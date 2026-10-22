@@ -10,10 +10,17 @@ import {
 } from '../types/cullingGame';
 import { CullingBoard } from './CullingBoard';
 import { CullingPiece as CullingPieceComponent } from './CullingPiece';
-import { executeCullingMove, resignCullingMatch, handleCullingTimeout } from '../game/cullingEngine';
+import {
+  executeCullingMove,
+  resignCullingMatch,
+  handleCullingTimeout,
+  getLegalMovesForSquare,
+} from '../game/cullingEngine';
 import { getBestCullingBotMove } from '../game/cullingBot';
+import { sounds } from '../utils/audio';
 
 const CullingTheoryView = React.lazy(() => import('./CullingTheoryView'));
+
 import {
   BookOpen,
   Flag,
@@ -28,9 +35,10 @@ import {
   X,
   AlertTriangle,
   Zap,
-  Sparkles,
-  Shield,
   Send,
+  Search,
+  FileText,
+  ChevronDown,
 } from 'lucide-react';
 
 interface CullingMatchViewProps {
@@ -55,6 +63,8 @@ interface AbilityPopup {
   timestamp: number;
 }
 
+type MobileActiveTab = 'abilities' | 'logs' | 'inspector' | 'roster' | null;
+
 export const CullingMatchView: React.FC<CullingMatchViewProps> = ({
   initialMatch,
   isBotMatch,
@@ -69,7 +79,14 @@ export const CullingMatchView: React.FC<CullingMatchViewProps> = ({
   const [isBotThinking, setIsBotThinking] = useState(false);
   const [flipped, setFlipped] = useState(userColor === 'black');
 
-  // Inspected piece floating toast state (shows piece name & moniker for Culling Game)
+  // Selected piece data for inspector & valid move derivations
+  const [selectedPieceData, setSelectedPieceData] = useState<{
+    type: CullingPieceType;
+    color: CullingPieceColor;
+    pos?: CullingPos;
+  } | null>(null);
+
+  // Inspected piece floating toast state
   const [inspectedPiece, setInspectedPiece] = useState<{
     name: string;
     role: string;
@@ -80,21 +97,32 @@ export const CullingMatchView: React.FC<CullingMatchViewProps> = ({
   // Red GameOver modal visibility state
   const [showGameOverModal, setShowGameOverModal] = useState(match.status === 'completed');
 
-  // Ability pop-up notifications stack (Blue for player, Purple for opponent)
+  // Mobile active tab bottom sheet
+  const [mobileTab, setMobileTab] = useState<MobileActiveTab>(null);
+
+  // Ability pop-up notifications stack
   const [abilityPopups, setAbilityPopups] = useState<AbilityPopup[]>([]);
   const processedMovesRef = useRef<number>(initialMatch.history.length);
 
   const moveLogEndRef = useRef<HTMLDivElement | null>(null);
-  const stepLogEndRef = useRef<HTMLDivElement | null>(null);
+  const mobileMoveLogEndRef = useRef<HTMLDivElement | null>(null);
   const botTimerRef = useRef<NodeJS.Timeout | null>(null);
   const toastTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // When match completes, trigger prominent red modal
+  // When match completes, trigger red modal and game-over audio
   useEffect(() => {
     if (match.status === 'completed') {
       setShowGameOverModal(true);
+      sounds.playGameOver();
     }
   }, [match.status]);
+
+  // Audio warning on check
+  useEffect(() => {
+    if (match.inCheck && match.status === 'active') {
+      sounds.playCheck();
+    }
+  }, [match.inCheck, match.status]);
 
   // Inspect piece function for Culling pieces
   const handleInspectPiece = useCallback((pieceType: string, pieceColor?: CullingPieceColor) => {
@@ -115,7 +143,7 @@ export const CullingMatchView: React.FC<CullingMatchViewProps> = ({
     }
   }, []);
 
-  // Monitor move history to spawn ability popups & narrative steps
+  // Monitor move history to spawn ability popups & trigger ability sounds
   useEffect(() => {
     if (match.history.length > processedMovesRef.current) {
       const newMoves = match.history.slice(processedMovesRef.current);
@@ -127,6 +155,7 @@ export const CullingMatchView: React.FC<CullingMatchViewProps> = ({
           (Boolean(m.actionType) && m.actionType !== 'move');
 
         if (isSpecial) {
+          sounds.playAbility();
           const charInfo = CULLING_ROSTER[m.piece.type];
           const isPlayer = m.piece.color === userColor;
           const popupId = `popup_${Date.now()}_${Math.random()}`;
@@ -162,7 +191,6 @@ export const CullingMatchView: React.FC<CullingMatchViewProps> = ({
 
           setAbilityPopups((prev) => [newPopup, ...prev.slice(0, 3)]);
 
-          // Auto-dismiss popup after 4.5 seconds
           setTimeout(() => {
             setAbilityPopups((prev) => prev.filter((p) => p.id !== popupId));
           }, 4500);
@@ -174,8 +202,8 @@ export const CullingMatchView: React.FC<CullingMatchViewProps> = ({
   // Auto-scroll logs
   useEffect(() => {
     moveLogEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    stepLogEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [match.history.length]);
+    mobileMoveLogEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [match.history.length, mobileTab]);
 
   // Synchronize state from multiplayer socket
   useEffect(() => {
@@ -186,6 +214,11 @@ export const CullingMatchView: React.FC<CullingMatchViewProps> = ({
         const msg = JSON.parse(event.data);
         if ((msg.type === 'culling:state' || msg.type === 'culling:moved') && msg.match) {
           setMatch(msg.match);
+          if (msg.match.lastMove?.captured) {
+            sounds.playCapture();
+          } else {
+            sounds.playMove();
+          }
         } else if (msg.type === 'culling:clock') {
           setMatch((prev) => {
             if (prev.status !== 'active') return prev;
@@ -225,6 +258,15 @@ export const CullingMatchView: React.FC<CullingMatchViewProps> = ({
         if (bestMove) {
           const res = executeCullingMove(prev, bestMove.from, bestMove.to, bestMove.actionType);
           if (res.success) {
+            const executedMove = res.state.lastMove;
+            if (executedMove?.captured) {
+              sounds.playCapture();
+            } else if (executedMove?.isSpecialAbility || executedMove?.actionType !== 'move') {
+              sounds.playAbility();
+            } else {
+              sounds.playMove();
+            }
+
             // Check if bonus turn was earned
             if (res.state.status === 'active' && res.state.turn === botColor) {
               setTimeout(() => runBotTurn(res.state, botColor), 500);
@@ -258,7 +300,6 @@ export const CullingMatchView: React.FC<CullingMatchViewProps> = ({
       setMatch((prev) => {
         if (prev.status !== 'active') return prev;
 
-        // Check if paused by rulebook
         if (prev.rulebookPausedUntil && Date.now() < prev.rulebookPausedUntil) {
           return prev;
         }
@@ -291,6 +332,15 @@ export const CullingMatchView: React.FC<CullingMatchViewProps> = ({
 
       const res = executeCullingMove(match, from, to, actionType as any);
       if (res.success) {
+        const executedMove = res.state.lastMove;
+        if (executedMove?.captured) {
+          sounds.playCapture();
+        } else if (executedMove?.isSpecialAbility || executedMove?.actionType !== 'move') {
+          sounds.playAbility();
+        } else {
+          sounds.playMove();
+        }
+
         const nextState = res.state;
         setMatch(nextState);
 
@@ -300,6 +350,7 @@ export const CullingMatchView: React.FC<CullingMatchViewProps> = ({
         }
       }
     } else if (socket && socket.readyState === WebSocket.OPEN) {
+      sounds.playMove();
       const activeUserId = userColor === 'white' ? match.whitePlayer.userId : match.blackPlayer.userId;
       socket.send(
         JSON.stringify({
@@ -332,7 +383,6 @@ export const CullingMatchView: React.FC<CullingMatchViewProps> = ({
     }
   };
 
-  // Opening the Theory Book keeps the room alive without affecting the opponent
   const handleOpenRules = () => {
     setIsRulesOpen(true);
   };
@@ -343,20 +393,16 @@ export const CullingMatchView: React.FC<CullingMatchViewProps> = ({
     return `${m}:${s < 10 ? '0' : ''}${s}`;
   };
 
-  // Captured pieces derived from move history
-  const capturedByWhite = useMemo(() => {
-    return match.history
-      .filter((m) => m.captured && m.piece.color === 'white')
-      .map((m) => m.captured!);
-  }, [match.history]);
+  // Last moved piece
+  const lastMovedPiece = match.lastMove ? match.lastMove.piece : null;
 
-  const capturedByBlack = useMemo(() => {
-    return match.history
-      .filter((m) => m.captured && m.piece.color === 'black')
-      .map((m) => m.captured!);
-  }, [match.history]);
+  // Derive valid moves for the currently selected piece
+  const selectedLegalMoves = useMemo(() => {
+    if (!selectedPieceData?.pos) return [];
+    return getLegalMovesForSquare(match, selectedPieceData.pos);
+  }, [selectedPieceData, match]);
 
-  // Human-readable narrative steps stating exactly who is moving which piece
+  // Human-readable narrative steps
   const narrativeSteps = useMemo(() => {
     return match.history.map((m, idx) => {
       const charInfo = CULLING_ROSTER[m.piece.type];
@@ -399,32 +445,34 @@ export const CullingMatchView: React.FC<CullingMatchViewProps> = ({
   const playerTime =
     userColor === 'white' ? match.whiteTimeRemaining : match.blackTimeRemaining;
 
-  const opponentCaptured = opponentColor === 'white' ? capturedByWhite : capturedByBlack;
-  const playerCaptured = userColor === 'white' ? capturedByWhite : capturedByBlack;
-
   return (
-    <div className="h-screen w-screen overflow-hidden bg-white dark:bg-[#0a0e14] text-black dark:text-white flex flex-col font-sans select-none relative">
-      {/* Floating Piece Name Toast Banner (Shown on sidebar/mobile/board piece click) */}
+    <div
+      className={`w-screen bg-neutral-950 text-white flex flex-col font-sans relative ${
+        isRulesOpen
+          ? 'min-h-[100dvh] overflow-y-auto touch-auto select-text'
+          : 'h-[100dvh] max-h-[100dvh] overflow-x-hidden overflow-y-hidden lg:h-auto lg:min-h-screen lg:overflow-y-auto touch-manipulation lg:touch-auto select-none lg:select-auto'
+      }`}
+    >
+      {/* Inspected piece toast banner */}
       {inspectedPiece && (
-        <div className="fixed top-14 left-1/2 -translate-x-1/2 z-50 pointer-events-auto animate-in fade-in slide-in-from-top-3 duration-200 max-w-sm w-[90%]">
-          <div className="bg-neutral-900 text-white border-3 border-amber-400 shadow-[5px_5px_0px_#f59e0b] px-3.5 py-2.5 flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2.5 min-w-0">
-              <div className="w-8 h-8 shrink-0 bg-neutral-950 border border-neutral-700 flex items-center justify-center p-1">
+        <div className="fixed top-14 left-1/2 -translate-x-1/2 z-50 pointer-events-auto max-w-sm w-[92%] animate-in fade-in slide-in-from-top-2 duration-150">
+          <div className="bg-neutral-900 text-white border-2 border-amber-400 shadow-[4px_4px_0px_#f59e0b] px-3 py-2 flex items-center justify-between gap-2.5">
+            <div className="flex items-center gap-2 min-w-0">
+              <div className="w-8 h-8 shrink-0 bg-black border border-neutral-700 flex items-center justify-center p-0.5">
                 <CullingPieceComponent type={inspectedPiece.type} color={inspectedPiece.team} />
               </div>
               <div className="truncate">
-                <div className="text-xs sm:text-sm font-black uppercase tracking-wide text-amber-400 truncate">
+                <div className="text-xs font-black uppercase tracking-wide text-amber-400 truncate">
                   {inspectedPiece.name}
                 </div>
-                <div className="text-[10px] sm:text-[11px] text-neutral-300 font-bold truncate">
+                <div className="text-[10px] text-neutral-300 font-bold truncate">
                   {inspectedPiece.role}
                 </div>
               </div>
             </div>
             <button
               onClick={() => setInspectedPiece(null)}
-              className="p-1 text-neutral-400 hover:text-white cursor-pointer transition-colors"
-              title="Dismiss"
+              className="p-1 text-neutral-400 hover:text-white cursor-pointer"
             >
               <X className="w-4 h-4" />
             </button>
@@ -432,18 +480,16 @@ export const CullingMatchView: React.FC<CullingMatchViewProps> = ({
         </div>
       )}
 
-      {/* Prominent Red Game-Over Modal Overlay */}
+      {/* Prominent Red Game-Over Modal */}
       {showGameOverModal && match.status === 'completed' && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200">
-          <div className="bg-red-600 text-white border-4 border-black dark:border-white shadow-[8px_8px_0px_#000] dark:shadow-[8px_8px_0px_#fff] p-6 sm:p-7 max-w-md w-full relative">
+        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-red-600 text-white border-4 border-white shadow-[8px_8px_0px_#000] p-6 max-w-md w-full relative">
             <button
               onClick={() => setShowGameOverModal(false)}
-              className="absolute top-3 right-3 p-1 text-white hover:bg-red-700 border-2 border-white/80 cursor-pointer"
-              title="Close modal to inspect board"
+              className="absolute top-3 right-3 p-1 text-white hover:bg-red-700 border-2 border-white cursor-pointer"
             >
               <X className="w-5 h-5" />
             </button>
-
             <div className="flex flex-col items-center text-center">
               <div className="w-14 h-14 bg-white text-red-600 border-3 border-black flex items-center justify-center mb-3 shadow-[3px_3px_0px_#000]">
                 {isMatchDraw ? (
@@ -454,42 +500,23 @@ export const CullingMatchView: React.FC<CullingMatchViewProps> = ({
                   <Swords className="w-8 h-8" />
                 )}
               </div>
-
               <span className="text-xs font-mono font-black uppercase tracking-widest text-red-100 mb-1">
-                Match Concluded
+                Domain Climax
               </span>
-
-              <h2 className="text-2xl sm:text-3xl font-black uppercase tracking-tight text-white mb-2">
-                {isMatchDraw
-                  ? 'Stalemate / Draw'
-                  : isUserWinner
-                  ? 'Glorious Victory!'
-                  : 'Sorcery Defeat'}
+              <h2 className="text-2xl font-black uppercase text-white mb-2">
+                {isMatchDraw ? 'Stalemate / Draw' : isUserWinner ? 'Glorious Victory!' : 'Domain Defeat'}
               </h2>
-
-              <p className="text-sm font-bold text-red-100 bg-red-700/80 border border-red-500/80 px-3 py-2 mb-4 w-full">
-                {match.winReason ||
-                  (match.winner
-                    ? `${match.winner.toUpperCase()} KING EXECUTED DOMAIN VICTORY`
-                    : 'Game finished')}
+              <p className="text-xs font-bold text-red-100 bg-red-700/80 border border-red-500 px-3 py-1.5 mb-4 w-full">
+                {match.winReason || 'Game Finished'}
               </p>
-
-              <div className="text-[11px] font-bold text-red-100/90 mb-5">
-                {match.winner === 'white'
-                  ? 'Satoru Gojo & Protagonists stand supreme.'
-                  : match.winner === 'black'
-                  ? 'Ryomen Sukuna & Antagonists seized the Culling Game.'
-                  : 'Neither King fell in combat.'}
-              </div>
-
-              <div className="flex flex-col gap-2.5 w-full">
+              <div className="flex flex-col gap-2 w-full">
                 {onPlaySimilarBot && (
                   <button
                     onClick={() => {
                       setShowGameOverModal(false);
                       onPlaySimilarBot();
                     }}
-                    className="w-full py-2.5 bg-black hover:bg-neutral-900 text-white font-black text-xs uppercase border-2 border-black shadow-[3px_3px_0px_#000] cursor-pointer active:translate-x-0.5 active:translate-y-0.5"
+                    className="w-full py-2 bg-black hover:bg-neutral-900 text-white font-black text-xs uppercase border-2 border-white shadow-[2px_2px_0px_#000] cursor-pointer"
                   >
                     Play Again vs Similar Bot
                   </button>
@@ -500,16 +527,16 @@ export const CullingMatchView: React.FC<CullingMatchViewProps> = ({
                       setShowGameOverModal(false);
                       onPlayMultiplayer();
                     }}
-                    className="w-full py-2.5 bg-white hover:bg-neutral-100 text-red-700 font-black text-xs uppercase border-2 border-black shadow-[3px_3px_0px_#000] cursor-pointer active:translate-x-0.5 active:translate-y-0.5"
+                    className="w-full py-2 bg-white hover:bg-neutral-100 text-red-700 font-black text-xs uppercase border-2 border-black shadow-[2px_2px_0px_#000] cursor-pointer"
                   >
                     Direct Challenge Multiplayer
                   </button>
                 )}
                 <button
                   onClick={() => setShowGameOverModal(false)}
-                  className="w-full py-2 bg-red-800 hover:bg-red-700 text-white font-black text-xs uppercase border-2 border-white/60 cursor-pointer"
+                  className="w-full py-1.5 bg-red-800 hover:bg-red-700 text-white font-bold text-xs uppercase border border-white/60 cursor-pointer"
                 >
-                  Inspect Fallen King & Board
+                  Inspect Final Board
                 </button>
               </div>
             </div>
@@ -517,65 +544,115 @@ export const CullingMatchView: React.FC<CullingMatchViewProps> = ({
         </div>
       )}
 
-      {/* Top Header Bar (Ultra-compact to maximize vertical board area) */}
-      <header className="px-3 sm:px-5 py-1.5 border-b-2 sm:border-b-3 border-black dark:border-white bg-white dark:bg-[#0f172a] shrink-0 flex items-center justify-between gap-2.5 z-20">
-        <div className="flex items-center gap-2.5">
+      {/* COMPACT PINNED TOP HUD (Zero Jitter, Solid Anchor) */}
+      <header className="px-2.5 sm:px-4 py-1.5 border-b-2 border-neutral-800 bg-[#0c1017] shrink-0 flex items-center justify-between gap-1.5 z-20 h-12">
+        {/* Left: Exit & Title */}
+        <div className="flex items-center gap-1.5 shrink-0">
           <button
             onClick={onExit}
-            className="p-1.5 bg-white dark:bg-[#1e293b] hover:bg-neutral-100 dark:hover:bg-slate-700 border-2 border-black dark:border-white shadow-[2px_2px_0px_#000] dark:shadow-[2px_2px_0px_#fff] cursor-pointer active:translate-x-0.5 active:translate-y-0.5"
-            title="Exit to Dashboard"
+            className="p-1.5 bg-neutral-900 hover:bg-neutral-800 border border-neutral-700 shadow-[1px_1px_0px_#fff] cursor-pointer"
+            title="Exit"
           >
-            <ArrowLeft className="w-4 h-4" />
+            <ArrowLeft className="w-3.5 h-3.5 text-neutral-200" />
           </button>
-          <div className="flex items-center gap-2">
-            <Swords className="w-4 h-4 text-amber-500" />
-            <h1 className="text-xs sm:text-sm font-black uppercase tracking-wider">
-              Culling Game Mode
-            </h1>
-            <span className="text-[9px] bg-amber-400 text-black px-1.5 py-0.2 font-black uppercase border border-black shadow-[1px_1px_0px_#000]">
-              {isBotMatch ? 'vs Bot' : 'Direct Challenge'}
-            </span>
+          <div className="hidden sm:flex items-center gap-1">
+            <Swords className="w-3.5 h-3.5 text-amber-400" />
+            <span className="text-xs font-black uppercase tracking-wider">Culling</span>
           </div>
         </div>
 
-        {/* Action Controls */}
-        <div className="flex items-center gap-1.5 sm:gap-2">
-          <button
-            onClick={handleOpenRules}
-            className="px-2.5 py-1 bg-white dark:bg-[#1e293b] hover:bg-neutral-100 dark:hover:bg-slate-700 border-2 border-black dark:border-white shadow-[2px_2px_0px_#000] dark:shadow-[2px_2px_0px_#fff] text-xs font-black uppercase flex items-center gap-1 cursor-pointer active:translate-x-0.5 active:translate-y-0.5"
-            title="Read Theory Book"
+        {/* Center: Live Timers & Turn Indicator */}
+        <div className="flex items-center gap-1 sm:gap-2">
+          {/* Opponent Timer Chip */}
+          <div
+            className={`flex items-center gap-1 px-1.5 py-0.5 border text-[11px] font-mono transition-colors ${
+              match.turn === opponentColor
+                ? 'bg-amber-400 text-black border-amber-300 font-black shadow-[0_0_8px_#f59e0b]'
+                : 'bg-neutral-900 text-neutral-300 border-neutral-800'
+            }`}
           >
-            <BookOpen className="w-3.5 h-3.5 text-amber-500" />
-            <span className="hidden sm:inline">Theory Book</span>
-          </button>
+            <span className="text-[9px] uppercase font-bold opacity-80">
+              {opponentColor === 'white' ? 'W' : 'B'}
+            </span>
+            <Clock className="w-3 h-3" />
+            <span>{formatTime(opponentTime)}</span>
+          </div>
 
+          {/* Turn Badge / Check Alert */}
+          <div
+            className={`px-2 py-0.5 border text-[10px] font-black uppercase tracking-wider shrink-0 ${
+              match.inCheck
+                ? 'bg-red-600 text-white border-white animate-pulse shadow-[0_0_10px_#ef4444]'
+                : match.turn === userColor
+                ? 'bg-amber-500 text-black border-black font-black'
+                : 'bg-neutral-800 text-neutral-300 border-neutral-700'
+            }`}
+          >
+            {match.inCheck
+              ? `${match.inCheck.toUpperCase()} IN CHECK!`
+              : match.turn === userColor
+              ? 'YOUR TURN'
+              : 'OPPONENT TURN'}
+          </div>
+
+          {/* Player Timer Chip */}
+          <div
+            className={`flex items-center gap-1 px-1.5 py-0.5 border text-[11px] font-mono transition-colors ${
+              match.turn === userColor
+                ? 'bg-amber-400 text-black border-amber-300 font-black shadow-[0_0_8px_#f59e0b]'
+                : 'bg-neutral-900 text-neutral-300 border-neutral-800'
+            }`}
+          >
+            <span className="text-[9px] uppercase font-bold opacity-80">
+              {userColor === 'white' ? 'W' : 'B'} (YOU)
+            </span>
+            <Clock className="w-3 h-3" />
+            <span>{formatTime(playerTime)}</span>
+          </div>
+        </div>
+
+        {/* Right: Quick Utility Controls */}
+        <div className="flex items-center gap-1 shrink-0">
           <button
             onClick={() => setFlipped((prev) => !prev)}
-            className="p-1.5 bg-white dark:bg-[#1e293b] hover:bg-neutral-100 dark:hover:bg-slate-700 border-2 border-black dark:border-white shadow-[2px_2px_0px_#000] dark:shadow-[2px_2px_0px_#fff] cursor-pointer active:translate-x-0.5 active:translate-y-0.5"
+            className="p-1.5 bg-neutral-900 hover:bg-neutral-800 border border-neutral-700 cursor-pointer"
             title="Flip Board"
           >
-            <RotateCw className="w-3.5 h-3.5" />
+            <RotateCw className="w-3.5 h-3.5 text-neutral-300" />
           </button>
-
+          <button
+            onClick={handleOpenRules}
+            className="px-2 py-1 bg-amber-500 hover:bg-amber-400 text-black font-black text-[11px] uppercase border border-black cursor-pointer hidden sm:flex items-center gap-1"
+          >
+            <BookOpen className="w-3 h-3" />
+            <span>Theory</span>
+          </button>
+          <button
+            onClick={handleOpenRules}
+            className="p-1.5 bg-amber-500 text-black border border-black cursor-pointer sm:hidden"
+            title="Theory Book"
+          >
+            <BookOpen className="w-3.5 h-3.5" />
+          </button>
           <button
             onClick={handleResign}
             disabled={match.status !== 'active'}
-            className="px-2 py-1 bg-red-600 hover:bg-red-500 disabled:opacity-50 text-white border-2 border-black dark:border-white shadow-[2px_2px_0px_#000] dark:shadow-[2px_2px_0px_#fff] text-xs font-black uppercase flex items-center gap-1 cursor-pointer active:translate-x-0.5 active:translate-y-0.5"
+            className="p-1.5 bg-red-700 hover:bg-red-600 disabled:opacity-40 text-white border border-neutral-800 cursor-pointer"
+            title="Resign"
           >
             <Flag className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Resign</span>
           </button>
         </div>
       </header>
 
-      {/* Main Single-Screen Ergonomic Game Body (Fits in one desktop screen without vertical scrolling) */}
-      <main className="flex-1 w-full max-w-[1700px] mx-auto p-1 sm:p-2 lg:p-2.5 flex flex-col lg:flex-row items-center lg:items-stretch justify-between gap-2.5 lg:gap-4 overflow-y-auto lg:overflow-hidden">
-        {/* LEFT COLUMN: Step Announcements Box + Special Ability Pop-up Stack + Roster */}
-        <aside className="w-full lg:w-72 xl:w-80 flex flex-col gap-2 shrink-0 h-auto lg:h-full lg:overflow-hidden">
-          {/* 1. Live Step Announcement Box (Stating exactly who is moving which piece) */}
-          <div className="bg-neutral-100 dark:bg-[#0f172a] border-2 sm:border-3 border-black dark:border-white shadow-[3px_3px_0px_#000] dark:shadow-[3px_3px_0px_#fff] flex flex-col h-44 sm:h-48 lg:h-52 shrink-0 overflow-hidden">
-            <div className="px-2.5 py-1.5 bg-neutral-200 dark:bg-[#1e293b] border-b-2 border-black dark:border-white flex items-center justify-between text-[11px] font-black uppercase">
-              <span className="flex items-center gap-1 text-amber-600 dark:text-amber-400">
+      {/* MAIN VIEWPORT: ROCK-SOLID BOARD (Fixed Center on Mobile, Scrollable on Desktop) */}
+      <main className="flex-1 w-full max-w-[1700px] mx-auto p-1 lg:p-3 flex flex-row items-center lg:items-start justify-between gap-4 overflow-hidden lg:overflow-y-auto relative">
+        {/* DESKTOP-ONLY LEFT SIDEBAR: Logs, Abilities & Roster */}
+        <aside className="hidden lg:flex w-72 xl:w-80 flex-col gap-2 shrink-0 h-full overflow-hidden">
+          {/* 1. Step Announcements Box */}
+          <div className="bg-[#0f172a] border-2 border-white/20 shadow-[2px_2px_0px_#000] flex flex-col h-44 shrink-0 overflow-hidden">
+            <div className="px-2.5 py-1 bg-[#1e293b] border-b border-white/20 flex items-center justify-between text-[11px] font-black uppercase text-amber-400">
+              <span className="flex items-center gap-1">
                 <Send className="w-3.5 h-3.5" />
                 Step Announcements
               </span>
@@ -583,73 +660,55 @@ export const CullingMatchView: React.FC<CullingMatchViewProps> = ({
                 T{match.turnCount}
               </span>
             </div>
-
-            <div className="flex-1 p-2 overflow-y-auto space-y-1.5 text-xs font-mono">
+            <div className="flex-1 p-2 overflow-y-auto space-y-1 text-xs font-mono">
               {narrativeSteps.length === 0 ? (
-                <div className="text-neutral-400 dark:text-slate-500 text-center py-6 text-xs font-bold">
-                  Game commenced. Waiting for first step...
-                </div>
+                <div className="text-neutral-500 text-center py-6 text-xs">Waiting for first step...</div>
               ) : (
                 narrativeSteps.map((step) => (
                   <div
                     key={`step-${step.index}`}
                     onClick={() => handleInspectPiece(step.type, step.color)}
-                    className="p-1.5 bg-white dark:bg-[#1e293b] border border-black/20 dark:border-white/20 hover:border-amber-400 cursor-pointer transition-colors flex items-start gap-1.5 text-[11px] leading-tight"
+                    className="p-1 bg-[#1e293b]/70 border border-white/10 hover:border-amber-400 cursor-pointer flex items-start gap-1 text-[11px]"
                   >
-                    <span className="text-amber-500 font-black shrink-0">#{step.index}</span>
-                    <span className="font-bold text-neutral-800 dark:text-neutral-200">
-                      {step.text}
-                    </span>
+                    <span className="text-amber-500 font-bold shrink-0">#{step.index}</span>
+                    <span className="text-neutral-200">{step.text}</span>
                   </div>
                 ))
               )}
-              <div ref={stepLogEndRef} />
+              <div ref={moveLogEndRef} />
             </div>
           </div>
 
-          {/* 2. Special Ability Pop-up Stack (Blue for Player, Purple for Opponent) */}
-          <div className="flex-1 flex flex-col gap-2 min-h-0 overflow-y-auto">
+          {/* 2. Special Ability Stack */}
+          <div className="flex-1 flex flex-col gap-1.5 min-h-0 overflow-y-auto">
             {abilityPopups.length > 0 ? (
               abilityPopups.map((popup) => (
                 <div
                   key={popup.id}
-                  className={`p-2.5 border-2 animate-in slide-in-from-left duration-200 shadow-[3px_3px_0px_rgba(0,0,0,0.5)] flex flex-col gap-1 relative ${
+                  className={`p-2 border-2 animate-in slide-in-from-left duration-150 ${
                     popup.isPlayer
-                      ? 'bg-blue-950/95 border-blue-400 text-blue-100 shadow-[4px_4px_0px_#3b82f6]'
-                      : 'bg-purple-950/95 border-purple-400 text-purple-100 shadow-[4px_4px_0px_#a855f7]'
+                      ? 'bg-blue-950/95 border-blue-400 text-blue-100 shadow-[3px_3px_0px_#3b82f6]'
+                      : 'bg-purple-950/95 border-purple-400 text-purple-100 shadow-[3px_3px_0px_#a855f7]'
                   }`}
                 >
-                  <button
-                    onClick={() =>
-                      setAbilityPopups((prev) => prev.filter((p) => p.id !== popup.id))
-                    }
-                    className="absolute top-1.5 right-1.5 p-0.5 text-neutral-300 hover:text-white cursor-pointer"
-                  >
-                    <X className="w-3.5 h-3.5" />
-                  </button>
-
-                  <div className="flex items-center gap-1.5">
-                    <span
-                      className={`text-[9px] font-black uppercase px-1.5 py-0.2 tracking-wider ${
-                        popup.isPlayer
-                          ? 'bg-blue-500 text-white font-bold'
-                          : 'bg-purple-500 text-white font-bold'
-                      }`}
-                    >
-                      {popup.isPlayer ? 'Your Power Activated' : 'Opponent Power Activated'}
+                  <div className="flex items-center justify-between text-[9px] font-black uppercase">
+                    <span className={popup.isPlayer ? 'text-blue-400' : 'text-purple-400'}>
+                      {popup.isPlayer ? 'Your Power' : 'Opponent Power'}
                     </span>
+                    <button
+                      onClick={() => setAbilityPopups((prev) => prev.filter((p) => p.id !== popup.id))}
+                      className="cursor-pointer text-neutral-400 hover:text-white"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
                   </div>
-
-                  <div className="flex items-center gap-2 mt-0.5">
-                    <div className="w-6 h-6 shrink-0 bg-neutral-900 border border-neutral-600 flex items-center justify-center p-0.5">
+                  <div className="flex items-center gap-2 mt-1">
+                    <div className="w-6 h-6 shrink-0 bg-neutral-900 border border-neutral-700 flex items-center justify-center p-0.5">
                       <CullingPieceComponent type={popup.casterType} color={popup.color} />
                     </div>
-                    <div className="min-w-0">
-                      <div className="text-xs font-black uppercase tracking-wide truncate">
-                        {popup.casterName}
-                      </div>
-                      <div className="text-[10px] font-bold opacity-90 truncate flex items-center gap-1">
-                        <Zap className="w-3 h-3 text-amber-400" />
+                    <div className="min-w-0 text-xs truncate">
+                      <div className="font-black uppercase truncate">{popup.casterName}</div>
+                      <div className="text-[10px] text-amber-300 font-bold truncate">
                         {popup.abilityName} → {popup.targetSquare}
                       </div>
                     </div>
@@ -657,20 +716,20 @@ export const CullingMatchView: React.FC<CullingMatchViewProps> = ({
                 </div>
               ))
             ) : (
-              <div className="p-2 bg-neutral-100 dark:bg-[#0f172a] border border-dashed border-black/25 dark:border-white/25 text-[10px] text-neutral-400 text-center font-bold">
-                Special technique notifications appear here (Blue for yours, Purple for opponent)
+              <div className="p-3 bg-[#0f172a] border border-dashed border-white/20 text-[10px] text-neutral-500 text-center font-bold">
+                Special abilities and domain techniques appear here
               </div>
             )}
           </div>
 
-          {/* 3. Sorcerer Character Roster (Quick Info on Click) */}
-          <div className="p-2 bg-neutral-100 dark:bg-[#0f172a] border-2 border-black dark:border-white shadow-[2px_2px_0px_#000] dark:shadow-[2px_2px_0px_#fff] shrink-0">
-            <div className="flex items-center justify-between mb-1 text-[10px] font-black uppercase text-neutral-600 dark:text-neutral-300">
+          {/* 3. Character Roster Quick Monograph */}
+          <div className="p-2 bg-[#0f172a] border border-white/20 shrink-0">
+            <div className="flex items-center justify-between mb-1 text-[10px] font-black uppercase text-neutral-400">
               <span className="flex items-center gap-1">
-                <Info className="w-3 h-3 text-amber-500" />
+                <Info className="w-3 h-3 text-amber-400" />
                 Tap Piece for Moniker
               </span>
-              <span className="text-neutral-400 font-mono text-[9px]">16 Pieces</span>
+              <span className="font-mono text-[9px]">16 Pieces</span>
             </div>
             <div className="grid grid-cols-8 gap-1">
               {Object.keys(CULLING_ROSTER).map((key) => {
@@ -679,7 +738,7 @@ export const CullingMatchView: React.FC<CullingMatchViewProps> = ({
                   <button
                     key={key}
                     onClick={() => handleInspectPiece(key, info.team)}
-                    className="w-7 h-7 p-1 bg-white dark:bg-[#1e293b] hover:bg-amber-400/20 hover:border-amber-400 border border-black/30 dark:border-white/30 flex items-center justify-center cursor-pointer transition-transform hover:scale-110 active:scale-95"
+                    className="w-7 h-7 p-0.5 bg-[#1e293b] hover:border-amber-400 border border-white/20 flex items-center justify-center cursor-pointer hover:scale-110 active:scale-95 transition-transform"
                     title={`${info.name} (${info.role})`}
                   >
                     <CullingPieceComponent type={info.type} color={info.team} />
@@ -690,239 +749,405 @@ export const CullingMatchView: React.FC<CullingMatchViewProps> = ({
           </div>
         </aside>
 
-        {/* CENTER COLUMN: Maximized Board & Compact Top/Bottom Status Trays (No Player Names) */}
-        <section className="flex-1 flex flex-col items-center justify-center gap-1 shrink-0 h-full max-h-full">
-          {/* Opponent Slim Status Tray (No Player Name to Maximize Board Height) */}
-          <div
-            className={`w-full max-w-[min(calc(100vh-135px),640px)] px-3 py-1 border-2 border-black dark:border-white shadow-[2px_2px_0px_#000] dark:shadow-[2px_2px_0px_#fff] flex items-center justify-between transition-colors shrink-0 ${
-              match.turn === opponentColor
-                ? 'bg-amber-400 text-black'
-                : 'bg-neutral-100 dark:bg-[#0f172a] text-black dark:text-white'
-            }`}
-          >
-            <div className="flex items-center gap-2">
-              <span
-                className={`text-[9px] font-black uppercase px-1.5 py-0.2 border border-black shadow-[1px_1px_0px_#000] ${
-                  opponentColor === 'white' ? 'bg-white text-black' : 'bg-black text-white'
-                }`}
-              >
-                {opponentColor.toUpperCase()} (OPPONENT)
-              </span>
-
-              {/* Captured piece tray for opponent */}
-              <div className="flex items-center gap-1 overflow-x-auto max-w-[200px]">
-                {opponentCaptured.length === 0 ? (
-                  <span className="text-[10px] font-bold opacity-75">
-                    {match.turn === opponentColor
-                      ? isBotThinking
-                        ? 'Thinking...'
-                        : 'To Move'
-                      : 'Waiting'}
-                  </span>
-                ) : (
-                  opponentCaptured.slice(-6).map((p, idx) => (
-                    <button
-                      key={`opp-cap-${idx}`}
-                      onClick={() => handleInspectPiece(p.type, p.color)}
-                      className="w-4 h-4 p-0.5 bg-neutral-200 dark:bg-neutral-800 border border-black/40 hover:scale-125 transition-transform cursor-pointer"
-                      title="Inspect captured piece"
-                    >
-                      <CullingPieceComponent type={p.type} color={p.color} />
-                    </button>
-                  ))
-                )}
-              </div>
-            </div>
-
-            <div className="flex items-center gap-1.5 bg-white dark:bg-black px-2 py-0.5 border border-black dark:border-white shadow-[1px_1px_0px_#000] dark:shadow-[1px_1px_0px_#fff]">
-              <Clock className="w-3 h-3 text-amber-500" />
-              <span className="font-mono text-xs font-black">{formatTime(opponentTime)}</span>
-            </div>
-          </div>
-
-          {/* Maximized 10x10 Cross Board Grid */}
-          <div className="flex items-center justify-center shrink-0">
-            <CullingBoard
-              match={match}
-              myColor={userColor}
-              isInteractive={match.status === 'active' && match.turn === userColor && !isBotThinking}
-              onMove={handleMove}
-              flipped={flipped}
-              onPieceClick={(piece) =>
-                handleInspectPiece(piece.type, piece.color as CullingPieceColor)
-              }
-            />
-          </div>
-
-          {/* Player Slim Status Tray (No Player Name to Maximize Board Height) */}
-          <div
-            className={`w-full max-w-[min(calc(100vh-135px),640px)] px-3 py-1 border-2 border-black dark:border-white shadow-[2px_2px_0px_#000] dark:shadow-[2px_2px_0px_#fff] flex items-center justify-between transition-colors shrink-0 ${
-              match.turn === userColor
-                ? 'bg-amber-400 text-black'
-                : 'bg-neutral-100 dark:bg-[#0f172a] text-black dark:text-white'
-            }`}
-          >
-            <div className="flex items-center gap-2">
-              <span
-                className={`text-[9px] font-black uppercase px-1.5 py-0.2 border border-black shadow-[1px_1px_0px_#000] ${
-                  userColor === 'white' ? 'bg-white text-black' : 'bg-black text-white'
-                }`}
-              >
-                {userColor.toUpperCase()} (YOU)
-              </span>
-
-              {/* Captured piece tray for player */}
-              <div className="flex items-center gap-1 overflow-x-auto max-w-[200px]">
-                {playerCaptured.length === 0 ? (
-                  <span className="text-[10px] font-bold opacity-75">
-                    {match.turn === userColor ? 'Your Turn to Strike' : 'Opponent Turn'}
-                  </span>
-                ) : (
-                  playerCaptured.slice(-6).map((p, idx) => (
-                    <button
-                      key={`plyr-cap-${idx}`}
-                      onClick={() => handleInspectPiece(p.type, p.color)}
-                      className="w-4 h-4 p-0.5 bg-neutral-200 dark:bg-neutral-800 border border-black/40 hover:scale-125 transition-transform cursor-pointer"
-                      title="Inspect captured piece"
-                    >
-                      <CullingPieceComponent type={p.type} color={p.color} />
-                    </button>
-                  ))
-                )}
-              </div>
-            </div>
-
-            <div className="flex items-center gap-1.5 bg-white dark:bg-black px-2 py-0.5 border border-black dark:border-white shadow-[1px_1px_0px_#000] dark:shadow-[1px_1px_0px_#fff]">
-              <Clock className="w-3 h-3 text-amber-500" />
-              <span className="font-mono text-xs font-black">{formatTime(playerTime)}</span>
-            </div>
-          </div>
+        {/* CENTER COLUMN: FULLY IMMOBILE ROCK-SOLID BOARD */}
+        <section className="flex-1 flex flex-col items-center justify-center h-full max-h-full overflow-hidden shrink-0 touch-manipulation">
+          <CullingBoard
+            match={match}
+            myColor={userColor}
+            isInteractive={match.status === 'active' && match.turn === userColor && !isBotThinking}
+            onMove={handleMove}
+            flipped={flipped}
+            onPieceClick={(piece) => {
+              setSelectedPieceData({
+                type: piece.type as CullingPieceType,
+                color: piece.color as CullingPieceColor,
+                pos: piece.pos,
+              });
+              handleInspectPiece(piece.type, piece.color as CullingPieceColor);
+            }}
+          />
         </section>
 
-        {/* RIGHT COLUMN: Red Conclusion Banner / Match Status + SAN Technique Log + Match Actions */}
-        <aside className="w-full lg:w-72 xl:w-80 flex flex-col gap-2 shrink-0 h-auto lg:h-full lg:overflow-hidden">
-          {/* Red Game Conclusion Sidebar Banner */}
-          {match.status === 'completed' && (
-            <div className="p-3 bg-red-600 text-white border-3 border-black dark:border-white shadow-[4px_4px_0px_#000] dark:shadow-[4px_4px_0px_#fff] animate-in fade-in duration-150 shrink-0">
-              <div className="flex items-center justify-between mb-1">
-                <div className="flex items-center gap-1.5 font-black text-xs uppercase">
-                  <Trophy className="w-4 h-4 text-white" />
-                  <span>Match Concluded</span>
+        {/* DESKTOP-ONLY RIGHT SIDEBAR: Opponent Last Move + Selected Piece + Moves */}
+        <aside className="hidden lg:flex w-72 xl:w-80 flex-col gap-2 shrink-0 h-full overflow-hidden">
+          {/* Opponent Last Move Box */}
+          <div className="bg-[#0f172a] p-3 border-2 border-white/20 shadow-[2px_2px_0px_#000] flex flex-col shrink-0">
+            <span className="text-[10px] font-black uppercase text-neutral-400 mb-1.5">
+              Opponent's Last Move
+            </span>
+            {lastMovedPiece ? (
+              <div className="flex items-center gap-3 bg-neutral-900 border border-neutral-700 p-2">
+                <div className="w-14 h-14 shrink-0 bg-white border-2 border-black flex items-center justify-center p-1 shadow-[2px_2px_0px_#f59e0b]">
+                  <CullingPieceComponent type={lastMovedPiece.type} color={lastMovedPiece.color} />
                 </div>
-                <button
-                  onClick={() => setShowGameOverModal(true)}
-                  className="text-[9px] bg-black text-white px-2 py-0.5 font-bold uppercase border border-white cursor-pointer hover:bg-neutral-800"
-                >
-                  View Modal
-                </button>
-              </div>
-              <p className="text-[11px] font-bold mb-2 text-red-100">
-                {match.winReason || `${match.winner?.toUpperCase()} achieved victory!`}
-              </p>
-              <div className="flex gap-2">
-                {onPlaySimilarBot && (
-                  <button
-                    onClick={onPlaySimilarBot}
-                    className="flex-1 py-1.5 bg-black hover:bg-neutral-800 text-white font-black text-[10px] uppercase border border-white cursor-pointer"
-                  >
-                    Vs Bot
-                  </button>
-                )}
-                {onPlayMultiplayer && (
-                  <button
-                    onClick={onPlayMultiplayer}
-                    className="flex-1 py-1.5 bg-white hover:bg-neutral-100 text-red-700 font-black text-[10px] uppercase border border-black cursor-pointer"
-                  >
-                    Challenge
-                  </button>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* Turn & Status Card */}
-          <div className="p-2.5 bg-neutral-100 dark:bg-[#0f172a] border-2 sm:border-3 border-black dark:border-white shadow-[3px_3px_0px_#000] dark:shadow-[3px_3px_0px_#fff] flex items-center justify-between shrink-0">
-            <div>
-              <span className="text-[10px] font-mono font-bold uppercase text-neutral-500 dark:text-neutral-400">
-                Turn {match.turnCount}
-              </span>
-              <div className="text-xs sm:text-sm font-black uppercase text-amber-500">
-                {match.turn === 'white' ? "White's Turn" : "Black's Turn"}
-              </div>
-            </div>
-            {match.turnCount <= 5 && (
-              <span className="text-[9px] bg-sky-500 text-white px-1.5 py-0.5 font-bold uppercase border border-black shadow-[1px_1px_0px_#000]">
-                Infinity Shield (T{match.turnCount}/5)
-              </span>
-            )}
-          </div>
-
-          {/* Standard Technique SAN History Log */}
-          <div className="bg-white dark:bg-[#0f172a] border-2 sm:border-3 border-black dark:border-white shadow-[3px_3px_0px_#000] dark:shadow-[3px_3px_0px_#fff] flex flex-col flex-1 min-h-[140px] max-h-[220px] lg:max-h-none overflow-hidden">
-            <div className="p-2 bg-neutral-200 dark:bg-[#1e293b] border-b-2 border-black dark:border-white flex items-center justify-between text-[11px] font-black uppercase shrink-0">
-              <span>SAN Move Notation ({match.history.length})</span>
-              <span className="text-[9px] font-mono text-neutral-500">Max 200</span>
-            </div>
-
-            <div className="flex-1 p-2 overflow-y-auto space-y-1 text-xs font-mono">
-              {match.history.length === 0 ? (
-                <div className="text-neutral-400 dark:text-slate-500 text-center py-6 font-bold text-xs">
-                  Moves will record here in algebraic format.
-                </div>
-              ) : (
-                match.history.map((m, idx) => {
-                  const charInfo = CULLING_ROSTER[m.piece.type];
-                  return (
-                    <div
-                      key={`san-move-${idx}`}
-                      onClick={() => handleInspectPiece(m.piece.type, m.piece.color)}
-                      className="p-1 bg-neutral-100 dark:bg-[#1e293b] border border-black/15 dark:border-white/15 flex items-center justify-between hover:border-amber-400 cursor-pointer transition-colors"
-                      title="Inspect piece details"
-                    >
-                      <div className="flex items-center gap-1.5 truncate">
-                        <span className="text-neutral-400 w-4 text-[10px]">{idx + 1}.</span>
-                        <span className="font-bold truncate text-[11px]">
-                          {charInfo ? charInfo.name : m.piece.type}
-                        </span>
-                      </div>
-                      <span className="text-amber-500 dark:text-amber-400 font-bold shrink-0 text-xs">
-                        {m.san}
-                      </span>
+                <div className="min-w-0">
+                  <div className="text-xs font-black uppercase text-amber-400 truncate">
+                    {CULLING_ROSTER[lastMovedPiece.type]?.name || lastMovedPiece.type}
+                  </div>
+                  <div className="text-[10px] text-neutral-300 font-bold">
+                    {lastMovedPiece.color.toUpperCase()} · {CULLING_ROSTER[lastMovedPiece.type]?.role}
+                  </div>
+                  {match.lastMove && (
+                    <div className="text-[10px] font-mono font-bold text-amber-500 mt-0.5">
+                      → {posToCullingSquare(match.lastMove.to)}
                     </div>
-                  );
-                })
-              )}
-              <div ref={moveLogEndRef} />
-            </div>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <div className="py-4 text-center text-neutral-500 text-xs font-mono">No moves yet</div>
+            )}
           </div>
 
-          {/* Quick Match Action Buttons */}
-          <div className="flex items-center gap-2 shrink-0">
-            {onPlaySimilarBot && (
-              <button
-                onClick={onPlaySimilarBot}
-                className="flex-1 py-2 bg-neutral-100 dark:bg-[#0f172a] hover:bg-neutral-200 dark:hover:bg-slate-800 border-2 border-black dark:border-white shadow-[2px_2px_0px_#000] dark:shadow-[2px_2px_0px_#fff] text-xs font-black uppercase flex items-center justify-center gap-1 cursor-pointer active:translate-x-0.5 active:translate-y-0.5"
-              >
-                <Bot className="w-3.5 h-3.5 text-amber-500" />
-                <span>Vs Bot</span>
-              </button>
+          {/* Selected Piece Viewer & Valid Moves (From Theory Book) */}
+          <div className="bg-[#0f172a] p-3 border-2 border-white/20 shadow-[2px_2px_0px_#000] flex flex-col flex-1 min-h-0 overflow-hidden">
+            <span className="text-[10px] font-black uppercase text-neutral-400 mb-1.5">
+              Your Selected Piece
+            </span>
+            {selectedPieceData ? (
+              <div className="flex flex-col gap-2 flex-1 min-h-0 overflow-hidden">
+                <div className="flex items-center gap-3 bg-neutral-900 border border-neutral-700 p-2 shrink-0">
+                  <div className="w-14 h-14 shrink-0 bg-neutral-950 border-2 border-amber-400 flex items-center justify-center p-1 shadow-[2px_2px_0px_#f59e0b]">
+                    <CullingPieceComponent
+                      type={selectedPieceData.type}
+                      color={selectedPieceData.color}
+                    />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-xs font-black uppercase text-amber-400 truncate">
+                      {CULLING_ROSTER[selectedPieceData.type]?.name}
+                    </div>
+                    <div className="text-[10px] text-neutral-300 font-bold">
+                      {selectedPieceData.color.toUpperCase()} ·{' '}
+                      {CULLING_ROSTER[selectedPieceData.type]?.role}
+                    </div>
+                    {selectedPieceData.pos && (
+                      <div className="text-[10px] font-mono text-neutral-400">
+                        Square {posToCullingSquare(selectedPieceData.pos)}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Valid Destinations List */}
+                <div className="flex-1 overflow-y-auto border border-white/10 bg-black/40 p-2 text-xs">
+                  <div className="text-[10px] font-black uppercase text-amber-500 mb-1">
+                    Valid Moves ({selectedLegalMoves.length})
+                  </div>
+                  {selectedLegalMoves.length === 0 ? (
+                    <div className="text-neutral-500 text-[11px] py-2">
+                      {match.turn !== userColor ? 'Not your turn' : 'No legal moves available'}
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-3 gap-1">
+                      {selectedLegalMoves.map((m, idx) => (
+                        <div
+                          key={`valid-${idx}`}
+                          className="px-1.5 py-1 bg-[#1e293b] border border-white/20 text-center font-mono text-[11px] font-bold"
+                        >
+                          {posToCullingSquare(m.to)}
+                          {m.actionType && m.actionType !== 'move' && (
+                            <span className="block text-[8px] text-amber-400 uppercase font-sans">
+                              {m.actionType}
+                            </span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <div className="py-6 text-center text-neutral-500 text-xs font-mono">
+                Click a piece on the board to view its profile & legal moves
+              </div>
             )}
-            {onPlayMultiplayer && (
-              <button
-                onClick={onPlayMultiplayer}
-                className="flex-1 py-2 bg-amber-400 hover:bg-amber-300 text-black border-2 border-black shadow-[2px_2px_0px_#000] text-xs font-black uppercase flex items-center justify-center gap-1 cursor-pointer active:translate-x-0.5 active:translate-y-0.5"
-              >
-                <Users className="w-3.5 h-3.5" />
-                <span>Direct Challenge</span>
-              </button>
-            )}
+          </div>
+
+          {/* Algebraic SAN Move History */}
+          <div className="bg-[#0f172a] border border-white/20 p-2 shrink-0 h-32 flex flex-col overflow-hidden">
+            <span className="text-[10px] font-black uppercase text-neutral-400 mb-1">
+              SAN Notation History ({match.history.length})
+            </span>
+            <div className="flex-1 overflow-y-auto space-y-0.5 text-xs font-mono">
+              {match.history.length === 0 ? (
+                <div className="text-neutral-500 text-center py-4 text-xs">No moves logged</div>
+              ) : (
+                match.history.map((m, idx) => (
+                  <div key={idx} className="flex justify-between text-[11px] px-1 py-0.5 hover:bg-white/5">
+                    <span className="text-neutral-500">{idx + 1}.</span>
+                    <span className="font-bold text-neutral-300">{CULLING_ROSTER[m.piece.type]?.name}</span>
+                    <span className="text-amber-400 font-bold">{m.san}</span>
+                  </div>
+                ))
+              )}
+            </div>
           </div>
         </aside>
       </main>
 
-      {/* Full-screen Theory Book View */}
+      {/* MOBILE-ONLY SLIDE-UP BOTTOM SHEET (Overlaid, Zero Board Shift) */}
+      {mobileTab && (
+        <div className="lg:hidden fixed bottom-14 left-0 right-0 max-h-[46dvh] z-40 bg-[#0c1017]/98 backdrop-blur-md border-t-3 border-amber-400 shadow-[0_-8px_30px_rgba(0,0,0,0.85)] flex flex-col animate-in slide-in-from-bottom-5 duration-150">
+          {/* Drawer Header with Title and Close Button */}
+          <div className="px-3 py-1.5 bg-[#161d2b] border-b border-neutral-700 flex items-center justify-between shrink-0">
+            <div className="flex items-center gap-1.5 text-xs font-black uppercase text-amber-400">
+              {mobileTab === 'abilities' && <Zap className="w-3.5 h-3.5" />}
+              {mobileTab === 'logs' && <FileText className="w-3.5 h-3.5" />}
+              {mobileTab === 'inspector' && <Search className="w-3.5 h-3.5" />}
+              {mobileTab === 'roster' && <Users className="w-3.5 h-3.5" />}
+              <span>
+                {mobileTab === 'abilities'
+                  ? 'Special Abilities Feed'
+                  : mobileTab === 'logs'
+                  ? 'Steps & SAN Notation'
+                  : mobileTab === 'inspector'
+                  ? 'Piece Inspector'
+                  : 'Sorcerer Roster'}
+              </span>
+            </div>
+            <button
+              onClick={() => setMobileTab(null)}
+              className="p-1 text-neutral-300 hover:text-white cursor-pointer"
+            >
+              <ChevronDown className="w-4 h-4" />
+            </button>
+          </div>
+
+          {/* Drawer Body Content */}
+          <div className="flex-1 overflow-y-auto p-3 text-xs">
+            {/* 1. Abilities Tab */}
+            {mobileTab === 'abilities' && (
+              <div className="space-y-2">
+                {abilityPopups.length > 0 ? (
+                  abilityPopups.map((popup) => (
+                    <div
+                      key={popup.id}
+                      className={`p-2 border-2 ${
+                        popup.isPlayer
+                          ? 'bg-blue-950/95 border-blue-400 text-blue-100'
+                          : 'bg-purple-950/95 border-purple-400 text-purple-100'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <div className="w-6 h-6 shrink-0 bg-neutral-900 border border-neutral-700 flex items-center justify-center p-0.5">
+                          <CullingPieceComponent type={popup.casterType} color={popup.color} />
+                        </div>
+                        <div className="min-w-0">
+                          <div className="font-black uppercase truncate">{popup.casterName}</div>
+                          <div className="text-[10px] text-amber-300 font-bold truncate">
+                            {popup.abilityName} → {popup.targetSquare}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="py-6 text-center text-neutral-400 text-xs">
+                    No active abilities in the current queue. Techniques trigger during combat!
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* 2. Logs & Moves Tab */}
+            {mobileTab === 'logs' && (
+              <div className="space-y-3">
+                <div>
+                  <div className="text-[10px] font-black uppercase text-amber-400 mb-1">
+                    Live Step Announcements
+                  </div>
+                  <div className="space-y-1 font-mono text-[11px] max-h-36 overflow-y-auto">
+                    {narrativeSteps.map((step) => (
+                      <div
+                        key={`m-step-${step.index}`}
+                        onClick={() => handleInspectPiece(step.type, step.color)}
+                        className="p-1 bg-[#161d2b] border border-neutral-700 flex items-start gap-1"
+                      >
+                        <span className="text-amber-500 font-bold">#{step.index}</span>
+                        <span>{step.text}</span>
+                      </div>
+                    ))}
+                    <div ref={mobileMoveLogEndRef} />
+                  </div>
+                </div>
+
+                <div>
+                  <div className="text-[10px] font-black uppercase text-amber-400 mb-1">
+                    Algebraic SAN History
+                  </div>
+                  <div className="grid grid-cols-2 gap-1 font-mono text-[11px]">
+                    {match.history.map((m, i) => (
+                      <div key={`m-san-${i}`} className="p-1 bg-[#161d2b] border border-neutral-700 flex justify-between">
+                        <span className="text-neutral-500">{i + 1}.</span>
+                        <span className="text-amber-400 font-bold">{m.san}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* 3. Inspector Tab */}
+            {mobileTab === 'inspector' && (
+              <div className="grid grid-cols-2 gap-2">
+                {/* Last Move */}
+                <div className="bg-[#161d2b] border border-neutral-700 p-2 flex flex-col items-center text-center">
+                  <span className="text-[9px] font-black uppercase text-neutral-400 mb-1">
+                    Opponent Last Move
+                  </span>
+                  {lastMovedPiece ? (
+                    <>
+                      <div className="w-12 h-12 bg-white border border-black p-1 mb-1">
+                        <CullingPieceComponent type={lastMovedPiece.type} color={lastMovedPiece.color} />
+                      </div>
+                      <div className="text-[11px] font-black uppercase text-amber-400 truncate w-full">
+                        {CULLING_ROSTER[lastMovedPiece.type]?.name}
+                      </div>
+                      <div className="text-[9px] text-neutral-400">
+                        {match.lastMove ? `→ ${posToCullingSquare(match.lastMove.to)}` : ''}
+                      </div>
+                    </>
+                  ) : (
+                    <div className="py-4 text-[10px] text-neutral-500">None</div>
+                  )}
+                </div>
+
+                {/* Selected Piece */}
+                <div className="bg-[#161d2b] border border-neutral-700 p-2 flex flex-col items-center text-center">
+                  <span className="text-[9px] font-black uppercase text-neutral-400 mb-1">
+                    Selected Piece
+                  </span>
+                  {selectedPieceData ? (
+                    <>
+                      <div className="w-12 h-12 bg-neutral-950 border border-amber-400 p-1 mb-1">
+                        <CullingPieceComponent
+                          type={selectedPieceData.type}
+                          color={selectedPieceData.color}
+                        />
+                      </div>
+                      <div className="text-[11px] font-black uppercase text-amber-400 truncate w-full">
+                        {CULLING_ROSTER[selectedPieceData.type]?.name}
+                      </div>
+                      <div className="text-[9px] text-neutral-400">
+                        {selectedLegalMoves.length} valid moves
+                      </div>
+                    </>
+                  ) : (
+                    <div className="py-4 text-[10px] text-neutral-500">Tap a piece</div>
+                  )}
+                </div>
+
+                {/* Legal Moves List Full Width */}
+                {selectedPieceData && (
+                  <div className="col-span-2 bg-[#161d2b] border border-neutral-700 p-2">
+                    <div className="text-[10px] font-black uppercase text-amber-400 mb-1">
+                      Legal Moves for {CULLING_ROSTER[selectedPieceData.type]?.name}
+                    </div>
+                    {selectedLegalMoves.length === 0 ? (
+                      <div className="text-[10px] text-neutral-400">No legal moves available</div>
+                    ) : (
+                      <div className="flex flex-wrap gap-1">
+                        {selectedLegalMoves.map((m, idx) => (
+                          <span
+                            key={`mob-move-${idx}`}
+                            className="px-2 py-0.5 bg-neutral-900 border border-neutral-600 font-mono text-[10px] font-bold text-amber-300"
+                          >
+                            {posToCullingSquare(m.to)}
+                            {m.actionType && m.actionType !== 'move' && ` (${m.actionType})`}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* 4. Roster Tab */}
+            {mobileTab === 'roster' && (
+              <div>
+                <div className="text-[10px] font-black uppercase text-neutral-400 mb-2">
+                  Tap any sorcerer to view moniker
+                </div>
+                <div className="grid grid-cols-4 gap-2">
+                  {Object.keys(CULLING_ROSTER).map((key) => {
+                    const info = CULLING_ROSTER[key as CullingPieceType];
+                    return (
+                      <button
+                        key={`mob-roster-${key}`}
+                        onClick={() => handleInspectPiece(key, info.team)}
+                        className="p-1.5 bg-[#161d2b] border border-neutral-700 hover:border-amber-400 flex flex-col items-center text-center cursor-pointer active:scale-95 transition-transform"
+                      >
+                        <div className="w-8 h-8 mb-1">
+                          <CullingPieceComponent type={info.type} color={info.team} />
+                        </div>
+                        <span className="text-[9px] font-bold uppercase truncate w-full">
+                          {info.name}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* MOBILE-ONLY FIXED BOTTOM TAB BAR (Quick Thumb Navigation) */}
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 h-14 bg-[#0c1017] border-t-2 border-neutral-800 z-30 flex items-center justify-around px-2 shadow-[0_-2px_10px_rgba(0,0,0,0.5)]">
+        {/* Tab 1: Abilities */}
+        <button
+          onClick={() => setMobileTab((prev) => (prev === 'abilities' ? null : 'abilities'))}
+          className={`flex-1 h-full flex flex-col items-center justify-center gap-0.5 cursor-pointer transition-colors relative ${
+            mobileTab === 'abilities' ? 'text-amber-400 bg-amber-400/10' : 'text-neutral-400 hover:text-white'
+          }`}
+        >
+          <Zap className="w-4 h-4" />
+          <span className="text-[9px] font-black uppercase tracking-tight">Powers</span>
+          {abilityPopups.length > 0 && (
+            <span className="absolute top-1.5 right-1/4 w-2 h-2 rounded-full bg-purple-500 animate-ping" />
+          )}
+        </button>
+
+        {/* Tab 2: Logs & Notation */}
+        <button
+          onClick={() => setMobileTab((prev) => (prev === 'logs' ? null : 'logs'))}
+          className={`flex-1 h-full flex flex-col items-center justify-center gap-0.5 cursor-pointer transition-colors ${
+            mobileTab === 'logs' ? 'text-amber-400 bg-amber-400/10' : 'text-neutral-400 hover:text-white'
+          }`}
+        >
+          <FileText className="w-4 h-4" />
+          <span className="text-[9px] font-black uppercase tracking-tight">Logs</span>
+        </button>
+
+        {/* Tab 3: Piece Inspector */}
+        <button
+          onClick={() => setMobileTab((prev) => (prev === 'inspector' ? null : 'inspector'))}
+          className={`flex-1 h-full flex flex-col items-center justify-center gap-0.5 cursor-pointer transition-colors ${
+            mobileTab === 'inspector' ? 'text-amber-400 bg-amber-400/10' : 'text-neutral-400 hover:text-white'
+          }`}
+        >
+          <Search className="w-4 h-4" />
+          <span className="text-[9px] font-black uppercase tracking-tight">Inspector</span>
+        </button>
+
+        {/* Tab 4: Roster */}
+        <button
+          onClick={() => setMobileTab((prev) => (prev === 'roster' ? null : 'roster'))}
+          className={`flex-1 h-full flex flex-col items-center justify-center gap-0.5 cursor-pointer transition-colors ${
+            mobileTab === 'roster' ? 'text-amber-400 bg-amber-400/10' : 'text-neutral-400 hover:text-white'
+          }`}
+        >
+          <Users className="w-4 h-4" />
+          <span className="text-[9px] font-black uppercase tracking-tight">Roster</span>
+        </button>
+      </nav>
+
+      {/* Full-screen Theory Book Modal */}
       {isRulesOpen && (
-        <div className="fixed inset-0 z-50 bg-black/95 flex flex-col">
+        <div className="fixed inset-0 z-50 bg-black/95 flex flex-col overflow-y-auto overscroll-contain touch-pan-y">
           <React.Suspense
             fallback={
               <div className="flex-1 flex items-center justify-center text-white font-mono text-xs font-bold">

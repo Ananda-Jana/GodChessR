@@ -610,7 +610,7 @@ export const CullingTheoryView: React.FC<CullingTheoryViewProps> = ({ onBack }) 
   }, [selectedArticle]);
 
   return (
-    <div className="min-h-screen bg-white dark:bg-[#0a0e14] text-black dark:text-white flex flex-col font-sans select-none">
+    <div className="min-h-screen w-full bg-white dark:bg-[#0a0e14] text-black dark:text-white flex flex-col font-sans select-text touch-pan-y overflow-y-auto">
       {/* Top Header Bar */}
       <header className="px-4 sm:px-6 py-3 border-b-3 border-black dark:border-white bg-white dark:bg-[#0f172a] sticky top-0 z-40 flex items-center justify-between">
         <div className="flex items-center gap-3">

@@ -9,6 +9,7 @@ import {
 } from '../types/cullingGame';
 import { CullingPiece as CullingPieceComponent } from './CullingPiece';
 import { getLegalMovesForSquare } from '../game/cullingEngine';
+import { sounds } from '../utils/audio';
 
 interface CullingBoardProps {
   match: CullingMatchState;
@@ -16,7 +17,7 @@ interface CullingBoardProps {
   isInteractive: boolean;
   onMove: (from: CullingPos, to: CullingPos, actionType?: string) => void;
   flipped?: boolean;
-  onPieceClick?: (piece: { type: string; color: string }) => void;
+  onPieceClick?: (piece: { type: string; color: string; pos?: CullingPos }) => void;
 }
 
 export const CullingBoard: React.FC<CullingBoardProps> = ({
@@ -50,7 +51,7 @@ export const CullingBoard: React.FC<CullingBoardProps> = ({
 
     // Trigger piece name inspection callback if piece clicked
     if (clickedPiece && onPieceClick) {
-      onPieceClick(clickedPiece);
+      onPieceClick({ type: clickedPiece.type, color: clickedPiece.color, pos: { x, y } });
     }
 
     if (!isInteractive) return;
@@ -66,6 +67,7 @@ export const CullingBoard: React.FC<CullingBoardProps> = ({
       // If clicking on same selected piece, deselect
       if (selectedPos.x === x && selectedPos.y === y) {
         setSelectedPos(null);
+        sounds.playSelect();
         return;
       }
     }
@@ -73,6 +75,7 @@ export const CullingBoard: React.FC<CullingBoardProps> = ({
     // Select piece if it belongs to current active player and match's turn
     if (clickedPiece && clickedPiece.color === match.turn && clickedPiece.color === myColor) {
       setSelectedPos({ x, y });
+      sounds.playSelect();
     } else {
       setSelectedPos(null);
     }
@@ -90,11 +93,11 @@ export const CullingBoard: React.FC<CullingBoardProps> = ({
 
   return (
     <div
-      className="relative p-1.5 sm:p-2.5 rounded-xl border-3 sm:border-4 border-black dark:border-white shadow-[4px_4px_0px_#000000] dark:shadow-[4px_4px_0px_#ffffff] select-none max-w-full overflow-hidden"
-      style={{ backgroundColor: '#f01e2c' }}
+      className="relative p-1 sm:p-2 rounded-xl border-3 sm:border-4 border-black dark:border-white shadow-[4px_4px_0px_#000000] dark:shadow-[4px_4px_0px_#ffffff] select-none touch-manipulation max-w-full overflow-hidden shrink-0"
+      style={{ backgroundColor: '#e11d48' }}
     >
-      {/* 10x10 Cross-Shaped Board Grid: Maximize Screen Fill */}
-      <div className="grid grid-cols-10 grid-rows-10 border-2 border-black/40 dark:border-white/20 bg-transparent w-[300px] h-[300px] sm:w-[420px] sm:h-[420px] md:w-[490px] md:h-[490px] lg:w-[min(calc(100vh-135px),640px)] lg:h-[min(calc(100vh-135px),640px)] aspect-square">
+      {/* 10x10 Cross-Shaped Board Grid: Rock-Solid Dimensions Anchored to Viewport */}
+      <div className="grid grid-cols-10 grid-rows-10 border-2 border-black/40 dark:border-white/20 bg-transparent w-[min(calc(100dvh-150px),calc(100vw-18px),540px)] h-[min(calc(100dvh-150px),calc(100vw-18px),540px)] lg:w-[min(calc(100dvh-140px),620px)] lg:h-[min(calc(100dvh-140px),620px)] aspect-square touch-manipulation select-none">
         {rowIndices.map((y) =>
           colIndices.map((x) => {
             const isPlayable = isValidCullingPos(x, y);
@@ -104,7 +107,7 @@ export const CullingBoard: React.FC<CullingBoardProps> = ({
               return (
                 <div
                   key={`cell-${x}-${y}`}
-                  className="w-full h-full aspect-square bg-[#0a0e14]/90 pointer-events-none"
+                  className="w-full h-full aspect-square bg-[#0a0e14]/95 pointer-events-none"
                 />
               );
             }
@@ -130,25 +133,25 @@ export const CullingBoard: React.FC<CullingBoardProps> = ({
             const isDark = (x + y) % 2 === 0;
 
             // Light squares: Crisp, opaque off-white (#F2EFE4)
-            // Dark squares: Fully transparent with Gaussian backdrop blur revealing rich red background
+            // Dark squares: Fully transparent with Gaussian backdrop blur revealing rich crimson background
             let squareBg = 'transparent';
             let backdropStyle: React.CSSProperties = {};
 
             if (isDark) {
               squareBg = isLastMoveDst
-                ? 'rgba(245, 158, 11, 0.22)'
+                ? 'rgba(245, 158, 11, 0.3)'
                 : isLastMoveSrc
-                ? 'rgba(245, 158, 11, 0.12)'
-                : 'rgba(45, 10, 15, 0.15)';
+                ? 'rgba(245, 158, 11, 0.16)'
+                : 'rgba(40, 5, 12, 0.2)';
               backdropStyle = {
                 backdropFilter: 'blur(3px)',
                 WebkitBackdropFilter: 'blur(3px)',
               };
             } else {
               squareBg = isLastMoveDst
-                ? '#e6dec8'
+                ? '#fde68a'
                 : isLastMoveSrc
-                ? '#ede8d9'
+                ? '#fef3c7'
                 : '#F2EFE4';
             }
 
@@ -159,26 +162,44 @@ export const CullingBoard: React.FC<CullingBoardProps> = ({
                 key={`cell-${x}-${y}`}
                 onClick={() => handleSquareClick(x, y)}
                 style={{ backgroundColor: squareBg, ...backdropStyle }}
-                className={`relative w-full h-full aspect-square flex items-center justify-center cursor-pointer transition-all duration-75 border border-black/10 dark:border-white/10 ${
-                  isSelected ? 'ring-2 sm:ring-3 ring-amber-400 z-20 brightness-105' : ''
-                } ${isCheckSquare ? 'ring-2 sm:ring-3 ring-red-600 bg-red-600/35 animate-pulse z-10' : ''}`}
+                className={`relative w-full h-full aspect-square flex items-center justify-center cursor-pointer border border-black/15 dark:border-white/10 transition-colors duration-150 ${
+                  isSelected
+                    ? 'ring-2 sm:ring-3 ring-amber-400 z-20 shadow-[0_0_12px_#f59e0b] brightness-110'
+                    : ''
+                } ${
+                  isCheckSquare
+                    ? 'ring-3 ring-red-600 bg-red-600/40 animate-pulse z-20 shadow-[0_0_20px_#ef4444]'
+                    : ''
+                }`}
                 title={squareLabel}
               >
+                {/* Last move indicator dot trail */}
+                {isLastMoveDst && !piece && (
+                  <div className="absolute w-2 h-2 rounded-full bg-amber-500 shadow-[0_0_8px_#f59e0b] pointer-events-none" />
+                )}
+
                 {/* Coordinate label */}
                 <span
-                  className={`absolute bottom-0.5 right-0.5 text-[6px] sm:text-[8px] font-mono font-bold pointer-events-none select-none ${
-                    isDark ? 'text-red-200/50' : 'text-neutral-700/60'
+                  className={`absolute bottom-0.5 right-0.5 text-[6px] sm:text-[7.5px] font-mono font-bold pointer-events-none select-none ${
+                    isDark ? 'text-rose-200/60' : 'text-neutral-700/60'
                   }`}
                 >
                   {squareLabel}
                 </span>
 
-                {/* Scaled-up Piece Component */}
+                {/* Cursed Aura domain glow under checked king */}
+                {isCheckSquare && (
+                  <div className="absolute inset-0 rounded-sm bg-radial from-red-600/60 via-red-600/20 to-transparent animate-ping pointer-events-none z-10" />
+                )}
+
+                {/* Piece Component (Zero Layout Shift) */}
                 {piece && (
                   <div
-                    className={`w-[94%] h-[94%] flex items-center justify-center z-10 transition-transform duration-700 ease-out ${
+                    className={`w-[92%] h-[92%] flex items-center justify-center z-10 transition-transform duration-200 ease-out ${
                       isDefeatedKing
-                        ? 'transform rotate-90 translate-y-2 origin-bottom-right drop-shadow-xl z-20 opacity-80'
+                        ? 'transform rotate-90 translate-y-1.5 origin-bottom-right drop-shadow-xl z-20 opacity-80'
+                        : isSelected
+                        ? 'scale-105 drop-shadow-[0_4px_6px_rgba(245,158,11,0.4)]'
                         : ''
                     }`}
                   >
@@ -189,12 +210,12 @@ export const CullingBoard: React.FC<CullingBoardProps> = ({
                 {/* Status effects */}
                 {piece?.isRestricted && (
                   <div className="absolute inset-0 bg-sky-500/25 border-2 border-sky-400 flex items-center justify-center z-20 pointer-events-none">
-                    <span className="text-[9px]">❄️</span>
+                    <span className="text-[10px] sm:text-xs">❄️</span>
                   </div>
                 )}
 
                 {piece?.contractShield && (
-                  <div className="absolute inset-0 border-2 border-amber-400 rounded-sm z-20 pointer-events-none animate-pulse" />
+                  <div className="absolute inset-0 border-2 border-amber-400 rounded-sm z-20 pointer-events-none animate-pulse shadow-[0_0_8px_#f59e0b]" />
                 )}
 
                 {/* Legal Move Indicators */}
@@ -202,14 +223,14 @@ export const CullingBoard: React.FC<CullingBoardProps> = ({
                   <div
                     className={`absolute z-30 pointer-events-none flex items-center justify-center ${
                       legalMove.actionType === 'shoot' || legalMove.actionType === 'pierce_shoot'
-                        ? 'w-full h-full border-2 sm:border-3 border-red-500 bg-red-500/20 rounded-full animate-pulse'
+                        ? 'w-full h-full border-2 sm:border-3 border-red-500 bg-red-500/25 rounded-full animate-pulse shadow-[0_0_10px_#ef4444]'
                         : legalMove.actionType === 'teleport'
-                        ? 'w-full h-full border-2 border-amber-400 bg-amber-400/20'
+                        ? 'w-full h-full border-2 border-amber-400 bg-amber-400/25 shadow-[0_0_10px_#f59e0b]'
                         : legalMove.actionType === 'swap'
-                        ? 'w-full h-full border-2 border-purple-400 bg-purple-400/20'
+                        ? 'w-full h-full border-2 border-purple-400 bg-purple-400/25 shadow-[0_0_10px_#a855f7]'
                         : piece
-                        ? 'w-full h-full border-2 sm:border-3 border-amber-400 rounded-full bg-amber-400/20'
-                        : 'w-2.5 h-2.5 sm:w-3.5 sm:h-3.5 bg-amber-400 rounded-full shadow-[0_0_6px_#f59e0b]'
+                        ? 'w-full h-full border-2 sm:border-3 border-amber-400 rounded-full bg-amber-400/25 shadow-[0_0_10px_#f59e0b]'
+                        : 'w-2.5 h-2.5 sm:w-3.5 sm:h-3.5 bg-amber-400 rounded-full shadow-[0_0_8px_#f59e0b]'
                     }`}
                   />
                 )}

@@ -20,16 +20,36 @@ class SoundEffects {
     return this.ctx;
   }
 
+  playSelect() {
+    try {
+      this.triggerHaptic(12);
+      const ctx = this.getContext();
+      if (!ctx) return;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(520, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(380, ctx.currentTime + 0.05);
+      gain.gain.setValueAtTime(0.08, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.05);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.06);
+    } catch (_) {}
+  }
+
   playMove() {
     try {
+      this.triggerHaptic(20);
       const ctx = this.getContext();
       if (!ctx) return;
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
       osc.type = 'sine';
       osc.frequency.setValueAtTime(440, ctx.currentTime);
-      osc.frequency.exponentialRampToValueAtTime(320, ctx.currentTime + 0.08);
-      gain.gain.setValueAtTime(0.15, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(260, ctx.currentTime + 0.08);
+      gain.gain.setValueAtTime(0.18, ctx.currentTime);
       gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.08);
       osc.connect(gain);
       gain.connect(ctx.destination);
@@ -40,19 +60,69 @@ class SoundEffects {
 
   playCapture() {
     try {
+      this.triggerHaptic([30, 20, 40]);
       const ctx = this.getContext();
       if (!ctx) return;
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
       osc.type = 'triangle';
-      osc.frequency.setValueAtTime(600, ctx.currentTime);
-      osc.frequency.exponentialRampToValueAtTime(180, ctx.currentTime + 0.12);
-      gain.gain.setValueAtTime(0.25, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.12);
+      osc.frequency.setValueAtTime(650, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(140, ctx.currentTime + 0.14);
+      gain.gain.setValueAtTime(0.28, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.14);
       osc.connect(gain);
       gain.connect(ctx.destination);
       osc.start();
-      osc.stop(ctx.currentTime + 0.13);
+      osc.stop(ctx.currentTime + 0.15);
+    } catch (_) {}
+  }
+
+  playAbility() {
+    try {
+      this.triggerHaptic([40, 30, 60]);
+      const ctx = this.getContext();
+      if (!ctx) return;
+      // Synthesize Jujutsu cursed energy arpeggio: Low gong to mystical high bell
+      const freqs = [196, 293.66, 440, 587.33, 880];
+      freqs.forEach((freq, idx) => {
+        setTimeout(() => {
+          if (!this.ctx) return;
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = idx % 2 === 0 ? 'sine' : 'triangle';
+          osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+          osc.frequency.exponentialRampToValueAtTime(freq * 1.05, this.ctx.currentTime + 0.25);
+          gain.gain.setValueAtTime(0.15, this.ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.25);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start();
+          osc.stop(this.ctx.currentTime + 0.26);
+        }, idx * 45);
+      });
+    } catch (_) {}
+  }
+
+  playCheck() {
+    try {
+      this.triggerHaptic([50, 40, 50]);
+      const ctx = this.getContext();
+      if (!ctx) return;
+      [330, 311.13].forEach((f, i) => {
+        setTimeout(() => {
+          if (!this.ctx) return;
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(f, this.ctx.currentTime);
+          gain.gain.setValueAtTime(0.12, this.ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.12);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start();
+          osc.stop(this.ctx.currentTime + 0.13);
+        }, i * 110);
+      });
     } catch (_) {}
   }
 
@@ -103,6 +173,7 @@ class SoundEffects {
 
   playGameOver() {
     try {
+      this.triggerHaptic([60, 40, 80, 40, 120]);
       const ctx = this.getContext();
       if (!ctx) return;
       const notes = [440, 554.37, 659.25, 880];
@@ -121,6 +192,14 @@ class SoundEffects {
           osc.stop(this.ctx.currentTime + 0.29);
         }, idx * 110);
       });
+    } catch (_) {}
+  }
+
+  triggerHaptic(pattern: number | number[]) {
+    try {
+      if (typeof window !== 'undefined' && 'vibrate' in navigator) {
+        navigator.vibrate(pattern);
+      }
     } catch (_) {}
   }
 }

@@ -8,354 +8,549 @@ interface CullingPieceProps {
 }
 
 /**
- * Minimal Modern Culling Chess Palette:
- * - White Pieces: Crisp `#ffffff` fill with soft charcoal-grey 0.5px outline (`#374151`)
- * - Black Pieces: Deep `#090d16` obsidian fill with thin, muted white 0.5px outline (`rgba(241, 245, 249, 0.7)`)
- * All 16 Culling characters feature clean, understated, consistent outlines without heavy glow.
+ * Culling Game Chess Pieces - reference-sheet artwork.
+ *
+ * Every character belongs to ONE side only (shown in its comment header), so
+ * each character is drawn in its canonical look regardless of the colour
+ * argument. Only the Culling Pawn and the Cursed Roach Swarm follow `color`.
+ *
+ * - WHITE side: paper-white fill, deep navy line art, navy details
+ * - BLACK side: obsidian fill, thin pale outline, pale details
+ * - Accents: red (Sukuna mask, Yuji hoodie collar, Yorozu flower, Kurourushi eyes)
+ *            and blue (Gojo blindfold weave, Mechamaru lens)
+ *
+ * viewBox (24x24), piece footprint, type ids and exports are unchanged.
  */
+const WHITE = {
+  fill: '#ffffff',
+  line: '#1a2236',
+  detail: '#1a2236',
+  ink: '#1a2236',
+};
+const BLACK = {
+  fill: '#090d16',
+  line: 'rgba(241, 245, 249, 0.75)',
+  detail: 'rgba(241, 245, 249, 0.85)',
+  ink: 'rgba(241, 245, 249, 0.85)',
+};
+const RED = '#d7263d';
+const BLUE = '#2f6fe4';
+
 export function renderCullingPieceSvg(type: string, color: string) {
   const isWhite = color === 'white';
-  const fill = isWhite ? '#ffffff' : '#090d16';
-  const stroke = isWhite ? '#374151' : 'rgba(241, 245, 249, 0.7)';
-  const detail = isWhite ? '#374151' : 'rgba(241, 245, 249, 0.75)';
-  const contrastFill = isWhite ? '#374151' : 'rgba(241, 245, 249, 0.8)';
 
   switch (type) {
     /**
      * 1. SATORU GOJO (King-equivalent, White)
-     * Royal King Crown with Cross finial and centered Infinity Symbol (∞).
+     * Spiky white hair, blue-crossed black blindfold, cross finial, infinity robe.
      */
-    case 'culling_gojo':
+    case 'culling_gojo': {
+      const p = WHITE;
       return (
         <g id="gojo_king">
-          {/* Base */}
-          <path d="M4.5 20.5 H19.5 V22 H4.5 Z" fill={fill} stroke={stroke} strokeWidth="0.5" />
-          {/* Body */}
-          <path d="M6 19.5 C6.8 15 8 13 8 10 C8 7.5 10 5.8 12 5.8 C14 5.8 16 7.5 16 10 C16 13 17.2 15 18 19.5 Z" fill={fill} stroke={stroke} strokeWidth="0.5" />
-          {/* Crown Band */}
-          <path d="M8 10 H16 V11.5 H8 Z" fill={fill} stroke={stroke} strokeWidth="0.5" />
-          {/* King Cross Finial */}
-          <path d="M12 2 V5.8 M10 3.8 H14" stroke={stroke} strokeWidth="0.5" strokeLinecap="square" />
-          {/* Infinity Symbol Crest (∞) */}
-          <path
-            d="M9.6 14.8 C8.4 13.8 8.4 16.2 9.6 15.2 C10.6 14.2 13.4 16.2 14.4 15.2 C15.6 16.2 15.6 13.8 14.4 14.8 C13.4 15.8 10.6 13.8 9.6 14.8 Z"
-            fill="none"
-            stroke={detail}
-            strokeWidth="0.5"
-          />
+          {/* Two-tier plinth */}
+          <rect x="4.5" y="20.6" width="15" height="1.4" rx="0.2" fill={p.fill} stroke={p.line} strokeWidth="0.4" />
+          <rect x="5.8" y="19.5" width="12.4" height="1.1" rx="0.2" fill={p.fill} stroke={p.line} strokeWidth="0.4" />
+          {/* Robe */}
+          <path d="M9.4 10.2 H14.6 C14.9 13 16.6 16.2 17.2 19.5 H6.8 C7.4 16.2 9.1 13 9.4 10.2 Z" fill={p.fill} stroke={p.line} strokeWidth="0.4" />
+          <path d="M10.6 10.2 L12 11.6 L13.4 10.2" fill="none" stroke={p.detail} strokeWidth="0.4" strokeLinecap="round" />
+          {/* Infinity symbol */}
+          <path d="M12 15.4 C11.2 14 9.5 14 9.5 15.4 C9.5 16.8 11.2 16.8 12 15.4 C12.8 14 14.5 14 14.5 15.4 C14.5 16.8 12.8 16.8 12 15.4 Z" fill="none" stroke={p.line} strokeWidth="0.7" />
+          {/* Face */}
+          <path d="M8.4 6.4 C8.4 9 9.8 10.4 12 10.4 C14.2 10.4 15.6 9 15.6 6.4 Z" fill={p.fill} stroke={p.line} strokeWidth="0.4" />
+          {/* Blindfold */}
+          <rect x="8.3" y="6.5" width="7.4" height="1.9" rx="0.4" fill={p.ink} />
+          <path d="M9 7.1 L15 8 M9 8 L15 7.1" fill="none" stroke={BLUE} strokeWidth="0.35" strokeLinecap="round" />
+          {/* Spiky hair */}
+          <polygon points="7.6,7 7,5.2 8.2,5.6 7.9,3.9 9.4,4.7 9.8,3.2 11,4.3 12,2.8 13,4.3 14.2,3.2 14.6,4.7 16.1,3.9 15.8,5.6 17,5.2 16.4,7 15,6 13.6,5.6 12,6.2 10.4,5.6 9,6" fill={p.fill} stroke={p.line} strokeWidth="0.4" strokeLinejoin="round" />
+          <path d="M10 4.6 L10.5 5.6 M12 4.2 L12 5.6 M14 4.6 L13.5 5.6 M8.6 5.6 L9 6.2 M15.4 5.6 L15 6.2" fill="none" stroke={p.detail} strokeWidth="0.3" strokeLinecap="round" />
+          {/* King cross finial */}
+          <path d="M12 0.5 V2.8 M10.9 1.3 H13.1" fill="none" stroke={p.line} strokeWidth="0.7" strokeLinecap="square" />
         </g>
       );
+    }
 
     /**
      * 2. RYOMEN SUKUNA (King-equivalent, Black)
-     * Demon King Crown with 4 prominent curved horns and Cursed Face markings.
+     * Horned demon crown, red cursed mask and red chest markings.
      */
-    case 'culling_sukuna':
+    case 'culling_sukuna': {
+      const p = BLACK;
       return (
         <g id="sukuna_king">
-          {/* Base */}
-          <path d="M4.5 20.5 H19.5 V22 H4.5 Z" fill={fill} stroke={stroke} strokeWidth="0.5" />
-          {/* Demon Body */}
-          <path d="M6 19.5 C6.8 15 8 13 8 10 C8 7.5 10 5.8 12 5.8 C14 5.8 16 7.5 16 10 C16 13 17.2 15 18 19.5 Z" fill={fill} stroke={stroke} strokeWidth="0.5" />
-          {/* Four-Point Demonic Horned Crown */}
-          <path d="M6 6.5 L7.5 2 L9.5 5.5 L12 1.5 L14.5 5.5 L16.5 2 L18 6.5 Z" fill={fill} stroke={stroke} strokeWidth="0.5" strokeLinejoin="round" />
-          {/* Cursed Forehead Eye & Crescent Marking */}
-          <circle cx="12" cy="11.5" r="1.3" fill={contrastFill} />
-          <path d="M9.5 16 C9.5 13.8 14.5 13.8 14.5 16 M12 13 V18" stroke={detail} strokeWidth="0.5" strokeLinecap="round" fill="none" />
+          {/* Two-tier plinth */}
+          <rect x="4.5" y="20.6" width="15" height="1.4" rx="0.2" fill={p.fill} stroke={p.line} strokeWidth="0.4" />
+          <rect x="5.8" y="19.5" width="12.4" height="1.1" rx="0.2" fill={p.fill} stroke={p.line} strokeWidth="0.4" />
+          {/* Robe */}
+          <path d="M9.4 10.2 H14.6 C14.9 13 16.6 16.2 17.2 19.5 H6.8 C7.4 16.2 9.1 13 9.4 10.2 Z" fill={p.fill} stroke={p.line} strokeWidth="0.4" />
+          <path d="M9.6 10.4 L12 13.2 L14.4 10.4" fill="none" stroke={p.detail} strokeWidth="0.4" strokeLinecap="round" />
+          {/* Red chest sigil */}
+          <path d="M12 12.8 V15.4" fill="none" stroke={RED} strokeWidth="0.6" strokeLinecap="round" />
+          <path d="M12 14.8 C10.4 15.6 10 17.2 12 18.6 C14 17.2 13.6 15.6 12 14.8 Z" fill="none" stroke={RED} strokeWidth="0.5" />
+          <path d="M10.2 13.2 C9.4 14.4 9.8 15.8 10.6 16.4 M13.8 13.2 C14.6 14.4 14.2 15.8 13.4 16.4" fill="none" stroke={RED} strokeWidth="0.4" strokeLinecap="round" />
+          {/* Outer curved horns */}
+          <path d="M8.8 6.2 C6.8 5.6 6.4 3.2 7.4 1.2 C7.8 3 8.8 4 9.8 4.6 Z" fill={p.fill} stroke={p.line} strokeWidth="0.4" strokeLinejoin="round" />
+          <path d="M15.2 6.2 C17.2 5.6 17.6 3.2 16.6 1.2 C16.2 3 15.2 4 14.2 4.6 Z" fill={p.fill} stroke={p.line} strokeWidth="0.4" strokeLinejoin="round" />
+          {/* Tall central horns */}
+          <path d="M10.4 4.6 L10 0.6 L11.9 3.8 Z" fill={p.fill} stroke={p.line} strokeWidth="0.4" strokeLinejoin="round" />
+          <path d="M13.6 4.6 L14 0.6 L12.1 3.8 Z" fill={p.fill} stroke={p.line} strokeWidth="0.4" strokeLinejoin="round" />
+          {/* Head */}
+          <ellipse cx="12" cy="7.3" rx="3.5" ry="3.3" fill={p.fill} stroke={p.line} strokeWidth="0.4" />
+          {/* Red cursed mask */}
+          <path d="M9.1 6 C9.4 5.4 14.6 5.4 14.9 6 C15.1 8.4 13.8 10.2 12 10.6 C10.2 10.2 8.9 8.4 9.1 6 Z" fill={RED} />
+          <path d="M9.8 6.9 L11.3 7.4 M14.2 6.9 L12.7 7.4 M10.6 9.2 H13.4 M12 5.6 V8" fill="none" stroke="#090d16" strokeWidth="0.45" strokeLinecap="round" />
         </g>
       );
+    }
 
     /**
      * 3. YUJI ITADORI (Queen-equivalent, White)
-     * Queen coronet with 5 pearls and Tiger Sunburst Divergent Fist crest.
+     * Spiky hair, RED hoodie collar with buttons, sunburst emblem.
      */
-    case 'culling_yuji':
+    case 'culling_yuji': {
+      const p = WHITE;
       return (
         <g id="yuji_queen">
-          {/* Base */}
-          <path d="M5 20.5 H19 V22 H5 Z" fill={fill} stroke={stroke} strokeWidth="0.5" />
-          {/* Flared Queen Torso */}
-          <path d="M6.2 19.5 C7.2 15 8.5 13 9 10.5 H15 C15.5 13 16.8 15 17.8 19.5 Z" fill={fill} stroke={stroke} strokeWidth="0.5" />
-          {/* Queen Coronet */}
-          <polygon points="5.5,9.5 7,12.5 12,9.5 17,12.5 18.5,9.5 17.5,14.5 6.5,14.5" fill={fill} stroke={stroke} strokeWidth="0.5" strokeLinejoin="round" />
-          <circle cx="5.5" cy="8.5" r="1.1" fill={fill} stroke={stroke} strokeWidth="0.5" />
-          <circle cx="8.8" cy="7.8" r="1.1" fill={fill} stroke={stroke} strokeWidth="0.5" />
-          <circle cx="12" cy="7.2" r="1.3" fill={fill} stroke={stroke} strokeWidth="0.5" />
-          <circle cx="15.2" cy="7.8" r="1.1" fill={fill} stroke={stroke} strokeWidth="0.5" />
-          <circle cx="18.5" cy="8.5" r="1.1" fill={fill} stroke={stroke} strokeWidth="0.5" />
-          {/* Divergent Fist Impact Sunburst Emblem */}
-          <path d="M12 14.8 V18.2 M10.2 15.4 L13.8 17.6 M10.2 17.6 L13.8 15.4 M9.4 16.5 H14.6" stroke={detail} strokeWidth="0.5" strokeLinecap="round" />
+          {/* Two-tier plinth */}
+          <rect x="5" y="20.6" width="14" height="1.4" rx="0.2" fill={p.fill} stroke={p.line} strokeWidth="0.4" />
+          <rect x="6.3" y="19.5" width="11.4" height="1.1" rx="0.2" fill={p.fill} stroke={p.line} strokeWidth="0.4" />
+          {/* Torso */}
+          <path d="M8.8 10.6 H15.2 C15.4 13 16.8 16.2 17.4 19.5 H6.6 C7.2 16.2 8.6 13 8.8 10.6 Z" fill={p.fill} stroke={p.line} strokeWidth="0.4" />
+          {/* Sunburst emblem */}
+          <circle cx="12" cy="15.9" r="0.9" fill={p.ink} />
+          <path d="M12 13.7 V14.6 M12 17.2 V18.1 M9.8 15.9 H10.7 M13.3 15.9 H14.2 M10.5 14.4 L11.1 15 M12.9 16.8 L13.5 17.4 M13.5 14.4 L12.9 15 M11.1 16.8 L10.5 17.4" fill="none" stroke={p.detail} strokeWidth="0.4" strokeLinecap="round" />
+          {/* Face */}
+          <path d="M8.8 6.4 C8.8 8.8 10 9.8 12 9.8 C14 9.8 15.2 8.8 15.2 6.4 Z" fill={p.fill} stroke={p.line} strokeWidth="0.4" />
+          {/* Red hoodie collar */}
+          <path d="M7.9 10.2 C8 9.5 9.6 9.2 12 9.2 C14.4 9.2 16 9.5 16.1 10.2 L16.5 12.4 C15 13.3 9 13.3 7.5 12.4 Z" fill={RED} stroke={p.line} strokeWidth="0.5" strokeLinejoin="round" />
+          <path d="M8.6 10.5 C10 11.3 14 11.3 15.4 10.5" fill="none" stroke={p.line} strokeWidth="0.3" />
+          <circle cx="12" cy="11.4" r="0.35" fill={p.fill} stroke={p.line} strokeWidth="0.25" />
+          <circle cx="12" cy="12.4" r="0.35" fill={p.fill} stroke={p.line} strokeWidth="0.25" />
+          {/* Spiky hair */}
+          <polygon points="8.5,7 7.4,5.8 8.2,5.4 7.5,3.8 9.2,4.4 9.4,2.8 10.8,3.8 11.6,2.2 12.6,3.6 13.8,2.4 14.4,4 16,3.4 15.8,5 16.8,5.4 15.8,6.8 15.5,7 14.6,5.6 13.2,5.4 12,6 10.6,5.4 9.4,5.6" fill={p.fill} stroke={p.line} strokeWidth="0.4" strokeLinejoin="round" />
+          <path d="M10 4.4 L10.4 5.4 M12 3.6 L12 5 M14 4.2 L13.6 5.2" fill="none" stroke={p.detail} strokeWidth="0.3" strokeLinecap="round" />
         </g>
       );
+    }
 
     /**
      * 4. KENJAKU (Queen-equivalent, Black)
-     * Veiled Queen coronet with 5 pearls and Horizontal Brain Stitches across forehead.
+     * Top bun, long hair, forehead stitches, earrings, crossed robe.
      */
-    case 'culling_kenjaku':
+    case 'culling_kenjaku': {
+      const p = BLACK;
       return (
         <g id="kenjaku_queen">
-          <path d="M5 20.5 H19 V22 H5 Z" fill={fill} stroke={stroke} strokeWidth="0.5" />
-          <path d="M6.2 19.5 C7.2 15 8.5 13 9 10.5 H15 C15.5 13 16.8 15 17.8 19.5 Z" fill={fill} stroke={stroke} strokeWidth="0.5" />
-          <polygon points="5.5,9.5 7,12.5 12,9.5 17,12.5 18.5,9.5 17.5,14.5 6.5,14.5" fill={fill} stroke={stroke} strokeWidth="0.5" strokeLinejoin="round" />
-          <circle cx="5.5" cy="8.5" r="1.1" fill={fill} stroke={stroke} strokeWidth="0.5" />
-          <circle cx="8.8" cy="7.8" r="1.1" fill={fill} stroke={stroke} strokeWidth="0.5" />
-          <circle cx="12" cy="7.2" r="1.3" fill={fill} stroke={stroke} strokeWidth="0.5" />
-          <circle cx="15.2" cy="7.8" r="1.1" fill={fill} stroke={stroke} strokeWidth="0.5" />
-          <circle cx="18.5" cy="8.5" r="1.1" fill={fill} stroke={stroke} strokeWidth="0.5" />
-          {/* Signature Forehead Stitches Crest */}
-          <line x1="8.5" y1="16.5" x2="15.5" y2="16.5" stroke={detail} strokeWidth="0.5" strokeLinecap="round" />
-          <line x1="9.5" y1="15" x2="9.5" y2="18" stroke={detail} strokeWidth="0.5" />
-          <line x1="11.2" y1="15" x2="11.2" y2="18" stroke={detail} strokeWidth="0.5" />
-          <line x1="12.8" y1="15" x2="12.8" y2="18" stroke={detail} strokeWidth="0.5" />
-          <line x1="14.5" y1="15" x2="14.5" y2="18" stroke={detail} strokeWidth="0.5" />
+          {/* Two-tier plinth */}
+          <rect x="5" y="20.6" width="14" height="1.4" rx="0.2" fill={p.fill} stroke={p.line} strokeWidth="0.4" />
+          <rect x="6.3" y="19.5" width="11.4" height="1.1" rx="0.2" fill={p.fill} stroke={p.line} strokeWidth="0.4" />
+          {/* Robe */}
+          <path d="M8.8 10.6 H15.2 C15.4 13 16.8 16.2 17.4 19.5 H6.6 C7.2 16.2 8.6 13 8.8 10.6 Z" fill={p.fill} stroke={p.line} strokeWidth="0.4" />
+          <path d="M9.2 10.8 L12 15 L14.8 10.8 M9.8 15.6 L12 12.8 L14.2 15.6 M8.6 15.2 L11.2 19.4 M15.4 15.2 L12.8 19.4" fill="none" stroke={p.detail} strokeWidth="0.4" strokeLinecap="round" />
+          {/* Long hair */}
+          <path d="M8.7 4.4 C6.9 6 6.7 10 7 13 C7.2 14.6 6.8 15.8 6.6 17 C8.5 15.6 8.9 12.6 8.9 10 Z" fill={p.fill} stroke={p.line} strokeWidth="0.4" strokeLinejoin="round" />
+          <path d="M15.3 4.4 C17.1 6 17.3 10 17 13 C16.8 14.6 17.2 15.8 17.4 17 C15.5 15.6 15.1 12.6 15.1 10 Z" fill={p.fill} stroke={p.line} strokeWidth="0.4" strokeLinejoin="round" />
+          <path d="M7.8 6 C7.4 9 7.6 13 7.3 16 M16.2 6 C16.6 9 16.4 13 16.7 16" fill="none" stroke={p.detail} strokeWidth="0.3" strokeLinecap="round" />
+          {/* Head */}
+          <path d="M8.8 6.8 C8.8 3.6 10.2 3.2 12 3.2 C13.8 3.2 15.2 3.6 15.2 6.8 C15.2 9 13.8 10.4 12 10.4 C10.2 10.4 8.8 9 8.8 6.8 Z" fill={p.fill} stroke={p.line} strokeWidth="0.4" />
+          {/* Top bun */}
+          <circle cx="12" cy="1.9" r="1.3" fill={p.fill} stroke={p.line} strokeWidth="0.4" />
+          <path d="M10.8 3.2 H13.2" fill="none" stroke={p.detail} strokeWidth="0.4" strokeLinecap="round" />
+          {/* Forehead stitches */}
+          <path d="M9.2 5 H14.8 M9.8 4.4 V5.6 M10.9 4.4 V5.6 M12 4.4 V5.6 M13.1 4.4 V5.6 M14.2 4.4 V5.6" fill="none" stroke={p.detail} strokeWidth="0.4" strokeLinecap="round" />
+          {/* Earrings */}
+          <circle cx="8.6" cy="8.6" r="0.5" fill="none" stroke={p.detail} strokeWidth="0.4" strokeLinecap="round" />
+          <circle cx="15.4" cy="8.6" r="0.5" fill="none" stroke={p.detail} strokeWidth="0.4" strokeLinecap="round" />
         </g>
       );
+    }
 
     /**
      * 5. KOKICHI MUTA / MECHAMARU (Armored Ranged Attacker, White)
-     * Heavy armored puppet robot with visor slit and shoulder cannon exhausts.
+     * Round helmet with blue cyclops lens, ear pods, antenna, strapped armor.
      */
-    case 'culling_mechamaru':
+    case 'culling_mechamaru': {
+      const p = WHITE;
       return (
         <g id="mechamaru_robot">
-          <path d="M5 20.5 H19 V22 H5 Z" fill={fill} stroke={stroke} strokeWidth="0.5" />
-          {/* Angular Armor Torso */}
-          <path d="M6.5 19.5 L7.5 11 H16.5 L17.5 19.5 Z" fill={fill} stroke={stroke} strokeWidth="0.5" />
-          {/* Angular Helmet & Dual Shoulder Cannons */}
-          <rect x="5.5" y="7" width="2.5" height="4" fill={fill} stroke={stroke} strokeWidth="0.5" />
-          <rect x="16" y="7" width="2.5" height="4" fill={fill} stroke={stroke} strokeWidth="0.5" />
-          <path d="M8 11 V5 H16 V11 Z" fill={fill} stroke={stroke} strokeWidth="0.5" />
-          {/* Horizontal Robot Visor Slit */}
-          <rect x="9.5" y="7.5" width="5" height="1.5" fill={contrastFill} stroke={stroke} strokeWidth="0.5" />
-          {/* Puppet Core Chest Aperture */}
-          <circle cx="12" cy="15.5" r="1.6" fill={fill} stroke={stroke} strokeWidth="0.5" />
-          <circle cx="12" cy="15.5" r="0.7" fill={contrastFill} />
+          {/* Two-tier plinth */}
+          <rect x="5" y="20.6" width="14" height="1.4" rx="0.2" fill={p.fill} stroke={p.line} strokeWidth="0.4" />
+          <rect x="6.3" y="19.5" width="11.4" height="1.1" rx="0.2" fill={p.fill} stroke={p.line} strokeWidth="0.4" />
+          {/* Armored torso */}
+          <path d="M8 10.8 H16 L17.4 19.5 H6.6 Z" fill={p.fill} stroke={p.line} strokeWidth="0.4" strokeLinejoin="round" />
+          <path d="M8.4 11 C10 13.2 14 13.4 15.6 11 M9 12.4 L16 17.4 M8.8 11.8 L7.6 15" fill="none" stroke={p.ink} strokeWidth="0.7" strokeLinecap="round" />
+          <path d="M7.4 16 L10.4 15 L11.4 17.6 L8.4 18.8 Z" fill={p.ink} strokeLinejoin="round" />
+          {/* Neck */}
+          <rect x="10.4" y="9.8" width="3.2" height="1.2" fill={p.ink} />
+          {/* Antenna */}
+          <path d="M15.4 4.4 L15.9 1" fill="none" stroke={p.line} strokeWidth="0.5" strokeLinecap="round" />
+          <circle cx="15.9" cy="1.1" r="0.45" fill={p.ink} />
+          {/* Ear pods */}
+          <rect x="7" y="5.2" width="1.5" height="3" rx="0.5" fill={p.fill} stroke={p.line} strokeWidth="0.4" />
+          <rect x="15.5" y="5.2" width="1.5" height="3" rx="0.5" fill={p.fill} stroke={p.line} strokeWidth="0.4" />
+          {/* Helmet */}
+          <circle cx="12" cy="6.6" r="3.6" fill={p.fill} stroke={p.line} strokeWidth="0.4" />
+          <path d="M9.6 9.1 H14.4" fill="none" stroke={p.detail} strokeWidth="0.4" strokeLinecap="round" />
+          {/* Cyclops lens */}
+          <circle cx="12" cy="6.5" r="1.7" fill={p.fill} stroke={p.line} strokeWidth="0.5" />
+          <circle cx="12" cy="6.5" r="1.1" fill={p.ink} />
+          <circle cx="12" cy="6.5" r="0.55" fill={BLUE} />
         </g>
       );
+    }
 
     /**
      * 6. KENTO NANAMI (Heavy Orthogonal Attacker, White)
-     * Fortress Rook Tower with signature round goggles and 7:3 Ratio Cleaver tie.
+     * Swept-back blond hair, dark sunglasses, suit lapels and navy tie.
      */
-    case 'culling_nanami':
+    case 'culling_nanami': {
+      const p = WHITE;
       return (
         <g id="nanami_cleaver">
-          <path d="M5 20.5 H19 V22 H5 Z" fill={fill} stroke={stroke} strokeWidth="0.5" />
-          <path d="M6.5 19.5 L7.5 10.5 H16.5 L17.5 19.5 Z" fill={fill} stroke={stroke} strokeWidth="0.5" />
-          {/* Rook Battlements */}
-          <polygon points="6,10.5 6,5.5 8.5,5.5 8.5,7.8 10.8,7.8 10.8,5.5 13.2,5.5 13.2,7.8 15.5,7.8 15.5,5.5 18,5.5 18,10.5" fill={fill} stroke={stroke} strokeWidth="0.5" />
-          {/* Nanami's Iconic Round Goggles/Glasses */}
-          <circle cx="10" cy="9" r="1.4" fill={fill} stroke={stroke} strokeWidth="0.5" />
-          <circle cx="14" cy="9" r="1.4" fill={fill} stroke={stroke} strokeWidth="0.5" />
-          <line x1="11.4" y1="9" x2="12.6" y2="9" stroke={detail} strokeWidth="0.5" />
-          {/* 7:3 Cleaver Diagonal Slash */}
-          <line x1="9" y1="13.5" x2="15" y2="17.5" stroke={detail} strokeWidth="1.2" strokeLinecap="round" />
-          <circle cx="13.2" cy="16.3" r="1" fill={contrastFill} />
+          {/* Two-tier plinth */}
+          <rect x="5" y="20.6" width="14" height="1.4" rx="0.2" fill={p.fill} stroke={p.line} strokeWidth="0.4" />
+          <rect x="6.3" y="19.5" width="11.4" height="1.1" rx="0.2" fill={p.fill} stroke={p.line} strokeWidth="0.4" />
+          {/* Suit */}
+          <path d="M8.6 10.6 H15.4 C15.6 13 16.8 16.4 17.4 19.5 H6.6 C7.2 16.4 8.4 13 8.6 10.6 Z" fill={p.fill} stroke={p.line} strokeWidth="0.4" />
+          <path d="M9.2 10.8 L12 16.6 L14.8 10.8 M9 11.2 L10.4 14.6 M15 11.2 L13.6 14.6" fill="none" stroke={p.detail} strokeWidth="0.4" strokeLinecap="round" />
+          <circle cx="13.6" cy="17.4" r="0.3" fill={p.ink} />
+          {/* Shirt collar and tie */}
+          <polygon points="10.1,10 12,11.2 13.9,10 13,9.6 12,10.4 11,9.6" fill={p.fill} stroke={p.line} strokeWidth="0.4" strokeLinejoin="round" />
+          <polygon points="12,10.9 11.2,11.8 11.7,15.8 12,16.6 12.3,15.8 12.8,11.8" fill={p.ink} strokeLinejoin="round" />
+          {/* Face */}
+          <path d="M8.8 6.4 C8.8 8.8 10 10 12 10.2 C14 10 15.2 8.8 15.2 6.4 Z" fill={p.fill} stroke={p.line} strokeWidth="0.4" />
+          <rect x="8.9" y="6.6" width="2.7" height="1.4" rx="0.6" fill={p.ink} />
+          <rect x="12.4" y="6.6" width="2.7" height="1.4" rx="0.6" fill={p.ink} />
+          <path d="M11.6 7 H12.4 M11.2 9.2 H12.8" fill="none" stroke={p.detail} strokeWidth="0.4" strokeLinecap="round" />
+          {/* Swept-back hair */}
+          <path d="M8.4 6.6 C7.6 4 9.2 2.2 12 2.2 C14.8 2.2 16.4 4 15.6 6.6 C15.2 5.4 14.4 4.6 12.6 4.4 C11 4.6 9.6 5.4 8.4 6.6 Z" fill={p.fill} stroke={p.line} strokeWidth="0.4" strokeLinejoin="round" />
+          <path d="M10 3.2 C10.4 3.8 10.6 4.2 10.4 4.8 M12 2.8 C12.4 3.4 12.6 3.8 12.4 4.4 M13.8 3.2 C14 3.6 14.2 4 14 4.6" fill="none" stroke={p.detail} strokeWidth="0.3" strokeLinecap="round" />
         </g>
       );
+    }
 
     /**
      * 7. PANDA (Resilient Support, White)
-     * Muscular Knight Steed with prominent Round Panda Ears and Boxing Glove Core.
+     * Round panda head with ears, eye patches and nose, wrapped scarf and robe sash.
      */
-    case 'culling_panda':
+    case 'culling_panda': {
+      const p = WHITE;
       return (
         <g id="panda_knight">
-          <path d="M5 20.5 H19 V22 H5 Z" fill={fill} stroke={stroke} strokeWidth="0.5" />
-          {/* Knight Torso */}
-          <path
-            d="M6.8 19.5 C6.8 16 8.5 14 9.5 12 L7.2 12.8 C6.2 13 5.2 12.5 4.8 11.5 L4.5 10 C4.5 9.5 5 9 6 8.5 L7.5 6 L7.5 4 L9.5 5 C12.5 4.5 16 6.5 17 11 C18 14 17.5 17 17.2 19.5 Z"
-            fill={fill}
-            stroke={stroke}
-            strokeWidth="0.5"
-            strokeLinejoin="round"
-          />
-          {/* Prominent Round Panda Ears */}
-          <circle cx="9.5" cy="4.5" r="1.6" fill={contrastFill} stroke={stroke} strokeWidth="0.5" />
-          <circle cx="14.2" cy="6.8" r="1.6" fill={contrastFill} stroke={stroke} strokeWidth="0.5" />
-          {/* Panda Eye Patch */}
-          <ellipse cx="9.5" cy="9" rx="1.4" ry="1" fill={contrastFill} />
-          {/* Boxing Core Chest Crest */}
-          <circle cx="13" cy="14.5" r="1.5" fill={fill} stroke={stroke} strokeWidth="0.5" />
-          <path d="M12 14.5 H14" stroke={detail} strokeWidth="0.5" />
+          {/* Two-tier plinth */}
+          <rect x="5" y="20.6" width="14" height="1.4" rx="0.2" fill={p.fill} stroke={p.line} strokeWidth="0.4" />
+          <rect x="6.3" y="19.5" width="11.4" height="1.1" rx="0.2" fill={p.fill} stroke={p.line} strokeWidth="0.4" />
+          {/* Robe */}
+          <path d="M8.4 11.2 H15.6 C15.8 13.4 16.8 16.4 17.4 19.5 H6.6 C7.2 16.4 8.2 13.4 8.4 11.2 Z" fill={p.fill} stroke={p.line} strokeWidth="0.4" />
+          <path d="M8.8 13.8 L15.8 18.6 M8.2 16.6 L12.4 19.4 M15.8 13 L9.6 17.4" fill="none" stroke={p.detail} strokeWidth="0.4" strokeLinecap="round" />
+          {/* Wrapped scarf */}
+          <path d="M7.8 10.4 C9 11.8 15 11.8 16.2 10.4 L16.5 12.4 C15 13.6 9 13.6 7.5 12.4 Z" fill={p.fill} stroke={p.line} strokeWidth="0.4" strokeLinejoin="round" />
+          <path d="M8.8 12.4 L15 11.8 M9.6 13.2 L14.4 12.6" fill="none" stroke={p.detail} strokeWidth="0.3" strokeLinecap="round" />
+          {/* Ears */}
+          <circle cx="8.2" cy="3.4" r="1.5" fill={p.ink} />
+          <circle cx="15.8" cy="3.4" r="1.5" fill={p.ink} />
+          {/* Head */}
+          <ellipse cx="12" cy="6.6" rx="4.2" ry="3.8" fill={p.fill} stroke={p.line} strokeWidth="0.4" />
+          {/* Eye patches */}
+          <ellipse cx="10.1" cy="6.4" rx="1.05" ry="1.6" transform="rotate(20 10.1 6.4)" fill={p.ink} />
+          <ellipse cx="13.9" cy="6.4" rx="1.05" ry="1.6" transform="rotate(-20 13.9 6.4)" fill={p.ink} />
+          <circle cx="10.3" cy="6.3" r="0.3" fill={p.fill} />
+          <circle cx="13.7" cy="6.3" r="0.3" fill={p.fill} />
+          {/* Nose and mouth */}
+          <path d="M11 8 H13 L12 9 Z" fill={p.ink} strokeLinejoin="round" />
+          <path d="M12 9 V9.5 M10.8 9.8 Q12 10.6 13.2 9.8" fill="none" stroke={p.ink} strokeWidth="0.35" strokeLinecap="round" />
         </g>
       );
+    }
 
     /**
      * 8. MAKI ZENIN (Agile Close-Combat Support, White)
-     * Knight Steed with High Ponytail Crest and Twin Dragon Bone Spear Blades.
+     * Short bob with side bangs, round glasses, dark scarf, diagonal weapon strap.
      */
-    case 'culling_maki':
+    case 'culling_maki': {
+      const p = WHITE;
       return (
         <g id="maki_knight">
-          <path d="M5 20.5 H19 V22 H5 Z" fill={fill} stroke={stroke} strokeWidth="0.5" />
-          <path
-            d="M6.8 19.5 C6.8 16 8.5 14 9.5 12 L7.2 12.8 C6.2 13 5.2 12.5 4.8 11.5 L4.5 10 C4.5 9.5 5 9 6 8.5 L7.5 6 L7.5 4 L9.5 5 C12.5 4.5 16 6.5 17 11 C18 14 17.5 17 17.2 19.5 Z"
-            fill={fill}
-            stroke={stroke}
-            strokeWidth="0.5"
-            strokeLinejoin="round"
-          />
-          {/* High Ponytail Crest */}
-          <path d="M15 6 Q19 5 18 9" stroke={detail} strokeWidth="0.5" fill="none" strokeLinecap="round" />
-          {/* Twin Spear Blade Crest */}
-          <line x1="11" y1="8" x2="16" y2="15" stroke={detail} strokeWidth="0.5" strokeLinecap="round" />
-          <line x1="15.5" y1="9" x2="10.5" y2="16" stroke={detail} strokeWidth="0.5" strokeLinecap="round" />
+          {/* Two-tier plinth */}
+          <rect x="5" y="20.6" width="14" height="1.4" rx="0.2" fill={p.fill} stroke={p.line} strokeWidth="0.4" />
+          <rect x="6.3" y="19.5" width="11.4" height="1.1" rx="0.2" fill={p.fill} stroke={p.line} strokeWidth="0.4" />
+          {/* Robe */}
+          <path d="M8.4 11 H15.6 C15.8 13.4 16.8 16.4 17.4 19.5 H6.6 C7.2 16.4 8.2 13.4 8.4 11 Z" fill={p.fill} stroke={p.line} strokeWidth="0.4" />
+          {/* Diagonal strap */}
+          <path d="M8.2 13.2 L9.6 12.6 L16.8 18.8 L15.8 19.4 Z" fill={p.ink} strokeLinejoin="round" />
+          <path d="M9.4 15.4 L12.4 19.2" fill="none" stroke={p.detail} strokeWidth="0.4" strokeLinecap="round" />
+          {/* Dark scarf */}
+          <path d="M7.8 10.2 C9 11.8 15 11.8 16.2 10.2 L16.6 12.4 C15 13.4 9 13.4 7.4 12.4 Z" fill={p.ink} strokeLinejoin="round" />
+          {/* Face */}
+          <path d="M8.8 6.4 C8.8 8.8 10 10 12 10.2 C14 10 15.2 8.8 15.2 6.4 Z" fill={p.fill} stroke={p.line} strokeWidth="0.4" />
+          <circle cx="10.2" cy="7.3" r="1.1" fill="none" stroke={p.ink} strokeWidth="0.4" />
+          <circle cx="13.8" cy="7.3" r="1.1" fill="none" stroke={p.ink} strokeWidth="0.4" />
+          <path d="M11.3 7.3 H12.7 M11.4 9.2 H12.6" fill="none" stroke={p.detail} strokeWidth="0.4" strokeLinecap="round" />
+          {/* Bob with bangs */}
+          <path d="M8 9 C7.4 5 8.8 2.6 12 2.6 C15.2 2.6 16.6 5 16 9 C15.6 7.4 15.4 5.8 14.6 5 C13.4 5.6 10.6 5.6 9.4 5 C8.6 5.8 8.4 7.4 8 9 Z" fill={p.fill} stroke={p.line} strokeWidth="0.4" strokeLinejoin="round" />
+          <path d="M10.2 3.4 L10.6 5.2 M12 3 L12 5.4 M13.8 3.4 L13.4 5.2" fill="none" stroke={p.detail} strokeWidth="0.3" strokeLinecap="round" />
         </g>
       );
+    }
 
     /**
      * 9. KINJI HAKARI (Tactical Magician, White)
-     * Bishop Mitre with 777 Pachinko Jackpot Die and Station Shutter Doors.
+     * Very spiky hair, closed eyes, high crossed collar, ringed jackpot emblem.
      */
-    case 'culling_hakari':
+    case 'culling_hakari': {
+      const p = WHITE;
       return (
         <g id="hakari_bishop">
-          <path d="M5 20.5 H19 V22 H5 Z" fill={fill} stroke={stroke} strokeWidth="0.5" />
-          {/* Bishop Mitre Body */}
-          <path d="M7.8 19.5 C7.8 15 8.8 13 9 10 C9 6.8 11 4 12 3.5 C13 4 15 6.8 15 10 C15.2 13 16.2 15 16.2 19.5 Z" fill={fill} stroke={stroke} strokeWidth="0.5" />
-          {/* Bishop Top Finial */}
-          <circle cx="12" cy="2.8" r="1.2" fill={fill} stroke={stroke} strokeWidth="0.5" />
-          {/* Mitre Slash */}
-          <path d="M12 5.5 L14 9.5" stroke={stroke} strokeWidth="0.5" />
-          {/* 777 Jackpot Die Box */}
-          <rect x="9.5" y="12.5" width="5" height="4.5" rx="0.5" fill={fill} stroke={detail} strokeWidth="0.5" />
-          {/* Three Jackpot Pip Dots (777) */}
-          <circle cx="11" cy="14" r="0.6" fill={contrastFill} />
-          <circle cx="12" cy="15" r="0.6" fill={contrastFill} />
-          <circle cx="13" cy="14" r="0.6" fill={contrastFill} />
+          {/* Two-tier plinth */}
+          <rect x="5" y="20.6" width="14" height="1.4" rx="0.2" fill={p.fill} stroke={p.line} strokeWidth="0.4" />
+          <rect x="6.3" y="19.5" width="11.4" height="1.1" rx="0.2" fill={p.fill} stroke={p.line} strokeWidth="0.4" />
+          {/* Coat */}
+          <path d="M8.6 10.6 H15.4 C15.6 13 16.8 16.4 17.4 19.5 H6.6 C7.2 16.4 8.4 13 8.6 10.6 Z" fill={p.fill} stroke={p.line} strokeWidth="0.4" />
+          <path d="M10 13.8 L14.4 18.8 M9.6 17 L11 19.3" fill="none" stroke={p.detail} strokeWidth="0.4" strokeLinecap="round" />
+          {/* Jackpot emblem */}
+          <circle cx="11.7" cy="15.7" r="1.3" fill="none" stroke={p.detail} strokeWidth="0.4" />
+          <circle cx="11.7" cy="15.7" r="0.6" fill="none" stroke={p.detail} strokeWidth="0.3" />
+          {/* Face */}
+          <path d="M8.8 6.6 C8.8 8.8 10 9.8 12 9.8 C14 9.8 15.2 8.8 15.2 6.6 Z" fill={p.fill} stroke={p.line} strokeWidth="0.4" />
+          <path d="M9.8 7.5 H11 M13 7.5 H14.2 M11.2 9 H12.8" fill="none" stroke={p.detail} strokeWidth="0.4" strokeLinecap="round" />
+          {/* High collar */}
+          <polygon points="8.2,9.8 10.8,10.8 12,12 13.2,10.8 15.8,9.8 16,11.6 12.8,13.4 11.2,13.4 8,11.6" fill={p.fill} stroke={p.line} strokeWidth="0.4" strokeLinejoin="round" />
+          <circle cx="12" cy="12.8" r="0.3" fill={p.ink} />
+          {/* Spiky hair */}
+          <polygon points="8.6,7 7.4,5.6 8,5.2 7.2,3.4 9,4.2 9,2.4 10.6,3.6 11.4,1.8 12.4,3.2 13.6,1.8 14.2,3.6 15.4,2.4 15.4,4.4 16.8,3.6 16.2,5.4 17,5.8 16,7 15.2,6 13.8,5.4 12,6 10.2,5.4 8.8,6" fill={p.fill} stroke={p.line} strokeWidth="0.4" strokeLinejoin="round" />
+          <path d="M10 4 L10.4 5.2 M12 3.2 L12 5 M14 3.8 L13.6 5" fill="none" stroke={p.detail} strokeWidth="0.3" strokeLinecap="round" />
         </g>
       );
+    }
 
     /**
      * 10. URAUME (Tactical Magician, Black)
-     * Bishop Mitre with Intricate 6-Point Glacial Snowflake Crystal.
+     * Straight bob with bangs, closed eyes, crossed kimono, glacial snowflake.
      */
-    case 'culling_uraume':
+    case 'culling_uraume': {
+      const p = BLACK;
       return (
         <g id="uraume_bishop">
-          <path d="M5 20.5 H19 V22 H5 Z" fill={fill} stroke={stroke} strokeWidth="0.5" />
-          <path d="M7.8 19.5 C7.8 15 8.8 13 9 10 C9 6.8 11 4 12 3.5 C13 4 15 6.8 15 10 C15.2 13 16.2 15 16.2 19.5 Z" fill={fill} stroke={stroke} strokeWidth="0.5" />
-          <circle cx="12" cy="2.8" r="1.2" fill={fill} stroke={stroke} strokeWidth="0.5" />
-          <path d="M12 5.5 L14 9.5" stroke={stroke} strokeWidth="0.5" />
-          {/* Glacial Snowflake Crystal (6-point asterism) */}
-          <line x1="12" y1="12" x2="12" y2="17" stroke={detail} strokeWidth="0.5" strokeLinecap="round" />
-          <line x1="9.8" y1="13.2" x2="14.2" y2="15.8" stroke={detail} strokeWidth="0.5" strokeLinecap="round" />
-          <line x1="9.8" y1="15.8" x2="14.2" y2="13.2" stroke={detail} strokeWidth="0.5" strokeLinecap="round" />
-          <circle cx="12" cy="14.5" r="0.8" fill={contrastFill} />
+          {/* Two-tier plinth */}
+          <rect x="5" y="20.6" width="14" height="1.4" rx="0.2" fill={p.fill} stroke={p.line} strokeWidth="0.4" />
+          <rect x="6.3" y="19.5" width="11.4" height="1.1" rx="0.2" fill={p.fill} stroke={p.line} strokeWidth="0.4" />
+          {/* Kimono */}
+          <path d="M8.6 10.6 H15.4 C15.6 13 16.8 16.4 17.4 19.5 H6.6 C7.2 16.4 8.4 13 8.6 10.6 Z" fill={p.fill} stroke={p.line} strokeWidth="0.4" />
+          <path d="M9 10.8 L12 13 L15 10.8 M8.4 14.6 L10.2 19.3 M15.6 14.6 L13.8 19.3" fill="none" stroke={p.detail} strokeWidth="0.4" strokeLinecap="round" />
+          {/* Glacial snowflake */}
+          <path d="M9.6 16 H14.4 M10.8 13.92 L13.2 18.08 M13.2 13.92 L10.8 18.08" fill="none" stroke={p.ink} strokeWidth="0.6" strokeLinecap="round" />
+          <path d="M10.5 15.4 L9.9 16 L10.5 16.6 M13.5 15.4 L14.1 16 L13.5 16.6 M11 14.6 L11.8 14.8 M13 14.6 L12.2 14.8 M11 17.4 L11.8 17.2 M13 17.4 L12.2 17.2" fill="none" stroke={p.detail} strokeWidth="0.3" strokeLinecap="round" />
+          <circle cx="12" cy="16" r="0.45" fill={p.ink} />
+          {/* Face */}
+          <path d="M9 6.2 C9 8.8 10.2 10.2 12 10.2 C13.8 10.2 15 8.8 15 6.2 Z" fill={p.fill} stroke={p.line} strokeWidth="0.4" />
+          {/* Bob hair */}
+          <path d="M7.4 10.2 C6.8 5 8.6 2.4 12 2.4 C15.4 2.4 17.2 5 16.6 10.2 L15.2 10.2 L15.2 6 C13.6 6.5 10.4 6.5 8.8 6 L8.8 10.2 Z" fill={p.fill} stroke={p.line} strokeWidth="0.4" strokeLinejoin="round" />
+          <path d="M12 2.8 V5.6 M10.4 3.2 C9.6 4 9.2 5 9.2 6 M13.6 3.2 C14.4 4 14.8 5 14.8 6" fill="none" stroke={p.detail} strokeWidth="0.3" strokeLinecap="round" />
         </g>
       );
+    }
 
     /**
-     * 11. YOROZU (Heavy Support / Rook Counterpart, Black)
-     * Heavy Fortress Silhouette with Beetle Carapace Wings & True Sphere Diamond.
+     * 11. YOROZU (Heavy Support, Black)
+     * Long flowing hair, thorn crown, red flower sigil on the robe.
      */
-    case 'culling_yorozu':
+    case 'culling_yorozu': {
+      const p = BLACK;
       return (
         <g id="yorozu_construct">
-          <path d="M5 20.5 H19 V22 H5 Z" fill={fill} stroke={stroke} strokeWidth="0.5" />
-          {/* Body */}
-          <path d="M6.5 19.5 L7.5 11 H16.5 L17.5 19.5 Z" fill={fill} stroke={stroke} strokeWidth="0.5" />
-          {/* Carapace Crest */}
-          <polygon points="7,11 9,6 12,8 15,6 17,11" fill={fill} stroke={stroke} strokeWidth="0.5" />
-          {/* True Sphere Liquid Construct Diamond */}
-          <polygon points="12,11.5 15,14.5 12,17.5 9,14.5" fill={fill} stroke={detail} strokeWidth="0.5" />
-          <circle cx="12" cy="14.5" r="1" fill={contrastFill} />
+          {/* Two-tier plinth */}
+          <rect x="5" y="20.6" width="14" height="1.4" rx="0.2" fill={p.fill} stroke={p.line} strokeWidth="0.4" />
+          <rect x="6.3" y="19.5" width="11.4" height="1.1" rx="0.2" fill={p.fill} stroke={p.line} strokeWidth="0.4" />
+          {/* Robe */}
+          <path d="M8.6 10.6 H15.4 C15.6 13 16.8 16.4 17.4 19.5 H6.6 C7.2 16.4 8.4 13 8.6 10.6 Z" fill={p.fill} stroke={p.line} strokeWidth="0.4" />
+          <path d="M9.2 10.8 L12 12.6 L14.8 10.8 M8.6 15 L10.6 19.3 M15.4 15 L13.4 19.3" fill="none" stroke={p.detail} strokeWidth="0.4" strokeLinecap="round" />
+          {/* Red flower sigil */}
+          <ellipse cx="12" cy="14.3" rx="0.7" ry="1.3" transform="rotate(0 12 15.6)" fill="none" stroke={RED} strokeWidth="0.4" />
+          <ellipse cx="12" cy="14.3" rx="0.7" ry="1.3" transform="rotate(45 12 15.6)" fill="none" stroke={RED} strokeWidth="0.4" />
+          <ellipse cx="12" cy="14.3" rx="0.7" ry="1.3" transform="rotate(90 12 15.6)" fill="none" stroke={RED} strokeWidth="0.4" />
+          <ellipse cx="12" cy="14.3" rx="0.7" ry="1.3" transform="rotate(135 12 15.6)" fill="none" stroke={RED} strokeWidth="0.4" />
+          <ellipse cx="12" cy="14.3" rx="0.7" ry="1.3" transform="rotate(180 12 15.6)" fill="none" stroke={RED} strokeWidth="0.4" />
+          <ellipse cx="12" cy="14.3" rx="0.7" ry="1.3" transform="rotate(225 12 15.6)" fill="none" stroke={RED} strokeWidth="0.4" />
+          <ellipse cx="12" cy="14.3" rx="0.7" ry="1.3" transform="rotate(270 12 15.6)" fill="none" stroke={RED} strokeWidth="0.4" />
+          <ellipse cx="12" cy="14.3" rx="0.7" ry="1.3" transform="rotate(315 12 15.6)" fill="none" stroke={RED} strokeWidth="0.4" />
+          <circle cx="12" cy="15.6" r="0.55" fill={RED} />
+          {/* Long hair */}
+          <path d="M8.6 4.4 C6.8 6 6.6 10 6.8 13 C6.9 15 6.6 17 6.4 18.4 C8.4 17 8.8 14 8.8 11 Z" fill={p.fill} stroke={p.line} strokeWidth="0.4" strokeLinejoin="round" />
+          <path d="M15.4 4.4 C17.2 6 17.4 10 17.2 13 C17.1 15 17.4 17 17.6 18.4 C15.6 17 15.2 14 15.2 11 Z" fill={p.fill} stroke={p.line} strokeWidth="0.4" strokeLinejoin="round" />
+          <path d="M7.8 6 C7.4 9 7.6 13 7.4 16 M16.2 6 C16.6 9 16.4 13 16.6 16" fill="none" stroke={p.detail} strokeWidth="0.3" strokeLinecap="round" />
+          {/* Face */}
+          <path d="M8.8 6.4 C8.8 8.8 10 10.2 12 10.2 C14 10.2 15.2 8.8 15.2 6.4 Z" fill={p.fill} stroke={p.line} strokeWidth="0.4" />
+          <path d="M10 7.8 H11.2 M12.8 7.8 H14" fill="none" stroke={p.detail} strokeWidth="0.4" strokeLinecap="round" />
+          {/* Hair cap */}
+          <path d="M8.8 6.4 C8.8 3 10.4 2.6 12 2.6 C13.6 2.6 15.2 3 15.2 6.4 C14 4.6 10 4.6 8.8 6.4 Z" fill={p.fill} stroke={p.line} strokeWidth="0.4" strokeLinejoin="round" />
+          {/* Thorn crown */}
+          <path d="M8.6 4.6 Q10 3.2 11 4.4 T13 4.4 T15.4 4.6" fill="none" stroke={p.detail} strokeWidth="0.4" strokeLinecap="round" />
+          <path d="M9.4 3.9 L9 3.1 M11.6 4 L11.8 3.2 M13.6 3.9 L14.2 3.2" fill="none" stroke={p.detail} strokeWidth="0.3" strokeLinecap="round" />
         </g>
       );
+    }
 
     /**
-     * 12. REGGIE STAR (Tactical Support / Knight Counterpart, Black)
-     * Knight Silhouette wrapped in Floating Contract Receipt Scroll Banners.
+     * 12. REGGIE STAR (Tactical Support, Black)
+     * Short tufted hair, pointed shirt collar, white four-point star.
      */
-    case 'culling_reggie':
+    case 'culling_reggie': {
+      const p = BLACK;
       return (
         <g id="reggie_contract">
-          <path d="M5 20.5 H19 V22 H5 Z" fill={fill} stroke={stroke} strokeWidth="0.5" />
-          <path
-            d="M6.8 19.5 C6.8 16 8.5 14 9.5 12 L7.2 12.8 C6.2 13 5.2 12.5 4.8 11.5 L4.5 10 C4.5 9.5 5 9 6 8.5 L7.5 6 L7.5 4 L9.5 5 C12.5 4.5 16 6.5 17 11 C18 14 17.5 17 17.2 19.5 Z"
-            fill={fill}
-            stroke={stroke}
-            strokeWidth="0.5"
-            strokeLinejoin="round"
-          />
-          {/* Floating Receipt Parchment Banner */}
-          <rect x="9.5" y="12" width="5" height="5.5" rx="0.5" fill={fill} stroke={detail} strokeWidth="0.5" />
-          <line x1="10.8" y1="13.5" x2="13.2" y2="13.5" stroke={detail} strokeWidth="0.5" />
-          <line x1="10.8" y1="15" x2="13.2" y2="15" stroke={detail} strokeWidth="0.5" />
-          <line x1="10.8" y1="16.5" x2="13.2" y2="16.5" stroke={detail} strokeWidth="0.5" />
+          {/* Two-tier plinth */}
+          <rect x="5" y="20.6" width="14" height="1.4" rx="0.2" fill={p.fill} stroke={p.line} strokeWidth="0.4" />
+          <rect x="6.3" y="19.5" width="11.4" height="1.1" rx="0.2" fill={p.fill} stroke={p.line} strokeWidth="0.4" />
+          {/* Jacket */}
+          <path d="M8.6 10.6 H15.4 C15.6 13 16.8 16.4 17.4 19.5 H6.6 C7.2 16.4 8.4 13 8.6 10.6 Z" fill={p.fill} stroke={p.line} strokeWidth="0.4" />
+          {/* Four-point star */}
+          <polygon points="12,14.4 12.5,15.5 13.6,16 12.5,16.5 12,17.6 11.5,16.5 10.4,16 11.5,15.5" fill={p.ink} />
+          {/* Face */}
+          <path d="M8.8 6.4 C8.8 8.8 10 10 12 10.2 C14 10 15.2 8.8 15.2 6.4 Z" fill={p.fill} stroke={p.line} strokeWidth="0.4" />
+          {/* Pointed collar */}
+          <polygon points="8.8,10 10.8,11.6 12,10.6 13.2,11.6 15.2,10 15.6,12.6 12,14 8.4,12.6" fill={p.fill} stroke={p.line} strokeWidth="0.4" strokeLinejoin="round" />
+          {/* Tufted hair */}
+          <polygon points="8.4,7.2 7.8,5 8.8,3.8 9.4,2.8 11,3 12.2,2.4 13.4,3 15,2.8 15.8,4.2 16.2,5.8 15.6,7.2 14.8,5.6 13.4,5.2 12,5.8 10.6,5.2 9.2,5.6" fill={p.fill} stroke={p.line} strokeWidth="0.4" strokeLinejoin="round" />
+          <path d="M10 3.6 L10.4 5 M12 3 L12 5 M14 3.6 L13.6 5" fill="none" stroke={p.detail} strokeWidth="0.3" strokeLinecap="round" />
         </g>
       );
+    }
 
     /**
      * 13. NAOYA ZENIN (Agile Knight Counterpart, Black)
-     * Aerodynamic Speed Vector Knight with 24-FPS Animation Filmstrip Notches.
+     * Side-swept hair, high collar, diagonal filmstrip slash.
      */
-    case 'culling_naoya':
+    case 'culling_naoya': {
+      const p = BLACK;
       return (
         <g id="naoya_speed">
-          <path d="M5 20.5 H19 V22 H5 Z" fill={fill} stroke={stroke} strokeWidth="0.5" />
-          <path
-            d="M6.8 19.5 C6.8 16 8.5 14 9.5 12 L7.2 12.8 C6.2 13 5.2 12.5 4.8 11.5 L4.5 10 C4.5 9.5 5 9 6 8.5 L7.5 6 L7.5 4 L9.5 5 C12.5 4.5 16 6.5 17 11 C18 14 17.5 17 17.2 19.5 Z"
-            fill={fill}
-            stroke={stroke}
-            strokeWidth="0.5"
-            strokeLinejoin="round"
-          />
-          {/* 24-FPS Projection Speed Arrows */}
-          <path d="M10.5 13 L13.5 15 L10.5 17" fill="none" stroke={detail} strokeWidth="0.5" strokeLinecap="round" strokeLinejoin="round" />
-          <path d="M12.5 13 L15.5 15 L12.5 17" fill="none" stroke={detail} strokeWidth="0.5" strokeLinecap="round" strokeLinejoin="round" />
+          {/* Two-tier plinth */}
+          <rect x="5" y="20.6" width="14" height="1.4" rx="0.2" fill={p.fill} stroke={p.line} strokeWidth="0.4" />
+          <rect x="6.3" y="19.5" width="11.4" height="1.1" rx="0.2" fill={p.fill} stroke={p.line} strokeWidth="0.4" />
+          {/* Robe */}
+          <path d="M8.6 10.6 H15.4 C15.6 13 16.8 16.4 17.4 19.5 H6.6 C7.2 16.4 8.4 13 8.6 10.6 Z" fill={p.fill} stroke={p.line} strokeWidth="0.4" />
+          {/* Diagonal filmstrip slash */}
+          <path d="M9 18.6 L14.6 13.6 L15.4 14.4 L9.8 19.2 Z" fill={p.ink} strokeLinejoin="round" />
+          <path d="M10.6 17.6 L11.6 18.4 M12 16.4 L13 17.2 M13.4 15.2 L14.4 16" fill="none" stroke={p.fill} strokeWidth="0.5" strokeLinecap="round" />
+          {/* Face */}
+          <path d="M8.8 6.4 C8.8 8.8 10 10 12 10.2 C14 10 15.2 8.8 15.2 6.4 Z" fill={p.fill} stroke={p.line} strokeWidth="0.4" />
+          {/* High collar */}
+          <path d="M8.4 10 C9.6 11.4 14.4 11.4 15.6 10 L16 12.6 C14.4 13.6 9.6 13.6 8 12.6 Z" fill={p.fill} stroke={p.line} strokeWidth="0.4" strokeLinejoin="round" />
+          {/* Side-swept hair */}
+          <path d="M8.4 7.4 C7.8 4 9.4 2.6 12 2.6 C14.8 2.6 16.4 4.2 15.6 7.4 C15.2 6.2 14.8 5.4 14 5 C12.6 5.8 10.4 5.6 9 5 C8.8 5.8 8.6 6.6 8.4 7.4 Z" fill={p.fill} stroke={p.line} strokeWidth="0.4" strokeLinejoin="round" />
+          <path d="M10.2 3.4 L10.4 5 M12 3 L12 5.3 M13.8 3.4 L13.4 5" fill="none" stroke={p.detail} strokeWidth="0.3" strokeLinecap="round" />
         </g>
       );
+    }
 
     /**
-     * 14. KUROURUSHI (Heavy Orthogonal / Rook Counterpart, Black)
-     * Cockroach Carapace with Antennae Horns and Festering Life Cleaver Blade.
+     * 14. KUROURUSHI (Heavy Orthogonal Counterpart, Black)
+     * Long hair, curved antennae, red eyes, feather sigil.
      */
-    case 'culling_kurourushi':
+    case 'culling_kurourushi': {
+      const p = BLACK;
       return (
         <g id="kurourushi_cleaver">
-          <path d="M5 20.5 H19 V22 H5 Z" fill={fill} stroke={stroke} strokeWidth="0.5" />
-          <path d="M6.5 19.5 L7.5 11 H16.5 L17.5 19.5 Z" fill={fill} stroke={stroke} strokeWidth="0.5" />
-          {/* Dual Mandible Antennae */}
-          <path d="M10 8 Q8 4 10 2" stroke={detail} strokeWidth="0.5" fill="none" strokeLinecap="round" />
-          <path d="M14 8 Q16 4 14 2" stroke={detail} strokeWidth="0.5" fill="none" strokeLinecap="round" />
-          {/* Festering Cleaver Blade */}
-          <path d="M9 13 H15 V16.5 L13 18.5 H9 Z" fill={fill} stroke={detail} strokeWidth="0.5" />
-          <circle cx="12" cy="15" r="1" fill={contrastFill} />
+          {/* Two-tier plinth */}
+          <rect x="5" y="20.6" width="14" height="1.4" rx="0.2" fill={p.fill} stroke={p.line} strokeWidth="0.4" />
+          <rect x="6.3" y="19.5" width="11.4" height="1.1" rx="0.2" fill={p.fill} stroke={p.line} strokeWidth="0.4" />
+          {/* Robe */}
+          <path d="M8.6 10.6 H15.4 C15.6 13 16.8 16.4 17.4 19.5 H6.6 C7.2 16.4 8.4 13 8.6 10.6 Z" fill={p.fill} stroke={p.line} strokeWidth="0.4" />
+          <path d="M9 10.8 L12 13 L15 10.8" fill="none" stroke={p.detail} strokeWidth="0.4" strokeLinecap="round" />
+          {/* Feather sigil */}
+          <path d="M10 18.4 C9.8 15 12 13 14.4 12.8 C14.6 15.4 12.8 17.8 10 18.4 Z" fill="none" stroke={p.ink} strokeWidth="0.45" />
+          <path d="M10 18.4 L14 13.2 M11.4 16.6 L10.6 15.6 M12.4 15.4 L11.6 14.4 M12.2 16.8 L13.4 16.6" fill="none" stroke={p.detail} strokeWidth="0.3" strokeLinecap="round" />
+          {/* Curved antennae */}
+          <path d="M10.2 3.2 C9 1.8 7.2 1.2 6 1.6 M13.8 3.2 C15 1.8 16.8 1.2 18 1.6 M10.8 2.8 L10.2 1.2 M13.2 2.8 L13.8 1.2 M9.2 2.4 L8.4 0.9 M14.8 2.4 L15.6 0.9" fill="none" stroke={p.line} strokeWidth="0.85" strokeLinecap="round" />
+          <path d="M10.2 3.2 C9 1.8 7.2 1.2 6 1.6 M13.8 3.2 C15 1.8 16.8 1.2 18 1.6 M10.8 2.8 L10.2 1.2 M13.2 2.8 L13.8 1.2 M9.2 2.4 L8.4 0.9 M14.8 2.4 L15.6 0.9" fill="none" stroke={p.fill} strokeWidth="0.4" strokeLinecap="round" />
+          {/* Long hair */}
+          <path d="M8.5 4.4 C6.7 6.6 6.7 10 7 13 C7.3 14.4 7 15.8 6.8 17 C8.6 15.6 8.8 12.6 8.8 10 Z" fill={p.fill} stroke={p.line} strokeWidth="0.4" strokeLinejoin="round" />
+          <path d="M15.5 4.4 C17.3 6.6 17.3 10 17 13 C16.7 14.4 17 15.8 17.2 17 C15.4 15.6 15.2 12.6 15.2 10 Z" fill={p.fill} stroke={p.line} strokeWidth="0.4" strokeLinejoin="round" />
+          <path d="M7.8 7 C7.4 10 7.6 13 7.4 15.4 M16.2 7 C16.6 10 16.4 13 16.6 15.4" fill="none" stroke={p.detail} strokeWidth="0.3" strokeLinecap="round" />
+          {/* Face */}
+          <path d="M8.8 6.4 C8.8 8.8 10 10.2 12 10.2 C14 10.2 15.2 8.8 15.2 6.4 Z" fill={p.fill} stroke={p.line} strokeWidth="0.4" />
+          <circle cx="10.2" cy="7.7" r="0.45" fill={RED} />
+          <circle cx="13.8" cy="7.7" r="0.45" fill={RED} />
+          {/* Hair cap */}
+          <path d="M8.8 6.4 C8.8 3 10.4 2.8 12 2.8 C13.6 2.8 15.2 3 15.2 6.4 C14 4.8 10 4.8 8.8 6.4 Z" fill={p.fill} stroke={p.line} strokeWidth="0.4" strokeLinejoin="round" />
         </g>
       );
+    }
 
     /**
-     * 15. CULLING PAWN (Standard Chess Pawn with Clean Sorcery Seal)
+     * 15. CULLING PAWN (Standard pawn, both sides)
+     * Round head marked with II, tall cone body with two diamond marks.
      */
-    case 'culling_pawn':
+    case 'culling_pawn': {
+      const p = isWhite ? WHITE : BLACK;
       return (
         <g id="culling_pawn">
-          <path d="M6.5 20.5 H17.5 V22 H6.5 Z" fill={fill} stroke={stroke} strokeWidth="0.5" />
-          <path d="M8 19.5 C8 14.5 9.5 12 12 12 C14.5 12 16 14.5 16 19.5 H8 Z" fill={fill} stroke={stroke} strokeWidth="0.5" />
-          <circle cx="12" cy="7.2" r="3.2" fill={fill} stroke={stroke} strokeWidth="0.5" />
-          {/* Subtle Centered Sorcery Ring */}
-          <circle cx="12" cy="15.5" r="1.3" fill={fill} stroke={detail} strokeWidth="0.5" />
+          {/* Two-tier plinth */}
+          <rect x="6.5" y="20.6" width="11" height="1.4" rx="0.2" fill={p.fill} stroke={p.line} strokeWidth="0.4" />
+          <rect x="7.8" y="19.5" width="8.4" height="1.1" rx="0.2" fill={p.fill} stroke={p.line} strokeWidth="0.4" />
+          {/* Cone body */}
+          <path d="M9.8 11.2 H14.2 C14.4 14 15.6 17.2 16.4 19.5 H7.6 C8.4 17.2 9.6 14 9.8 11.2 Z" fill={p.fill} stroke={p.line} strokeWidth="0.4" />
+          <polygon points="12,13.6 12.7,14.6 12,15.6 11.3,14.6" fill={p.ink} />
+          <polygon points="12,16.4 12.6,17.2 12,18 11.4,17.2" fill={p.ink} />
+          {/* Collar */}
+          <rect x="9" y="10.4" width="6" height="1.1" rx="0.4" fill={p.fill} stroke={p.line} strokeWidth="0.4" />
+          {/* Head */}
+          <circle cx="12" cy="6.8" r="3.3" fill={p.fill} stroke={p.line} strokeWidth="0.4" />
+          <rect x="10.8" y="5.2" width="0.8" height="3.2" fill={p.ink} />
+          <rect x="12.4" y="5.2" width="0.8" height="3.2" fill={p.ink} />
         </g>
       );
+    }
 
     /**
      * 16. CURSED ROACH SWARM (Miniature Swarm Unit)
+     * Tapering cone of stacked roach bodies, antennae and tiny eyes.
      */
-    case 'culling_swarm':
+    case 'culling_swarm': {
+      const p = isWhite ? WHITE : BLACK;
       return (
         <g id="culling_swarm">
-          <path d="M7.5 20.5 H16.5 V22 H7.5 Z" fill={fill} stroke={stroke} strokeWidth="0.5" />
-          <path d="M8.8 19.5 C8.8 15.5 10 13.5 12 13.5 C14 13.5 15.2 15.5 15.2 19.5 Z" fill={fill} stroke={stroke} strokeWidth="0.5" />
-          <circle cx="12" cy="9.2" r="2.5" fill={fill} stroke={stroke} strokeWidth="0.5" />
-          {/* Trio of Swarm Chitin Dots */}
-          <circle cx="12" cy="15" r="0.8" fill={contrastFill} />
-          <circle cx="10.5" cy="16.5" r="0.7" fill={contrastFill} />
-          <circle cx="13.5" cy="16.5" r="0.7" fill={contrastFill} />
+          {/* Two-tier plinth */}
+          <rect x="7.5" y="20.6" width="9" height="1.4" rx="0.2" fill={p.fill} stroke={p.line} strokeWidth="0.4" />
+          <rect x="8.8" y="19.5" width="6.4" height="1.1" rx="0.2" fill={p.fill} stroke={p.line} strokeWidth="0.4" />
+          {/* Roach bodies */}
+          <ellipse cx="8.6" cy="18.2" rx="1.05" ry="1.5" fill={p.fill} stroke={p.line} strokeWidth="0.4" />
+          <ellipse cx="10.3" cy="18.2" rx="1.05" ry="1.5" fill={p.fill} stroke={p.line} strokeWidth="0.4" />
+          <ellipse cx="12" cy="18.2" rx="1.05" ry="1.5" fill={p.fill} stroke={p.line} strokeWidth="0.4" />
+          <ellipse cx="13.7" cy="18.2" rx="1.05" ry="1.5" fill={p.fill} stroke={p.line} strokeWidth="0.4" />
+          <ellipse cx="15.4" cy="18.2" rx="1.05" ry="1.5" fill={p.fill} stroke={p.line} strokeWidth="0.4" />
+          <ellipse cx="9.4" cy="16.3" rx="1.05" ry="1.5" fill={p.fill} stroke={p.line} strokeWidth="0.4" />
+          <ellipse cx="11.1" cy="16.3" rx="1.05" ry="1.5" fill={p.fill} stroke={p.line} strokeWidth="0.4" />
+          <ellipse cx="12.9" cy="16.3" rx="1.05" ry="1.5" fill={p.fill} stroke={p.line} strokeWidth="0.4" />
+          <ellipse cx="14.6" cy="16.3" rx="1.05" ry="1.5" fill={p.fill} stroke={p.line} strokeWidth="0.4" />
+          <ellipse cx="10.1" cy="14.4" rx="1.05" ry="1.5" fill={p.fill} stroke={p.line} strokeWidth="0.4" />
+          <ellipse cx="11.7" cy="14.4" rx="1.05" ry="1.5" fill={p.fill} stroke={p.line} strokeWidth="0.4" />
+          <ellipse cx="13.3" cy="14.4" rx="1.05" ry="1.5" fill={p.fill} stroke={p.line} strokeWidth="0.4" />
+          <ellipse cx="10.7" cy="12.5" rx="1.05" ry="1.5" fill={p.fill} stroke={p.line} strokeWidth="0.4" />
+          <ellipse cx="12.2" cy="12.5" rx="1.05" ry="1.5" fill={p.fill} stroke={p.line} strokeWidth="0.4" />
+          <ellipse cx="13.5" cy="12.5" rx="1.05" ry="1.5" fill={p.fill} stroke={p.line} strokeWidth="0.4" />
+          <ellipse cx="11" cy="10.6" rx="1.05" ry="1.5" fill={p.fill} stroke={p.line} strokeWidth="0.4" />
+          <ellipse cx="12.6" cy="10.6" rx="1.05" ry="1.5" fill={p.fill} stroke={p.line} strokeWidth="0.4" />
+          <ellipse cx="11.4" cy="8.8" rx="1.05" ry="1.5" fill={p.fill} stroke={p.line} strokeWidth="0.4" />
+          <ellipse cx="12.6" cy="8.8" rx="1.05" ry="1.5" fill={p.fill} stroke={p.line} strokeWidth="0.4" />
+          <ellipse cx="12" cy="7.2" rx="1.05" ry="1.5" fill={p.fill} stroke={p.line} strokeWidth="0.4" />
+          {/* Eyes */}
+          <circle cx="10.5" cy="16.2" r="0.22" fill={p.ink} />
+          <circle cx="13.4" cy="16.4" r="0.22" fill={p.ink} />
+          <circle cx="11.7" cy="14.2" r="0.22" fill={p.ink} />
+          <circle cx="12.9" cy="12.4" r="0.22" fill={p.ink} />
+          <circle cx="11.2" cy="10.4" r="0.22" fill={p.ink} />
+          <circle cx="12.2" cy="8.6" r="0.22" fill={p.ink} />
+          <circle cx="9.4" cy="18" r="0.22" fill={p.ink} />
+          <circle cx="14.9" cy="18.2" r="0.22" fill={p.ink} />
+          {/* Antennae and legs */}
+          <path d="M11.6 6 C10.4 4 8.6 2.8 7.2 2.4 M12.4 6 C13.6 4 15.4 2.8 16.8 2.4 M12 5.8 L12 1.8 M11.2 5.2 L10.4 2.2 M12.8 5.2 L13.6 2.2" fill="none" stroke={p.line} strokeWidth="0.85" strokeLinecap="round" />
+          <path d="M11.6 6 C10.4 4 8.6 2.8 7.2 2.4 M12.4 6 C13.6 4 15.4 2.8 16.8 2.4 M12 5.8 L12 1.8 M11.2 5.2 L10.4 2.2 M12.8 5.2 L13.6 2.2" fill="none" stroke={p.fill} strokeWidth="0.4" strokeLinecap="round" />
+          <path d="M7.6 17.4 L6.6 16.6 M7.8 15.4 L6.8 14.4 M8.6 13.4 L7.8 12.2 M16.4 17.4 L17.4 16.6 M16.2 15.4 L17.2 14.4 M15.4 13.4 L16.2 12.2" fill="none" stroke={p.line} strokeWidth="0.7" strokeLinecap="round" />
+          <path d="M7.6 17.4 L6.6 16.6 M7.8 15.4 L6.8 14.4 M8.6 13.4 L7.8 12.2 M16.4 17.4 L17.4 16.6 M16.2 15.4 L17.2 14.4 M15.4 13.4 L16.2 12.2" fill="none" stroke={p.fill} strokeWidth="0.3" strokeLinecap="round" />
         </g>
       );
+    }
 
     default:
       return null;

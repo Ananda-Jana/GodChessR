@@ -1,6 +1,6 @@
 [
   {
-    "id": "ch_test_1792651844885",
+    "id": "ch_test_1792658501632",
     "challenger": {
       "userId": "usr_alice_test",
       "username": "alice",
@@ -16,8 +16,29 @@
     "status": "accepted",
     "timeControl": 300,
     "moveSuggestions": "included",
-    "createdAt": 1792651844885,
-    "expiresAt": 1792652144885,
-    "matchId": "match_test_1792651844885"
+    "createdAt": 1792658501632,
+    "expiresAt": 1792658801632,
+    "matchId": "match_test_1792658501632"
+  },
+  {
+    "id": "ch_test_1792658572260",
+    "challenger": {
+      "userId": "usr_alice_test",
+      "username": "alice",
+      "displayName": "Alice Champion",
+      "avatarId": "avatar_queen"
+    },
+    "challenged": {
+      "userId": "usr_bob_test",
+      "username": "bob",
+      "displayName": "Bob Tactician",
+      "avatarId": "avatar_prince"
+    },
+    "status": "accepted",
+    "timeControl": 300,
+    "moveSuggestions": "included",
+    "createdAt": 1792658572260,
+    "expiresAt": 1792658872260,
+    "matchId": "match_test_1792658572260"
   }
 ]
