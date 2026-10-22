@@ -54,6 +54,32 @@ const SUMMON_CATALOG: { type: RoseSummonPieceType; name: string; role: string; d
   { type: 'pawn', name: 'Pawn ♟️', role: 'Loyal Footman', desc: 'Advance 1 step & diagonal capture' },
 ];
 
+const PIECE_DISPLAY_NAMES: Record<string, string> = {
+  pawn: 'Loyal Footman (Pawn)',
+  knight: 'Valiant Cavalier (Knight)',
+  bishop: 'Royal Cleric (Bishop)',
+  rook: 'Castle Tower (Rook)',
+  queen: 'Royal Empress (Queen)',
+  king: 'Royal Sovereign (King)',
+  prince: 'Prince',
+  communist: 'Thorn Guard (Communist)',
+  supremeRook: 'Rose Tower (Supreme Rook)',
+  priest: 'Cupid Priest',
+  culling_gojo: 'Gojo Satoru',
+  culling_sukuna: 'Ryomen Sukuna',
+  culling_yuji: 'Itadori Yuji',
+  culling_kenjaku: 'Kenjaku',
+  culling_panda: 'Panda',
+  culling_nanami: 'Kento Nanami',
+  culling_maki: 'Maki Zenin',
+  culling_hakari: 'Kinji Hakari',
+  culling_uraume: 'Uraume',
+  culling_yorozu: 'Yorozu',
+  culling_reggie: 'Reggie Star',
+  culling_naoya: 'Naoya Zenin',
+  culling_kurourushi: 'Kurourushi',
+};
+
 export const RoseParadiseView: React.FC<RoseParadiseViewProps> = ({ onBack }) => {
   const { user } = useAuth();
   
@@ -529,17 +555,20 @@ export const RoseParadiseView: React.FC<RoseParadiseViewProps> = ({ onBack }) =>
           {activeMatch && activeMatch.status === 'active' && (
             <button
               onClick={() => {
-                if (window.confirm('Do you lovingly concede the match to your partner?')) {
-                  if (isBotMatch) {
-                    const finished = {
-                      ...activeMatch,
-                      status: 'completed' as const,
+                if (window.confirm('Do you lovingly concede the match?')) {
+                  if (isBotMatch && botMatch) {
+                    const opponentRoleName = botPlayerRole === 'boyfriend' ? 'Boyfriend Bot' : 'Girlfriend Bot';
+                    const finished: RoseMatchState = {
+                      ...botMatch,
+                      status: 'completed',
                       winner: botPlayerRole,
-                      winReason: 'Player lovingly conceded to bot.',
+                      winReason: `You lovingly conceded to ${opponentRoleName}.`,
                     };
                     setBotMatch(finished);
+                    sounds.playGameOver();
                   } else {
                     socketResignMatch();
+                    sounds.playGameOver();
                   }
                 }
               }}
@@ -1073,6 +1102,60 @@ export const RoseParadiseView: React.FC<RoseParadiseViewProps> = ({ onBack }) =>
                   {isInCheck ? '⚠️ Check Active' : (mySeat?.petals || 0) < 3 ? 'Summon (3 🌹)' : '⚡ Summon (3 🌹)'}
                 </button>
               </div>
+            </div>
+
+            {/* Active Piece Inspector (Right Sidebar Bottom Portion) */}
+            <div className="brutal-card p-4 flex flex-col gap-3 border-3 border-white shadow-[4px_4px_0px_#fff]">
+              <div className="flex items-center justify-between border-b-2 border-neutral-800 pb-2">
+                <span className="text-xs font-black uppercase text-amber-400 flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5" /> Piece Inspector
+                </span>
+                <span className="text-[10px] font-mono text-neutral-400">Activity</span>
+              </div>
+
+              {(() => {
+                const targetPiece = (selectedSquare && activeMatch.board[selectedSquare.y][selectedSquare.x]) 
+                  || (activeMatch.lastMove ? activeMatch.lastMove.piece : null);
+                
+                const isSelectedByMe = selectedSquare && activeMatch.board[selectedSquare.y][selectedSquare.x]?.color === effectiveMyColor;
+                const isLastMoveMine = activeMatch.lastMove && activeMatch.lastMove.piece.color === effectiveMyColor;
+
+                const isMine = isSelectedByMe || (activeMatch.lastMove && !selectedSquare && isLastMoveMine);
+
+                const opponentRole = opponentSeat?.role || (effectiveMyColor === 'white' ? 'girlfriend' : 'boyfriend');
+                const opponentName = opponentSeat?.displayName || (opponentRole === 'boyfriend' ? 'Boyfriend Bot 👑' : 'Girlfriend Bot 👸');
+
+                if (!targetPiece) {
+                  return (
+                    <div className="py-6 text-center text-neutral-500 text-xs font-mono">
+                      Click any piece on the board to inspect.
+                    </div>
+                  );
+                }
+
+                const pieceName = PIECE_DISPLAY_NAMES[targetPiece.type] || targetPiece.type.toUpperCase();
+                let actionMsg = '';
+                if (isMine) {
+                  actionMsg = `You are moving the ${pieceName}`;
+                } else {
+                  const roleLabel = opponentRole === 'boyfriend' ? 'boyfriend' : 'girlfriend';
+                  actionMsg = `Your ${roleLabel} (${opponentName}) is moving the ${pieceName}`;
+                }
+
+                return (
+                  <div className="flex flex-col items-center gap-3 py-2">
+                    <div className="w-20 h-20 sm:w-24 sm:h-24 bg-neutral-950 border-3 border-amber-400 p-2 flex items-center justify-center shadow-[4px_4px_0px_#fbbf24]">
+                      <ChessPiece type={targetPiece.type} color={targetPiece.color} className="w-full h-full" />
+                    </div>
+                    <div className="text-center">
+                      <div className="font-black text-sm uppercase text-white">{pieceName}</div>
+                      <div className="text-xs text-amber-300 font-mono mt-1 font-bold leading-relaxed">
+                        {actionMsg}!
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
 
             {/* Game Over Banner */}

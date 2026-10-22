@@ -6,6 +6,7 @@ import {
   getRoomById,
   getRoomByCode,
   getPublicRoseRooms,
+  getUserActiveRoomId,
   destroyRoom,
   type RoseRoom,
 } from './roseRooms.ts';
@@ -309,8 +310,12 @@ export function registerRoseSocket(wss: WebSocketServer) {
         }
 
         case 'rose:resign': {
-          const rId = ws.roseRoomId || roomId;
-          const room = getRoomById(rId);
+          let rId = ws.roseRoomId || roomId;
+          let room = getRoomById(rId);
+          if (!room && user.userId) {
+            const activeRoomId = getUserActiveRoomId(user.userId);
+            if (activeRoomId) room = getRoomById(activeRoomId);
+          }
           if (!room || room.match.status !== 'active') return;
 
           const seat = getSeatByUserId(room.match, user.userId);

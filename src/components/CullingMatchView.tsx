@@ -768,74 +768,68 @@ export const CullingMatchView: React.FC<CullingMatchViewProps> = ({
           />
         </section>
 
-        {/* DESKTOP-ONLY RIGHT SIDEBAR: Opponent Last Move + Selected Piece + Moves */}
+        {/* DESKTOP-ONLY RIGHT SIDEBAR: Active Piece Inspector + Valid Moves + SAN History */}
         <aside className="hidden lg:flex w-72 xl:w-80 flex-col gap-2 shrink-0 h-full overflow-hidden">
-          {/* Opponent Last Move Box */}
-          <div className="bg-[#0f172a] p-3 border-2 border-white/20 shadow-[2px_2px_0px_#000] flex flex-col shrink-0">
-            <span className="text-[10px] font-black uppercase text-neutral-400 mb-1.5">
-              Opponent's Last Move
-            </span>
-            {lastMovedPiece ? (
-              <div className="flex items-center gap-3 bg-neutral-900 border border-neutral-700 p-2">
-                <div className="w-14 h-14 shrink-0 bg-white border-2 border-black flex items-center justify-center p-1 shadow-[2px_2px_0px_#f59e0b]">
-                  <CullingPieceComponent type={lastMovedPiece.type} color={lastMovedPiece.color} />
-                </div>
-                <div className="min-w-0">
-                  <div className="text-xs font-black uppercase text-amber-400 truncate">
-                    {CULLING_ROSTER[lastMovedPiece.type]?.name || lastMovedPiece.type}
+          {/* Active Piece Inspector (Big Box, similar to Rose Paradise) */}
+          <div className="bg-[#0f172a] p-4 border-2 border-white/20 shadow-[4px_4px_0px_#000] flex flex-col shrink-0">
+            <div className="flex items-center justify-between border-b-2 border-white/10 pb-2 mb-3">
+              <span className="text-xs font-black uppercase text-amber-400 flex items-center gap-1.5">
+                <Zap className="w-3.5 h-3.5" /> Active Piece Inspector
+              </span>
+              <span className="text-[10px] font-mono text-neutral-400">Combat State</span>
+            </div>
+
+            {(() => {
+              const targetPiece = (selectedPieceData && selectedPieceData.pos && match.board[selectedPieceData.pos.y] && match.board[selectedPieceData.pos.y][selectedPieceData.pos.x])
+                || (match.lastMove ? match.lastMove.piece : null);
+
+              const isSelectedByMe = selectedPieceData && selectedPieceData.color === userColor;
+              const isLastMoveMine = match.lastMove && match.lastMove.piece.color === userColor;
+              const isMine = isSelectedByMe || (match.lastMove && !selectedPieceData && isLastMoveMine);
+
+              if (!targetPiece) {
+                return (
+                  <div className="py-6 text-center text-neutral-400 text-xs font-mono">
+                    Click any piece on the board to inspect.
                   </div>
-                  <div className="text-[10px] text-neutral-300 font-bold">
-                    {lastMovedPiece.color.toUpperCase()} · {CULLING_ROSTER[lastMovedPiece.type]?.role}
+                );
+              }
+
+              const charInfo = CULLING_ROSTER[targetPiece.type];
+              const pieceName = charInfo ? charInfo.name : targetPiece.type.toUpperCase();
+              const pieceRole = charInfo ? charInfo.role : targetPiece.color;
+              
+              const actionMsg = isMine
+                ? `You are moving the ${pieceName}`
+                : `Opponent (${targetPiece.color === 'white' ? 'White' : 'Black'}) is moving the ${pieceName}`;
+
+              return (
+                <div className="flex flex-col items-center gap-3 py-1">
+                  <div className="w-20 h-20 sm:w-24 sm:h-24 bg-neutral-950 border-3 border-amber-400 p-2 flex items-center justify-center shadow-[4px_4px_0px_#f59e0b]">
+                    <CullingPieceComponent type={targetPiece.type} color={targetPiece.color} />
                   </div>
-                  {match.lastMove && (
-                    <div className="text-[10px] font-mono font-bold text-amber-500 mt-0.5">
-                      → {posToCullingSquare(match.lastMove.to)}
+                  <div className="text-center w-full">
+                    <div className="font-black text-sm uppercase text-white truncate">{pieceName}</div>
+                    <div className="text-[11px] text-neutral-300 font-bold uppercase mt-0.5">{pieceRole}</div>
+                    <div className="text-xs text-amber-300 font-mono mt-1 font-bold leading-relaxed">
+                      {actionMsg}!
                     </div>
-                  )}
+                  </div>
                 </div>
-              </div>
-            ) : (
-              <div className="py-4 text-center text-neutral-500 text-xs font-mono">No moves yet</div>
-            )}
+              );
+            })()}
           </div>
 
-          {/* Selected Piece Viewer & Valid Moves (From Theory Book) */}
+          {/* Selected Piece Valid Moves Box */}
           <div className="bg-[#0f172a] p-3 border-2 border-white/20 shadow-[2px_2px_0px_#000] flex flex-col flex-1 min-h-0 overflow-hidden">
             <span className="text-[10px] font-black uppercase text-neutral-400 mb-1.5">
-              Your Selected Piece
+              Valid Destinations {selectedPieceData ? `(${selectedPieceData.type})` : ''}
             </span>
             {selectedPieceData ? (
               <div className="flex flex-col gap-2 flex-1 min-h-0 overflow-hidden">
-                <div className="flex items-center gap-3 bg-neutral-900 border border-neutral-700 p-2 shrink-0">
-                  <div className="w-14 h-14 shrink-0 bg-neutral-950 border-2 border-amber-400 flex items-center justify-center p-1 shadow-[2px_2px_0px_#f59e0b]">
-                    <CullingPieceComponent
-                      type={selectedPieceData.type}
-                      color={selectedPieceData.color}
-                    />
-                  </div>
-                  <div className="min-w-0">
-                    <div className="text-xs font-black uppercase text-amber-400 truncate">
-                      {CULLING_ROSTER[selectedPieceData.type]?.name}
-                    </div>
-                    <div className="text-[10px] text-neutral-300 font-bold">
-                      {selectedPieceData.color.toUpperCase()} ·{' '}
-                      {CULLING_ROSTER[selectedPieceData.type]?.role}
-                    </div>
-                    {selectedPieceData.pos && (
-                      <div className="text-[10px] font-mono text-neutral-400">
-                        Square {posToCullingSquare(selectedPieceData.pos)}
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Valid Destinations List */}
                 <div className="flex-1 overflow-y-auto border border-white/10 bg-black/40 p-2 text-xs">
-                  <div className="text-[10px] font-black uppercase text-amber-500 mb-1">
-                    Valid Moves ({selectedLegalMoves.length})
-                  </div>
                   {selectedLegalMoves.length === 0 ? (
-                    <div className="text-neutral-500 text-[11px] py-2">
+                    <div className="text-neutral-500 text-[11px] py-2 text-center">
                       {match.turn !== userColor ? 'Not your turn' : 'No legal moves available'}
                     </div>
                   ) : (
@@ -858,8 +852,8 @@ export const CullingMatchView: React.FC<CullingMatchViewProps> = ({
                 </div>
               </div>
             ) : (
-              <div className="py-6 text-center text-neutral-500 text-xs font-mono">
-                Click a piece on the board to view its profile & legal moves
+              <div className="py-4 text-center text-neutral-500 text-xs font-mono">
+                Click a piece on the board to view its valid destinations
               </div>
             )}
           </div>
