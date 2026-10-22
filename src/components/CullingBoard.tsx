@@ -91,7 +91,7 @@ export const CullingBoard: React.FC<CullingBoardProps> = ({
   return (
     <div
       className="relative p-1.5 sm:p-2.5 rounded-xl border-3 sm:border-4 border-black dark:border-white shadow-[4px_4px_0px_#000000] dark:shadow-[4px_4px_0px_#ffffff] select-none max-w-full overflow-hidden"
-      style={{ backgroundColor: '#450d12' }}
+      style={{ backgroundColor: '#f01e2c' }}
     >
       {/* 10x10 Cross-Shaped Board Grid: Maximize Screen Fill */}
       <div className="grid grid-cols-10 grid-rows-10 border-2 border-black/40 dark:border-white/20 bg-transparent w-[300px] h-[300px] sm:w-[420px] sm:h-[420px] md:w-[490px] md:h-[490px] lg:w-[min(calc(100vh-135px),640px)] lg:h-[min(calc(100vh-135px),640px)] aspect-square">
