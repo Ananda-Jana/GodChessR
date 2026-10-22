@@ -101,7 +101,7 @@ export function destroyRoom(roomId: string) {
 }
 
 // Sweeper: expire waiting rooms after 10 minutes or inactive finished matches after 5 minutes
-setInterval(() => {
+const sweeper = setInterval(() => {
   const now = Date.now();
   for (const [roomId, room] of rooms.entries()) {
     if (room.match.status === 'waiting_guest' && now - room.match.createdAt > 10 * 60 * 1000) {
@@ -111,3 +111,4 @@ setInterval(() => {
     }
   }
 }, 30000);
+sweeper.unref();

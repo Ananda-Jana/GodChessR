@@ -76,7 +76,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
         const res = await fetch(`/api/players?q=${encodeURIComponent(searchQuery)}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
-        if (res.ok) {
+        if (res.ok && res.headers.get('content-type')?.includes('application/json')) {
           const data = await res.json();
           setPlayers(data.players || []);
         }
@@ -99,11 +99,11 @@ export const Dashboard: React.FC<DashboardProps> = ({
         fetch('/api/matches', { headers: { Authorization: `Bearer ${token}` } }),
         fetch('/api/challenges', { headers: { Authorization: `Bearer ${token}` } }),
       ]);
-      if (matchesRes.ok) {
+      if (matchesRes.ok && matchesRes.headers.get('content-type')?.includes('application/json')) {
         const data = await matchesRes.json();
         setActiveMatches(data.matches || []);
       }
-      if (challengesRes.ok) {
+      if (challengesRes.ok && challengesRes.headers.get('content-type')?.includes('application/json')) {
         const data = await challengesRes.json();
         setOutgoingChallenges(data.outgoing || []);
       }

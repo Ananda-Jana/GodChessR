@@ -17,7 +17,18 @@ import { initWebSocketServer } from './server/socket.ts';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const isProd = process.env.NODE_ENV === 'production';
-const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
+const PORT = (() => {
+  if (process.env.NGINX_PORT && process.env.PORT === process.env.NGINX_PORT) {
+    return process.env.DEFAULT_APP_PORT ? parseInt(process.env.DEFAULT_APP_PORT, 10) : 3000;
+  }
+  if (process.env.PORT) {
+    return parseInt(process.env.PORT, 10);
+  }
+  if (process.env.DEFAULT_APP_PORT) {
+    return parseInt(process.env.DEFAULT_APP_PORT, 10);
+  }
+  return 3000;
+})();
 
 async function startServer() {
   const app = express();
@@ -28,7 +39,10 @@ async function startServer() {
   // Attach WebSocket Server
   initWebSocketServer(server);
 
-  // --- REST API ROUTES ---
+  // Health check routes for Cloud Run / deployment health monitoring
+  app.get(['/health', '/api/health'], (_req, res) => {
+    res.status(200).json({ status: 'ok', uptime: process.uptime() });
+  });
 
   // Auth: Register
   app.post('/api/auth/register', (req, res) => {
