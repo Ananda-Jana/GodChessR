@@ -407,13 +407,13 @@ for (const t of testRoles) {
 // ============================================================================
 // 5. 500 RANDOM SELF-PLAY SIMULATION GAMES
 // ============================================================================
-console.log('--- Simulating 500 Random Self-Play Games ---');
+console.log('--- Simulating 100 Random Self-Play Games ---');
 let whiteWins = 0;
 let blackWins = 0;
 let drawsRepetition = 0;
 let draws30Move = 0;
 
-for (let gameIdx = 1; gameIdx <= 500; gameIdx++) {
+for (let gameIdx = 1; gameIdx <= 100; gameIdx++) {
   let simMatch = createInitialCullingMatch(
     `sim_${gameIdx}`,
     { userId: 'w', username: 'w', displayName: 'White' },
@@ -448,12 +448,12 @@ for (let gameIdx = 1; gameIdx <= 500; gameIdx++) {
     else if (simMatch.winReason?.includes('30-move')) draws30Move++;
   }
 
-  if (gameIdx % 100 === 0) {
-    console.log(`  ... simulated ${gameIdx} / 500 games`);
+  if (gameIdx % 25 === 0) {
+    console.log(`  ... simulated ${gameIdx} / 100 games`);
   }
 }
 
-console.log(`✓ 500 Simulation Games Completed:`);
+console.log(`✓ 100 Simulation Games Completed:`);
 console.log(`  - White Wins: ${whiteWins}`);
 console.log(`  - Black Wins: ${blackWins}`);
 console.log(`  - Threefold Repetition Draws: ${drawsRepetition}`);

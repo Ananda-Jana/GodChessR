@@ -8216,8 +8216,25 @@
       ]
     ],
     "turn": "white",
-    "status": "active",
-    "dice": null,
+    "status": "completed",
+    "dice": {
+      "rolledValue": 5,
+      "category": "expensive",
+      "eligiblePieceTypes": [
+        "rook",
+        "queen",
+        "prince",
+        "king",
+        "pawn",
+        "communist",
+        "supremeRook",
+        "priest"
+      ],
+      "isFallbackAnyPiece": false,
+      "isConsumed": false,
+      "probabilityMode": "uniform",
+      "rolledAt": 1792686159947
+    },
     "whitePawnsReachedEndRank": 0,
     "blackPawnsReachedEndRank": 0,
     "capturedByWhite": [],
@@ -8261,16 +8278,22 @@
       }
     ],
     "inCheck": null,
-    "result": null,
+    "result": {
+      "winner": "black",
+      "reason": "timeout",
+      "winnerUserId": "usr_bob_test",
+      "completedAt": 1792686160961,
+      "explanation": "Timer expired for white. Piece difference is 0 (<= 7). Black wins on time!"
+    },
     "moveSuggestions": "included",
     "totalCaptures": 0,
     "diceActive": true,
     "timeControl": 300,
-    "whiteTimeRemaining": 299.99,
+    "whiteTimeRemaining": 0,
     "blackTimeRemaining": 299.99,
     "lastTurnStartTime": 1792662073628,
     "createdAt": 1792662073608,
-    "updatedAt": 1792662073628,
+    "updatedAt": 1792686160961,
     "boardWidth": 8,
     "boardHeight": 8,
     "lostPieces": {
@@ -8562,8 +8585,25 @@
       ]
     ],
     "turn": "white",
-    "status": "active",
-    "dice": null,
+    "status": "completed",
+    "dice": {
+      "rolledValue": 6,
+      "category": "expensive",
+      "eligiblePieceTypes": [
+        "rook",
+        "queen",
+        "prince",
+        "king",
+        "pawn",
+        "communist",
+        "supremeRook",
+        "priest"
+      ],
+      "isFallbackAnyPiece": false,
+      "isConsumed": false,
+      "probabilityMode": "uniform",
+      "rolledAt": 1792686159949
+    },
     "whitePawnsReachedEndRank": 0,
     "blackPawnsReachedEndRank": 0,
     "capturedByWhite": [],
@@ -8607,16 +8647,22 @@
       }
     ],
     "inCheck": null,
-    "result": null,
+    "result": {
+      "winner": "black",
+      "reason": "timeout",
+      "winnerUserId": "usr_bob_test",
+      "completedAt": 1792686160964,
+      "explanation": "Timer expired for white. Piece difference is 0 (<= 7). Black wins on time!"
+    },
     "moveSuggestions": "included",
     "totalCaptures": 0,
     "diceActive": true,
     "timeControl": 300,
-    "whiteTimeRemaining": 299.989,
+    "whiteTimeRemaining": 0,
     "blackTimeRemaining": 299.994,
     "lastTurnStartTime": 1792662166347,
     "createdAt": 1792662166330,
-    "updatedAt": 1792662166347,
+    "updatedAt": 1792686160964,
     "boardWidth": 8,
     "boardHeight": 8,
     "lostPieces": {
@@ -8908,8 +8954,22 @@
       ]
     ],
     "turn": "white",
-    "status": "active",
-    "dice": null,
+    "status": "completed",
+    "dice": {
+      "rolledValue": 2,
+      "category": "inexpensive",
+      "eligiblePieceTypes": [
+        "knight",
+        "bishop",
+        "pawn",
+        "communist",
+        "priest"
+      ],
+      "isFallbackAnyPiece": false,
+      "isConsumed": false,
+      "probabilityMode": "uniform",
+      "rolledAt": 1792686159951
+    },
     "whitePawnsReachedEndRank": 0,
     "blackPawnsReachedEndRank": 0,
     "capturedByWhite": [],
@@ -8953,16 +9013,22 @@
       }
     ],
     "inCheck": null,
-    "result": null,
+    "result": {
+      "winner": "black",
+      "reason": "timeout",
+      "winnerUserId": "usr_bob_test",
+      "completedAt": 1792686160966,
+      "explanation": "Timer expired for white. Piece difference is 0 (<= 7). Black wins on time!"
+    },
     "moveSuggestions": "included",
     "totalCaptures": 0,
     "diceActive": true,
     "timeControl": 300,
-    "whiteTimeRemaining": 299.986,
+    "whiteTimeRemaining": 0,
     "blackTimeRemaining": 299.994,
     "lastTurnStartTime": 1792662197392,
     "createdAt": 1792662197372,
-    "updatedAt": 1792662197392,
+    "updatedAt": 1792686160966,
     "boardWidth": 8,
     "boardHeight": 8,
     "lostPieces": {
@@ -9254,8 +9320,25 @@
       ]
     ],
     "turn": "white",
-    "status": "active",
-    "dice": null,
+    "status": "completed",
+    "dice": {
+      "rolledValue": 6,
+      "category": "expensive",
+      "eligiblePieceTypes": [
+        "rook",
+        "queen",
+        "prince",
+        "king",
+        "pawn",
+        "communist",
+        "supremeRook",
+        "priest"
+      ],
+      "isFallbackAnyPiece": false,
+      "isConsumed": false,
+      "probabilityMode": "uniform",
+      "rolledAt": 1792686159953
+    },
     "whitePawnsReachedEndRank": 0,
     "blackPawnsReachedEndRank": 0,
     "capturedByWhite": [],
@@ -9299,16 +9382,22 @@
       }
     ],
     "inCheck": null,
-    "result": null,
+    "result": {
+      "winner": "black",
+      "reason": "timeout",
+      "winnerUserId": "usr_bob_test",
+      "completedAt": 1792686160968,
+      "explanation": "Timer expired for white. Piece difference is 0 (<= 7). Black wins on time!"
+    },
     "moveSuggestions": "included",
     "totalCaptures": 0,
     "diceActive": true,
     "timeControl": 300,
-    "whiteTimeRemaining": 299.988,
+    "whiteTimeRemaining": 0,
     "blackTimeRemaining": 299.994,
     "lastTurnStartTime": 1792662245955,
     "createdAt": 1792662245937,
-    "updatedAt": 1792662245955,
+    "updatedAt": 1792686160968,
     "boardWidth": 8,
     "boardHeight": 8,
     "lostPieces": {
@@ -9600,8 +9689,25 @@
       ]
     ],
     "turn": "white",
-    "status": "active",
-    "dice": null,
+    "status": "completed",
+    "dice": {
+      "rolledValue": 6,
+      "category": "expensive",
+      "eligiblePieceTypes": [
+        "rook",
+        "queen",
+        "prince",
+        "king",
+        "pawn",
+        "communist",
+        "supremeRook",
+        "priest"
+      ],
+      "isFallbackAnyPiece": false,
+      "isConsumed": false,
+      "probabilityMode": "uniform",
+      "rolledAt": 1792686159955
+    },
     "whitePawnsReachedEndRank": 0,
     "blackPawnsReachedEndRank": 0,
     "capturedByWhite": [],
@@ -9645,16 +9751,385 @@
       }
     ],
     "inCheck": null,
+    "result": {
+      "winner": "black",
+      "reason": "timeout",
+      "winnerUserId": "usr_bob_test",
+      "completedAt": 1792686160970,
+      "explanation": "Timer expired for white. Piece difference is 0 (<= 7). Black wins on time!"
+    },
+    "moveSuggestions": "included",
+    "totalCaptures": 0,
+    "diceActive": true,
+    "timeControl": 300,
+    "whiteTimeRemaining": 0,
+    "blackTimeRemaining": 299.988,
+    "lastTurnStartTime": 1792662401281,
+    "createdAt": 1792662401255,
+    "updatedAt": 1792686160970,
+    "boardWidth": 8,
+    "boardHeight": 8,
+    "lostPieces": {
+      "white": 0,
+      "black": 0
+    },
+    "lostExpensive": {
+      "white": 0,
+      "black": 0
+    },
+    "expansionUsed": {
+      "white": false,
+      "black": false
+    },
+    "expansionPending": {
+      "white": false,
+      "black": false
+    },
+    "craftingUsed": {
+      "white": false,
+      "black": false
+    },
+    "craftingPending": {
+      "white": false,
+      "black": false
+    },
+    "craftingLocked": {
+      "white": false,
+      "black": false
+    },
+    "pausedForAction": null
+  },
+  {
+    "id": "match_test_1792689442380",
+    "whitePlayer": {
+      "userId": "usr_alice_test",
+      "username": "alice",
+      "displayName": "Alice Champion",
+      "avatarId": "avatar_queen"
+    },
+    "blackPlayer": {
+      "userId": "usr_bob_test",
+      "username": "bob",
+      "displayName": "Bob Tactician",
+      "avatarId": "avatar_prince"
+    },
+    "board": [
+      [
+        {
+          "id": "w_q_a1",
+          "type": "queen",
+          "color": "white",
+          "hasMoved": false
+        },
+        {
+          "id": "w_n_b1",
+          "type": "knight",
+          "color": "white",
+          "hasMoved": false
+        },
+        {
+          "id": "w_b_c1",
+          "type": "bishop",
+          "color": "white",
+          "hasMoved": false
+        },
+        {
+          "id": "w_r_d1",
+          "type": "rook",
+          "color": "white",
+          "hasMoved": false
+        },
+        {
+          "id": "w_k_e1",
+          "type": "king",
+          "color": "white",
+          "hasMoved": false
+        },
+        {
+          "id": "w_b_f1",
+          "type": "bishop",
+          "color": "white",
+          "hasMoved": false
+        },
+        {
+          "id": "w_r_g1",
+          "type": "rook",
+          "color": "white",
+          "hasMoved": false
+        },
+        {
+          "id": "w_p_h1",
+          "type": "prince",
+          "color": "white",
+          "hasMoved": false,
+          "princeSpecialUsed": false
+        }
+      ],
+      [
+        {
+          "id": "w_pawn_0",
+          "type": "pawn",
+          "color": "white",
+          "hasMoved": false
+        },
+        {
+          "id": "w_pawn_1",
+          "type": "pawn",
+          "color": "white",
+          "hasMoved": false
+        },
+        {
+          "id": "w_pawn_2",
+          "type": "pawn",
+          "color": "white",
+          "hasMoved": false
+        },
+        {
+          "id": "w_pawn_3",
+          "type": "pawn",
+          "color": "white",
+          "hasMoved": false
+        },
+        null,
+        {
+          "id": "w_pawn_5",
+          "type": "pawn",
+          "color": "white",
+          "hasMoved": false
+        },
+        {
+          "id": "w_pawn_6",
+          "type": "pawn",
+          "color": "white",
+          "hasMoved": false
+        },
+        {
+          "id": "w_pawn_7",
+          "type": "pawn",
+          "color": "white",
+          "hasMoved": false
+        }
+      ],
+      [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      [
+        null,
+        null,
+        null,
+        null,
+        {
+          "id": "w_pawn_4",
+          "type": "pawn",
+          "color": "white",
+          "hasMoved": true
+        },
+        null,
+        null,
+        null
+      ],
+      [
+        null,
+        null,
+        null,
+        null,
+        {
+          "id": "b_pawn_4",
+          "type": "pawn",
+          "color": "black",
+          "hasMoved": true
+        },
+        null,
+        null,
+        null
+      ],
+      [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      [
+        {
+          "id": "b_pawn_0",
+          "type": "pawn",
+          "color": "black",
+          "hasMoved": false
+        },
+        {
+          "id": "b_pawn_1",
+          "type": "pawn",
+          "color": "black",
+          "hasMoved": false
+        },
+        {
+          "id": "b_pawn_2",
+          "type": "pawn",
+          "color": "black",
+          "hasMoved": false
+        },
+        {
+          "id": "b_pawn_3",
+          "type": "pawn",
+          "color": "black",
+          "hasMoved": false
+        },
+        null,
+        {
+          "id": "b_pawn_5",
+          "type": "pawn",
+          "color": "black",
+          "hasMoved": false
+        },
+        {
+          "id": "b_pawn_6",
+          "type": "pawn",
+          "color": "black",
+          "hasMoved": false
+        },
+        {
+          "id": "b_pawn_7",
+          "type": "pawn",
+          "color": "black",
+          "hasMoved": false
+        }
+      ],
+      [
+        {
+          "id": "b_p_a8",
+          "type": "prince",
+          "color": "black",
+          "hasMoved": false,
+          "princeSpecialUsed": false
+        },
+        {
+          "id": "b_r_b8",
+          "type": "rook",
+          "color": "black",
+          "hasMoved": false
+        },
+        {
+          "id": "b_b_c8",
+          "type": "bishop",
+          "color": "black",
+          "hasMoved": false
+        },
+        {
+          "id": "b_r_d8",
+          "type": "rook",
+          "color": "black",
+          "hasMoved": false
+        },
+        {
+          "id": "b_k_e8",
+          "type": "king",
+          "color": "black",
+          "hasMoved": false
+        },
+        {
+          "id": "b_b_f8",
+          "type": "bishop",
+          "color": "black",
+          "hasMoved": false
+        },
+        {
+          "id": "b_n_g8",
+          "type": "knight",
+          "color": "black",
+          "hasMoved": false
+        },
+        {
+          "id": "b_q_h8",
+          "type": "queen",
+          "color": "black",
+          "hasMoved": false
+        }
+      ]
+    ],
+    "turn": "white",
+    "status": "active",
+    "dice": {
+      "rolledValue": 5,
+      "category": "expensive",
+      "eligiblePieceTypes": [
+        "rook",
+        "queen",
+        "prince",
+        "king",
+        "pawn",
+        "communist",
+        "supremeRook",
+        "priest"
+      ],
+      "isFallbackAnyPiece": false,
+      "isConsumed": false,
+      "probabilityMode": "uniform",
+      "rolledAt": 1792689462798
+    },
+    "whitePawnsReachedEndRank": 0,
+    "blackPawnsReachedEndRank": 0,
+    "capturedByWhite": [],
+    "capturedByBlack": [],
+    "moveHistory": [
+      {
+        "from": {
+          "x": 4,
+          "y": 1
+        },
+        "to": {
+          "x": 4,
+          "y": 3
+        },
+        "piece": {
+          "id": "w_pawn_4",
+          "type": "pawn",
+          "color": "white",
+          "hasMoved": false
+        },
+        "timestamp": 1792689442390,
+        "san": "Pe2→e4"
+      },
+      {
+        "from": {
+          "x": 4,
+          "y": 6
+        },
+        "to": {
+          "x": 4,
+          "y": 4
+        },
+        "piece": {
+          "id": "b_pawn_4",
+          "type": "pawn",
+          "color": "black",
+          "hasMoved": false
+        },
+        "timestamp": 1792689442395,
+        "san": "Pe7→e5"
+      }
+    ],
+    "inCheck": null,
     "result": null,
     "moveSuggestions": "included",
     "totalCaptures": 0,
     "diceActive": true,
     "timeControl": 300,
-    "whiteTimeRemaining": 299.986,
-    "blackTimeRemaining": 299.988,
-    "lastTurnStartTime": 1792662401281,
-    "createdAt": 1792662401255,
-    "updatedAt": 1792662401281,
+    "whiteTimeRemaining": 299.99,
+    "blackTimeRemaining": 299.995,
+    "lastTurnStartTime": 1792689442395,
+    "createdAt": 1792689442380,
+    "updatedAt": 1792689462798,
     "boardWidth": 8,
     "boardHeight": 8,
     "lostPieces": {

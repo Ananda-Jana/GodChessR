@@ -26,11 +26,20 @@ export interface RoseSeat {
   lastSeen: number;
 }
 
+export interface PublicRoseRoom {
+  code: string;
+  hostDisplayName: string;
+  hostUserId: string;
+  hostRole: RoseRole;
+  hostAvatarId?: string;
+  createdAt: number;
+}
+
 export interface RoseMatchState {
   id: string;
   code: string;
   status: RoseMatchStatus;
-  timeControl: 60 | 120; // 60s sprint or 120s blitz
+  timeControl: number; // 0 for untimed couples chess, or 60/120
   moveSuggestions: boolean;
   board: (Piece | null)[][];
   turn: PieceColor;
@@ -71,3 +80,4 @@ export interface RoseReaction {
   text: string; // '❤️' | '🌹' | '😉' | '😅' | '✨' | '⏳'
   timestamp: number;
 }
+

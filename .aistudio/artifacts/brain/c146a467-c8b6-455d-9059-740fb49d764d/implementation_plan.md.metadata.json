@@ -1,0 +1,6 @@
+{
+  "summary":  "Implementation plan to eliminate stalling and ensure instantaneous, zero-lag room starts for Rose Paradise mode by standardizing its multiplayer logic to match Culling and Dice Chess, removing timers for peaceful couples play, adding an initial rulebook popup, and enabling direct room codes alongside an open lobby list.",
+  "updatedAt":  "2026-10-22T16:30:51.318261683Z",
+  "requestFeedback":  true,
+  "userFacing":  true
+}

@@ -6,13 +6,13 @@ import {
   isSquareAttacked,
   getLegalMovesForSquare,
 } from '../game/engine.ts';
-import type { RoseMatchState, RoseSeat, RoseMatchStatus } from './types.ts';
+import type { RoseMatchState, RoseSeat, RoseMatchStatus, RoseRole } from './types.ts';
 
 export function createInitialRoseMatch(
   id: string,
   code: string,
   hostSeat: RoseSeat,
-  timeControl: 60 | 120 = 60,
+  timeControl: number = 0,
   moveSuggestions = true
 ): RoseMatchState {
   const board = createInitialBoard('standard');
@@ -94,13 +94,28 @@ export function applyRoseMove(
     return { success: false, error: 'No seat assigned for current turn.' };
   }
 
-  // Use engine executeMove
-  const engineRes = engineExecuteMove(match as any, from, to);
+  // Use engine executeMove with pure chess rules (dice disabled)
+  const engineState = {
+    ...match,
+    diceActive: false,
+    dice: null,
+    capturedByWhite: (match as any).capturedByWhite || [],
+    capturedByBlack: (match as any).capturedByBlack || [],
+    whitePlayer: { userId: match.whiteSeat?.userId || 'w', username: match.whiteSeat?.username || 'w', displayName: match.whiteSeat?.displayName || 'w' },
+    blackPlayer: { userId: match.blackSeat?.userId || 'b', username: match.blackSeat?.username || 'b', displayName: match.blackSeat?.displayName || 'b' },
+    whitePawnsReachedEndRank: (match as any).whitePawnsReachedEndRank || 0,
+    blackPawnsReachedEndRank: (match as any).blackPawnsReachedEndRank || 0,
+    moveHistory: (match as any).moveHistory || [],
+  };
+  const engineRes = engineExecuteMove(engineState as any, from, to);
   if (!engineRes.success || !engineRes.state) {
     return { success: false, error: engineRes.error || 'Invalid move.' };
   }
 
-  const nextMatch = { ...(engineRes.state as unknown as RoseMatchState) };
+  const whiteSeatCopy: RoseSeat | null = match.whiteSeat ? { ...match.whiteSeat } : null;
+  const blackSeatCopy: RoseSeat | null = match.blackSeat ? { ...match.blackSeat } : null;
+  const activeSeat = match.turn === 'white' ? whiteSeatCopy : blackSeatCopy;
+
   const targetPiece = match.board[to.y][to.x];
   const isCapture = targetPiece !== null;
   const isPawn = movingPiece.type === 'pawn';
@@ -110,39 +125,70 @@ export function applyRoseMove(
   if (isCapture) petalsGained++;
 
   // Check gave check
-  if (nextMatch.inCheck && nextMatch.inCheck !== match.turn) {
+  if (engineRes.state.inCheck && engineRes.state.inCheck !== match.turn) {
     petalsGained++;
   }
 
   // Love Link check (once per 4 moves)
-  if (match.turnCount - currentSeat.lastLoveLinkTurn >= 4) {
-    if (checkLoveLink(nextMatch.board, match.turn)) {
+  if (activeSeat && match.turnCount - activeSeat.lastLoveLinkTurn >= 4) {
+    if (checkLoveLink(engineRes.state.board, match.turn)) {
       petalsGained++;
-      currentSeat.lastLoveLinkTurn = match.turnCount;
+      activeSeat.lastLoveLinkTurn = match.turnCount;
     }
   }
 
-  if (petalsGained > 0) {
-    currentSeat.petals = Math.min(3, currentSeat.petals + petalsGained);
+  if (activeSeat && petalsGained > 0) {
+    activeSeat.petals = Math.min(3, activeSeat.petals + petalsGained);
   }
 
-  // Halfmove clock for 20-move rule without capture or pawn move
-  if (isCapture || isPawn) {
-    nextMatch.halfmoveClock = 0;
-  } else {
-    nextMatch.halfmoveClock = (match.halfmoveClock || 0) + 1;
+  let halfmove = (isCapture || isPawn) ? 0 : (match.halfmoveClock || 0) + 1;
+  let status: RoseMatchStatus = engineRes.state.status === 'completed' ? 'completed' : match.status;
+  let winner: RoseRole | 'draw' | null = null;
+  let winReason: string | undefined = engineRes.state.result?.reason ? String(engineRes.state.result.reason) : undefined;
+
+  if (engineRes.state.result?.winner === 'draw') {
+    winner = 'draw';
+  } else if (engineRes.state.result?.winner === 'white') {
+    winner = whiteSeatCopy?.role || 'boyfriend';
+  } else if (engineRes.state.result?.winner === 'black') {
+    winner = blackSeatCopy?.role || 'girlfriend';
   }
 
   // Check 20-move draw rule
-  if (nextMatch.halfmoveClock >= 40) { // 40 plies = 20 full moves
-    nextMatch.status = 'completed';
-    nextMatch.winner = 'draw';
-    nextMatch.winReason = 'Draw by 20 moves without capture or pawn advance.';
+  if (halfmove >= 40) {
+    status = 'completed';
+    winner = 'draw';
+    winReason = 'Draw by 20 moves without capture or pawn advance.';
   }
 
-  nextMatch.seq = match.seq + 1;
-  nextMatch.updatedAt = Date.now();
-  nextMatch.lastTurnStartTime = Date.now();
+  const nextMatch: RoseMatchState = {
+    ...match,
+    whiteSeat: whiteSeatCopy,
+    blackSeat: blackSeatCopy,
+    board: engineRes.state.board,
+    turn: engineRes.state.turn,
+    turnCount: match.turnCount + (match.turn === 'black' ? 1 : 0),
+    inCheck: engineRes.state.inCheck,
+    status,
+    winner,
+    winReason,
+    lastMove: { from, to, piece: movingPiece },
+    halfmoveClock: halfmove,
+    history: [
+      ...match.history,
+      {
+        from,
+        to,
+        piece: movingPiece,
+        captured: targetPiece || undefined,
+        san: `${movingPiece.type} to ${to.x},${to.y}`,
+        timestamp: Date.now(),
+      },
+    ],
+    seq: match.seq + 1,
+    updatedAt: Date.now(),
+    lastTurnStartTime: Date.now(),
+  };
 
   return { success: true, state: nextMatch };
 }

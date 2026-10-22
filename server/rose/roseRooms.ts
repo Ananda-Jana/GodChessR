@@ -1,5 +1,5 @@
 import { WebSocket } from 'ws';
-import type { RoseMatchState, RoseSeat, RoseRole } from '../../src/rose/types.ts';
+import type { RoseMatchState, RoseSeat, RoseRole, PublicRoseRoom } from '../../src/rose/types.ts';
 import { createInitialRoseMatch } from '../../src/rose/roseRules.ts';
 
 export interface RoseRoom {
@@ -7,29 +7,54 @@ export interface RoseRoom {
   sockets: Set<WebSocket>;
   hostWs?: WebSocket;
   guestWs?: WebSocket;
-  readySockets: Set<string>; // userId set for handshake ready
+  hostUserId: string;
+  hostDisplayName: string;
+  hostRole: RoseRole;
+  hostAvatarId?: string;
+  createdAt: number;
 }
 
-const rooms = new Map<string, RoseRoom>();
+const rooms = new Map<string, RoseRoom>(); // roomId -> RoseRoom
+const roomsByCode = new Map<string, string>(); // code (uppercase) -> roomId
 const userActiveRoom = new Map<string, string>(); // userId -> roomId
 
 export function generateRoseCode(): string {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // Crockford without ambiguous chars
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // Crockford unambiguous characters
   for (let attempts = 0; attempts < 100; attempts++) {
     let code = 'ROSE-';
     for (let i = 0; i < 6; i++) {
       code += chars.charAt(Math.floor(Math.random() * chars.length));
     }
-    let exists = false;
-    for (const r of rooms.values()) {
-      if (r.match.code === code) {
-        exists = true;
-        break;
-      }
-    }
-    if (!exists) return code;
+    if (!roomsByCode.has(code)) return code;
   }
   return `ROSE-${Date.now().toString(36).slice(-6).toUpperCase()}`;
+}
+
+export function getPublicRoseRooms(): PublicRoseRoom[] {
+  const list: PublicRoseRoom[] = [];
+  const now = Date.now();
+  for (const room of rooms.values()) {
+    // Only waiting rooms within 15 minutes where host socket is still alive (if available)
+    if (room.match.status === 'waiting_guest') {
+      if (now - room.createdAt > 15 * 60 * 1000) {
+        destroyRoom(room.match.id);
+        continue;
+      }
+      if (room.hostWs && room.hostWs.readyState !== WebSocket.OPEN) {
+        destroyRoom(room.match.id);
+        continue;
+      }
+      list.push({
+        code: room.match.code,
+        hostDisplayName: room.hostDisplayName,
+        hostUserId: room.hostUserId,
+        hostRole: room.hostRole,
+        hostAvatarId: room.hostAvatarId,
+        createdAt: room.createdAt,
+      });
+    }
+  }
+  return list;
 }
 
 export function createRoseRoom(
@@ -38,19 +63,28 @@ export function createRoseRoom(
   hostDisplayName: string,
   hostAvatarId: string,
   hostRole: RoseRole,
-  timeControl: 60 | 120,
-  moveSuggestions: boolean
+  timeControl: number = 0,
+  moveSuggestions: boolean = true,
+  hostWs?: WebSocket
 ): RoseRoom {
+  // Clean up any existing room hosted by this user
+  const existingRoomId = userActiveRoom.get(hostUserId);
+  if (existingRoomId) {
+    destroyRoom(existingRoomId);
+  }
+
   const code = generateRoseCode();
-  const roomId = `room_${Math.random().toString(36).slice(2, 10)}`;
+  const roomId = `rose_room_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
   const resumeToken = Math.random().toString(36).slice(2);
-  const color = Math.random() < 0.5 ? 'white' : 'black';
+  
+  // Boyfriend defaults to white (Prince), Girlfriend defaults to black (Queen), or vice-versa
+  const color = hostRole === 'boyfriend' ? 'white' : 'black';
 
   const hostSeat: RoseSeat = {
     userId: hostUserId,
     username: hostUsername,
     displayName: hostDisplayName,
-    avatarId: hostAvatarId,
+    avatarId: hostAvatarId || 'avatar_prince',
     role: hostRole,
     color,
     petals: 0,
@@ -64,15 +98,103 @@ export function createRoseRoom(
   const match = createInitialRoseMatch(roomId, code, hostSeat, timeControl, moveSuggestions);
   match.status = 'waiting_guest';
 
+  const sockets = new Set<WebSocket>();
+  if (hostWs) sockets.add(hostWs);
+
   const room: RoseRoom = {
     match,
-    sockets: new Set(),
-    readySockets: new Set(),
+    sockets,
+    hostWs,
+    hostUserId,
+    hostDisplayName,
+    hostRole,
+    hostAvatarId,
+    createdAt: Date.now(),
   };
 
   rooms.set(roomId, room);
+  roomsByCode.set(code.toUpperCase(), roomId);
   userActiveRoom.set(hostUserId, roomId);
   return room;
+}
+
+export function joinRoseRoom(
+  code: string,
+  guestUserId: string,
+  guestUsername: string,
+  guestDisplayName: string,
+  guestAvatarId: string,
+  guestWs?: WebSocket
+): { success: boolean; room?: RoseRoom; hostSeat?: RoseSeat; guestSeat?: RoseSeat; error?: string } {
+  const upperCode = code.trim().toUpperCase();
+  const roomId = roomsByCode.get(upperCode);
+  if (!roomId) {
+    return { success: false, error: 'Rose room code not found or expired.' };
+  }
+
+  const room = rooms.get(roomId);
+  if (!room) {
+    roomsByCode.delete(upperCode);
+    return { success: false, error: 'Room does not exist.' };
+  }
+
+  if (room.match.status !== 'waiting_guest') {
+    return { success: false, error: 'This Rose room is no longer open for guests.' };
+  }
+
+  const hostSeat = room.match.whiteSeat || room.match.blackSeat;
+  if (!hostSeat) {
+    return { success: false, error: 'Invalid room configuration.' };
+  }
+
+  if (hostSeat.userId === guestUserId) {
+    return { success: false, error: 'You cannot join your own room code.' };
+  }
+
+  // Complementary role & opposite color for boyfriend vs girlfriend
+  const guestRole: RoseRole = hostSeat.role === 'boyfriend' ? 'girlfriend' : 'boyfriend';
+  const guestColor = hostSeat.color === 'white' ? 'black' : 'white';
+  const resumeToken = Math.random().toString(36).slice(2);
+
+  const guestSeat: RoseSeat = {
+    userId: guestUserId,
+    username: guestUsername,
+    displayName: guestDisplayName,
+    avatarId: guestAvatarId || 'avatar_princess',
+    role: guestRole,
+    color: guestColor,
+    petals: 0,
+    summonsUsed: 0,
+    lastLoveLinkTurn: 0,
+    resumeToken,
+    isConnected: true,
+    lastSeen: Date.now(),
+  };
+
+  if (guestColor === 'white') {
+    room.match.whiteSeat = guestSeat;
+  } else {
+    room.match.blackSeat = guestSeat;
+  }
+
+  // IMMEDIATELY ACTIVATE GAME: Zero handshake lag, zero stall!
+  room.match.status = 'active';
+  room.match.lastTurnStartTime = Date.now();
+  room.match.updatedAt = Date.now();
+
+  if (guestWs) {
+    room.sockets.add(guestWs);
+    room.guestWs = guestWs;
+  }
+
+  userActiveRoom.set(guestUserId, roomId);
+
+  return {
+    success: true,
+    room,
+    hostSeat,
+    guestSeat,
+  };
 }
 
 export function getRoomById(roomId: string): RoseRoom | undefined {
@@ -80,11 +202,9 @@ export function getRoomById(roomId: string): RoseRoom | undefined {
 }
 
 export function getRoomByCode(code: string): RoseRoom | undefined {
-  const upper = code.toUpperCase();
-  for (const r of rooms.values()) {
-    if (r.match.code.toUpperCase() === upper) return r;
-  }
-  return undefined;
+  const upper = code.trim().toUpperCase();
+  const roomId = roomsByCode.get(upper);
+  return roomId ? rooms.get(roomId) : undefined;
 }
 
 export function getUserActiveRoomId(userId: string): string | undefined {
@@ -94,17 +214,19 @@ export function getUserActiveRoomId(userId: string): string | undefined {
 export function destroyRoom(roomId: string) {
   const room = rooms.get(roomId);
   if (room) {
+    roomsByCode.delete(room.match.code.toUpperCase());
     if (room.match.whiteSeat) userActiveRoom.delete(room.match.whiteSeat.userId);
     if (room.match.blackSeat) userActiveRoom.delete(room.match.blackSeat.userId);
+    userActiveRoom.delete(room.hostUserId);
     rooms.delete(roomId);
   }
 }
 
-// Sweeper: expire waiting rooms after 10 minutes or inactive finished matches after 5 minutes
+// Sweeper: expire waiting rooms older than 15 minutes or completed rooms older than 5 minutes
 const sweeper = setInterval(() => {
   const now = Date.now();
   for (const [roomId, room] of rooms.entries()) {
-    if (room.match.status === 'waiting_guest' && now - room.match.createdAt > 10 * 60 * 1000) {
+    if (room.match.status === 'waiting_guest' && now - room.createdAt > 15 * 60 * 1000) {
       destroyRoom(roomId);
     } else if (room.match.status === 'completed' && now - room.match.updatedAt > 5 * 60 * 1000) {
       destroyRoom(roomId);

@@ -2,13 +2,16 @@ import { WebSocket, WebSocketServer } from 'ws';
 import type { RoseSeat, RoseRole, RoseMatchState } from '../../src/rose/types.ts';
 import {
   createRoseRoom,
+  joinRoseRoom,
   getRoomById,
   getRoomByCode,
-  getUserActiveRoomId,
+  getPublicRoseRooms,
   destroyRoom,
   type RoseRoom,
 } from './roseRooms.ts';
-import { applyRoseMove, applyRoseSummon, getSeatByUserId, getSeatByColor } from '../../src/rose/roseRules.ts';
+import { applyRoseMove, applyRoseSummon, getSeatByUserId } from '../../src/rose/roseRules.ts';
+import { getUserIdFromSession } from '../auth.ts';
+import { db } from '../db.ts';
 
 interface ExtendedSocket extends WebSocket {
   userId?: string;
@@ -29,6 +32,16 @@ export function registerRoseSocket(wss: WebSocketServer) {
     }
   }
 
+  function broadcastPublicRoseRooms() {
+    const list = getPublicRoseRooms();
+    const payload = JSON.stringify({ type: 'rose:rooms_list', rooms: list });
+    for (const client of wss.clients) {
+      if (client.readyState === WebSocket.OPEN) {
+        client.send(payload);
+      }
+    }
+  }
+
   wss.on('connection', (ws: ExtendedSocket) => {
     ws.on('message', (message: string) => {
       try {
@@ -45,148 +58,179 @@ export function registerRoseSocket(wss: WebSocketServer) {
         const room = getRoomById(ws.roseRoomId);
         if (room) {
           room.sockets.delete(ws);
-          if (ws.userId) {
+          if (room.match.status === 'waiting_guest' && room.hostWs === ws) {
+            destroyRoom(room.match.id);
+            broadcastPublicRoseRooms();
+          } else if (room.match.status === 'active' && ws.userId) {
             const seat = getSeatByUserId(room.match, ws.userId);
             if (seat) seat.isConnected = false;
+            broadcastRoom(room, { type: 'rose:state', match: room.match });
           }
-          broadcastRoom(room, { type: 'rose:roomState', match: room.match });
         }
       }
     });
   });
 
+  function resolveUser(ws: ExtendedSocket, data: any): { userId: string; username: string; displayName: string; avatarId?: string } {
+    let userId = ws.userId || data.userId;
+    if (!userId && data.token) {
+      userId = getUserIdFromSession(data.token);
+    }
+    if (!userId) {
+      userId = `guest_${Math.random().toString(36).substring(2, 7)}`;
+    }
+
+    const userRecord = db.findUserById(userId);
+    const username = userRecord?.username || ws.username || data.username || 'Gardener';
+    const displayName = userRecord?.displayName || ws.displayName || data.displayName || username;
+    const avatarId = userRecord?.avatarId || ws.avatarId || data.avatarId;
+
+    return { userId, username, displayName, avatarId };
+  }
+
   function handleRoseMessage(ws: ExtendedSocket, data: any) {
     try {
-      const { type, roomId, code, role, timeControl, moveSuggestions, from, to, pieceType, text } = data;
+      const { type, roomId, code, role, from, to, pieceType, text } = data;
+      const user = resolveUser(ws, data);
+      ws.userId = user.userId;
 
       switch (type) {
-        case 'rose:create': {
-          if (!ws.userId) {
-            ws.send(JSON.stringify({ type: 'rose:error', message: 'Authentication required.' }));
-            return;
-          }
+        case 'rose:list_rooms': {
+          ws.send(JSON.stringify({ type: 'rose:rooms_list', rooms: getPublicRoseRooms() }));
+          break;
+        }
+
+        case 'rose:create':
+        case 'rose:create_room': {
           const chosenRole: RoseRole = role === 'girlfriend' ? 'girlfriend' : 'boyfriend';
-          const tc = timeControl === 120 ? 120 : 60;
+          // Untimed couples chess by default (timeControl = 0)
           const room = createRoseRoom(
-            ws.userId,
-            ws.username || 'User',
-            ws.displayName || ws.username || 'Gardener',
-            ws.avatarId || 'avatar_prince',
+            user.userId,
+            user.username,
+            user.displayName,
+            user.avatarId || (chosenRole === 'boyfriend' ? 'avatar_prince' : 'avatar_queen'),
             chosenRole,
-            tc,
-            moveSuggestions !== false
+            0, // Untimed
+            true,
+            ws
           );
 
           ws.roseRoomId = room.match.id;
-          room.sockets.add(ws);
-          room.hostWs = ws;
 
-          ws.send(JSON.stringify({ type: 'rose:roomState', match: room.match }));
+          ws.send(JSON.stringify({
+            type: 'rose:created',
+            code: room.match.code,
+            match: room.match,
+            yourColor: room.match.whiteSeat?.userId === user.userId ? 'white' : 'black',
+            yourRole: chosenRole,
+          }));
+
+          broadcastPublicRoseRooms();
           break;
         }
 
-        case 'rose:join': {
-          if (!ws.userId) {
-            ws.send(JSON.stringify({ type: 'rose:error', message: 'Authentication required.' }));
-            return;
-          }
-          const targetCode = code?.trim();
-          const room = getRoomByCode(targetCode);
-          if (!room || room.match.status !== 'waiting_guest') {
-            ws.send(JSON.stringify({ type: 'rose:error', message: 'Invalid or expired Rose room code.' }));
+        case 'rose:join':
+        case 'rose:join_room': {
+          const targetCode = String(code || '').trim().toUpperCase();
+          if (!targetCode) {
+            ws.send(JSON.stringify({ type: 'rose:error', message: 'Room code cannot be empty.' }));
             return;
           }
 
-          const hostSeat = room.match.whiteSeat || room.match.blackSeat;
-          if (hostSeat && hostSeat.userId === ws.userId) {
-            ws.send(JSON.stringify({ type: 'rose:error', message: 'Cannot join your own room.' }));
+          const res = joinRoseRoom(
+            targetCode,
+            user.userId,
+            user.username,
+            user.displayName,
+            user.avatarId || 'avatar_queen',
+            ws
+          );
+
+          if (!res.success || !res.room || !res.hostSeat || !res.guestSeat) {
+            ws.send(JSON.stringify({ type: 'rose:error', message: res.error || 'Failed to join Rose room.' }));
             return;
           }
 
-          const guestRole: RoseRole = hostSeat?.role === 'boyfriend' ? 'girlfriend' : 'boyfriend';
-          const guestColor = hostSeat?.color === 'white' ? 'black' : 'white';
-          const resumeToken = Math.random().toString(36).slice(2);
-
-          const guestSeat: RoseSeat = {
-            userId: ws.userId,
-            username: ws.username || 'User',
-            displayName: ws.displayName || ws.username || 'Gardener',
-            avatarId: ws.avatarId || 'avatar_princess',
-            role: guestRole,
-            color: guestColor,
-            petals: 0,
-            summonsUsed: 0,
-            lastLoveLinkTurn: 0,
-            resumeToken,
-            isConnected: true,
-            lastSeen: Date.now(),
-          };
-
-          if (guestColor === 'white') room.match.whiteSeat = guestSeat;
-          else room.match.blackSeat = guestSeat;
-
-          room.match.status = 'handshake';
-          room.sockets.add(ws);
-          room.guestWs = ws;
+          const room = res.room;
           ws.roseRoomId = room.match.id;
 
-          broadcastRoom(room, { type: 'rose:roomState', match: room.match });
+          // INSTANTANEOUS START: Notify both Host and Guest with zero lag!
+          if (room.hostWs && room.hostWs.readyState === WebSocket.OPEN) {
+            room.hostWs.send(JSON.stringify({
+              type: 'rose:match_started',
+              match: room.match,
+              yourColor: res.hostSeat.color,
+              yourRole: res.hostSeat.role,
+            }));
+          }
+
+          ws.send(JSON.stringify({
+            type: 'rose:match_started',
+            match: room.match,
+            yourColor: res.guestSeat.color,
+            yourRole: res.guestSeat.role,
+          }));
+
+          // Broadcast state to all sockets in room
+          broadcastRoom(room, { type: 'rose:state', match: room.match });
+
+          // Update lobby list
+          broadcastPublicRoseRooms();
           break;
         }
 
-        case 'rose:ready': {
+        case 'rose:cancel':
+        case 'rose:cancel_room': {
           const rId = ws.roseRoomId || roomId;
-          const room = getRoomById(rId);
-          if (!room || !ws.userId) return;
-
-          room.readySockets.add(ws.userId);
-          if (room.readySockets.size >= 2) {
-            room.match.status = 'active';
-            room.match.lastTurnStartTime = Date.now();
-            broadcastRoom(room, { type: 'rose:start', match: room.match, serverTime: Date.now() });
-            broadcastRoom(room, { type: 'rose:state', match: room.match });
-          } else {
-            broadcastRoom(room, { type: 'rose:roomState', match: room.match });
+          if (rId) {
+            destroyRoom(rId);
+            ws.roseRoomId = undefined;
           }
+          ws.send(JSON.stringify({ type: 'rose:cancelled' }));
+          broadcastPublicRoseRooms();
           break;
         }
 
         case 'rose:move': {
           const rId = ws.roseRoomId || roomId;
           const room = getRoomById(rId);
-          if (!room || room.match.status !== 'active' || !ws.userId) {
-            ws.send(JSON.stringify({ type: 'rose:reject', reason: 'Not active or invalid room.' }));
+          if (!room || room.match.status !== 'active') {
+            ws.send(JSON.stringify({ type: 'rose:error', message: 'Match is not active.' }));
             return;
           }
 
-          const seat = getSeatByUserId(room.match, ws.userId);
+          const seat = getSeatByUserId(room.match, user.userId);
           if (!seat || seat.color !== room.match.turn) {
-            ws.send(JSON.stringify({ type: 'rose:reject', reason: 'Not your turn.' }));
+            ws.send(JSON.stringify({ type: 'rose:error', message: 'Not your turn.' }));
             return;
           }
 
           const res = applyRoseMove(room.match, from, to);
           if (!res.success || !res.state) {
-            ws.send(JSON.stringify({ type: 'rose:reject', reason: res.error || 'Invalid move.' }));
+            ws.send(JSON.stringify({ type: 'rose:error', message: res.error || 'Invalid move.' }));
             return;
           }
 
           room.match = res.state;
-          broadcastRoom(room, { type: 'rose:state', match: room.match });
+          broadcastRoom(room, {
+            type: 'rose:moved',
+            match: room.match,
+            lastMove: res.state.lastMove,
+          });
           break;
         }
 
         case 'rose:summon': {
           const rId = ws.roseRoomId || roomId;
           const room = getRoomById(rId);
-          if (!room || room.match.status !== 'active' || !ws.userId) {
-            ws.send(JSON.stringify({ type: 'rose:reject', reason: 'Not active or invalid room.' }));
+          if (!room || room.match.status !== 'active') {
+            ws.send(JSON.stringify({ type: 'rose:error', message: 'Match is not active.' }));
             return;
           }
 
-          const res = applyRoseSummon(room.match, ws.userId, pieceType, to);
+          const res = applyRoseSummon(room.match, user.userId, pieceType, to);
           if (!res.success || !res.state) {
-            ws.send(JSON.stringify({ type: 'rose:reject', reason: res.error || 'Summon failed.' }));
+            ws.send(JSON.stringify({ type: 'rose:error', message: res.error || 'Summon failed.' }));
             return;
           }
 
@@ -198,13 +242,13 @@ export function registerRoseSocket(wss: WebSocketServer) {
         case 'rose:reaction': {
           const rId = ws.roseRoomId || roomId;
           const room = getRoomById(rId);
-          if (!room || !ws.userId) return;
+          if (!room) return;
 
           broadcastRoom(room, {
             type: 'rose:reaction',
             reaction: {
-              id: Math.random().toString(36).slice(2),
-              senderUserId: ws.userId,
+              id: `rx_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+              senderUserId: user.userId,
               text: text || '❤️',
               timestamp: Date.now(),
             },
@@ -212,11 +256,47 @@ export function registerRoseSocket(wss: WebSocketServer) {
           break;
         }
 
+        case 'rose:chat': {
+          const rId = ws.roseRoomId || roomId;
+          const room = getRoomById(rId);
+          if (!room || !text) return;
+
+          broadcastRoom(room, {
+            type: 'rose:chat',
+            message: {
+              id: `msg_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+              senderUserId: user.userId,
+              senderDisplayName: user.displayName,
+              text: String(text).slice(0, 150),
+              timestamp: Date.now(),
+            },
+          });
+          break;
+        }
+
+        case 'rose:resign': {
+          const rId = ws.roseRoomId || roomId;
+          const room = getRoomById(rId);
+          if (!room || room.match.status !== 'active') return;
+
+          const seat = getSeatByUserId(room.match, user.userId);
+          const opponentSeat = room.match.whiteSeat?.userId === user.userId ? room.match.blackSeat : room.match.whiteSeat;
+          
+          room.match.status = 'completed';
+          room.match.winner = opponentSeat?.role || (seat?.role === 'boyfriend' ? 'girlfriend' : 'boyfriend');
+          room.match.winReason = `${seat?.displayName || 'Player'} resigned with loving grace.`;
+          room.match.updatedAt = Date.now();
+
+          broadcastRoom(room, { type: 'rose:state', match: room.match });
+          break;
+        }
+
+        case 'rose:resync':
         case 'rose:resyncRequest': {
           const rId = ws.roseRoomId || roomId;
           const room = getRoomById(rId);
           if (room) {
-            ws.send(JSON.stringify({ type: 'rose:roomState', match: room.match }));
+            ws.send(JSON.stringify({ type: 'rose:state', match: room.match }));
           }
           break;
         }
@@ -227,7 +307,7 @@ export function registerRoseSocket(wss: WebSocketServer) {
     } catch (err) {
       console.error('Rose message handling error:', err);
       try {
-        ws.send(JSON.stringify({ type: 'rose:reject', reason: 'Internal server error.' }));
+        ws.send(JSON.stringify({ type: 'rose:error', message: 'Internal server error.' }));
       } catch {}
     }
   }
