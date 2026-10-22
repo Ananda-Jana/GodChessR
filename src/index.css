@@ -1,0 +1,173 @@
+@import "tailwindcss";
+
+:root {
+  --bg: #000000;
+  --bg-card: #0a0a0c;
+  --bg-panel: #141416;
+  --border: #ffffff;
+  --text: #ffffff;
+  --text-muted: #a1a1aa;
+  --accent: #fbbf24;
+  --accent-contrast: #000000;
+  --shadow: #ffffff;
+  --border-width: 3px;
+  --border-width-thick: 4px;
+  --shadow-offset: 4px 4px 0px #ffffff;
+  --shadow-offset-lg: 6px 6px 0px #ffffff;
+  --board-light: #475569;
+  --board-dark: #1e293b;
+  --board-border: #ffffff;
+}
+
+html.dark {
+  --bg: #000000;
+  --bg-card: #0a0a0c;
+  --bg-panel: #141416;
+  --border: #ffffff;
+  --text: #ffffff;
+  --text-muted: #a1a1aa;
+  --accent: #fbbf24;
+  --accent-contrast: #000000;
+  --shadow: #ffffff;
+  --shadow-offset: 4px 4px 0px #ffffff;
+  --shadow-offset-lg: 6px 6px 0px #ffffff;
+  --board-light: #475569;
+  --board-dark: #1e293b;
+  --board-border: #ffffff;
+}
+
+@layer base {
+  * {
+    border-radius: 0px !important;
+  }
+
+  body {
+    font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, monospace, sans-serif;
+    background-color: var(--bg);
+    color: var(--text);
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, monospace, sans-serif;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: -0.02em;
+  }
+
+  button, input, select, textarea {
+    font-family: inherit;
+    border-radius: 0px !important;
+  }
+}
+
+/* Brutalist Component Tokens */
+.brutal-border {
+  border: 3px solid var(--border);
+}
+
+.brutal-border-thick {
+  border: 4px solid var(--border);
+}
+
+.brutal-shadow {
+  box-shadow: 4px 4px 0px var(--shadow);
+}
+
+.brutal-shadow-lg {
+  box-shadow: 6px 6px 0px var(--shadow);
+}
+
+.brutal-card {
+  background-color: var(--bg-card);
+  border: 3px solid var(--border);
+  box-shadow: 5px 5px 0px var(--shadow);
+}
+
+.brutal-btn-primary {
+  background-color: var(--accent);
+  color: var(--accent-contrast);
+  border: 3px solid var(--border);
+  box-shadow: 4px 4px 0px var(--shadow);
+  font-weight: 800;
+  text-transform: uppercase;
+  transition: transform 0.04s, box-shadow 0.04s;
+  cursor: pointer;
+}
+
+.brutal-btn-primary:hover:not(:disabled) {
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0px var(--shadow);
+}
+
+.brutal-btn-primary:active:not(:disabled) {
+  transform: translate(2px, 2px);
+  box-shadow: 2px 2px 0px var(--shadow);
+}
+
+.brutal-btn-secondary {
+  background-color: var(--bg-card);
+  color: var(--text);
+  border: 3px solid var(--border);
+  box-shadow: 4px 4px 0px var(--shadow);
+  font-weight: 800;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.brutal-btn-secondary:hover:not(:disabled) {
+  background-color: var(--text);
+  color: var(--bg);
+  box-shadow: 6px 6px 0px var(--shadow);
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg);
+  border-left: 2px solid var(--border);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 0px !important;
+}
+
+/* Cute Soft Board & Chunky Piece Styling (Match View Only) */
+.soft-board-tray {
+  border-radius: 16px !important;
+  overflow: hidden;
+}
+
+.soft-board-grid {
+  border-radius: 12px !important;
+  overflow: hidden;
+}
+
+.soft-move-dot {
+  border-radius: 9999px !important;
+}
+
+.chess-piece-shadow {
+  position: relative;
+}
+
+.chess-piece-shadow::after {
+  content: '';
+  position: absolute;
+  bottom: 4%;
+  left: 20%;
+  width: 60%;
+  height: 14%;
+  background: rgba(0, 0, 0, 0.22);
+  border-radius: 50% !important;
+  pointer-events: none;
+  z-index: 1;
+}
+
+html.dark .chess-piece-shadow::after {
+  background: rgba(0, 0, 0, 0.42);
+}
