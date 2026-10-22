@@ -141,17 +141,10 @@ export function registerRoseSocket(wss: WebSocketServer) {
 
           room.readySockets.add(ws.userId);
           if (room.readySockets.size >= 2) {
-            room.match.status = 'countdown';
+            room.match.status = 'active';
             room.match.lastTurnStartTime = Date.now();
             broadcastRoom(room, { type: 'rose:start', match: room.match, serverTime: Date.now() });
-
-            setTimeout(() => {
-              if (room.match.status === 'countdown') {
-                room.match.status = 'active';
-                room.match.lastTurnStartTime = Date.now();
-                broadcastRoom(room, { type: 'rose:state', match: room.match });
-              }
-            }, 3000);
+            broadcastRoom(room, { type: 'rose:state', match: room.match });
           } else {
             broadcastRoom(room, { type: 'rose:roomState', match: room.match });
           }

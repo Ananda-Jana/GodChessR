@@ -1,6 +1,7 @@
 import express from 'express';
 import http from 'http';
 import path from 'path';
+import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { db } from './server/db.ts';
 import type { UserRecord } from './server/db.ts';
@@ -16,7 +17,7 @@ import { initWebSocketServer } from './server/socket.ts';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const isProd = process.env.NODE_ENV === 'production';
+const isProd = fs.existsSync(path.resolve(__dirname, 'dist'));
 const PORT = (() => {
   if (process.env.NGINX_PORT && process.env.PORT === process.env.NGINX_PORT) {
     return process.env.DEFAULT_APP_PORT ? parseInt(process.env.DEFAULT_APP_PORT, 10) : 3000;

@@ -40,8 +40,6 @@ export function useRoseRoom() {
 
           case 'rose:start':
             setMatch(data.match);
-            // Send synced / ready ack
-            ws.send(JSON.stringify({ type: 'rose:ready', roomId: data.match.id }));
             break;
 
           case 'rose:reject':
