@@ -34,7 +34,7 @@ export function initCullingSocket(io: WebSocketServer) {
   const rooms = new Map<string, CullingRoom>();
   const matchmakingQueue: { ws: ExtendedSocket; userId: string; timeControl: 120 | 300 }[] = [];
   
-  // Pending direct challenges (Room Code -> Challenge Info)
+  // Map of Room Code -> Challenge Info
   interface DirectChallenge {
     code: string;
     hostWs: ExtendedSocket;
@@ -46,11 +46,24 @@ export function initCullingSocket(io: WebSocketServer) {
   }
   const directChallenges = new Map<string, DirectChallenge>();
 
+  function generateUniqueRoomCode(): string {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    let code = '';
+    for (let attempts = 0; attempts < 100; attempts++) {
+      code = 'CULL';
+      for (let i = 0; i < 3; i++) {
+        code += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+      if (!directChallenges.has(code)) return code;
+    }
+    return `CULL${Date.now().toString(36).slice(-3).toUpperCase()}`;
+  }
+
   function getPublicChallengesList() {
     const list: any[] = [];
     const now = Date.now();
     for (const [code, c] of directChallenges.entries()) {
-      // Expire challenges older than 15 minutes
+      // Expire challenges older than 15 minutes or with dead sockets
       if (now - c.createdAt > 15 * 60 * 1000 || c.hostWs.readyState !== WebSocket.OPEN) {
         directChallenges.delete(code);
         continue;
@@ -95,7 +108,7 @@ export function initCullingSocket(io: WebSocketServer) {
       const match = room.match;
       if (match.status !== 'active') continue;
 
-      // Check if paused by rulebook (8-second pause)
+      // Check if paused by rulebook
       if (match.rulebookPausedUntil && now < match.rulebookPausedUntil) {
         continue;
       }
@@ -107,6 +120,14 @@ export function initCullingSocket(io: WebSocketServer) {
           const finished = handleCullingTimeout(match, 'white');
           room.match = finished;
           broadcastRoom(matchId, { type: 'culling:state', match: finished });
+        } else {
+          // Send lightweight clock delta
+          broadcastRoom(matchId, {
+            type: 'culling:clock',
+            matchId,
+            whiteTimeRemaining: match.whiteTimeRemaining,
+            blackTimeRemaining: match.blackTimeRemaining,
+          });
         }
       } else {
         match.blackTimeRemaining = Math.max(0, match.blackTimeRemaining - 1);
@@ -114,6 +135,14 @@ export function initCullingSocket(io: WebSocketServer) {
           const finished = handleCullingTimeout(match, 'black');
           room.match = finished;
           broadcastRoom(matchId, { type: 'culling:state', match: finished });
+        } else {
+          // Send lightweight clock delta
+          broadcastRoom(matchId, {
+            type: 'culling:clock',
+            matchId,
+            whiteTimeRemaining: match.whiteTimeRemaining,
+            blackTimeRemaining: match.blackTimeRemaining,
+          });
         }
       }
     }
@@ -125,31 +154,29 @@ export function initCullingSocket(io: WebSocketServer) {
         const msg = JSON.parse(rawData.toString());
         if (!msg.type || !msg.type.startsWith('culling:')) return;
 
-        const userId = ws.userId || msg.userId;
+        // Ensure user identity is registered
+        const effectiveUserId = msg.userId || ws.userId || `guest_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+        if (!ws.userId) {
+          ws.userId = effectiveUserId;
+        }
 
         switch (msg.type) {
           /**
            * CULLING MATCHMAKING QUEUE
-           * Pairs two players and randomly assigns White and Black sides
            */
           case 'culling:join_queue': {
-            if (!userId) {
-              ws.send(JSON.stringify({ type: 'culling:error', message: 'Authentication required' }));
-              return;
-            }
             const timeControl = msg.timeControl === 120 ? 120 : 300;
             // Remove any stale queue entries for this user
-            const existingIdx = matchmakingQueue.findIndex((q) => q.userId === userId);
+            const existingIdx = matchmakingQueue.findIndex((q) => q.userId === effectiveUserId);
             if (existingIdx !== -1) matchmakingQueue.splice(existingIdx, 1);
 
             // Check if someone is already waiting
             if (matchmakingQueue.length > 0) {
               const opponent = matchmakingQueue.shift()!;
               if (opponent.ws.readyState === WebSocket.OPEN) {
-                // Randomly choose White and Black sides (50/50)
                 const isUserWhite = Math.random() < 0.5;
-                const whiteUser = isUserWhite ? userId : opponent.userId;
-                const blackUser = isUserWhite ? opponent.userId : userId;
+                const whiteUser = isUserWhite ? effectiveUserId : opponent.userId;
+                const blackUser = isUserWhite ? opponent.userId : effectiveUserId;
 
                 const userRecord1 = db.findUserById(whiteUser);
                 const userRecord2 = db.findUserById(blackUser);
@@ -159,14 +186,14 @@ export function initCullingSocket(io: WebSocketServer) {
                   matchId,
                   {
                     userId: whiteUser,
-                    username: userRecord1?.username || 'Sorcerer_White',
-                    displayName: userRecord1?.displayName || 'Sorcerer White',
+                    username: userRecord1?.username || (isUserWhite ? msg.displayName : 'Sorcerer White'),
+                    displayName: userRecord1?.displayName || (isUserWhite ? msg.displayName : 'Sorcerer White'),
                     avatarId: userRecord1?.avatarId,
                   },
                   {
                     userId: blackUser,
-                    username: userRecord2?.username || 'Curse_Black',
-                    displayName: userRecord2?.displayName || 'Curse Black',
+                    username: userRecord2?.username || (!isUserWhite ? msg.displayName : 'Curse Black'),
+                    displayName: userRecord2?.displayName || (!isUserWhite ? msg.displayName : 'Curse Black'),
                     avatarId: userRecord2?.avatarId,
                   },
                   timeControl
@@ -180,17 +207,25 @@ export function initCullingSocket(io: WebSocketServer) {
                 ws.cullingMatchId = matchId;
                 opponent.ws.cullingMatchId = matchId;
 
-                broadcastRoom(matchId, {
+                // Send targeted match_started with explicit yourColor
+                ws.send(JSON.stringify({
                   type: 'culling:match_started',
                   matchId,
                   match: newMatch,
-                });
+                  yourColor: isUserWhite ? 'white' : 'black',
+                }));
+
+                opponent.ws.send(JSON.stringify({
+                  type: 'culling:match_started',
+                  matchId,
+                  match: newMatch,
+                  yourColor: isUserWhite ? 'black' : 'white',
+                }));
                 return;
               }
             }
 
-            // Otherwise, wait in queue
-            matchmakingQueue.push({ ws, userId, timeControl });
+            matchmakingQueue.push({ ws, userId: effectiveUserId, timeControl });
             ws.send(JSON.stringify({ type: 'culling:queued' }));
             break;
           }
@@ -202,12 +237,11 @@ export function initCullingSocket(io: WebSocketServer) {
             const matchId = msg.matchId;
             let room = rooms.get(matchId);
             if (!room) {
-              // Create room if not found
               const timeControl = msg.timeControl === 120 ? 120 : 300;
               const newMatch = createInitialCullingMatch(
                 matchId,
                 {
-                  userId: userId || 'p1',
+                  userId: effectiveUserId || 'p1',
                   username: 'Sorcerer White',
                   displayName: 'Sorcerer White',
                 },
@@ -224,7 +258,14 @@ export function initCullingSocket(io: WebSocketServer) {
 
             room.sockets.add(ws);
             ws.cullingMatchId = matchId;
-            ws.send(JSON.stringify({ type: 'culling:state', match: room.match }));
+            const yourColor =
+              effectiveUserId === room.match.whitePlayer.userId
+                ? 'white'
+                : effectiveUserId === room.match.blackPlayer.userId
+                ? 'black'
+                : undefined;
+
+            ws.send(JSON.stringify({ type: 'culling:state', match: room.match, yourColor }));
             break;
           }
 
@@ -235,7 +276,10 @@ export function initCullingSocket(io: WebSocketServer) {
           case 'culling:shoot': {
             const matchId = ws.cullingMatchId || msg.matchId;
             const room = rooms.get(matchId);
-            if (!room) return;
+            if (!room) {
+              ws.send(JSON.stringify({ type: 'culling:error', message: 'Match room not found.' }));
+              return;
+            }
 
             const from: CullingPos = msg.from;
             const to: CullingPos = msg.to;
@@ -243,8 +287,14 @@ export function initCullingSocket(io: WebSocketServer) {
 
             // Authoritative turn validation
             const match = room.match;
-            const expectedUser = match.turn === 'white' ? match.whitePlayer.userId : match.blackPlayer.userId;
-            if (userId && expectedUser && userId !== expectedUser) {
+            if (match.status !== 'active') {
+              ws.send(JSON.stringify({ type: 'culling:error', message: 'Match is already completed.' }));
+              return;
+            }
+
+            const activeExpectedUserId = match.turn === 'white' ? match.whitePlayer.userId : match.blackPlayer.userId;
+            const callingUserId = msg.userId || ws.userId;
+            if (callingUserId && activeExpectedUserId && callingUserId !== activeExpectedUserId) {
               ws.send(JSON.stringify({ type: 'culling:error', message: 'Not your turn.' }));
               return;
             }
@@ -252,9 +302,22 @@ export function initCullingSocket(io: WebSocketServer) {
             const res = executeCullingMove(match, from, to, actionType);
             if (res.success) {
               room.match = res.state;
-              broadcastRoom(matchId, { type: 'culling:state', match: res.state });
+              // Broadcast delta event + updated state
+              broadcastRoom(matchId, {
+                type: 'culling:moved',
+                matchId,
+                lastMove: res.state.lastMove,
+                match: res.state,
+              });
+
+              // Clean up completed room after 60 seconds
+              if (res.state.status === 'completed') {
+                setTimeout(() => {
+                  rooms.delete(matchId);
+                }, 60000);
+              }
             } else {
-              ws.send(JSON.stringify({ type: 'culling:error', message: res.error }));
+              ws.send(JSON.stringify({ type: 'culling:error', message: res.error || 'Illegal move.' }));
             }
             break;
           }
@@ -265,10 +328,11 @@ export function initCullingSocket(io: WebSocketServer) {
           case 'culling:resign': {
             const matchId = ws.cullingMatchId || msg.matchId;
             const room = rooms.get(matchId);
-            if (!room) return;
+            if (!room || room.match.status !== 'active') return;
 
+            const callingUserId = msg.userId || ws.userId;
             const resigningColor: CullingPieceColor = msg.color ||
-              (userId === room.match.whitePlayer.userId ? 'white' : 'black');
+              (callingUserId === room.match.whitePlayer.userId ? 'white' : 'black');
 
             const finished = resignCullingMatch(room.match, resigningColor);
             room.match = finished;
@@ -277,34 +341,27 @@ export function initCullingSocket(io: WebSocketServer) {
           }
 
           /**
-           * CREATE DIRECT CHALLENGE
-           * Generates a unique room code and hosts an open challenge
+           * CREATE DIRECT CHALLENGE ROOM
            */
           case 'culling:create_challenge': {
-            if (!userId) {
-              ws.send(JSON.stringify({ type: 'culling:error', message: 'Authentication required' }));
-              return;
-            }
             const timeControl = msg.timeControl === 120 ? 120 : 300;
             const preferredSide = msg.preferredSide || 'random';
-            const userRecord = db.findUserById(userId);
-            const displayName = userRecord?.displayName || userRecord?.username || msg.displayName || 'Sorcerer';
+            const userRecord = db.findUserById(effectiveUserId);
+            const displayName = userRecord?.displayName || userRecord?.username || msg.displayName || 'Host Sorcerer';
 
-            // Generate short readable 6-character room code (e.g. CULL77 or random)
-            const randomCode = Math.random().toString(36).substring(2, 8).toUpperCase();
-            const code = (msg.code ? String(msg.code).trim().toUpperCase() : randomCode).substring(0, 8);
-
-            // Clean up any old challenges from this host
+            // Clean up any existing challenges hosted by this socket or user
             for (const [existingCode, c] of directChallenges.entries()) {
-              if (c.hostUserId === userId) {
+              if (c.hostUserId === effectiveUserId || c.hostWs === ws) {
                 directChallenges.delete(existingCode);
               }
             }
 
+            const code = generateUniqueRoomCode();
+
             directChallenges.set(code, {
               code,
               hostWs: ws,
-              hostUserId: userId,
+              hostUserId: effectiveUserId,
               hostDisplayName: displayName,
               timeControl,
               preferredSide,
@@ -326,31 +383,42 @@ export function initCullingSocket(io: WebSocketServer) {
            * JOIN DIRECT CHALLENGE BY ROOM CODE
            */
           case 'culling:join_challenge': {
-            if (!userId) {
-              ws.send(JSON.stringify({ type: 'culling:error', message: 'Authentication required' }));
+            const rawCode = String(msg.code || '').trim().toUpperCase();
+            if (!rawCode) {
+              ws.send(JSON.stringify({ type: 'culling:error', message: 'Room code cannot be empty.' }));
               return;
             }
-            const rawCode = String(msg.code || '').trim().toUpperCase();
+
             const challenge = directChallenges.get(rawCode);
 
             if (!challenge) {
-              ws.send(JSON.stringify({ type: 'culling:error', message: 'Challenge code not found or expired.' }));
+              ws.send(JSON.stringify({ type: 'culling:error', message: 'Room code not found or has expired.' }));
               return;
             }
 
-            if (challenge.hostUserId === userId) {
-              ws.send(JSON.stringify({ type: 'culling:error', message: 'Cannot join your own challenge.' }));
-              return;
-            }
-
-            if (challenge.hostWs.readyState !== WebSocket.OPEN) {
+            // Expiration check (15 minutes)
+            if (Date.now() - challenge.createdAt > 15 * 60 * 1000) {
               directChallenges.delete(rawCode);
-              ws.send(JSON.stringify({ type: 'culling:error', message: 'Challenger disconnected.' }));
+              ws.send(JSON.stringify({ type: 'culling:error', message: 'This room code has expired.' }));
               broadcastPublicChallenges();
               return;
             }
 
-            // Remove challenge from pending
+            // Block joining own challenge
+            if (challenge.hostWs === ws || challenge.hostUserId === effectiveUserId) {
+              ws.send(JSON.stringify({ type: 'culling:error', message: 'Cannot join your own room code.' }));
+              return;
+            }
+
+            // Host connection check
+            if (challenge.hostWs.readyState !== WebSocket.OPEN) {
+              directChallenges.delete(rawCode);
+              ws.send(JSON.stringify({ type: 'culling:error', message: 'Room host has disconnected.' }));
+              broadcastPublicChallenges();
+              return;
+            }
+
+            // Remove challenge from pending so no 3rd player can join
             directChallenges.delete(rawCode);
             broadcastPublicChallenges();
 
@@ -364,25 +432,30 @@ export function initCullingSocket(io: WebSocketServer) {
               isHostWhite = Math.random() < 0.5;
             }
 
-            const whiteUserId = isHostWhite ? challenge.hostUserId : userId;
-            const blackUserId = isHostWhite ? userId : challenge.hostUserId;
+            const whiteUserId = isHostWhite ? challenge.hostUserId : effectiveUserId;
+            const blackUserId = isHostWhite ? effectiveUserId : challenge.hostUserId;
 
             const userWhite = db.findUserById(whiteUserId);
             const userBlack = db.findUserById(blackUserId);
+
+            const whiteName = userWhite?.displayName || userWhite?.username ||
+              (isHostWhite ? challenge.hostDisplayName : (msg.displayName || 'Guest Player'));
+            const blackName = userBlack?.displayName || userBlack?.username ||
+              (!isHostWhite ? challenge.hostDisplayName : (msg.displayName || 'Guest Player'));
 
             const matchId = `cull_direct_${rawCode}_${Date.now()}`;
             const newMatch = createInitialCullingMatch(
               matchId,
               {
                 userId: whiteUserId,
-                username: userWhite?.username || (isHostWhite ? challenge.hostDisplayName : 'Player White'),
-                displayName: userWhite?.displayName || (isHostWhite ? challenge.hostDisplayName : 'Player White'),
+                username: whiteName,
+                displayName: whiteName,
                 avatarId: userWhite?.avatarId,
               },
               {
                 userId: blackUserId,
-                username: userBlack?.username || (!isHostWhite ? challenge.hostDisplayName : 'Player Black'),
-                displayName: userBlack?.displayName || (!isHostWhite ? challenge.hostDisplayName : 'Player Black'),
+                username: blackName,
+                displayName: blackName,
                 avatarId: userBlack?.avatarId,
               },
               challenge.timeControl
@@ -396,11 +469,23 @@ export function initCullingSocket(io: WebSocketServer) {
             ws.cullingMatchId = matchId;
             challenge.hostWs.cullingMatchId = matchId;
 
-            broadcastRoom(matchId, {
+            // Send targeted match_started to host and guest with guaranteed yourColor
+            const hostColor: CullingPieceColor = isHostWhite ? 'white' : 'black';
+            const guestColor: CullingPieceColor = isHostWhite ? 'black' : 'white';
+
+            challenge.hostWs.send(JSON.stringify({
               type: 'culling:match_started',
               matchId,
               match: newMatch,
-            });
+              yourColor: hostColor,
+            }));
+
+            ws.send(JSON.stringify({
+              type: 'culling:match_started',
+              matchId,
+              match: newMatch,
+              yourColor: guestColor,
+            }));
             break;
           }
 
@@ -422,14 +507,13 @@ export function initCullingSocket(io: WebSocketServer) {
             const code = msg.code ? String(msg.code).trim().toUpperCase() : null;
             if (code && directChallenges.has(code)) {
               const c = directChallenges.get(code)!;
-              if (c.hostUserId === userId || c.hostWs === ws) {
+              if (c.hostUserId === effectiveUserId || c.hostWs === ws) {
                 directChallenges.delete(code);
                 broadcastPublicChallenges();
               }
             } else {
-              // Cancel any hosted by this user
               for (const [cCode, c] of directChallenges.entries()) {
-                if (c.hostUserId === userId || c.hostWs === ws) {
+                if (c.hostUserId === effectiveUserId || c.hostWs === ws) {
                   directChallenges.delete(cCode);
                 }
               }
@@ -491,3 +575,4 @@ export function initCullingSocket(io: WebSocketServer) {
     });
   });
 }
+

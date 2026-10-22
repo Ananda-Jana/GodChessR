@@ -10,9 +10,10 @@ import {
 } from '../types/cullingGame';
 import { CullingBoard } from './CullingBoard';
 import { CullingPiece as CullingPieceComponent } from './CullingPiece';
-import { CullingRulesModal } from './CullingRulesModal';
 import { executeCullingMove, resignCullingMatch, handleCullingTimeout } from '../game/cullingEngine';
 import { getBestCullingBotMove } from '../game/cullingBot';
+
+const CullingTheoryView = React.lazy(() => import('./CullingTheoryView'));
 import {
   BookOpen,
   Flag,
@@ -183,8 +184,17 @@ export const CullingMatchView: React.FC<CullingMatchViewProps> = ({
     const handleMessage = (event: MessageEvent) => {
       try {
         const msg = JSON.parse(event.data);
-        if (msg.type === 'culling:state' && msg.match) {
+        if ((msg.type === 'culling:state' || msg.type === 'culling:moved') && msg.match) {
           setMatch(msg.match);
+        } else if (msg.type === 'culling:clock') {
+          setMatch((prev) => {
+            if (prev.status !== 'active') return prev;
+            return {
+              ...prev,
+              whiteTimeRemaining: msg.whiteTimeRemaining,
+              blackTimeRemaining: msg.blackTimeRemaining,
+            };
+          });
         }
       } catch (err) {
         console.error('Socket message parse error:', err);
@@ -290,6 +300,7 @@ export const CullingMatchView: React.FC<CullingMatchViewProps> = ({
         }
       }
     } else if (socket && socket.readyState === WebSocket.OPEN) {
+      const activeUserId = userColor === 'white' ? match.whitePlayer.userId : match.blackPlayer.userId;
       socket.send(
         JSON.stringify({
           type: 'culling:move',
@@ -297,6 +308,7 @@ export const CullingMatchView: React.FC<CullingMatchViewProps> = ({
           from,
           to,
           actionType: actionType || 'move',
+          userId: activeUserId,
         })
       );
     }
@@ -320,20 +332,9 @@ export const CullingMatchView: React.FC<CullingMatchViewProps> = ({
     }
   };
 
-  // Opening the rulebook pauses clock for exactly 8 seconds
+  // Opening the Theory Book keeps the room alive without affecting the opponent
   const handleOpenRules = () => {
-    const pauseUntil = Date.now() + 8000;
-    setMatch((prev) => ({ ...prev, rulebookPausedUntil: pauseUntil }));
     setIsRulesOpen(true);
-
-    if (!isBotMatch && socket && socket.readyState === WebSocket.OPEN) {
-      socket.send(
-        JSON.stringify({
-          type: 'culling:rules_open',
-          matchId: match.id,
-        })
-      );
-    }
   };
 
   const formatTime = (seconds: number) => {
@@ -541,11 +542,11 @@ export const CullingMatchView: React.FC<CullingMatchViewProps> = ({
         <div className="flex items-center gap-1.5 sm:gap-2">
           <button
             onClick={handleOpenRules}
-            className="px-2 py-1 bg-white dark:bg-[#1e293b] hover:bg-neutral-100 dark:hover:bg-slate-700 border-2 border-black dark:border-white shadow-[2px_2px_0px_#000] dark:shadow-[2px_2px_0px_#fff] text-xs font-black uppercase flex items-center gap-1 cursor-pointer active:translate-x-0.5 active:translate-y-0.5"
-            title="Pauses timer for 8s"
+            className="px-2.5 py-1 bg-white dark:bg-[#1e293b] hover:bg-neutral-100 dark:hover:bg-slate-700 border-2 border-black dark:border-white shadow-[2px_2px_0px_#000] dark:shadow-[2px_2px_0px_#fff] text-xs font-black uppercase flex items-center gap-1 cursor-pointer active:translate-x-0.5 active:translate-y-0.5"
+            title="Read Theory Book"
           >
             <BookOpen className="w-3.5 h-3.5 text-amber-500" />
-            <span className="hidden sm:inline">Rules</span>
+            <span className="hidden sm:inline">Theory Book</span>
           </button>
 
           <button
@@ -919,8 +920,20 @@ export const CullingMatchView: React.FC<CullingMatchViewProps> = ({
         </aside>
       </main>
 
-      {/* Rules Modal */}
-      <CullingRulesModal isOpen={isRulesOpen} onClose={() => setIsRulesOpen(false)} />
+      {/* Full-screen Theory Book View */}
+      {isRulesOpen && (
+        <div className="fixed inset-0 z-50 bg-black/95 flex flex-col">
+          <React.Suspense
+            fallback={
+              <div className="flex-1 flex items-center justify-center text-white font-mono text-xs font-bold">
+                Loading Theory Book...
+              </div>
+            }
+          >
+            <CullingTheoryView onBack={() => setIsRulesOpen(false)} />
+          </React.Suspense>
+        </div>
+      )}
     </div>
   );
 };

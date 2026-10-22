@@ -1,11 +1,10 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, lazy, Suspense } from 'react';
 import {
   CullingMatchState,
   CullingPieceColor,
 } from '../types/cullingGame';
 import { createInitialCullingMatch } from '../game/cullingEngine';
 import { CullingMatchView } from './CullingMatchView';
-import { CullingRulesModal } from './CullingRulesModal';
 import { useAuth } from '../context/AuthContext';
 import {
   Swords,
@@ -24,6 +23,8 @@ import {
   RefreshCw,
 } from 'lucide-react';
 
+const CullingTheoryView = lazy(() => import('./CullingTheoryView'));
+
 interface CullingModeEntryProps {
   onBack: () => void;
 }
@@ -41,9 +42,12 @@ export const CullingModeEntry: React.FC<CullingModeEntryProps> = ({ onBack }) =>
   const { user, token } = useAuth();
 
   const [activeMatch, setActiveMatch] = useState<CullingMatchState | null>(null);
+  const activeMatchRef = useRef<CullingMatchState | null>(null);
+  activeMatchRef.current = activeMatch;
+
   const [isBotMatch, setIsBotMatch] = useState(false);
   const [userColor, setUserColor] = useState<CullingPieceColor>('white');
-  const [isRulesOpen, setIsRulesOpen] = useState(false);
+  const [showTheory, setShowTheory] = useState(false);
 
   // Common setup state
   const [selectedSide, setSelectedSide] = useState<'white' | 'black' | 'random'>('random');
@@ -54,6 +58,7 @@ export const CullingModeEntry: React.FC<CullingModeEntryProps> = ({ onBack }) =>
   const [hostedCode, setHostedCode] = useState<string | null>(null);
   const [isCreatingChallenge, setIsCreatingChallenge] = useState(false);
   const [isJoiningChallenge, setIsJoiningChallenge] = useState(false);
+  const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [copiedCode, setCopiedCode] = useState(false);
   const [publicChallenges, setPublicChallenges] = useState<PublicChallenge[]>([]);
@@ -61,18 +66,18 @@ export const CullingModeEntry: React.FC<CullingModeEntryProps> = ({ onBack }) =>
   const [socket, setSocket] = useState<WebSocket | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
 
-  // Initialize and maintain WebSocket connection for Direct Challenges
+  // Initialize single robust WebSocket connection for Culling Mode
   useEffect(() => {
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const wsUrl = `${protocol}//${window.location.host}/ws`;
     const ws = new WebSocket(wsUrl);
     wsRef.current = ws;
+    setSocket(ws);
 
     ws.onopen = () => {
       if (token) {
         ws.send(JSON.stringify({ type: 'auth', token }));
       }
-      // Request list of open direct challenges
       ws.send(JSON.stringify({ type: 'culling:list_challenges' }));
     };
 
@@ -83,27 +88,37 @@ export const CullingModeEntry: React.FC<CullingModeEntryProps> = ({ onBack }) =>
         if (msg.type === 'culling:challenge_created') {
           setHostedCode(msg.code);
           setIsCreatingChallenge(false);
+          setStatusMessage('Waiting for opponent to join...');
           setErrorMessage(null);
         } else if (msg.type === 'culling:challenges_list') {
           setPublicChallenges(msg.challenges || []);
         } else if (msg.type === 'culling:challenge_cancelled') {
           setHostedCode(null);
           setIsCreatingChallenge(false);
+          setStatusMessage(null);
         } else if (msg.type === 'culling:match_started' && msg.match) {
           const match: CullingMatchState = msg.match;
-          const mySide: CullingPieceColor =
-            match.whitePlayer.userId === user?.id ? 'white' : 'black';
-          setIsBotMatch(false);
-          setUserColor(mySide);
-          setActiveMatch(match);
-          setSocket(ws);
-          setHostedCode(null);
+          // Exact color assignment: prefer explicit yourColor from server
+          const assignedColor: CullingPieceColor =
+            msg.yourColor || (match.whitePlayer.userId === user?.id ? 'white' : 'black');
+
+          setStatusMessage('Opponent joined! Launching game...');
           setIsJoiningChallenge(false);
           setIsCreatingChallenge(false);
+          setHostedCode(null);
+
+          // Brief smooth transition
+          setTimeout(() => {
+            setIsBotMatch(false);
+            setUserColor(assignedColor);
+            setActiveMatch(match);
+            setStatusMessage(null);
+          }, 300);
         } else if (msg.type === 'culling:error') {
           setErrorMessage(msg.message || 'Operation failed');
           setIsJoiningChallenge(false);
           setIsCreatingChallenge(false);
+          setStatusMessage(null);
         }
       } catch (err) {
         console.error('Socket message parse error:', err);
@@ -121,11 +136,12 @@ export const CullingModeEntry: React.FC<CullingModeEntryProps> = ({ onBack }) =>
     };
 
     return () => {
-      if (!activeMatch) {
-        ws.close();
+      // Clean up when unmounting CullingModeEntry entirely back to dashboard
+      if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN && !activeMatchRef.current) {
+        wsRef.current.close();
       }
     };
-  }, [token, user?.id, activeMatch]);
+  }, [token, user?.id]);
 
   // Start Bot Match
   const handleStartBotMatch = () => {
@@ -160,6 +176,7 @@ export const CullingModeEntry: React.FC<CullingModeEntryProps> = ({ onBack }) =>
   // Create Direct Challenge Room
   const handleCreateChallenge = () => {
     setErrorMessage(null);
+    setStatusMessage('Creating challenge room...');
     if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
       setErrorMessage('Connecting to game server...');
       return;
@@ -189,18 +206,25 @@ export const CullingModeEntry: React.FC<CullingModeEntryProps> = ({ onBack }) =>
       );
     }
     setHostedCode(null);
+    setStatusMessage(null);
   };
 
   // Join Challenge with Code
   const handleJoinChallenge = (codeToJoin?: string) => {
     const targetCode = (codeToJoin || joinCodeInput).trim().toUpperCase();
     if (!targetCode) {
-      setErrorMessage('Please enter a challenge room code.');
+      setErrorMessage('Please enter a room code.');
+      return;
+    }
+
+    if (hostedCode && targetCode === hostedCode) {
+      setErrorMessage('You cannot join your own room code.');
       return;
     }
 
     setErrorMessage(null);
     setIsJoiningChallenge(true);
+    setStatusMessage('Connecting to room...');
 
     if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
       wsRef.current.send(
@@ -208,11 +232,13 @@ export const CullingModeEntry: React.FC<CullingModeEntryProps> = ({ onBack }) =>
           type: 'culling:join_challenge',
           code: targetCode,
           userId: user?.id,
+          displayName: user?.displayName || user?.username,
         })
       );
     } else {
       setErrorMessage('Disconnected from server. Reconnecting...');
       setIsJoiningChallenge(false);
+      setStatusMessage(null);
     }
   };
 
@@ -230,6 +256,22 @@ export const CullingModeEntry: React.FC<CullingModeEntryProps> = ({ onBack }) =>
     }
   };
 
+  // Fullscreen Pre-Game Theory Book Modal/View
+  if (showTheory) {
+    return (
+      <Suspense
+        fallback={
+          <div className="min-h-screen bg-black flex items-center justify-center text-white font-mono text-xs font-bold gap-2">
+            <Loader2 className="w-5 h-5 animate-spin text-amber-400" />
+            <span>Loading Culling Theory Book...</span>
+          </div>
+        }
+      >
+        <CullingTheoryView onBack={() => setShowTheory(false)} />
+      </Suspense>
+    );
+  }
+
   // If a match is active, render CullingMatchView
   if (activeMatch) {
     return (
@@ -239,9 +281,9 @@ export const CullingModeEntry: React.FC<CullingModeEntryProps> = ({ onBack }) =>
         userColor={userColor}
         onExit={() => {
           setActiveMatch(null);
-          if (socket) socket.close();
+          refreshChallenges();
         }}
-        socket={socket}
+        socket={wsRef.current}
         onPlaySimilarBot={() => {
           setActiveMatch(null);
           handleStartBotMatch();
@@ -274,11 +316,11 @@ export const CullingModeEntry: React.FC<CullingModeEntryProps> = ({ onBack }) =>
         </div>
 
         <button
-          onClick={() => setIsRulesOpen(true)}
-          className="flex items-center gap-1.5 px-3 py-1.5 bg-white dark:bg-[#1e293b] hover:bg-neutral-100 dark:hover:bg-slate-700 border-2 border-black dark:border-white shadow-[2px_2px_0px_#000] dark:shadow-[2px_2px_0px_#fff] text-xs font-black uppercase cursor-pointer active:translate-x-0.5 active:translate-y-0.5"
+          onClick={() => setShowTheory(true)}
+          className="flex items-center gap-1.5 px-3.5 py-1.5 bg-red-600 hover:bg-red-500 text-white border-2 border-black shadow-[2px_2px_0px_#000] text-xs font-black uppercase cursor-pointer active:translate-x-0.5 active:translate-y-0.5"
         >
-          <BookOpen className="w-4 h-4 text-amber-500" />
-          <span>Rules Codex</span>
+          <BookOpen className="w-4 h-4 text-white" />
+          <span>Theory Book</span>
         </button>
       </header>
 
@@ -288,7 +330,7 @@ export const CullingModeEntry: React.FC<CullingModeEntryProps> = ({ onBack }) =>
         {errorMessage && (
           <div className="w-full bg-red-600 text-white border-2 border-black p-3 font-bold text-xs uppercase flex items-center justify-between shadow-[3px_3px_0px_#000] animate-in fade-in">
             <div className="flex items-center gap-2">
-              <ShieldAlert className="w-4 h-4" />
+              <ShieldAlert className="w-4 h-4 shrink-0" />
               <span>{errorMessage}</span>
             </div>
             <button
@@ -297,6 +339,14 @@ export const CullingModeEntry: React.FC<CullingModeEntryProps> = ({ onBack }) =>
             >
               ✕
             </button>
+          </div>
+        )}
+
+        {/* Status / Transition Banner */}
+        {statusMessage && (
+          <div className="w-full bg-amber-400 text-black border-2 border-black p-3 font-black text-xs uppercase flex items-center gap-2 shadow-[3px_3px_0px_#000] animate-in fade-in">
+            <Loader2 className="w-4 h-4 animate-spin shrink-0" />
+            <span>{statusMessage}</span>
           </div>
         )}
 
@@ -310,9 +360,30 @@ export const CullingModeEntry: React.FC<CullingModeEntryProps> = ({ onBack }) =>
           <h2 className="text-2xl sm:text-3xl font-black uppercase tracking-tight mb-2">
             Culling Game Battlegrounds
           </h2>
-          <p className="text-xs sm:text-sm text-neutral-600 dark:text-slate-300 font-bold max-w-2xl mx-auto mb-5">
+          <p className="text-xs sm:text-sm text-neutral-600 dark:text-slate-300 font-bold max-w-2xl mx-auto mb-4">
             Balanced Sorcerer combat on an 88-square cross grid. Challenge a friend directly via Room Code, join open player challenges, or clash against the Grandmaster Bot.
           </p>
+
+          {/* Prominent Red Pre-Game Theory Book Gate */}
+          <div className="mb-6 p-3 bg-red-600/10 border-2 border-red-600 dark:border-red-500 flex flex-col sm:flex-row items-center justify-between gap-3 text-left">
+            <div className="flex items-center gap-2.5">
+              <BookOpen className="w-5 h-5 text-red-600 dark:text-red-400 shrink-0" />
+              <div>
+                <span className="text-xs font-black uppercase text-red-600 dark:text-red-400 block">
+                  New to Culling Game Mode?
+                </span>
+                <span className="text-[11px] font-bold text-neutral-600 dark:text-neutral-300">
+                  Read complete piece movesets, 5-turn King immunity laws, and master tactical tips.
+                </span>
+              </div>
+            </div>
+            <button
+              onClick={() => setShowTheory(true)}
+              className="px-4 py-2 bg-red-600 hover:bg-red-500 text-white font-black text-xs uppercase border-2 border-black shadow-[3px_3px_0px_#000] cursor-pointer whitespace-nowrap active:translate-x-0.5 active:translate-y-0.5"
+            >
+              📖 Read the Theory Book First
+            </button>
+          </div>
 
           {/* Time Control & Allegiance Global Defaults */}
           <div className="flex flex-wrap items-center justify-center gap-4 mb-6 pb-4 border-b-2 border-black/10 dark:border-white/10">
@@ -409,9 +480,9 @@ export const CullingModeEntry: React.FC<CullingModeEntryProps> = ({ onBack }) =>
 
                 {/* If user is currently hosting a challenge room */}
                 {hostedCode ? (
-                  <div className="bg-amber-400 text-black p-4 border-2 border-black shadow-[3px_3px_0px_#000] mb-4 text-center">
+                  <div className="bg-amber-400 text-black p-4 border-2 border-black shadow-[3px_3px_0px_#000] mb-4 text-center animate-in fade-in">
                     <span className="text-[10px] font-mono font-black uppercase tracking-wider block mb-1">
-                      Waiting for Opponent to Join
+                      Waiting for Opponent to Join…
                     </span>
                     <div className="flex items-center justify-center gap-2 my-2">
                       <span className="text-2xl font-mono font-black tracking-widest bg-black text-amber-400 px-3 py-1 border-2 border-black">
@@ -429,28 +500,44 @@ export const CullingModeEntry: React.FC<CullingModeEntryProps> = ({ onBack }) =>
                     <p className="text-[11px] font-bold mt-1">
                       Send this Room Code to your opponent. The game begins the second they join!
                     </p>
-                    <button
-                      onClick={handleCancelChallenge}
-                      className="mt-3 px-3 py-1 bg-red-600 hover:bg-red-700 text-white font-black text-[11px] uppercase border border-black cursor-pointer"
-                    >
-                      Cancel Challenge
-                    </button>
+                    <div className="flex items-center justify-center gap-2 mt-3">
+                      <button
+                        onClick={handleCancelChallenge}
+                        className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white font-black text-[11px] uppercase border border-black cursor-pointer"
+                      >
+                        Cancel Challenge
+                      </button>
+                      <button
+                        onClick={() => setShowTheory(true)}
+                        className="px-3 py-1 bg-black text-white hover:bg-neutral-800 font-black text-[11px] uppercase border border-black cursor-pointer"
+                      >
+                        📖 Read Codex While Waiting
+                      </button>
+                    </div>
                   </div>
                 ) : (
                   <>
-                    {/* Create Room Button */}
-                    <div className="mb-4">
+                    {/* Create Room Button Row */}
+                    <div className="mb-4 flex flex-col sm:flex-row gap-2">
                       <button
                         onClick={handleCreateChallenge}
                         disabled={isCreatingChallenge}
-                        className="w-full py-2.5 bg-amber-400 hover:bg-amber-300 text-black font-black text-xs uppercase border-2 border-black shadow-[3px_3px_0px_#000] flex items-center justify-center gap-1.5 cursor-pointer active:translate-x-0.5 active:translate-y-0.5"
+                        className="flex-1 py-2.5 bg-amber-400 hover:bg-amber-300 text-black font-black text-xs uppercase border-2 border-black shadow-[3px_3px_0px_#000] flex items-center justify-center gap-1.5 cursor-pointer active:translate-x-0.5 active:translate-y-0.5"
                       >
                         {isCreatingChallenge ? (
                           <Loader2 className="w-4 h-4 animate-spin" />
                         ) : (
                           <Plus className="w-4 h-4" />
                         )}
-                        <span>Create Direct Challenge Room</span>
+                        <span>Create Direct Room</span>
+                      </button>
+
+                      <button
+                        onClick={() => setShowTheory(true)}
+                        className="py-2.5 px-3 bg-red-600 hover:bg-red-500 text-white font-black text-xs uppercase border-2 border-black shadow-[3px_3px_0px_#000] flex items-center justify-center gap-1 cursor-pointer active:translate-x-0.5 active:translate-y-0.5 whitespace-nowrap"
+                        title="Read theory before creating"
+                      >
+                        <span>📖 Codex</span>
                       </button>
                     </div>
 
@@ -557,20 +644,28 @@ export const CullingModeEntry: React.FC<CullingModeEntryProps> = ({ onBack }) =>
                 </div>
               </div>
 
-              <button
-                onClick={handleStartBotMatch}
-                className="w-full py-3 bg-black hover:bg-neutral-900 text-white font-black text-xs uppercase tracking-wider border-2 border-black shadow-[3px_3px_0px_#000] flex items-center justify-center gap-2 cursor-pointer active:translate-x-0.5 active:translate-y-0.5 mt-4"
-              >
-                <Swords className="w-4 h-4 text-amber-400" />
-                <span>Play vs Bot</span>
-              </button>
+              <div className="flex flex-col sm:flex-row gap-2 mt-4">
+                <button
+                  onClick={handleStartBotMatch}
+                  className="flex-1 py-3 bg-black hover:bg-neutral-900 text-white font-black text-xs uppercase tracking-wider border-2 border-black shadow-[3px_3px_0px_#000] flex items-center justify-center gap-2 cursor-pointer active:translate-x-0.5 active:translate-y-0.5"
+                >
+                  <Swords className="w-4 h-4 text-amber-400" />
+                  <span>Play vs Bot</span>
+                </button>
+
+                <button
+                  onClick={() => setShowTheory(true)}
+                  className="py-3 px-3 bg-red-600 hover:bg-red-500 text-white font-black text-xs uppercase border-2 border-black shadow-[3px_3px_0px_#000] flex items-center justify-center gap-1 cursor-pointer active:translate-x-0.5 active:translate-y-0.5 whitespace-nowrap"
+                  title="Read Theory Book"
+                >
+                  <BookOpen className="w-4 h-4" />
+                  <span>Theory Book</span>
+                </button>
+              </div>
             </div>
           </div>
         </div>
       </main>
-
-      {/* Rules Modal */}
-      <CullingRulesModal isOpen={isRulesOpen} onClose={() => setIsRulesOpen(false)} />
     </div>
   );
 };

@@ -7847,8 +7847,25 @@
       ]
     ],
     "turn": "white",
-    "status": "active",
-    "dice": null,
+    "status": "completed",
+    "dice": {
+      "rolledValue": 6,
+      "category": "expensive",
+      "eligiblePieceTypes": [
+        "rook",
+        "queen",
+        "prince",
+        "king",
+        "pawn",
+        "communist",
+        "supremeRook",
+        "priest"
+      ],
+      "isFallbackAnyPiece": false,
+      "isConsumed": false,
+      "probabilityMode": "uniform",
+      "rolledAt": 1792649815110
+    },
     "whitePawnsReachedEndRank": 0,
     "blackPawnsReachedEndRank": 0,
     "capturedByWhite": [],
@@ -7892,16 +7909,368 @@
       }
     ],
     "inCheck": null,
+    "result": {
+      "winner": "black",
+      "reason": "timeout",
+      "winnerUserId": "usr_bob_test",
+      "completedAt": 1792649816124,
+      "explanation": "Timer expired for white. Piece difference is 0 (<= 7). Black wins on time!"
+    },
+    "moveSuggestions": "included",
+    "totalCaptures": 0,
+    "diceActive": true,
+    "timeControl": 300,
+    "whiteTimeRemaining": 0,
+    "blackTimeRemaining": 299.993,
+    "lastTurnStartTime": 1792648674528,
+    "createdAt": 1792648674510,
+    "updatedAt": 1792649816124,
+    "boardWidth": 8,
+    "boardHeight": 8,
+    "lostPieces": {
+      "white": 0,
+      "black": 0
+    },
+    "lostExpensive": {
+      "white": 0,
+      "black": 0
+    },
+    "expansionUsed": {
+      "white": false,
+      "black": false
+    },
+    "expansionPending": {
+      "white": false,
+      "black": false
+    },
+    "craftingUsed": {
+      "white": false,
+      "black": false
+    },
+    "craftingPending": {
+      "white": false,
+      "black": false
+    },
+    "craftingLocked": {
+      "white": false,
+      "black": false
+    },
+    "pausedForAction": null
+  },
+  {
+    "id": "match_test_1792651844885",
+    "whitePlayer": {
+      "userId": "usr_alice_test",
+      "username": "alice",
+      "displayName": "Alice Champion",
+      "avatarId": "avatar_queen"
+    },
+    "blackPlayer": {
+      "userId": "usr_bob_test",
+      "username": "bob",
+      "displayName": "Bob Tactician",
+      "avatarId": "avatar_prince"
+    },
+    "board": [
+      [
+        {
+          "id": "w_q_a1",
+          "type": "queen",
+          "color": "white",
+          "hasMoved": false
+        },
+        {
+          "id": "w_n_b1",
+          "type": "knight",
+          "color": "white",
+          "hasMoved": false
+        },
+        {
+          "id": "w_b_c1",
+          "type": "bishop",
+          "color": "white",
+          "hasMoved": false
+        },
+        {
+          "id": "w_r_d1",
+          "type": "rook",
+          "color": "white",
+          "hasMoved": false
+        },
+        {
+          "id": "w_k_e1",
+          "type": "king",
+          "color": "white",
+          "hasMoved": false
+        },
+        {
+          "id": "w_b_f1",
+          "type": "bishop",
+          "color": "white",
+          "hasMoved": false
+        },
+        {
+          "id": "w_r_g1",
+          "type": "rook",
+          "color": "white",
+          "hasMoved": false
+        },
+        {
+          "id": "w_p_h1",
+          "type": "prince",
+          "color": "white",
+          "hasMoved": false,
+          "princeSpecialUsed": false
+        }
+      ],
+      [
+        {
+          "id": "w_pawn_0",
+          "type": "pawn",
+          "color": "white",
+          "hasMoved": false
+        },
+        {
+          "id": "w_pawn_1",
+          "type": "pawn",
+          "color": "white",
+          "hasMoved": false
+        },
+        {
+          "id": "w_pawn_2",
+          "type": "pawn",
+          "color": "white",
+          "hasMoved": false
+        },
+        {
+          "id": "w_pawn_3",
+          "type": "pawn",
+          "color": "white",
+          "hasMoved": false
+        },
+        null,
+        {
+          "id": "w_pawn_5",
+          "type": "pawn",
+          "color": "white",
+          "hasMoved": false
+        },
+        {
+          "id": "w_pawn_6",
+          "type": "pawn",
+          "color": "white",
+          "hasMoved": false
+        },
+        {
+          "id": "w_pawn_7",
+          "type": "pawn",
+          "color": "white",
+          "hasMoved": false
+        }
+      ],
+      [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      [
+        null,
+        null,
+        null,
+        null,
+        {
+          "id": "w_pawn_4",
+          "type": "pawn",
+          "color": "white",
+          "hasMoved": true
+        },
+        null,
+        null,
+        null
+      ],
+      [
+        null,
+        null,
+        null,
+        null,
+        {
+          "id": "b_pawn_4",
+          "type": "pawn",
+          "color": "black",
+          "hasMoved": true
+        },
+        null,
+        null,
+        null
+      ],
+      [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+      ],
+      [
+        {
+          "id": "b_pawn_0",
+          "type": "pawn",
+          "color": "black",
+          "hasMoved": false
+        },
+        {
+          "id": "b_pawn_1",
+          "type": "pawn",
+          "color": "black",
+          "hasMoved": false
+        },
+        {
+          "id": "b_pawn_2",
+          "type": "pawn",
+          "color": "black",
+          "hasMoved": false
+        },
+        {
+          "id": "b_pawn_3",
+          "type": "pawn",
+          "color": "black",
+          "hasMoved": false
+        },
+        null,
+        {
+          "id": "b_pawn_5",
+          "type": "pawn",
+          "color": "black",
+          "hasMoved": false
+        },
+        {
+          "id": "b_pawn_6",
+          "type": "pawn",
+          "color": "black",
+          "hasMoved": false
+        },
+        {
+          "id": "b_pawn_7",
+          "type": "pawn",
+          "color": "black",
+          "hasMoved": false
+        }
+      ],
+      [
+        {
+          "id": "b_p_a8",
+          "type": "prince",
+          "color": "black",
+          "hasMoved": false,
+          "princeSpecialUsed": false
+        },
+        {
+          "id": "b_r_b8",
+          "type": "rook",
+          "color": "black",
+          "hasMoved": false
+        },
+        {
+          "id": "b_b_c8",
+          "type": "bishop",
+          "color": "black",
+          "hasMoved": false
+        },
+        {
+          "id": "b_r_d8",
+          "type": "rook",
+          "color": "black",
+          "hasMoved": false
+        },
+        {
+          "id": "b_k_e8",
+          "type": "king",
+          "color": "black",
+          "hasMoved": false
+        },
+        {
+          "id": "b_b_f8",
+          "type": "bishop",
+          "color": "black",
+          "hasMoved": false
+        },
+        {
+          "id": "b_n_g8",
+          "type": "knight",
+          "color": "black",
+          "hasMoved": false
+        },
+        {
+          "id": "b_q_h8",
+          "type": "queen",
+          "color": "black",
+          "hasMoved": false
+        }
+      ]
+    ],
+    "turn": "white",
+    "status": "active",
+    "dice": null,
+    "whitePawnsReachedEndRank": 0,
+    "blackPawnsReachedEndRank": 0,
+    "capturedByWhite": [],
+    "capturedByBlack": [],
+    "moveHistory": [
+      {
+        "from": {
+          "x": 4,
+          "y": 1
+        },
+        "to": {
+          "x": 4,
+          "y": 3
+        },
+        "piece": {
+          "id": "w_pawn_4",
+          "type": "pawn",
+          "color": "white",
+          "hasMoved": false
+        },
+        "timestamp": 1792651844895,
+        "san": "Pe2→e4"
+      },
+      {
+        "from": {
+          "x": 4,
+          "y": 6
+        },
+        "to": {
+          "x": 4,
+          "y": 4
+        },
+        "piece": {
+          "id": "b_pawn_4",
+          "type": "pawn",
+          "color": "black",
+          "hasMoved": false
+        },
+        "timestamp": 1792651844902,
+        "san": "Pe7→e5"
+      }
+    ],
+    "inCheck": null,
     "result": null,
     "moveSuggestions": "included",
     "totalCaptures": 0,
     "diceActive": true,
     "timeControl": 300,
-    "whiteTimeRemaining": 299.989,
+    "whiteTimeRemaining": 299.991,
     "blackTimeRemaining": 299.993,
-    "lastTurnStartTime": 1792648674528,
-    "createdAt": 1792648674510,
-    "updatedAt": 1792648674528,
+    "lastTurnStartTime": 1792651844902,
+    "createdAt": 1792651844886,
+    "updatedAt": 1792651844902,
     "boardWidth": 8,
     "boardHeight": 8,
     "lostPieces": {
