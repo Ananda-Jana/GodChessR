@@ -9800,7 +9800,7 @@
     "pausedForAction": null
   },
   {
-    "id": "match_test_1792691497608",
+    "id": "match_test_1792692732566",
     "whitePlayer": {
       "userId": "usr_alice_test",
       "username": "alice",
@@ -10080,7 +10080,7 @@
           "color": "white",
           "hasMoved": false
         },
-        "timestamp": 1792691497620,
+        "timestamp": 1792692732576,
         "san": "Pe2→e4"
       },
       {
@@ -10098,7 +10098,7 @@
           "color": "black",
           "hasMoved": false
         },
-        "timestamp": 1792691497627,
+        "timestamp": 1792692732581,
         "san": "Pe7→e5"
       }
     ],
@@ -10108,11 +10108,11 @@
     "totalCaptures": 0,
     "diceActive": true,
     "timeControl": 300,
-    "whiteTimeRemaining": 299.988,
-    "blackTimeRemaining": 299.993,
-    "lastTurnStartTime": 1792691497627,
-    "createdAt": 1792691497608,
-    "updatedAt": 1792691497627,
+    "whiteTimeRemaining": 299.99,
+    "blackTimeRemaining": 299.995,
+    "lastTurnStartTime": 1792692732581,
+    "createdAt": 1792692732566,
+    "updatedAt": 1792692732581,
     "boardWidth": 8,
     "boardHeight": 8,
     "lostPieces": {

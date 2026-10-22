@@ -474,5 +474,13 @@
   [
     "91a02ad95e6f90add3e26b01412771291592b766a1bb5f01b07092d589d1a4b1",
     "usr_bob_test"
+  ],
+  [
+    "46fba6ce9288f52e50d87cf5fe58b7a40e9dfec5223ce8304cbca42628a4a33b",
+    "usr_alice_test"
+  ],
+  [
+    "0462d4bc5ebe6212c26176f69343000e941a79b72388f98e5c0ee0f04b3b989d",
+    "usr_bob_test"
   ]
 ]

@@ -221,7 +221,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
         {/* Latest Edition Banner (Mobile) */}
         <div className="lg:hidden w-full">
           <img
-            src="/assets/aistudio/08e91f91-1085-474c-9bb3-21a5ec893727_25c4bf5c.png"
+            src="/assets/aistudio/672e88a7-582e-43c9-8312-2ee33c37b24e_c348a496.png"
             alt="Latest Edition"
             className="w-full pointer-events-none border-2 border-black dark:border-white shadow-[4px_4px_0px_#000000]"
           />
@@ -232,7 +232,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
           {/* Latest Edition Banner (Desktop) */}
           <div className="hidden lg:block">
             <img
-              src="/assets/aistudio/08e91f91-1085-474c-9bb3-21a5ec893727_25c4bf5c.png"
+              src="/assets/aistudio/672e88a7-582e-43c9-8312-2ee33c37b24e_c348a496.png"
               alt="Latest Edition"
               className="w-full pointer-events-none border-3 border-black dark:border-white shadow-[5px_5px_0px_#000000] dark:shadow-[5px_5px_0px_#ffffff]"
             />
