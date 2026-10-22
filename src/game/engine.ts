@@ -1020,8 +1020,10 @@ export function executeMove(
       expansionPending[victimColor] = true;
     }
 
-    // Check Crafting Trigger: 2nd expensive lost piece
+    // Check Crafting Trigger: 2nd expensive lost piece (if crafting is allowed in this match)
+    const isCraftingAllowed = currentState.craftingAllowed !== false;
     if (
+      isCraftingAllowed &&
       !craftingUsed[victimColor] &&
       lostExpensive[victimColor] >= CRAFTING_LOST_EXPENSIVE_THRESHOLD &&
       !craftingPending[victimColor]

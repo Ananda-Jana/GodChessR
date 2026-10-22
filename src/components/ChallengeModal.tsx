@@ -40,6 +40,13 @@ export const ChallengeModal: React.FC<ChallengeModalProps> = ({
             <div className="inline-flex items-center gap-1 px-2 py-0.5 bg-neutral-200 dark:bg-neutral-800 border border-black dark:border-white text-[11px] font-black uppercase">
               <span>💡 Hints: {challenge.moveSuggestions === 'excluded' ? 'Excluded' : 'Included'}</span>
             </div>
+            <div className={`inline-flex items-center gap-1 px-2 py-0.5 border border-black dark:border-white text-[11px] font-black uppercase ${
+              challenge.craftingAllowed !== false
+                ? 'bg-amber-400 text-black'
+                : 'bg-neutral-200 dark:bg-neutral-800'
+            }`}>
+              <span>{challenge.craftingAllowed !== false ? '🔨 Crafting: On' : '🚫 Crafting: Avoided'}</span>
+            </div>
           </div>
 
           <div className="flex items-center gap-2 mt-3">

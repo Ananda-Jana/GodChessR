@@ -937,6 +937,26 @@ export const MatchView: React.FC<MatchViewProps> = ({
             </div>
           )}
 
+          {/* Match Settings Info Badge */}
+          <div className="bg-white dark:bg-[#0a0a0c] border-3 border-black dark:border-white p-3 shadow-[3px_3px_0px_#000000] dark:shadow-[3px_3px_0px_#ffffff] text-xs font-bold flex flex-wrap items-center justify-between gap-1.5">
+            <span className="text-[10px] font-black uppercase text-neutral-500">Match Rules:</span>
+            <div className="flex flex-wrap items-center gap-1 font-mono text-[11px]">
+              <span className="px-1.5 py-0.5 bg-neutral-200 dark:bg-neutral-800 border border-black dark:border-white">
+                ⏱️ {activeMatch.timeControl === 120 ? '2m' : '5m'}
+              </span>
+              <span className="px-1.5 py-0.5 bg-neutral-200 dark:bg-neutral-800 border border-black dark:border-white">
+                💡 {activeMatch.moveSuggestions === 'excluded' ? 'No Hints' : 'Hints'}
+              </span>
+              <span className={`px-1.5 py-0.5 border border-black dark:border-white ${
+                activeMatch.craftingAllowed !== false
+                  ? 'bg-amber-400 text-black font-black'
+                  : 'bg-neutral-200 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400'
+              }`}>
+                {activeMatch.craftingAllowed !== false ? '🔨 Crafting On' : '🚫 Crafting Avoided'}
+              </span>
+            </div>
+          </div>
+
           {/* Persistent Prince Rules Explanation Panel */}
           <PrinceRulesCard
             myColor={myColor}

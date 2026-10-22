@@ -59,13 +59,13 @@ export const CraftingModal: React.FC<CraftingModalProps> = ({
       <div
         className="w-full max-w-lg p-4 sm:p-6 border-4 transition-colors max-h-[95vh] overflow-y-auto bg-black border-white shadow-[8px_8px_0px_#ffffff] text-white"
       >
-        {/* Red Accent Header Banner per spec: "You lost 4 expensive pieces: craft a new piece" */}
+        {/* Red Accent Header Banner: "You lost 2 expensive pieces: craft a new piece" */}
         <div className="bg-red-600 text-white p-2.5 sm:p-3 mb-4 border-2 border-current flex items-center justify-between gap-2 shadow-[3px_3px_0px_#000]">
           <div className="flex items-center gap-2">
             <Hammer className="w-5 h-5 flex-shrink-0" />
             <div>
               <h2 className="text-xs sm:text-sm font-black uppercase tracking-wider">
-                You lost 4 expensive pieces: craft a new piece
+                You lost 2 expensive pieces: craft a new piece
               </h2>
               <p className="text-[10px] font-mono opacity-90">
                 Free action • Clocks paused • 1 craft per game

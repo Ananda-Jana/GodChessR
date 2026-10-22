@@ -117,11 +117,13 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
   const [challengeTimeControl, setChallengeTimeControl] = useState<120 | 300>(300);
   const [challengeMoveSuggestions, setChallengeMoveSuggestions] = useState<'included' | 'excluded'>('included');
+  const [challengeCrafting, setChallengeCrafting] = useState<'allowed' | 'off'>('allowed');
 
   const handleChallengePlayer = (targetUserId: string, targetName: string) => {
-    sendChallenge(targetUserId, challengeTimeControl, challengeMoveSuggestions);
+    const craftingAllowed = challengeCrafting === 'allowed';
+    sendChallenge(targetUserId, challengeTimeControl, challengeMoveSuggestions, craftingAllowed);
     setSentNotice(
-      `Challenge (${challengeTimeControl === 120 ? '2m' : '5m'}, hints ${challengeMoveSuggestions}) sent to ${targetName}!`
+      `Challenge (${challengeTimeControl === 120 ? '2m' : '5m'}, hints ${challengeMoveSuggestions}, crafting ${craftingAllowed ? 'on' : 'off'}) sent to ${targetName}!`
     );
     setTimeout(() => setSentNotice(null), 4000);
     setTimeout(refreshUserData, 500);
@@ -686,6 +688,34 @@ export const Dashboard: React.FC<DashboardProps> = ({
                     }`}
                   >
                     Off
+                  </button>
+                </div>
+
+                <div className="flex items-center gap-1 bg-neutral-100 dark:bg-[#141416] border-2 border-black dark:border-white p-1 text-xs">
+                  <span className="text-[10px] font-black uppercase px-1">Crafting:</span>
+                  <button
+                    type="button"
+                    onClick={() => setChallengeCrafting('allowed')}
+                    title="Allow 2nd expensive piece sacrifice to craft Communist, Priest, or Supreme Rook"
+                    className={`px-2 py-0.5 font-black text-[11px] uppercase cursor-pointer border ${
+                      challengeCrafting === 'allowed'
+                        ? 'bg-amber-400 text-black border-black shadow-[1px_1px_0px_#000]'
+                        : 'border-transparent text-neutral-600 dark:text-neutral-400'
+                    }`}
+                  >
+                    On
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setChallengeCrafting('off')}
+                    title="Avoid mid-game piece crafting (standard chess piece flow without summons)"
+                    className={`px-2 py-0.5 font-black text-[11px] uppercase cursor-pointer border ${
+                      challengeCrafting === 'off'
+                        ? 'bg-amber-400 text-black border-black shadow-[1px_1px_0px_#000]'
+                        : 'border-transparent text-neutral-600 dark:text-neutral-400'
+                    }`}
+                  >
+                    Avoid
                   </button>
                 </div>
               </div>

@@ -12,7 +12,8 @@ interface SocketContextType {
   sendChallenge: (
     targetUserId: string,
     timeControl?: 120 | 300,
-    moveSuggestions?: 'included' | 'excluded'
+    moveSuggestions?: 'included' | 'excluded',
+    craftingAllowed?: boolean
   ) => void;
   respondChallenge: (challengeId: string, action: 'accept' | 'decline') => void;
   cancelChallenge: (challengeId: string) => void;
@@ -175,10 +176,11 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const sendChallenge = (
     targetUserId: string,
     timeControl: 120 | 300 = 300,
-    moveSuggestions: 'included' | 'excluded' = 'included'
+    moveSuggestions: 'included' | 'excluded' = 'included',
+    craftingAllowed: boolean = true
   ) => {
     setMatchError(null);
-    send({ type: 'challenge:send', targetUserId, timeControl, moveSuggestions });
+    send({ type: 'challenge:send', targetUserId, timeControl, moveSuggestions, craftingAllowed });
   };
 
   const respondChallenge = (challengeId: string, action: 'accept' | 'decline') => {

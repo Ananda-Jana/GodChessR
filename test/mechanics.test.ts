@@ -338,5 +338,20 @@ assert(mateRes.state.status === 'completed', 'Match ends immediately with status
 assert(mateRes.state.result?.reason === 'checkmate', 'Result reason is checkmate');
 assert(mateRes.state.pausedForAction === null, 'Crafting is forfeited upon checkmate');
 
+// --- TEST 11: Crafting Avoidance (craftingAllowed: false) ---
+const avoidCraftMatch: MatchState = {
+  ...inCheckMatch,
+  id: 'test_avoid_craft',
+  craftingAllowed: false,
+  lostExpensive: { white: 0, black: 1 }, // Already lost 1 expensive piece
+};
+// White Queen at (3, 3) captures Black Rook at (3, 7) -> 2nd expensive lost piece for Black
+const avoidRes = executeMove(avoidCraftMatch, { x: 3, y: 3 }, { x: 3, y: 7 });
+assert(avoidRes.success === true, 'White Queen captures 2nd expensive piece');
+assert(avoidRes.state.lostExpensive?.black === 2, 'Black has lost 2 expensive pieces');
+assert(avoidRes.state.craftingPending?.black !== true, 'Crafting is NOT pending when craftingAllowed is false');
+assert(avoidRes.state.pausedForAction === null, 'Game does NOT pause for crafting when craftingAllowed is false');
+console.log('✓ Crafting is cleanly avoided when craftingAllowed is false');
+
 console.log('=== ALL GODCHESS EXPANSION & CRAFTING TESTS PASSED! ===');
 

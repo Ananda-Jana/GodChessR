@@ -206,6 +206,7 @@ export function initWebSocketServer(server: HttpServer) {
         const timeControl: 120 | 300 = data.timeControl === 120 ? 120 : 300;
         const moveSuggestions: 'included' | 'excluded' =
           data.moveSuggestions === 'excluded' ? 'excluded' : 'included';
+        const craftingAllowed: boolean = data.craftingAllowed !== false;
         const challenge: Challenge = {
           id: challengeId,
           challenger: {
@@ -223,6 +224,7 @@ export function initWebSocketServer(server: HttpServer) {
           status: 'pending',
           timeControl,
           moveSuggestions,
+          craftingAllowed,
           createdAt: Date.now(),
           expiresAt: Date.now() + 5 * 60 * 1000, // 5 minutes expiration
         };
@@ -282,6 +284,7 @@ export function initWebSocketServer(server: HttpServer) {
             inCheck: null,
             result: null,
             moveSuggestions: challenge.moveSuggestions || 'included',
+            craftingAllowed: challenge.craftingAllowed !== false,
             totalCaptures: 0,
             diceActive: true,
             timeControl: duration,

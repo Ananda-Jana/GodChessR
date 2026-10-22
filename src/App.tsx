@@ -213,7 +213,8 @@ function AppContent() {
     difficulty: 'grandmaster' | 'master',
     timeControl: 120 | 300 = 300,
     moveSuggestions: 'included' | 'excluded' = 'included',
-    gameMode: 'standard' | 'crafted' = 'standard'
+    gameMode: 'standard' | 'crafted' = 'standard',
+    craftingAllowed: boolean = true
   ) => {
     if (!user) return;
     setIsBotModalOpen(false);
@@ -246,6 +247,7 @@ function AppContent() {
       } : botUser,
       board: createInitialBoard(gameMode),
       gameMode,
+      craftingAllowed,
       turn: 'white',
       status: 'active',
       dice: null,
