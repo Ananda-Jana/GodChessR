@@ -56,13 +56,26 @@ assert(botMove, 'Bot should compute a valid move');
 assert(typeof botMove.from.x === 'number' && typeof botMove.to.y === 'number', 'Bot move should have coordinates');
 console.log('✓ Rose bot move calculation passed');
 
-// Move white pawn e2 -> e4 to vacate (4, 1) in White's home rows
+// Move white pawn e2 -> e4 to vacate (4, 1)
 const moveRes = applyRoseMove(match, { x: 4, y: 1 }, { x: 4, y: 3 });
 assert(moveRes.success && moveRes.state, 'Pawn move should succeed');
 const summonChoice = getBotSummonChoice(moveRes.state, 'white');
 assert(summonChoice, 'Bot should find a summon square');
-assert(['priest', 'communist', 'supremeRook'].includes(summonChoice.pieceType), 'Bot should pick a valid unit');
-console.log('✓ Rose bot summon choice passed');
+assert(
+  ['queen', 'bishop', 'knight', 'rook', 'supremeRook', 'priest', 'communist'].includes(summonChoice.pieceType),
+  'Bot should pick a valid unit from multi-summon choices'
+);
+console.log('✓ Rose bot summon choice with multiple units passed');
+
+// Test summoning anywhere on the board (e.g. center square { x: 4, y: 4 })
+moveRes.state.turn = 'white';
+moveRes.state.whiteSeat!.petals = 3;
+const summonPlacementRes = applyRoseSummon(moveRes.state, 'user_host', 'queen', { x: 4, y: 4 });
+assert(summonPlacementRes.success, 'Summon Queen anywhere on empty unchecking board square should succeed');
+assert(summonPlacementRes.state?.board[4][4]?.type === 'queen', 'Placed piece should be Queen');
+assert(summonPlacementRes.state?.whiteSeat?.petals === 0, 'Petals should be deducted by 3');
+assert(summonPlacementRes.state?.turn === 'black', 'Turn should advance to opponent after summon');
+console.log('✓ Rose universal board summon placement (Queen at 4,4) passed');
 
 const botEmoji = getRandomBotReaction();
 assert(botEmoji && botEmoji.length > 0, 'Bot should return a reaction emoji');

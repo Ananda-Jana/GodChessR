@@ -10,6 +10,7 @@ import {
   type RoseRoom,
 } from './roseRooms.ts';
 import { applyRoseMove, applyRoseSummon, getSeatByUserId } from '../../src/rose/roseRules.ts';
+import { isKingInCheck } from '../../src/game/engine.ts';
 import { getUserIdFromSession } from '../auth.ts';
 import { db } from '../db.ts';
 
@@ -199,7 +200,18 @@ export function registerRoseSocket(wss: WebSocketServer) {
             return;
           }
 
-          const seat = getSeatByUserId(room.match, user.userId);
+          let seat = getSeatByUserId(room.match, user.userId);
+          if (!seat) {
+            if (ws === room.hostWs) {
+              seat = room.match.whiteSeat?.userId === room.hostUserId ? room.match.whiteSeat : room.match.blackSeat;
+            } else if (ws === room.guestWs) {
+              seat = room.match.whiteSeat?.userId === room.hostUserId ? room.match.blackSeat : room.match.whiteSeat;
+            }
+          }
+          if (!seat && room.match.status === 'active') {
+            seat = room.match.turn === 'white' ? room.match.whiteSeat : room.match.blackSeat;
+          }
+
           if (!seat || seat.color !== room.match.turn) {
             ws.send(JSON.stringify({ type: 'rose:error', message: 'Not your turn.' }));
             return;
@@ -228,7 +240,29 @@ export function registerRoseSocket(wss: WebSocketServer) {
             return;
           }
 
-          const res = applyRoseSummon(room.match, user.userId, pieceType, to);
+          let seat = getSeatByUserId(room.match, user.userId);
+          if (!seat) {
+            if (ws === room.hostWs) {
+              seat = room.match.whiteSeat?.userId === room.hostUserId ? room.match.whiteSeat : room.match.blackSeat;
+            } else if (ws === room.guestWs) {
+              seat = room.match.whiteSeat?.userId === room.hostUserId ? room.match.blackSeat : room.match.whiteSeat;
+            }
+          }
+          if (!seat && room.match.status === 'active') {
+            seat = room.match.turn === 'white' ? room.match.whiteSeat : room.match.blackSeat;
+          }
+
+          if (!seat || seat.color !== room.match.turn) {
+            ws.send(JSON.stringify({ type: 'rose:error', message: 'Not your turn.' }));
+            return;
+          }
+
+          if (room.match.inCheck === seat.color || isKingInCheck(room.match.board, seat.color)) {
+            ws.send(JSON.stringify({ type: 'rose:error', message: 'Cannot summon while King is in check. Escape check first!' }));
+            return;
+          }
+
+          const res = applyRoseSummon(room.match, seat.color, pieceType, to);
           if (!res.success || !res.state) {
             ws.send(JSON.stringify({ type: 'rose:error', message: res.error || 'Summon failed.' }));
             return;

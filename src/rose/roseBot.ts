@@ -6,8 +6,9 @@
  */
 
 import type { PieceColor, Position, PieceType } from '../types/game.ts';
-import type { RoseMatchState, RoseRole } from './types.ts';
+import type { RoseMatchState, RoseRole, RoseSummonPieceType } from './types.ts';
 import { getAllLegalMoves, applyMoveToBoard, isKingInCheck, isSquareAttacked } from '../game/engine.ts';
+import { getValidRoseSummonSquares } from './roseRules.ts';
 
 const PIECE_VALUES: Record<PieceType, number> = {
   pawn: 100,
@@ -113,29 +114,37 @@ export function getBestRoseBotMove(
 export function getBotSummonChoice(
   match: RoseMatchState,
   botColor: PieceColor
-): { pieceType: 'priest' | 'communist' | 'supremeRook'; pos: Position } | null {
-  const homeRows = botColor === 'white' ? [0, 1] : [6, 7];
-  const emptySquares: Position[] = [];
-
-  for (const y of homeRows) {
-    for (let x = 0; x < 8; x++) {
-      if (!match.board[y][x]) {
-        emptySquares.push({ x, y });
-      }
-    }
+): { pieceType: RoseSummonPieceType; pos: Position } | null {
+  // If bot is in check, it cannot summon - it must escape or defend the check!
+  if (match.inCheck === botColor || isKingInCheck(match.board, botColor)) {
+    return null;
   }
 
-  if (emptySquares.length === 0) return null;
-
-  // Pick a safe square
   const opponentColor: PieceColor = botColor === 'white' ? 'black' : 'white';
-  const safeSquares = emptySquares.filter((sq) => !isSquareAttacked(match.board, sq, opponentColor));
-  const chosenSquare = safeSquares.length > 0 ? safeSquares[Math.floor(Math.random() * safeSquares.length)] : emptySquares[0];
+  const candidateTypes: RoseSummonPieceType[] = ['queen', 'bishop', 'knight', 'rook', 'supremeRook', 'priest', 'communist'];
 
-  const types: ('priest' | 'communist' | 'supremeRook')[] = ['priest', 'communist', 'supremeRook'];
-  const pieceType = types[Math.floor(Math.random() * types.length)];
+  // Shuffle candidate types with high priority for Queen / Bishop / Knight / Rook
+  const prioritizedTypes = [...candidateTypes].sort(() => Math.random() - 0.5);
 
-  return { pieceType, pos: chosenSquare };
+  for (const pieceType of prioritizedTypes) {
+    const validSquares = getValidRoseSummonSquares(match.board, botColor, pieceType);
+    if (validSquares.length === 0) continue;
+
+    // Filter for unattacked squares if possible
+    const safeSquares = validSquares.filter((sq) => !isSquareAttacked(match.board, sq, opponentColor));
+    const pool = safeSquares.length > 0 ? safeSquares : validSquares;
+
+    // Prefer squares closer to center/action
+    pool.sort((a, b) => {
+      const distA = Math.abs(a.x - 3.5) + Math.abs(a.y - 3.5);
+      const distB = Math.abs(b.x - 3.5) + Math.abs(b.y - 3.5);
+      return distA - distB;
+    });
+
+    return { pieceType, pos: pool[0] };
+  }
+
+  return null;
 }
 
 // Romantic dialogue phrases for the Bot

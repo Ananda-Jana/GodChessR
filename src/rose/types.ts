@@ -2,6 +2,16 @@ import type { Piece, Position, PieceColor, PieceType } from '../types/game.ts';
 
 export type RoseRole = 'boyfriend' | 'girlfriend';
 
+export type RoseSummonPieceType =
+  | 'queen'
+  | 'bishop'
+  | 'knight'
+  | 'rook'
+  | 'pawn'
+  | 'priest'
+  | 'communist'
+  | 'supremeRook';
+
 export type RoseMatchStatus =
   | 'created'
   | 'waiting_guest'

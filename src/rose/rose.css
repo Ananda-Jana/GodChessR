@@ -1,103 +1,123 @@
-/* Rose Paradise Glassmorphic Theme (strictly scoped to .rose-theme) */
+/* Rose Paradise Proper Brutalism Theme (strictly scoped to .rose-theme) */
 .rose-theme {
-  --glass-bg: #0b0f17;
-  --glass-surface: rgba(30, 41, 59, 0.5);
-  --glass-surface-elevated: rgba(51, 65, 85, 0.6);
-  --glass-border: rgba(255, 255, 255, 0.14);
-  --glass-border-focus: #22d3ee;
-  --text-primary: #f8fafc;
-  --text-secondary: #94a3b8;
-  --board-light: #eaedf1;
-  --board-dark: #738294;
-  --accent-cyan: #22d3ee;
+  --bg: #000000;
+  --bg-card: #0a0a0c;
+  --bg-panel: #141416;
+  --border: #ffffff;
+  --accent-gold: #fbbf24;
   --accent-rose: #f43f5e;
+  --accent-cyan: #22d3ee;
+  --board-light: #e2e8f0;
+  --board-dark: #334155;
   
-  background: radial-gradient(ellipse at 50% 0%, #1e293b 0%, #0f172a 55%, #080d14 100%);
-  color: var(--text-primary);
-  font-family: inherit;
+  background-color: #000000;
+  color: #ffffff;
   min-height: 100vh;
 }
 
-/* Glassmorphic Panel Cards */
-.rose-theme .glass-card {
-  background: rgba(30, 41, 59, 0.45);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 16px !important;
-  box-shadow: 0 12px 35px -5px rgba(0, 0, 0, 0.45);
+.rose-theme * {
+  border-radius: 0px !important;
 }
 
-.rose-theme .glass-card-focus {
-  background: rgba(30, 41, 59, 0.6);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(34, 211, 238, 0.4);
-  border-radius: 16px !important;
-  box-shadow: 0 16px 40px -5px rgba(0, 0, 0, 0.5), 0 0 20px rgba(34, 211, 238, 0.15);
+/* Brutalist Cards */
+.rose-theme .brutal-card {
+  background-color: #0a0a0c;
+  border: 3px solid #ffffff;
+  box-shadow: 4px 4px 0px #ffffff;
 }
 
-/* Glassmorphic Buttons */
-.rose-theme .glass-button {
-  background: rgba(51, 65, 85, 0.55);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  color: #f8fafc;
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  border-radius: 10px !important;
-  font-weight: 700;
-  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+.rose-theme .brutal-card-gold {
+  background-color: #0a0a0c;
+  border: 3px solid #fbbf24;
+  box-shadow: 4px 4px 0px #fbbf24;
 }
 
-.rose-theme .glass-button:hover:not(:disabled) {
-  background: rgba(71, 85, 105, 0.75);
-  border-color: rgba(255, 255, 255, 0.35);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
+.rose-theme .brutal-card-rose {
+  background-color: #0a0a0c;
+  border: 3px solid #f43f5e;
+  box-shadow: 4px 4px 0px #f43f5e;
 }
 
-.rose-theme .glass-button-primary {
-  background: linear-gradient(135deg, rgba(6, 182, 212, 0.85) 0%, rgba(59, 130, 246, 0.85) 100%);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+.rose-theme .brutal-card-cyan {
+  background-color: #0a0a0c;
+  border: 3px solid #22d3ee;
+  box-shadow: 4px 4px 0px #22d3ee;
+}
+
+/* Brutalist Buttons */
+.rose-theme .brutal-button {
+  background-color: #18181b;
   color: #ffffff;
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  border-radius: 10px !important;
+  border: 3px solid #ffffff;
+  box-shadow: 3px 3px 0px #ffffff;
   font-weight: 800;
-  box-shadow: 0 4px 18px rgba(6, 182, 212, 0.35);
-  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  text-transform: uppercase;
+  transition: transform 0.05s, box-shadow 0.05s;
 }
 
-.rose-theme .glass-button-primary:hover:not(:disabled) {
-  background: linear-gradient(135deg, rgba(34, 211, 238, 0.95) 0%, rgba(96, 165, 250, 0.95) 100%);
-  transform: translateY(-1px);
-  box-shadow: 0 6px 24px rgba(6, 182, 212, 0.5);
+.rose-theme .brutal-button:hover:not(:disabled) {
+  transform: translate(-2px, -2px);
+  box-shadow: 5px 5px 0px #ffffff;
 }
 
-/* Board Tray from Reference Image */
-.rose-theme .glass-board-tray {
-  background: rgba(15, 23, 42, 0.75);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  border-radius: 20px !important;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.65), 0 0 30px rgba(0, 0, 0, 0.4);
+.rose-theme .brutal-button:active:not(:disabled) {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0px #ffffff;
 }
 
-/* Subtle Floating Light Particles */
-@keyframes ambientDrift {
-  0% { transform: translateY(0px) rotate(0deg); opacity: 0; }
-  50% { opacity: 0.6; }
-  100% { transform: translateY(-100vh) rotate(180deg); opacity: 0; }
+.rose-theme .brutal-button-primary {
+  background-color: #fbbf24;
+  color: #000000;
+  border: 3px solid #ffffff;
+  box-shadow: 4px 4px 0px #ffffff;
+  font-weight: 900;
+  text-transform: uppercase;
+  transition: transform 0.05s, box-shadow 0.05s;
 }
 
-.glass-particle {
-  position: absolute;
-  width: 6px;
-  height: 6px;
-  background-color: rgba(34, 211, 238, 0.4);
-  border-radius: 50% !important;
-  animation: ambientDrift 14s linear infinite;
-  pointer-events: none;
-  filter: blur(1px);
+.rose-theme .brutal-button-primary:hover:not(:disabled) {
+  background-color: #f59e0b;
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0px #ffffff;
+}
+
+.rose-theme .brutal-button-primary:active:not(:disabled) {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0px #ffffff;
+}
+
+.rose-theme .brutal-button-rose {
+  background-color: #f43f5e;
+  color: #ffffff;
+  border: 3px solid #ffffff;
+  box-shadow: 4px 4px 0px #ffffff;
+  font-weight: 900;
+  text-transform: uppercase;
+  transition: transform 0.05s, box-shadow 0.05s;
+}
+
+.rose-theme .brutal-button-rose:hover:not(:disabled) {
+  background-color: #e11d48;
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0px #ffffff;
+}
+
+.rose-theme .brutal-button-rose:active:not(:disabled) {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0px #ffffff;
+}
+
+/* Brutalist Board Tray */
+.rose-theme .brutal-board-tray {
+  background-color: #050507;
+  border: 4px solid #ffffff;
+  box-shadow: 6px 6px 0px #ffffff;
+}
+
+/* Brutalist Badges */
+.rose-theme .brutal-badge {
+  border: 2px solid currentColor;
+  box-shadow: 2px 2px 0px currentColor;
+  font-weight: 800;
+  text-transform: uppercase;
 }

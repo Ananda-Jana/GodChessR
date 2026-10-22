@@ -9800,7 +9800,7 @@
     "pausedForAction": null
   },
   {
-    "id": "match_test_1792689442380",
+    "id": "match_test_1792691497608",
     "whitePlayer": {
       "userId": "usr_alice_test",
       "username": "alice",
@@ -10059,24 +10059,7 @@
     ],
     "turn": "white",
     "status": "active",
-    "dice": {
-      "rolledValue": 5,
-      "category": "expensive",
-      "eligiblePieceTypes": [
-        "rook",
-        "queen",
-        "prince",
-        "king",
-        "pawn",
-        "communist",
-        "supremeRook",
-        "priest"
-      ],
-      "isFallbackAnyPiece": false,
-      "isConsumed": false,
-      "probabilityMode": "uniform",
-      "rolledAt": 1792689462798
-    },
+    "dice": null,
     "whitePawnsReachedEndRank": 0,
     "blackPawnsReachedEndRank": 0,
     "capturedByWhite": [],
@@ -10097,7 +10080,7 @@
           "color": "white",
           "hasMoved": false
         },
-        "timestamp": 1792689442390,
+        "timestamp": 1792691497620,
         "san": "Pe2→e4"
       },
       {
@@ -10115,7 +10098,7 @@
           "color": "black",
           "hasMoved": false
         },
-        "timestamp": 1792689442395,
+        "timestamp": 1792691497627,
         "san": "Pe7→e5"
       }
     ],
@@ -10125,11 +10108,11 @@
     "totalCaptures": 0,
     "diceActive": true,
     "timeControl": 300,
-    "whiteTimeRemaining": 299.99,
-    "blackTimeRemaining": 299.995,
-    "lastTurnStartTime": 1792689442395,
-    "createdAt": 1792689442380,
-    "updatedAt": 1792689462798,
+    "whiteTimeRemaining": 299.988,
+    "blackTimeRemaining": 299.993,
+    "lastTurnStartTime": 1792691497627,
+    "createdAt": 1792691497608,
+    "updatedAt": 1792691497627,
     "boardWidth": 8,
     "boardHeight": 8,
     "lostPieces": {

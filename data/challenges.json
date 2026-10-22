@@ -1,6 +1,6 @@
 [
   {
-    "id": "ch_test_1792689442380",
+    "id": "ch_test_1792691497607",
     "challenger": {
       "userId": "usr_alice_test",
       "username": "alice",
@@ -16,8 +16,8 @@
     "status": "accepted",
     "timeControl": 300,
     "moveSuggestions": "included",
-    "createdAt": 1792689442380,
-    "expiresAt": 1792689742380,
-    "matchId": "match_test_1792689442380"
+    "createdAt": 1792691497607,
+    "expiresAt": 1792691797607,
+    "matchId": "match_test_1792691497608"
   }
 ]

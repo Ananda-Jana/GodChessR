@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import type { RoseMatchState, RoseRole, RoseReaction, PublicRoseRoom } from './types.ts';
+import type { RoseMatchState, RoseRole, RoseReaction, PublicRoseRoom, RoseSummonPieceType } from './types.ts';
 import type { PieceColor, Position } from '../types/game.ts';
 import { useAuth } from '../context/AuthContext';
 import { sounds } from '../utils/audio';
@@ -191,7 +191,7 @@ export function useRoseRoom() {
     });
   }, [send, match?.id, user?.id]);
 
-  const sendSummon = useCallback((pieceType: 'priest' | 'communist' | 'supremeRook', to: Position) => {
+  const sendSummon = useCallback((pieceType: RoseSummonPieceType, to: Position) => {
     setError(null);
     send({
       type: 'rose:summon',

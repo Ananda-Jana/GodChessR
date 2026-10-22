@@ -5,8 +5,95 @@ import {
   isKingInCheck,
   isSquareAttacked,
   getLegalMovesForSquare,
+  findKingPosition,
+  getPseudoLegalMoves,
 } from '../game/engine.ts';
-import type { RoseMatchState, RoseSeat, RoseMatchStatus, RoseRole } from './types.ts';
+import type { RoseMatchState, RoseSeat, RoseMatchStatus, RoseRole, RoseSummonPieceType } from './types.ts';
+
+export interface RoseCheckDetails {
+  inCheck: boolean;
+  kingPos: Position | null;
+  attackerPositions: Position[];
+  rayPositions: Position[];
+}
+
+/**
+ * Computes check details for a given color:
+ * 1. Attacker square(s) delivering check
+ * 2. Ray squares between sliding attackers and the King
+ */
+export function getRoseCheckDetails(
+  board: (Piece | null)[][],
+  color: PieceColor
+): RoseCheckDetails {
+  const kingPos = findKingPosition(board, color);
+  if (!kingPos) {
+    return { inCheck: false, kingPos: null, attackerPositions: [], rayPositions: [] };
+  }
+
+  const attackerPositions: Position[] = [];
+  const rayPositions: Position[] = [];
+  const enemyColor: PieceColor = color === 'white' ? 'black' : 'white';
+  const boardHeight = board.length;
+  const boardWidth = board[0]?.length || 8;
+
+  for (let y = 0; y < boardHeight; y++) {
+    for (let x = 0; x < boardWidth; x++) {
+      const piece = board[y][x];
+      if (piece && piece.color === enemyColor) {
+        const enemyMoves = getPseudoLegalMoves(board, { x, y });
+        const attacksKing = enemyMoves.some(
+          (m) => m.to.x === kingPos.x && m.to.y === kingPos.y
+        );
+
+        if (attacksKing) {
+          attackerPositions.push({ x, y });
+
+          // Ray computation for sliding pieces
+          const dx = Math.sign(kingPos.x - x);
+          const dy = Math.sign(kingPos.y - y);
+          const isOrth = (x === kingPos.x && y !== kingPos.y) || (y === kingPos.y && x !== kingPos.x);
+          const isDiag = Math.abs(kingPos.x - x) === Math.abs(kingPos.y - y);
+
+          if (
+            (isOrth || isDiag) &&
+            (piece.type === 'queen' ||
+              piece.type === 'rook' ||
+              piece.type === 'bishop' ||
+              piece.type === 'supremeRook' ||
+              piece.type === 'priest' ||
+              piece.type === 'prince')
+          ) {
+            let cx = x + dx;
+            let cy = y + dy;
+            while (cx !== kingPos.x || cy !== kingPos.y) {
+              if (cx >= 0 && cx < boardWidth && cy >= 0 && cy < boardHeight) {
+                rayPositions.push({ x: cx, y: cy });
+              }
+              cx += dx;
+              cy += dy;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  const seenRay = new Set<string>();
+  const dedupedRays = rayPositions.filter((p) => {
+    const k = `${p.x},${p.y}`;
+    if (seenRay.has(k)) return false;
+    seenRay.add(k);
+    return true;
+  });
+
+  return {
+    inCheck: attackerPositions.length > 0,
+    kingPos,
+    attackerPositions,
+    rayPositions: dedupedRays,
+  };
+}
 
 export function createInitialRoseMatch(
   id: string,
@@ -94,10 +181,13 @@ export function applyRoseMove(
     return { success: false, error: 'No seat assigned for current turn.' };
   }
 
-  // Use engine executeMove with pure chess rules (dice disabled)
+  // Use engine executeMove with pure chess rules (dice & mid-game crafting disabled)
   const engineState = {
     ...match,
     diceActive: false,
+    craftingAllowed: false,
+    expansionUsed: { white: true, black: true },
+    craftingUsed: { white: true, black: true },
     dice: null,
     capturedByWhite: (match as any).capturedByWhite || [],
     capturedByBlack: (match as any).capturedByBlack || [],
@@ -193,19 +283,72 @@ export function applyRoseMove(
   return { success: true, state: nextMatch };
 }
 
+export function getValidRoseSummonSquares(
+  board: (Piece | null)[][],
+  myColor: PieceColor,
+  pieceType: RoseSummonPieceType
+): Position[] {
+  // Rule: Cannot summon while in check! Defend King first!
+  if (isKingInCheck(board, myColor)) {
+    return [];
+  }
+
+  const validSquares: Position[] = [];
+  const enemyColor: PieceColor = myColor === 'white' ? 'black' : 'white';
+
+  for (let y = 0; y < 8; y++) {
+    for (let x = 0; x < 8; x++) {
+      if (board[y][x] !== null) continue;
+
+      const tempBoard = board.map((row) => [...row]);
+      tempBoard[y][x] = {
+        id: `rose_test_summon`,
+        type: pieceType as PieceType,
+        color: myColor,
+        hasMoved: true,
+      };
+
+      // Rule 1: Cannot leave or place friendly king in check
+      if (isKingInCheck(tempBoard, myColor)) continue;
+
+      // Rule 2: Cannot immediately deliver check to enemy king upon initial summon
+      if (isKingInCheck(tempBoard, enemyColor)) continue;
+
+      validSquares.push({ x, y });
+    }
+  }
+
+  return validSquares;
+}
+
 export function applyRoseSummon(
   match: RoseMatchState,
-  userId: string,
-  pieceType: 'priest' | 'communist' | 'supremeRook',
+  userIdOrColor: string,
+  pieceType: RoseSummonPieceType,
   pos: Position
 ): { success: boolean; state?: RoseMatchState; error?: string } {
   if (match.status !== 'active') {
     return { success: false, error: 'Match is not active.' };
   }
 
-  const seat = getSeatByUserId(match, userId);
+  // Resolve seat either by seat color ('white' | 'black') or by userId
+  let seat: RoseSeat | null = null;
+  if (userIdOrColor === 'white' || userIdOrColor === 'black') {
+    seat = getSeatByColor(match, userIdOrColor);
+  } else {
+    seat = getSeatByUserId(match, userIdOrColor);
+  }
+  // Safe fallback to active player if single player / bot match
+  if (!seat && match.status === 'active') {
+    seat = match.turn === 'white' ? match.whiteSeat : match.blackSeat;
+  }
+
   if (!seat || seat.color !== match.turn) {
     return { success: false, error: 'Not your turn or not seated.' };
+  }
+
+  if (match.inCheck === seat.color || isKingInCheck(match.board, seat.color)) {
+    return { success: false, error: 'Cannot summon while King is in check. Escape check first!' };
   }
 
   if (seat.petals < 3) {
@@ -216,14 +359,8 @@ export function applyRoseSummon(
     return { success: false, error: 'Maximum 2 summons per game reached.' };
   }
 
-  if (match.inCheck === seat.color) {
-    return { success: false, error: 'Cannot summon while in check.' };
-  }
-
-  // Check home zone (2 rows nearest player's own edge)
-  const homeRows = seat.color === 'white' ? [0, 1] : [6, 7];
-  if (!homeRows.includes(pos.y)) {
-    return { success: false, error: 'Summon must be placed in your 2-row home zone.' };
+  if (pos.x < 0 || pos.x > 7 || pos.y < 0 || pos.y > 7) {
+    return { success: false, error: 'Invalid board position.' };
   }
 
   if (match.board[pos.y][pos.x] !== null) {
@@ -231,14 +368,10 @@ export function applyRoseSummon(
   }
 
   const enemyColor: PieceColor = seat.color === 'white' ? 'black' : 'white';
-  if (isSquareAttacked(match.board, pos, enemyColor)) {
-    return { success: false, error: 'Summon square cannot be attacked by an enemy piece.' };
-  }
-
   const tempBoard = match.board.map((row) => [...row]);
   tempBoard[pos.y][pos.x] = {
     id: `rose_summon_${seat.color}_${Date.now()}`,
-    type: pieceType,
+    type: pieceType as PieceType,
     color: seat.color,
     hasMoved: true,
   };
@@ -251,9 +384,15 @@ export function applyRoseSummon(
     return { success: false, error: 'Summon cannot immediately give check to enemy King.' };
   }
 
-  // Apply summon
-  seat.petals -= 3;
-  seat.summonsUsed++;
+  // Update seats with new petal count & summon usage
+  const whiteSeatCopy: RoseSeat | null = match.whiteSeat ? { ...match.whiteSeat } : null;
+  const blackSeatCopy: RoseSeat | null = match.blackSeat ? { ...match.blackSeat } : null;
+  const activeSeat = match.turn === 'white' ? whiteSeatCopy : blackSeatCopy;
+
+  if (activeSeat) {
+    activeSeat.petals = Math.max(0, activeSeat.petals - 3);
+    activeSeat.summonsUsed++;
+  }
 
   const nextBoard = tempBoard;
   const nextTurn: PieceColor = seat.color === 'white' ? 'black' : 'white';
@@ -263,14 +402,13 @@ export function applyRoseSummon(
   let nextWinner = match.winner;
   let winReason = match.winReason;
 
-  // Check checkmate / stalemate after summon turn ends
-  const enemySeat = getSeatByColor(match, nextTurn);
+  // Check checkmate / stalemate for opponent after summon turn ends
   let hasLegalMoves = false;
   for (let y = 0; y < 8; y++) {
     for (let x = 0; x < 8; x++) {
       const p = nextBoard[y][x];
       if (p && p.color === nextTurn) {
-        const moves = getLegalMovesForSquare(match as any, { x, y });
+        const moves = getLegalMovesForSquare(nextBoard, { x, y });
         if (moves.length > 0) {
           hasLegalMoves = true;
           break;
@@ -284,22 +422,25 @@ export function applyRoseSummon(
     nextStatus = 'completed';
     if (nextInCheck) {
       nextWinner = seat.role;
-      winReason = `Checkmate by summon! ${seat.role} wins.`;
+      winReason = `Checkmate by tactical summon! ${seat.role} wins.`;
     } else {
       nextWinner = 'draw';
-      winReason = 'Draw by stalemate.';
+      winReason = 'Draw by stalemate after summon.';
     }
   }
 
   const nextState: RoseMatchState = {
     ...match,
+    whiteSeat: whiteSeatCopy,
+    blackSeat: blackSeatCopy,
     board: nextBoard,
     turn: nextTurn,
-    turnCount: match.turnCount + 1,
+    turnCount: match.turnCount + (match.turn === 'black' ? 1 : 0),
     inCheck: nextInCheck,
     status: nextStatus,
     winner: nextWinner,
     winReason,
+    lastMove: { from: pos, to: pos, piece: nextBoard[pos.y][pos.x]! },
     halfmoveClock: 0,
     seq: match.seq + 1,
     updatedAt: Date.now(),
