@@ -10,7 +10,7 @@
     "preview": "vite preview",
     "clean": "rm -rf dist server.js",
     "lint": "tsc --noEmit",
-    "test": "npx tsx test/engine.test.ts && npx tsx test/bot.test.ts && npx tsx test/integration.test.ts && npx tsx test/culling.test.ts"
+    "test": "npx tsx test/engine.test.ts && npx tsx test/bot.test.ts && npx tsx test/integration.test.ts && npx tsx test/culling.test.ts && npx tsx test/rose/rose.test.ts"
   },
   "dependencies": {
     "@google/genai": "^2.4.0",

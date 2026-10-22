@@ -1,0 +1,55 @@
+/* Rose Paradise Scoped Theme */
+.rose-theme {
+  --rose-bg: #1b0a2e;
+  --rose-surface: #2a0f45;
+  --rose-orchid: #c084fc;
+  --rose-purple: #a855f7;
+  --rose-pink: #f0abfc;
+  --rose-border: #000000;
+  --rose-shadow: 4px 4px 0px #000000;
+  background-color: var(--rose-bg);
+  color: #ffffff;
+  font-family: inherit;
+}
+
+.rose-theme .brutalist-card {
+  background-color: var(--rose-surface);
+  border: 4px solid var(--rose-border);
+  box-shadow: 6px 6px 0px var(--rose-border);
+}
+
+.rose-theme .brutalist-button {
+  background-color: var(--rose-purple);
+  color: #ffffff;
+  border: 3px solid var(--rose-border);
+  box-shadow: 4px 4px 0px var(--rose-border);
+  font-weight: 900;
+  text-transform: uppercase;
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
+}
+
+.rose-theme .brutalist-button:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0px var(--rose-border);
+}
+
+.rose-theme .brutalist-button:active {
+  transform: translate(2px, 2px);
+  box-shadow: 2px 2px 0px var(--rose-border);
+}
+
+@keyframes petalDrift {
+  0% { transform: translateY(-10px) rotate(0deg); opacity: 0; }
+  50% { opacity: 0.8; }
+  100% { transform: translateY(100vh) rotate(360deg); opacity: 0; }
+}
+
+.petal-particle {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  background-color: var(--rose-pink);
+  border-radius: 50% 0 50% 50%;
+  animation: petalDrift 8s linear infinite;
+  pointer-events: none;
+}

@@ -80,24 +80,78 @@ export function cullingSquareToPos(sq: CullingSquare): CullingPos | null {
   return isValidCullingPos(pos.x, pos.y) ? pos : null;
 }
 
+export type CullingRole =
+  | 'sovereign'
+  | 'vanguard'
+  | 'artillery'
+  | 'bulwark'
+  | 'warden'
+  | 'skirmisher'
+  | 'rusher'
+  | 'pawn'
+  | 'swarm';
+
+export function getPieceRole(type: CullingPieceType): CullingRole {
+  switch (type) {
+    case 'culling_gojo':
+    case 'culling_sukuna':
+      return 'sovereign';
+    case 'culling_yuji':
+    case 'culling_kenjaku':
+      return 'vanguard';
+    case 'culling_mechamaru':
+    case 'culling_uraume':
+      return 'artillery';
+    case 'culling_panda':
+    case 'culling_yorozu':
+      return 'bulwark';
+    case 'culling_nanami':
+    case 'culling_reggie':
+      return 'warden';
+    case 'culling_maki':
+    case 'culling_naoya':
+      return 'skirmisher';
+    case 'culling_hakari':
+    case 'culling_kurourushi':
+      return 'rusher';
+    case 'culling_pawn':
+      return 'pawn';
+    case 'culling_swarm':
+      return 'swarm';
+  }
+}
+
+export const CULLING_MATERIAL_VALUES: Record<CullingRole, number> = {
+  pawn: 1,
+  skirmisher: 3.5,
+  rusher: 3.5,
+  bulwark: 3.5,
+  artillery: 4,
+  warden: 4.5,
+  vanguard: 8,
+  sovereign: 99,
+  swarm: 0.5,
+};
+
 export interface CullingPiece {
   id: string;
   type: CullingPieceType;
   color: CullingPieceColor;
   hasMoved: boolean;
   // Character specific state
-  pandaCore?: 'panda' | 'gorilla';
-  contractShield?: boolean;
-  specialUsed?: boolean; // For Gojo teleport, Sukuna domain, Kenjaku swap, Yorozu construct, Mechamaru pierce, Maki rush
-  cooldown?: number; // Turns remaining on sprint cooldown (Naoya) or ability cooldown
-  isRestricted?: boolean; // Frozen by Uraume or restricted by Nanami/Domain
-  restrictedUntilTurn?: number;
+  pandaCore?: 'panda' | 'gorilla'; // Reused as Shell Intact ('panda') vs Broken ('gorilla') for Bulwarks
+  contractShield?: boolean; // Deprecated, kept for backward compatibility
+  specialUsed?: boolean; // Domain Step used for Sovereigns (Gojo / Sukuna)
+  cooldown?: number; // Deprecated, kept for backward compatibility
+  isRestricted?: boolean; // Deprecated, kept for backward compatibility
+  restrictedUntilTurn?: number; // Deprecated, kept for backward compatibility
 }
 
 export type CullingSpecialAction =
   | 'move'
   | 'teleport'
   | 'shoot'
+  | 'black_flash'
   | 'pierce_shoot'
   | 'domain'
   | 'swap'
@@ -143,145 +197,142 @@ export const CULLING_ROSTER: Record<CullingPieceType, CullingCharacterInfo> = {
     type: 'culling_gojo',
     name: 'Satoru Gojo',
     team: 'white',
-    role: 'Protected King-equivalent',
-    mobilityDescription: 'Moves up to 2 squares in any direction (orthogonal or diagonal).',
-    passiveAbility: 'Infinity: Immune to all enemy captures during the first 5 turns.',
-    activeAbility: 'Short-range Teleport (Once per game): Instantly translocate to any unoccupied square within range 3, bypassing obstacles.',
+    role: 'Sovereign',
+    mobilityDescription: 'Moves/captures 1 step in all 8 directions.',
+    activeAbility: 'Domain Step (Once per game): Move to an empty square exactly 2 away straight or diagonally, jumping pieces. Unusable while in check; landing square must not be attacked.',
     initialPos: { x: 8, y: 1 }, // H1
   },
   culling_yuji: {
     type: 'culling_yuji',
     name: 'Yuji Itadori',
     team: 'white',
-    role: 'Queen-equivalent',
-    mobilityDescription: 'Slides orthogonally and diagonally like a Queen.',
-    activeAbility: 'Divergent Fist Leap: Can jump over at most one blocking piece along its movement path to capture or land.',
+    role: 'Vanguard',
+    mobilityDescription: 'Slides up to 3 squares in all 8 directions (no leaping).',
+    activeAbility: 'Black Flash: A capture of an enemy at exactly distance 2 in a straight line strikes in place (Yuji does not move; target is removed). Distance-1 and 3 captures move normally.',
     initialPos: { x: 7, y: 1 }, // G1
   },
   culling_mechamaru: {
     type: 'culling_mechamaru',
     name: 'Kokichi Muta (Mechamaru)',
     team: 'white',
-    role: 'Stationary Ranged Attacker',
-    mobilityDescription: 'Stationary position (cannot move across the board).',
-    activeAbility: 'Puppet Cannon: Direct line-of-sight orthogonal/diagonal shooting at any enemy piece without leaving square.',
-    passiveAbility: 'Ultra Cannon (Once per game): Pierces through exactly one blocker to hit the target behind it.',
+    role: 'Artillery',
+    mobilityDescription: 'Moves/captures 1 step in all 8 directions.',
+    activeAbility: 'Ranged Strike: Removes an enemy exactly 2 squares away in 8 directions if the middle square is empty; Mechamaru does not move.',
     initialPos: { x: 6, y: 1 }, // F1
   },
   culling_panda: {
     type: 'culling_panda',
     name: 'Panda',
     team: 'white',
-    role: 'Resilient Support',
-    mobilityDescription: 'Standard Knight L-shape leaps. Expands to orthogonal/diagonal steps in Gorilla Core.',
-    passiveAbility: 'Core Switch: First capture attempt is rejected and transforms Panda to Gorilla Core. Only the second capture removes him.',
+    role: 'Bulwark',
+    mobilityDescription: 'Moves/captures as a knight (8 L-jumps, leaps freely).',
+    passiveAbility: 'Shell: The first capture attempt on Panda fails; attacker stays on its square, shell breaks, and the turn is spent.',
     initialPos: { x: 5, y: 1 }, // E1
   },
   culling_nanami: {
     type: 'culling_nanami',
     name: 'Kento Nanami',
     team: 'white',
-    role: 'Heavy Orthogonal Attacker',
-    mobilityDescription: 'Slides orthogonally any distance like a Rook.',
-    passiveAbility: '7:3 Ratio Technique: Adjacent enemies suffer restricted movement (1 square max). Immune to captures by low-value pawns and swarms.',
+    role: 'Warden',
+    mobilityDescription: 'Slides up to 3 squares orthogonally (no leaping).',
+    passiveAbility: 'Ratio Field: Any enemy piece in the 8 adjacent squares is restricted to moving/capturing 1 square max, and Artillery strikes are disabled for it.',
     initialPos: { x: 4, y: 1 }, // D1
   },
   culling_maki: {
     type: 'culling_maki',
     name: 'Maki Zenin',
     team: 'white',
-    role: 'Agile Close-Combat Support',
-    mobilityDescription: 'Slides up to 2 squares diagonally; leaps 2 squares orthogonally over obstacles.',
-    activeAbility: 'Heavenly Restriction Rush (Once per game): Can perform an immediate bonus move or strike in the same turn.',
+    role: 'Skirmisher',
+    mobilityDescription: 'Moves/captures 1 step in all 8 directions, OR hops exactly 2 squares orthogonally (leaping over anything).',
+    passiveAbility: 'Heavenly Restriction: Ignores restriction from the Warden Ratio Field.',
     initialPos: { x: 3, y: 1 }, // C1
   },
   culling_hakari: {
     type: 'culling_hakari',
     name: 'Kinji Hakari',
     team: 'white',
-    role: 'Special Support with Jackpot',
-    mobilityDescription: 'Slides up to 3 squares orthogonally.',
-    passiveAbility: 'Idle Death Gamble: Upon any successful capture, hits Jackpot to earn a 1-turn bonus move (non-recursive).',
+    role: 'Rusher',
+    mobilityDescription: 'Slides up to 2 squares diagonally (no leaping), or steps 1 square orthogonally.',
+    passiveAbility: 'Jackpot: After capturing, earns one extra non-capturing 1-square step with this piece to an unattacked square keeping Sovereign safe.',
     initialPos: { x: 2, y: 1 }, // B1
   },
   culling_sukuna: {
     type: 'culling_sukuna',
     name: 'Ryomen Sukuna',
     team: 'black',
-    role: 'Protected King-equivalent',
-    mobilityDescription: 'Moves up to 2 squares in any direction.',
-    passiveAbility: 'King of Curses: Immune to all enemy captures during the first 5 turns.',
-    activeAbility: 'Malevolent Shrine (Once per game): Activates domain restricting all White pieces within radius 2 for their next turn.',
+    role: 'Sovereign',
+    mobilityDescription: 'Moves/captures 1 step in all 8 directions.',
+    activeAbility: 'Domain Step (Once per game): Move to an empty square exactly 2 away straight or diagonally, jumping pieces. Unusable while in check; landing square must not be attacked.',
     initialPos: { x: 1, y: 8 }, // A8
   },
   culling_kenjaku: {
     type: 'culling_kenjaku',
     name: 'Kenjaku',
     team: 'black',
-    role: 'Queen-equivalent',
-    mobilityDescription: 'Slides orthogonally and diagonally like a Queen.',
-    activeAbility: 'Curse Manipulation (Once per game): Repositions or swaps places with any friendly piece (excluding Sukuna) within range 3.',
+    role: 'Vanguard',
+    mobilityDescription: 'Slides up to 3 squares in all 8 directions (no leaping).',
+    activeAbility: 'Black Flash: A capture of an enemy at exactly distance 2 in a straight line strikes in place (Kenjaku does not move; target is removed). Distance-1 and 3 captures move normally.',
     initialPos: { x: 2, y: 8 }, // B8
   },
   culling_uraume: {
     type: 'culling_uraume',
     name: 'Uraume',
     team: 'black',
-    role: 'Special Support',
-    mobilityDescription: 'Slides diagonally like a Bishop, plus steps 1 square orthogonally.',
-    activeAbility: 'Frost Calm: Targets a 3x3 sector within line of sight, immobilizing enemies inside for 1 turn (3 turn cooldown).',
+    role: 'Artillery',
+    mobilityDescription: 'Moves/captures 1 step in all 8 directions.',
+    activeAbility: 'Ranged Strike: Removes an enemy exactly 2 squares away in 8 directions if the middle square is empty; Uraume does not move.',
     initialPos: { x: 3, y: 8 }, // C8
   },
   culling_yorozu: {
     type: 'culling_yorozu',
     name: 'Yorozu',
     team: 'black',
-    role: 'Special Support',
-    mobilityDescription: 'Slides orthogonally like a Rook, plus steps 1 square diagonally.',
-    activeAbility: 'Liquid Metal Strike (Once per game): Creates and hurls constructed insect armor/spear to capture an enemy up to 3 squares away.',
+    role: 'Bulwark',
+    mobilityDescription: 'Moves/captures as a knight (8 L-jumps, leaps freely).',
+    passiveAbility: 'Shell: The first capture attempt on Yorozu fails; attacker stays on its square, shell breaks, and the turn is spent.',
     initialPos: { x: 4, y: 8 }, // D8
   },
   culling_reggie: {
     type: 'culling_reggie',
     name: 'Reggie Star',
     team: 'black',
-    role: 'Special Support',
-    mobilityDescription: 'Moves up to 2 squares in any direction.',
-    activeAbility: 'Receipt Contract (Once per game): Burns a contract to bestow an impenetrable 1-hit shield upon self or an adjacent ally.',
+    role: 'Warden',
+    mobilityDescription: 'Slides up to 3 squares orthogonally (no leaping).',
+    passiveAbility: 'Ratio Field: Any enemy piece in the 8 adjacent squares is restricted to moving/capturing 1 square max, and Artillery strikes are disabled for it.',
     initialPos: { x: 5, y: 8 }, // E8
   },
   culling_naoya: {
     type: 'culling_naoya',
-    name: 'Naoya Zenin (Cursed Spirit)',
+    name: 'Naoya Zenin',
     team: 'black',
-    role: 'Special Support',
-    mobilityDescription: 'Projection Sorcery: High-speed sprint up to 4 squares in any straight line.',
-    statusEffect: 'Subsonic Cooldown: After a sprint of 3+ squares, must rest with 1-square movement on the following turn.',
+    role: 'Skirmisher',
+    mobilityDescription: 'Moves/captures 1 step in all 8 directions, OR hops exactly 2 squares orthogonally (leaping over anything).',
+    passiveAbility: 'Heavenly Restriction: Ignores restriction from the Warden Ratio Field.',
     initialPos: { x: 6, y: 8 }, // F8
   },
   culling_kurourushi: {
     type: 'culling_kurourushi',
     name: 'Kurourushi',
     team: 'black',
-    role: 'Special Support',
-    mobilityDescription: 'Leaps 2 squares in any direction or slides diagonally up to 2 squares.',
-    activeAbility: 'Parthenogenesis / Roach Swarm: Upon capture or activation, spawns 1 Cursed Swarm unit (maximum 1 active swarm).',
+    role: 'Rusher',
+    mobilityDescription: 'Slides up to 2 squares diagonally (no leaping), or steps 1 square orthogonally.',
+    passiveAbility: 'Jackpot: After capturing, earns one extra non-capturing 1-square step with this piece to an unattacked square keeping Sovereign safe.',
     initialPos: { x: 7, y: 8 }, // G8
   },
   culling_pawn: {
     type: 'culling_pawn',
     name: 'Culling Pawn',
     team: 'white', // Color determined by piece instance
-    role: 'Standard Culling Pawn',
-    mobilityDescription: 'Steps 1 square forward; captures 1 square diagonally forward. Promotes upon reaching opponent end rank.',
+    role: 'Pawn',
+    mobilityDescription: 'Steps 1 square forward; captures 1 square diagonally forward. Promotes to Warden (Nanami/Reggie) on the far edge of each file.',
     initialPos: { x: 2, y: 2 },
   },
   culling_swarm: {
     type: 'culling_swarm',
     name: 'Cursed Roach Swarm',
     team: 'black',
-    role: 'Spawned Unit',
-    mobilityDescription: 'Steps 1 square in any orthogonal or diagonal direction.',
+    role: 'Spawned Unit (Deprecated)',
+    mobilityDescription: 'Steps 1 square in any orthogonal or diagonal direction (kept in union, never spawned).',
     initialPos: { x: 0, y: 0 },
   },
 };
@@ -313,10 +364,13 @@ export interface CullingMatchState {
   lastTurnStartTime: number;
   history: CullingMove[];
   lastMove?: CullingMove;
-  hakariBonusPending?: boolean;
+  hakariBonusPending?: boolean; // General Rusher Jackpot pending flag
+  jackpotPiecePos?: CullingPos; // Track square of Rusher entitled to bonus step
   makiChainPending?: boolean;
   domainActiveUntilTurn?: { color: CullingPieceColor; untilTurn: number; center: CullingPos };
   rulebookPausedUntil?: number;
+  halfmoveClock?: number; // 30-move rule counter (60 halfmoves without capture or pawn move)
+  positionHistory?: string[]; // Board FEN-like signatures for threefold repetition detection
   createdAt: number;
   updatedAt: number;
   // Performance optimization: cached king positions (maintained incrementally)

@@ -10,6 +10,7 @@ import { RulesModal } from './components/RulesModal';
 import { BotMatchModal } from './components/BotMatchModal';
 import { PopupAd } from './components/PopupAd';
 import { CraftTheoryView } from './components/CraftTheoryView';
+import { RoseParadiseView } from './rose/RoseParadiseView';
 import {
   MatchState,
   PieceColor,
@@ -53,6 +54,7 @@ function AppContent() {
   const [isRulesOpen, setIsRulesOpen] = useState(false);
   const [isBotModalOpen, setIsBotModalOpen] = useState(false);
   const [showCraftTheory, setShowCraftTheory] = useState(false);
+  const [isRoseOpen, setIsRoseOpen] = useState(false);
   const [botInitialGameMode, setBotInitialGameMode] = useState<'standard' | 'crafted'>('standard');
 
   // Last completed game review state (retained for 10 minutes then auto-flushed)
@@ -476,6 +478,10 @@ function AppContent() {
     return <CraftTheoryView onBack={() => setShowCraftTheory(false)} />;
   }
 
+  if (isRoseOpen) {
+    return <RoseParadiseView onBack={() => setIsRoseOpen(false)} />;
+  }
+
   const activeGame = botMatch || socketMatch;
 
   return (
@@ -507,6 +513,7 @@ function AppContent() {
             setIsBotModalOpen(true);
           }}
           onOpenCraftTheory={() => setShowCraftTheory(true)}
+          onOpenRose={() => setIsRoseOpen(true)}
           lastCompletedMatch={lastCompletedMatch}
           onClearLastGame={() => {
             setLastCompletedMatch(null);

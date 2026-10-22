@@ -26,20 +26,20 @@ import {
 export const CULLING_PIECE_VALUES: Record<CullingPieceType, number> = {
   culling_gojo: 20000,
   culling_sukuna: 20000,
-  culling_yuji: 950,
-  culling_kenjaku: 950,
-  culling_mechamaru: 650,
-  culling_panda: 600,
-  culling_nanami: 700,
-  culling_maki: 680,
-  culling_hakari: 720,
-  culling_uraume: 680,
-  culling_yorozu: 670,
-  culling_reggie: 600,
-  culling_naoya: 720,
-  culling_kurourushi: 650,
+  culling_yuji: 800,
+  culling_kenjaku: 800,
+  culling_nanami: 450,
+  culling_reggie: 450,
+  culling_mechamaru: 400,
+  culling_uraume: 400,
+  culling_panda: 350,
+  culling_yorozu: 350,
+  culling_maki: 350,
+  culling_naoya: 350,
+  culling_hakari: 350,
+  culling_kurourushi: 350,
   culling_pawn: 100,
-  culling_swarm: 80,
+  culling_swarm: 50,
 };
 
 // 10x10 Cross-Board Positional Table (White perspective: y=0 bottom arm, y=9 top arm)
@@ -86,10 +86,8 @@ export function evaluateCullingBoard(board: CullingBoard, turnCount: number): nu
 
       // Special state adjustments
       let bonus = 0;
-      if (piece.pandaCore === 'gorilla') bonus += 80;
-      if (piece.contractShield) bonus += 120;
-      if (!piece.specialUsed) bonus += 50; // Ability preserved
-      if (piece.isRestricted) bonus -= 70; // Immobilized
+      if (piece.pandaCore === 'panda') bonus += 50; // Bulwark Shell intact
+      if (!piece.specialUsed) bonus += 40; // Sovereign Domain Step available
 
       // Pawn advancement bonus
       if (piece.type === 'culling_pawn') {

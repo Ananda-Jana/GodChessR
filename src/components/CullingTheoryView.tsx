@@ -75,8 +75,8 @@ function getEnginePiecePattern(
     id: 'center_preview',
     type: pieceType,
     color,
-    hasMoved: true, // test normal move capabilities
-    pandaCore: pieceType === 'culling_panda' ? 'panda' : undefined,
+    hasMoved: true,
+    pandaCore: (pieceType === 'culling_panda' || pieceType === 'culling_yorozu') ? 'panda' : undefined,
   };
   board[centerPos.y][centerPos.x] = centerPiece;
 
@@ -92,7 +92,7 @@ function getEnginePiecePattern(
 
   match.board = board;
   match.turn = color;
-  match.turnCount = 6; // turn 6 to allow full capture engine mechanics
+  match.turnCount = 1;
 
   const moves: CullingMove[] = getPseudoLegalMovesForSquare(match, centerPos);
 
@@ -103,16 +103,10 @@ function getEnginePiecePattern(
     const dy = m.to.y - 4;
     if (dx >= -4 && dx <= 4 && dy >= -4 && dy <= 4) {
       const key = `${dx},${dy}`;
-      if (m.captured) {
-        cellMap.set(key, { type: 'capture', label: 'Cap' });
-      } else if (
-        m.actionType === 'teleport' ||
-        m.actionType === 'pierce_shoot' ||
-        m.actionType === 'construct_strike' ||
-        m.actionType === 'frost_freeze' ||
-        m.actionType === 'contract_shield'
-      ) {
+      if (m.actionType === 'teleport' || m.actionType === 'shoot' || m.actionType === 'black_flash') {
         cellMap.set(key, { type: 'special', label: 'Tech' });
+      } else if (m.captured) {
+        cellMap.set(key, { type: 'capture', label: 'Cap' });
       } else {
         cellMap.set(key, { type: 'move' });
       }
@@ -120,7 +114,6 @@ function getEnginePiecePattern(
   }
 
   if (scenario === 'combat') {
-    // Show ally on board
     cellMap.set('0,1', { type: 'ally', label: 'Ally', pieceType: 'culling_pawn', pieceColor: color });
   }
 
@@ -149,9 +142,9 @@ const MiniBoardDiagram: React.FC<{
 
       <div className="grid grid-cols-9 grid-rows-9 w-44 h-44 sm:w-52 sm:h-52 border-2 border-black dark:border-white p-0.5 bg-neutral-900 shadow-[3px_3px_0px_#000] dark:shadow-[3px_3px_0px_#fff]">
         {Array.from({ length: 9 }).map((_, r) => {
-          const dy = 4 - r; // row index to dy: r=0 -> dy=+4, r=8 -> dy=-4
+          const dy = 4 - r;
           return Array.from({ length: 9 }).map((__, c) => {
-            const dx = c - 4; // col index to dx: c=0 -> dx=-4, c=8 -> dx=+4
+            const dx = c - 4;
             const key = `${dx},${dy}`;
             const info = pattern.get(key);
             const isCenter = dx === 0 && dy === 0;
@@ -232,7 +225,7 @@ export const CullingTheoryView: React.FC<CullingTheoryViewProps> = ({ onBack }) 
   const { theme } = useTheme();
   const [selectedSection, setSelectedSection] = useState<string>('intro');
 
-  // Comprehensive articles detailing all Culling Game pieces strictly aligned with cullingEngine.ts
+  // Symmetrical articles detailing all 8 Culling Game roles strictly aligned with cullingEngine.ts
   const pieceArticles: PieceArticle[] = useMemo(
     () => [
       {
@@ -240,39 +233,37 @@ export const CullingTheoryView: React.FC<CullingTheoryViewProps> = ({ onBack }) 
         counterpartId: 'culling_sukuna',
         name: 'Satoru Gojo',
         counterpartName: 'Ryomen Sukuna',
-        role: 'Protected King-equivalent',
+        role: 'Sovereign',
         materialValue: 99,
         whiteColor: 'white',
         blackColor: 'black',
         movementSummary:
-          'Steps up to 2 squares in any direction (orthogonal or diagonal). Blocked by intervening pieces along rays.',
-        passiveAbility:
-          'Infinity: Immune to all enemy captures during the first 5 turns of the match. Cannot be checked or taken while active.',
+          'Moves/captures 1 step in all 8 directions. Sovereign piece whose loss is fatal.',
         activeAbility:
-          'Limitless Teleport (Once per game): Translocates instantly to any unoccupied square within radius 3, bypassing obstacles and board blockers completely.',
+          'Domain Step (Once per game): Move to an empty square exactly 2 away along a straight or diagonal line (8 targets), jumping intervening pieces. Unusable while in check; landing square must not be attacked.',
         strengths: [
-          'Total opening immunity for 5 full turns allows forward King positioning without early mate threats.',
-          'Two-square radial mobility outpaces standard chess Kings in endgames.',
-          'One-time 3-square teleport acts as the ultimate escape button from deep forks or mating nets.',
+          'Omnidirectional 1-step flexibility controls adjacent key squares.',
+          'Domain Step allows jumping over obstacles to escape entrapment or rapidly reposition across choke points.',
+          'Immune to trivial checkmate traps when saving Domain Step for emergency evasions.',
         ],
         weaknesses: [
-          'If captured after Turn 5, your entire faction instantly loses.',
-          'Vulnerable to Nanami’s 7:3 restriction if an enemy Nanami steps into adjacent squares.',
+          'If captured or checkmated, the match is instantly lost.',
+          'Domain Step CANNOT be used while in check; you must escape check with a standard step or interposition.',
         ],
         commonMistakes: [
-          'Forgetting that Infinity expires precisely when Turn 6 begins, leaving Gojo exposed in enemy territory.',
-          'Using the teleport too early for a trivial step instead of saving it for game-saving defense.',
+          'Using Domain Step prematurely on turn 2 instead of saving it as a late-game tactical escape.',
+          'Assuming Domain Step can capture an enemy piece (it can only land on an empty, unattacked square).',
         ],
         tactics: [
-          'Turn 1–5 Central Stride: Use immunity turns to safely centralize Gojo and anchor piece developments.',
-          'Emergency Teleport Castle: Teleport directly from the front lines back to the shielded arm (B0..G0) if the King is swarmed.',
+          'Domain Vault: Use Domain Step to jump over your own pawn rank into safe central territory.',
+          'King Shelter: When facing long-range sliding pressure, maneuver into the extended arms (B0..G0 or B9..G9).',
         ],
         specialScenario: {
-          title: 'Limitless Teleport Escape',
+          title: 'Domain Step Evasion',
           description:
-            'When surrounded by enemy heavy pieces or pinned against the board edge, Gojo bypasses all intervening units to any free cell within a 3-square Chebyshev distance.',
-          tip: 'Hold the teleport until the opponent commits heavy resources to a mating attack, rendering their moves wasted.',
-          limits: 'Once per match. Cannot land on occupied squares or capture upon landing.',
+            'When not in check, the Sovereign leaps exactly 2 squares in any of 8 straight or diagonal lines, vaulting cleanly over an intervening piece to land on an unattacked empty square.',
+          tip: 'Ensure the destination is completely unattacked by any opponent piece before committing.',
+          limits: 'Once per match. Cannot capture. Cannot be activated while in check. Landing cell must not be attacked.',
         },
       },
       {
@@ -280,303 +271,258 @@ export const CullingTheoryView: React.FC<CullingTheoryViewProps> = ({ onBack }) 
         counterpartId: 'culling_kenjaku',
         name: 'Yuji Itadori',
         counterpartName: 'Kenjaku',
-        role: 'Queen-equivalent with Leaping Ability',
-        materialValue: 9.5,
+        role: 'Vanguard',
+        materialValue: 8.0,
         whiteColor: 'white',
         blackColor: 'black',
         movementSummary:
-          'Slides along ranks, files, and diagonals like a Queen. Features the Divergent Fist leap.',
+          'Slides up to 3 squares in all 8 directions (orthogonal and diagonal). Does not leap over pieces.',
         activeAbility:
-          'Divergent Fist Leap: Can jump over exactly one blocking piece along any movement line to capture or land beyond it.',
+          'Black Flash: A capture of an enemy at exactly distance 2 in a straight line strikes in place (the Vanguard does NOT move; the target is removed). Captures at distance 1 or 3 move normally.',
         strengths: [
-          'Full-board Queen mobility combined with the ability to hop over friendly pawns or enemy sentries.',
-          'Creates inescapable discover checks and forks through enemy frontlines.',
+          'Multi-square sliding coverage across 8 directions dominates central files and open ranks.',
+          'Black Flash allows remote decapitation at distance 2 without vacating defensive outposts.',
         ],
         weaknesses: [
-          'Prime target for enemy trades and long-range Mechamaru physical shots.',
-          'Restricted to 1 square if standing adjacent to Nanami.',
+          'Cannot leap over any pieces—sliding rays stop at the first unit or void cell.',
+          'Restricted to 1 square max when standing adjacent to an enemy Warden (Nanami/Reggie).',
         ],
         commonMistakes: [
-          'Assuming Yuji can leap over TWO pieces—he can only hop over at most one obstacle per ray.',
-          'Premature Queen raids into enemy territory before pawns are developed.',
+          'Expecting to jump over pawns (leaping is strictly exclusive to Bulwark and Skirmisher).',
+          'Forgetting that Black Flash only triggers at exactly distance 2 (distance 1 and 3 captures move the Vanguard).',
         ],
         tactics: [
-          'Shield-Hop Fork: Place Yuji behind your own Pawn and jump directly into the opponent back rank to fork heavy pieces.',
-          'Cross-Arm Infiltration: Use the side arms (L2..L7 and R2..R7) to slide behind enemy defenses.',
+          'Anchor Strike: Position the Vanguard on D3 and use Black Flash to smash enemy pieces on D5 without advancing into crossfire.',
+          'Rook-Battery Support: Pair Vanguard with Artillery to create impenetrable 2-square exclusion corridors.',
         ],
         specialScenario: {
-          title: 'Divergent Fist Vault',
+          title: 'Black Flash Strike in Place',
           description:
-            'Unlike a standard chess Queen blocked by a single pawn, Yuji leaps cleanly over the first obstacle and strikes the piece or square behind it.',
-          tip: 'Use friendly pawns as springboards rather than clearing them out of the way.',
-          limits: 'At most 1 jumped piece per move. Ray continues normally after the jump until second obstacle.',
+            'When capturing an enemy precisely 2 squares away along a straight or diagonal line with an empty middle square, Black Flash obliterates the target while the Vanguard remains anchored on its origin square.',
+          tip: 'Use Black Flash to eliminate hostile pieces without surrendering control of your defensive square.',
+          limits: 'Applies only at distance 2. Middle square must be empty. Distance 1 and 3 captures move normally.',
         },
       },
       {
         id: 'culling_mechamaru',
-        counterpartId: 'culling_yorozu',
+        counterpartId: 'culling_uraume',
         name: 'Kokichi Muta (Mechamaru)',
-        counterpartName: 'Yorozu',
-        role: 'Armored Heavy Rusher',
-        materialValue: 5.5,
+        counterpartName: 'Uraume',
+        role: 'Artillery',
+        materialValue: 4.0,
         whiteColor: 'white',
         blackColor: 'black',
         movementSummary:
-          'Heavy physical sliding up to 4 squares in all 8 orthogonal and diagonal directions.',
-        passiveAbility:
-          'Armored Chassis: Heavy material value that anchors back-rank defense and dominates 4-square diagonals.',
+          'Moves/captures 1 step in all 8 directions. Features long-range Ranged Strike.',
         activeAbility:
-          'Ultra Cannon Overdrive Rush (Once per game): Physical thrust leaping over exactly one obstacle to capture or land up to 3 squares away.',
+          'Ranged Strike: Removes an enemy exactly 2 squares away along a straight or diagonal line, only if the middle square is empty; the Artillery does not move.',
         strengths: [
-          'High 4-square speed in all 8 directions covers critical center files (D, E, F).',
-          'Overdrive Rush delivers sudden checkmate threats through pawn walls.',
+          'Safe stationary sniping removes enemy attackers without exposing the Artillery to counter-attacks.',
+          'Controls all 8 radial directions at distance 2 when middle squares are clear.',
         ],
         weaknesses: [
-          'Capped at 4 squares max slide (cannot cross the full 10-rank board in a single move without repositioning).',
-          'Vulnerable to diagonal forks from agile leapers like Maki and Kurourushi.',
+          'Normal movement is only 1 step, making positional redeployment deliberate.',
+          'Ranged Strike is completely DISABLED if adjacent to an enemy Warden (Ratio Field restriction).',
         ],
         commonMistakes: [
-          'Treating Mechamaru as an infinite Rook—remember the 4-square maximum range limitation.',
-          'Wasting Overdrive Rush early on a standard pawn instead of breaking an enemy King defense.',
+          'Trying to fire through a blocked middle square (middle cell MUST be empty).',
+          'Allowing an enemy Warden to step adjacent, shutting down all Ranged Strike capabilities.',
         ],
         tactics: [
-          'Arm-to-Center Battery: Deploy Mechamaru along the F-file to control the entry squares of the top and bottom arms.',
-          'Overdrive King Snatch: Leap over an opponent bodyguard pawn to strike the enemy King after Turn 5.',
+          'Choke-Point Sentry: Station Artillery behind friendly pawns and snipe incoming hostiles across open ranks.',
+          'Corner Arm Fortress: Post Artillery on B1 or G1 to command diagonal entrance routes into the back rank.',
         ],
-      },
-      {
-        id: 'culling_nanami',
-        counterpartId: 'culling_kurourushi',
-        name: 'Kento Nanami',
-        counterpartName: 'Kurourushi',
-        role: 'Heavy Orthogonal Slider & Control Anchor',
-        materialValue: 6.0,
-        whiteColor: 'white',
-        blackColor: 'black',
-        movementSummary:
-          'Slides any distance horizontally and vertically along ranks and files (Rook-equivalent).',
-        passiveAbility:
-          '7:3 Ratio Technique: Any enemy piece standing adjacent (in the surrounding 3x3 box) is restricted to moving exactly 1 square max. Immune to capture by pawns and swarms!',
-        strengths: [
-          'Pawn Immunity: Enemy pawns and roach swarms CANNOT capture Nanami—he can walk directly into pawn chains.',
-          'Paralyzing Proximity: Moving adjacent to enemy Queens (Yuji/Kenjaku) cuts their sliding range down to a mere 1-square step!',
-        ],
-        weaknesses: [
-          'Higher-tier pieces (Kings, Queens, Mechas, leapers) can still capture Nanami normally.',
-          'Cannot slide diagonally—pure orthogonal slider.',
-        ],
-        commonMistakes: [
-          'Forgetting that Nanami is NOT immune to Maki, Panda, or Queen captures.',
-          'Letting Nanami get trapped on an outer arm without orthogonal retreat paths.',
-        ],
-        tactics: [
-          'Pawn-Wall Breaker: March Nanami straight into the opponent’s pawn chain without fear of pawn recapture.',
-          'Queen Neutralizer: Step adjacent to Kenjaku or Yuji to completely shut down their multi-square diagonal sweeps.',
-        ],
+        specialScenario: {
+          title: 'Stationary Ranged Strike',
+          description:
+            'Artillery eliminates an enemy piece 2 squares away along any orthogonal or diagonal vector without moving, provided the intervening cell is unoccupied.',
+          tip: 'Keep the intermediate square vacant to preserve your strike line.',
+          limits: 'Target must be exactly distance 2. Middle square must be empty. Disabled when restricted by Warden.',
+        },
       },
       {
         id: 'culling_panda',
-        counterpartId: 'culling_reggie',
+        counterpartId: 'culling_yorozu',
         name: 'Panda',
+        counterpartName: 'Yorozu',
+        role: 'Bulwark',
+        materialValue: 3.5,
+        whiteColor: 'white',
+        blackColor: 'black',
+        movementSummary:
+          'Moves/captures as a Knight (8 L-jumps: 2x1). Leaps freely over intervening pieces.',
+        passiveAbility:
+          'Shell: The first capture attempt on this piece fails; the attacker stays on its square, the shell breaks, and the turn is spent. The next capture works normally.',
+        strengths: [
+          'One of only two roles in the game capable of leaping over pieces in normal play.',
+          'Shell absorbs the first enemy attack completely, forcing the opponent to waste an entire turn.',
+        ],
+        weaknesses: [
+          'Once the shell breaks, the Bulwark can be captured normally.',
+          'Knight geometry cannot slide across open ranks or files.',
+        ],
+        commonMistakes: [
+          'Assuming the shell regenerates (it breaks permanently upon the first attack).',
+          'Expecting extra king-steps after the shell breaks (movement remains knight L-jumps only).',
+        ],
+        tactics: [
+          'Tempo Sponge: Place Bulwark directly in the path of an enemy Vanguard or Rusher; their first attack fails, surrendering tempo.',
+          'Fork Infiltration: Leap over congested pawn ranks to fork the enemy Sovereign and major pieces.',
+        ],
+        specialScenario: {
+          title: 'Shell Hardening Barrier',
+          description:
+            'When an opponent attacks a Bulwark with shell intact, the attack fails entirely. The attacking piece is stopped on its origin square, the shell breaks, and the enemy turn ends with zero progress.',
+          tip: 'Use the Bulwark as a frontline buffer to nullify an opponent’s aggressive momentum.',
+          limits: 'Works once per Bulwark. Attacker stays on its origin square. Second capture attempt succeeds normally.',
+        },
+      },
+      {
+        id: 'culling_nanami',
+        counterpartId: 'culling_reggie',
+        name: 'Kento Nanami',
         counterpartName: 'Reggie Star',
-        role: 'Resilient Support & Core Shifter',
+        role: 'Warden',
         materialValue: 4.5,
         whiteColor: 'white',
         blackColor: 'black',
         movementSummary:
-          'Standard Knight L-shape leaps (2x1). When transformed to Gorilla Core, gains 1-square steps in all 8 directions.',
+          'Slides up to 3 squares orthogonally (horizontal/vertical). Does not leap.',
         passiveAbility:
-          'Core Switch: The first time Panda is attacked, the capture is REJECTED! Panda sheds his outer shell and awakens Gorilla Core. Only a second attack can eliminate him.',
+          'Ratio Field: Any enemy piece in the 8 adjacent squares is restricted to moving/capturing 1 square max, and Artillery strikes are disabled for it.',
         strengths: [
-          'Virtually two lives on the board! Forces the enemy to waste two separate turns capturing him.',
-          'Gorilla Core expands his moveset from L-leaps to include 1-step orthogonal and diagonal strikes.',
+          'Paralyzing zone of control cuts enemy multi-square sliders down to 1 step.',
+          'Disables enemy Artillery strikes completely within its adjacent perimeter.',
+          'Fast orthogonal repositioning up to 3 squares across open files.',
         ],
         weaknesses: [
-          'Can be pushed backward or pinned while in Panda form.',
-          'Once Gorilla Core is triggered, he has no third life.',
+          'No diagonal movement whatsoever.',
+          'Has NO capture immunity (can be captured by pawns, sovereigns, and any piece).',
+          'Cannot restrict Skirmishers (Maki/Naoya ignore Ratio Field due to Heavenly Restriction).',
         ],
         commonMistakes: [
-          'Failing to use Gorilla Core’s newly acquired 1-step moves to fork adjacent high-value targets.',
-          'Sacrificing Panda before he has triggered Core Switch.',
+          'Assuming Nanami is immune to pawn captures (all pawn immunities have been removed).',
+          'Trying to restrict Maki or Naoya (Skirmishers ignore Ratio Field).',
         ],
         tactics: [
-          'Bait & Counter: Intentionally leave Panda on an attack line; when the opponent captures him, the attack fails, leaving their piece vulnerable to your immediate counter-strike!',
-          'Arm Sentry: Station Panda at the B0/G0 or B9/G9 choke point to absorb two hostile waves.',
+          'Queen Cager: Step adjacent to the enemy Vanguard to shut down its 3-square sliding sweeps.',
+          'Artillery Silencer: Walk adjacent to Mechamaru or Uraume to immediately deactivate their Ranged Strike.',
         ],
+        specialScenario: {
+          title: 'Ratio Field Suppression',
+          description:
+            'Any enemy unit standing in the 8 squares surrounding the Warden is restricted to a maximum movement/capture distance of 1 square, and Artillery ranged strikes are disabled.',
+          tip: 'Lock down enemy heavy pieces by pressing the Warden into close-quarters combat.',
+          limits: 'Applies dynamically from board position. Skirmishers are immune due to Heavenly Restriction.',
+        },
       },
       {
         id: 'culling_maki',
         counterpartId: 'culling_naoya',
         name: 'Maki Zenin',
         counterpartName: 'Naoya Zenin',
-        role: 'Agile Leaping Infiltrator',
-        materialValue: 4.0,
+        role: 'Skirmisher',
+        materialValue: 3.5,
         whiteColor: 'white',
         blackColor: 'black',
         movementSummary:
-          'Slides up to 2 squares diagonally. Leaps exactly 2 squares orthogonally over obstacles.',
-        activeAbility:
-          'Heavenly Restriction Rush: High tactical agility capable of vaulting over friendly or enemy pieces along ranks and files.',
+          'Moves/captures 1 step in all 8 directions, OR hops exactly 2 squares orthogonally (leaping over anything).',
+        passiveAbility:
+          'Heavenly Restriction: Completely immune to the Warden’s Ratio Field restriction.',
         strengths: [
-          'Obstacle-ignoring 2-square orthogonal leaps provide unmatched escape routes through congested board centers.',
-          'Quick 2-square diagonal slides control tight color complexes.',
+          'One of only two roles capable of leaping over pieces (2-square orthogonal hops).',
+          'Ignores the Warden Ratio Field, retaining full leaping mobility even when adjacent to Nanami or Reggie.',
+          'High unpredictability leaping through congested pawn chains.',
         ],
         weaknesses: [
-          'Lacks infinite sliding distance—cannot cross the full board without multiple maneuvers.',
-          'Vulnerable to long-range Rook and Queen lines once caught in the open.',
+          'Cannot slide beyond 2 squares in a single turn.',
+          'Vulnerable to long-range sliding attacks across open lines.',
         ],
         commonMistakes: [
-          'Confusing her 2-square orthogonal jump with a standard Knight L-leap.',
-          'Leaving Maki on a file with open enemy sliding pieces.',
+          'Confusing the 2-square orthogonal hop with a Knight L-jump (hop is strictly horizontal or vertical).',
+          'Trying to hop diagonally over pieces (diagonal moves are strictly 1-step sliding).',
         ],
         tactics: [
-          'Choke-Point Vault: Leap over your own pawn rank at C2 to immediately threaten the enemy D4/E4 center squares.',
-          'King Harassment: Use 2-square diagonal slides to deliver unexpected checks from behind cover.',
+          'Pawn Vault: Hop over your own Rank 2 pawns directly onto Rank 4 to establish immediate central control.',
+          'Warden Hunter: Use Heavenly Restriction to leap right past a Warden without suffering mobility penalties.',
         ],
+        specialScenario: {
+          title: 'Heavenly Restriction Vault',
+          description:
+            'The Skirmisher hops exactly 2 squares along ranks and files, ignoring any intermediate piece, and is completely immune to movement restrictions imposed by enemy Wardens.',
+          tip: 'Use Skirmishers to dismantle enemy Warden anchors that other pieces cannot approach safely.',
+          limits: 'Orthogonal hops are fixed at distance 2. Diagonal movement is capped at 1 step.',
+        },
       },
       {
         id: 'culling_hakari',
-        counterpartId: 'culling_uraume',
+        counterpartId: 'culling_kurourushi',
         name: 'Kinji Hakari',
-        counterpartName: 'Uraume',
-        role: 'Jackpot Momentum Specialist',
-        materialValue: 4.5,
+        counterpartName: 'Kurourushi',
+        role: 'Rusher',
+        materialValue: 3.5,
         whiteColor: 'white',
         blackColor: 'black',
-        movementSummary: 'Orthogonal sliding up to 3 squares along ranks and files.',
-        passiveAbility:
-          'Idle Death Gamble: Upon ANY successful piece capture, Hakari hits JACKPOT! Earns an immediate consecutive bonus turn (non-recursive).',
-        strengths: [
-          'The only piece in the game that grants consecutive player turns upon capturing.',
-          'Can capture a piece and instantly retreat or deliver a second capture in the same turn!',
-        ],
-        weaknesses: [
-          'Limited to orthogonal moves (cannot move diagonally).',
-          '3-square range cap requires tactical positioning before initiating captures.',
-        ],
-        commonMistakes: [
-          'Forgetting to plan the jackpot bonus step ahead of time, wasting the extra turn on an idle move.',
-          'Assuming jackpot triggers on non-capture moves (it only activates on capturing enemy pieces).',
-        ],
-        tactics: [
-          'Double-Strike Combo: Capture an enemy pawn with Hakari, trigger Jackpot, and immediately capture an adjacent Rook or King in the bonus turn!',
-          'Hit & Run: Capture an enemy piece on deep enemy squares, then immediately retreat Hakari back to safety in the same breath.',
-        ],
-      },
-      {
-        id: 'culling_reggie',
-        counterpartId: 'culling_panda',
-        name: 'Reggie Star',
-        counterpartName: 'Panda',
-        role: 'Tactical Support & Shield Bestower',
-        materialValue: 4.0,
-        whiteColor: 'black',
-        blackColor: 'black',
-        movementSummary: 'Moves up to 2 squares in any orthogonal or diagonal direction.',
-        activeAbility:
-          'Receipt Contract (Once per game): Bestows an impenetrable 1-hit contract shield upon self or any adjacent friendly piece. The shield absorbs the next capture attempt completely!',
-        strengths: [
-          'Can grant a 1-hit invulnerability shield to Ryomen Sukuna or Kenjaku, making them immune to an impending lethal attack.',
-          'Solid 2-square all-around radial movement.',
-        ],
-        weaknesses: [
-          'Once the contract is burned, Reggie has no other supernatural abilities.',
-          'Low individual offensive firepower compared to heavy hitters.',
-        ],
-        commonMistakes: [
-          'Shielding a piece that was not under immediate danger, wasting the one-time contract.',
-          'Using the shield on a low-value pawn instead of your King or Queen.',
-        ],
-        tactics: [
-          'King Guardian Protocol: Stand adjacent to Sukuna and shield him on Turn 6 right as King immunity ends.',
-          'Unstoppable Attacker: Shield Kenjaku, allowing him to dive deeply into enemy territory without fear of being traded.',
-        ],
-      },
-      {
-        id: 'culling_uraume',
-        counterpartId: 'culling_hakari',
-        name: 'Uraume',
-        counterpartName: 'Kinji Hakari',
-        role: 'Control Controller & Freeze Specialist',
-        materialValue: 5.0,
-        whiteColor: 'black',
-        blackColor: 'black',
         movementSummary:
-          'Slides diagonally like a Bishop, plus steps 1 square in any orthogonal direction.',
-        activeAbility:
-          'Frost Calm: Targets a 3x3 sector within line of sight, freezing and completely immobilizing all enemy pieces caught inside for 1 turn (3-turn cooldown).',
-        strengths: [
-          'Freezes multiple enemy pieces in place, neutralizing attacks or preventing defenders from saving their King.',
-          'Combination of Bishop diagonal slides and orthogonal steps avoids single-color diagonal entrapment.',
-        ],
-        weaknesses: [
-          'Frost Calm has a 3-turn cooldown before it can be deployed again.',
-          'Weak close-quarters brawler against high-mobility leapers.',
-        ],
-        commonMistakes: [
-          'Freezing an empty sector instead of targeting the cluster around the enemy King.',
-          'Targeting friendly pieces inadvertently in overlapping tactical sectors.',
-        ],
-        tactics: [
-          'Turn 6 Deep Freeze: Target Gojo’s guard cluster on Turn 6 to freeze his defenders while Sukuna maneuvers.',
-          'Choke-Point Wall: Freeze the narrow bottleneck between the central board and side arms.',
-        ],
-      },
-      {
-        id: 'culling_naoya',
-        counterpartId: 'culling_maki',
-        name: 'Naoya Zenin',
-        counterpartName: 'Maki Zenin',
-        role: 'High-Speed Sprint Rusher',
-        materialValue: 4.5,
-        whiteColor: 'black',
-        blackColor: 'black',
-        movementSummary:
-          'Projection Sorcery: High-speed sprint up to 4 squares in any straight line (orthogonal or diagonal).',
+          'Slides up to 2 squares diagonally (no leaping), or steps 1 square orthogonally.',
         passiveAbility:
-          'Subsonic Cooldown: After performing a sprint of 3 or 4 squares, Naoya must rest on the following turn, limiting his next movement to 1 square max.',
+          'Jackpot: After this piece captures an enemy, the same player earns ONE extra move with that SAME piece: a single 1-square step in 8 directions, no capture, to an unattacked square keeping Sovereign safe.',
         strengths: [
-          'Fastest single-turn coverage among support pieces—can cover 4 squares in 8 directions.',
-          'Tremendous flanking capability across the outer cross wings (L-file to H-file).',
+          'The only role that grants an immediate consecutive player turn upon capturing.',
+          'Hit-and-Run Mastery: Capture an enemy piece and immediately retreat to a safe unattacked square in the same turn.',
         ],
         weaknesses: [
-          'Sprint cooldown reduces him to a slow 1-step piece right after a deep dash.',
-          'Requires clear unobstructed straight lines—cannot jump over pieces.',
+          'Jackpot bonus step CANNOT capture and MUST be to an unattacked square.',
+          'If no safe unattacked square exists, the Jackpot bonus is forfeited automatically.',
         ],
         commonMistakes: [
-          'Sprinting into an isolated enemy square and then being captured during the 1-step cooldown turn.',
-          'Forgetting that 1 or 2 square moves DO NOT trigger the cooldown penalty.',
+          'Expecting to capture a second piece during the Jackpot bonus step (bonus step is non-capturing only).',
+          'Capturing when all surrounding squares are covered by opponent attacks (forfeits bonus).',
         ],
         tactics: [
-          'Staggered Approach: Move 2 squares first to retain full sprint readiness, then sprint 4 squares for the decisive capture.',
-          'Flank Sweep: Sprint down the L or R file to infiltrate the White team’s back rank at H1.',
+          'Tactical Retreat: Capture a forward enemy pawn, activate Jackpot, and step safely back behind friendly lines.',
+          'Diagonal Skewer: Use 2-square diagonal slides to threaten enemy minor pieces on flank corridors.',
         ],
+        specialScenario: {
+          title: 'Idle Death Gamble Jackpot',
+          description:
+            'Upon executing a capture, the Rusher triggers Jackpot, granting an immediate consecutive move consisting of a single 1-square step in any of 8 directions to an unattacked empty square.',
+          tip: 'Verify an unattacked escape square exists before committing the Rusher to a capture.',
+          limits: 'Bonus move must be with the same Rusher piece. Cannot capture. Cannot step into enemy attack. Non-recursive.',
+        },
       },
       {
         id: 'culling_pawn',
         name: 'Culling Pawn',
-        role: 'Frontline Infantry & Promotion Asset',
+        role: 'Pawn',
         materialValue: 1.0,
         whiteColor: 'white',
         blackColor: 'black',
         movementSummary:
-          'Steps 1 square forward. Captures 1 square diagonally forward. Promotes upon reaching the opponent’s end rank (Ranks 8 or 9 for White; Ranks 1 or 0 for Black).',
+          'Steps 1 square forward; captures 1 square diagonally forward. Promotes to Warden upon reaching the far edge of its file.',
         strengths: [
-          'Essential for territorial space control across the B2..G2 and B7..G7 files.',
-          'Promotes automatically to a heavy piece (Nanami or Naoya) upon touching the back row.',
+          'Crucial for space control and establishing board structure across the 88 playable squares.',
+          'Promotes automatically to Warden (Nanami for White, Reggie for Black) upon reaching the file’s far edge.',
         ],
         weaknesses: [
-          'Cannot capture Nanami due to his 7:3 Ratio passive immunity.',
-          'Slow single-step forward pace.',
+          'No initial 2-square double step; no en passant.',
+          'Single-step forward pace requires careful advance coordination.',
         ],
         commonMistakes: [
-          'Moving pawns forward without support, leaving them as easy fodder for Hakari’s Jackpot.',
-          'Overlooking the opponent’s pawn marching toward your end rank.',
+          'Forgetting that different files have different far-edge ranks due to the cross board geometry.',
+          'Expecting promotion into Vanguard or Sovereign (promotion is strictly to Warden).',
         ],
         tactics: [
-          'End-Rank Infiltration: Advance pawns through the extended top/bottom arms (B0/G0 or B9/G9) where defense is thin.',
-          'Jackpot Denial: Never leave unprotected pawns in Hakari’s 3-square orthogonal range.',
+          'Wing Infiltration: March pawns along files L and R (far edge is Rank 7 for White, Rank 2 for Black) for rapid promotion.',
+          'Pocket Advance: Advance pawns into the top/bottom arms (ranks 0 and 9) where defense is scarce.',
         ],
+        specialScenario: {
+          title: 'Far-Edge Warden Promotion',
+          description:
+            'When a pawn advances or captures into the far edge of its file (White: Rank 7 on L/R, Rank 8 on A/H, Rank 9 on B..G; Black mirrored at Ranks 2, 1, 0), it promotes automatically to a Warden.',
+          tip: 'Use lateral wings L and R for the shortest distance to promotion (only 5 steps!).',
+          limits: 'Automatic promotion. White promotes to Nanami; Black promotes to Reggie. Never promotes to Vanguard or Sovereign.',
+        },
       },
     ],
     []
@@ -717,7 +663,7 @@ export const CullingTheoryView: React.FC<CullingTheoryViewProps> = ({ onBack }) 
             <div className="space-y-5 animate-in fade-in duration-200">
               <div className="inline-flex items-center gap-2 px-3 py-1 bg-red-600 text-white border-2 border-black shadow-[2px_2px_0px_#000] text-xs font-black uppercase">
                 <Sparkles className="w-3.5 h-3.5" />
-                Chapter 1: Objective, 88-Square Battlefield & Core Turn Laws
+                Chapter 1: Objective, 88-Square Cross Battlefield & Rebalanced Rules
               </div>
 
               <h2 className="text-2xl sm:text-3xl font-black uppercase tracking-tight">
@@ -725,29 +671,136 @@ export const CullingTheoryView: React.FC<CullingTheoryViewProps> = ({ onBack }) 
               </h2>
 
               <p className="text-xs sm:text-sm text-neutral-600 dark:text-slate-300 font-bold leading-relaxed">
-                The Culling Game is an authoritative, supernatural chess battleground played on an
-                88-square cross-shaped board. Two opposing factions—Satoru Gojo’s Protagonists (White)
-                and Ryomen Sukuna’s Antagonists (Black)—clash with character-specific techniques,
-                five-turn King immunity, and tactical barrier interactions.
+                The Culling Game is an authoritative, 100% deterministic chess battleground played on an
+                88-square cross-shaped board. Both armies are exact 180° rotational mirror twins with
+                identical role laws, strict check and checkmate rules from Move 1, and balanced tactical techniques.
               </p>
 
+              {/* Mirror-Twin Table */}
+              <div className="p-4 bg-neutral-100 dark:bg-[#1e293b] border-2 border-black dark:border-white shadow-[3px_3px_0px_#000]">
+                <h3 className="text-xs font-black uppercase text-amber-500 mb-2 flex items-center gap-1.5">
+                  <Swords className="w-4 h-4" />
+                  Symmetrical Mirror-Twin Army Roles
+                </h3>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px] font-mono font-bold">
+                  <div className="p-2 bg-white dark:bg-[#0f172a] border border-black dark:border-white">
+                    <span className="text-amber-500 block uppercase font-black">Sovereign (V: 99)</span>
+                    <span>Gojo ⚔ Sukuna</span>
+                  </div>
+                  <div className="p-2 bg-white dark:bg-[#0f172a] border border-black dark:border-white">
+                    <span className="text-amber-500 block uppercase font-black">Vanguard (V: 8.0)</span>
+                    <span>Yuji ⚔ Kenjaku</span>
+                  </div>
+                  <div className="p-2 bg-white dark:bg-[#0f172a] border border-black dark:border-white">
+                    <span className="text-amber-500 block uppercase font-black">Artillery (V: 4.0)</span>
+                    <span>Mechamaru ⚔ Uraume</span>
+                  </div>
+                  <div className="p-2 bg-white dark:bg-[#0f172a] border border-black dark:border-white">
+                    <span className="text-amber-500 block uppercase font-black">Bulwark (V: 3.5)</span>
+                    <span>Panda ⚔ Yorozu</span>
+                  </div>
+                  <div className="p-2 bg-white dark:bg-[#0f172a] border border-black dark:border-white">
+                    <span className="text-amber-500 block uppercase font-black">Warden (V: 4.5)</span>
+                    <span>Nanami ⚔ Reggie</span>
+                  </div>
+                  <div className="p-2 bg-white dark:bg-[#0f172a] border border-black dark:border-white">
+                    <span className="text-amber-500 block uppercase font-black">Skirmisher (V: 3.5)</span>
+                    <span>Maki ⚔ Naoya</span>
+                  </div>
+                  <div className="p-2 bg-white dark:bg-[#0f172a] border border-black dark:border-white">
+                    <span className="text-amber-500 block uppercase font-black">Rusher (V: 3.5)</span>
+                    <span>Hakari ⚔ Kurourushi</span>
+                  </div>
+                  <div className="p-2 bg-white dark:bg-[#0f172a] border border-black dark:border-white">
+                    <span className="text-amber-500 block uppercase font-black">Pawn (V: 1.0)</span>
+                    <span>Frontline Infantry</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Quick-Reference Table */}
+              <div className="p-4 bg-neutral-100 dark:bg-[#1e293b] border-2 border-black dark:border-white shadow-[3px_3px_0px_#000]">
+                <h3 className="text-xs font-black uppercase text-amber-500 mb-2 flex items-center gap-1.5">
+                  <Zap className="w-4 h-4" />
+                  Quick-Reference Mobility & Ability Table
+                </h3>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs font-mono font-bold">
+                    <thead>
+                      <tr className="border-b border-black dark:border-white text-neutral-500 uppercase">
+                        <th className="py-1">Role</th>
+                        <th className="py-1">Mobility / Reach</th>
+                        <th className="py-1">Special Technique</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-black/10 dark:divide-white/10 text-neutral-700 dark:text-slate-300">
+                      <tr>
+                        <td className="py-1.5 font-black text-amber-500">Sovereign</td>
+                        <td className="py-1.5">8 directions (1 step)</td>
+                        <td className="py-1.5">Domain Step (2-step jump to safe empty cell, once/game)</td>
+                      </tr>
+                      <tr>
+                        <td className="py-1.5 font-black text-amber-500">Vanguard</td>
+                        <td className="py-1.5">Up to 24 steps (up to 3 in 8 dirs, no leap)</td>
+                        <td className="py-1.5">Black Flash (distance-2 capture strikes in place)</td>
+                      </tr>
+                      <tr>
+                        <td className="py-1.5 font-black text-amber-500">Artillery</td>
+                        <td className="py-1.5">8 steps (1 step in 8 dirs)</td>
+                        <td className="py-1.5">8 Ranged Strikes (distance-2 strike-in-place if middle empty)</td>
+                      </tr>
+                      <tr>
+                        <td className="py-1.5 font-black text-amber-500">Bulwark</td>
+                        <td className="py-1.5">8 Knight L-jumps (leaps freely)</td>
+                        <td className="py-1.5">Shell (absorbs 1st attack completely; attacker stays)</td>
+                      </tr>
+                      <tr>
+                        <td className="py-1.5 font-black text-amber-500">Warden</td>
+                        <td className="py-1.5">12 steps (up to 3 in 4 cardinal dirs)</td>
+                        <td className="py-1.5">Ratio Field (adjacent enemies restricted to 1 step max)</td>
+                      </tr>
+                      <tr>
+                        <td className="py-1.5 font-black text-amber-500">Skirmisher</td>
+                        <td className="py-1.5">12 moves (8 steps + 4 orthogonal 2-hops)</td>
+                        <td className="py-1.5">Heavenly Restriction (immune to Warden Ratio Field)</td>
+                      </tr>
+                      <tr>
+                        <td className="py-1.5 font-black text-amber-500">Rusher</td>
+                        <td className="py-1.5">12 moves (8 diag steps + 4 ortho steps)</td>
+                        <td className="py-1.5">Jackpot (capture grants 1 extra non-capturing safe step)</td>
+                      </tr>
+                      <tr>
+                        <td className="py-1.5 font-black text-amber-500">Pawn</td>
+                        <td className="py-1.5">1 forward step; 1 diagonal capture</td>
+                        <td className="py-1.5">Far-edge automatic promotion to Warden (Nanami/Reggie)</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Core Laws Grid */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="p-4 bg-neutral-100 dark:bg-[#1e293b] border-2 border-black dark:border-white shadow-[2px_2px_0px_#000]">
                   <h3 className="text-xs font-black uppercase text-amber-500 mb-1 flex items-center gap-1.5">
                     <Swords className="w-4 h-4" />
-                    Objective & Win Conditions
+                    Win & Draw Conditions
                   </h3>
                   <ul className="text-xs text-neutral-600 dark:text-slate-300 font-bold space-y-1.5 list-disc list-inside">
                     <li>
-                      <strong>King Decapitation:</strong> Capture the opponent’s King-equivalent
-                      (Satoru Gojo or Ryomen Sukuna) after Turn 5.
+                      <strong>Checkmate:</strong> Trap the enemy Sovereign with no legal escape or interposition.
                     </li>
                     <li>
-                      <strong>Domain Checkmate:</strong> Trap the enemy King with no legal escape or
-                      counter-strike.
+                      <strong>Suppression Loss:</strong> If a player has zero legal moves on their turn, they lose immediately (no stalemate draw).
                     </li>
                     <li>
-                      <strong>Clock Timeout:</strong> Depleting your countdown clock results in immediate loss.
+                      <strong>Draw by Repetition:</strong> Threefold repetition of the same board position.
+                    </li>
+                    <li>
+                      <strong>30-Move Draw:</strong> 30 consecutive full moves (60 plies) without a capture or pawn advance.
+                    </li>
+                    <li>
+                      <strong>Clock Timeout:</strong> Depleting match time results in an immediate loss.
                     </li>
                   </ul>
                 </div>
@@ -755,12 +808,12 @@ export const CullingTheoryView: React.FC<CullingTheoryViewProps> = ({ onBack }) 
                 <div className="p-4 bg-neutral-100 dark:bg-[#1e293b] border-2 border-black dark:border-white shadow-[2px_2px_0px_#000]">
                   <h3 className="text-xs font-black uppercase text-amber-500 mb-1 flex items-center gap-1.5">
                     <Shield className="w-4 h-4" />
-                    Turn 1–5 King Immunity
+                    Universal Leaping & Movement Laws
                   </h3>
                   <p className="text-xs text-neutral-600 dark:text-slate-300 font-bold leading-relaxed">
-                    Neither Satoru Gojo nor Ryomen Sukuna can be captured or checkmated during the first
-                    5 turns of the match (Infinity & King of Curses shields). This allows aggressive
-                    centralization without the threat of instant scholar’s mates.
+                    <strong>Only Bulwark and Skirmisher may leap over pieces in normal play!</strong> All other sliding pieces
+                    (Vanguard, Artillery, Warden, Rusher, Pawn) stop at the first piece (friend or foe) and at any void cell.
+                    Check applies strictly from Move 1.
                   </p>
                 </div>
 
@@ -772,18 +825,18 @@ export const CullingTheoryView: React.FC<CullingTheoryViewProps> = ({ onBack }) 
                   <p className="text-xs text-neutral-600 dark:text-slate-300 font-bold leading-relaxed">
                     Standard 8x8 center (Columns A..H, Ranks 1..8) extended by 4 peripheral arms:
                     Top arm (B9..G9), Bottom arm (B0..G0), Left arm (L2..L7), and Right arm (R2..R7).
-                    The four outer 2x2 corners are VOID space.
+                    The four outer 2x2 corners are non-playable VOID space.
                   </p>
                 </div>
 
                 <div className="p-4 bg-neutral-100 dark:bg-[#1e293b] border-2 border-black dark:border-white shadow-[2px_2px_0px_#000]">
                   <h3 className="text-xs font-black uppercase text-amber-500 mb-1 flex items-center gap-1.5">
                     <Clock className="w-4 h-4" />
-                    Time Controls & Pacing
+                    Far-Edge Pawn Promotion
                   </h3>
                   <p className="text-xs text-neutral-600 dark:text-slate-300 font-bold leading-relaxed">
-                    Available in Blitz (2 minutes) and Rapid (5 minutes). There are no random dice rolls
-                    in Culling Game Mode—all moves and abilities are 100% deterministic and server-authoritative.
+                    When a pawn reaches the far edge of its file (White: Rank 7 on L/R, Rank 8 on A/H, Rank 9 on B..G;
+                    Black mirrored at Ranks 2, 1, 0), it automatically promotes into a Warden (Nanami for White, Reggie for Black).
                   </p>
                 </div>
               </div>
@@ -805,18 +858,16 @@ export const CullingTheoryView: React.FC<CullingTheoryViewProps> = ({ onBack }) 
                 <div className="p-4 bg-neutral-100 dark:bg-[#1e293b] border-2 border-black dark:border-white shadow-[3px_3px_0px_#000]">
                   <h3 className="text-sm font-black uppercase text-amber-500 mb-1 flex items-center gap-2">
                     <span className="px-2 py-0.5 bg-black text-amber-400 text-[10px] font-mono">PHASE 1</span>
-                    The Opening (Turns 1–5) — Seize the Cross Arms
+                    The Opening — Classical Development & Sovereign Security
                   </h3>
                   <p className="text-xs text-neutral-600 dark:text-slate-300 font-bold leading-relaxed mb-2">
-                    During the first 5 turns, your King cannot be eliminated. Do NOT turtle in the corners!
+                    Check applies from Move 1. Do not rush your Sovereign into the open!
                   </p>
                   <ul className="text-xs text-neutral-600 dark:text-slate-300 font-bold space-y-1 list-disc list-inside">
-                    <li>Push the D2 and E2 pawns forward to open diagonals for Maki and Mechamaru.</li>
+                    <li>Push the D2 and E2 pawns forward to liberate your Vanguard and Warden diagonals.</li>
+                    <li>Develop Bulwarks (Panda / Yorozu) into the center; their Shell absorbs early hostile threats.</li>
                     <li>
-                      Advance Gojo / Sukuna into the central D4/E4 files to command high-influence squares under total immunity.
-                    </li>
-                    <li>
-                      Deploy Hakari or Nanami into the lateral wings (L-file and R-file) to control perimeter flanking corridors.
+                      Hop Skirmishers (Maki / Naoya) over your pawn chain to contest the central files (D4, E4).
                     </li>
                   </ul>
                 </div>
@@ -824,20 +875,20 @@ export const CullingTheoryView: React.FC<CullingTheoryViewProps> = ({ onBack }) 
                 <div className="p-4 bg-neutral-100 dark:bg-[#1e293b] border-2 border-black dark:border-white shadow-[3px_3px_0px_#000]">
                   <h3 className="text-sm font-black uppercase text-amber-500 mb-1 flex items-center gap-2">
                     <span className="px-2 py-0.5 bg-black text-amber-400 text-[10px] font-mono">PHASE 2</span>
-                    The Midgame (Turns 6–15) — Strike with Asymmetric Techniques
+                    The Midgame — Tactical Combinations & Zone Suppression
                   </h3>
                   <p className="text-xs text-neutral-600 dark:text-slate-300 font-bold leading-relaxed mb-2">
-                    Turn 6 is the deadly inflection point. Kings are now mortal.
+                    Leverage asymmetric strike-in-place techniques and restriction fields:
                   </p>
                   <ul className="text-xs text-neutral-600 dark:text-slate-300 font-bold space-y-1 list-disc list-inside">
                     <li>
-                      If playing White, leverage Yuji’s Divergent Fist to leap over pawn lines and pin the opponent Queen.
+                      Position your Vanguard for Black Flash strikes at distance 2, eliminating enemy pieces without giving up position.
                     </li>
                     <li>
-                      If playing Black, burn Reggie Star’s Contract Shield to bestow an indestructible shield on Sukuna immediately on Turn 6.
+                      Advance your Warden into close contact with the enemy Vanguard to restrict its movement to 1 square.
                     </li>
                     <li>
-                      Use Nanami to freeze enemy Queen movements by stepping directly adjacent (7:3 Ratio reduces sliding to 1 step).
+                      Use Artillery to snipe enemy pieces across clear ranks, and trigger Rusher Jackpot to hit-and-run safely.
                     </li>
                   </ul>
                 </div>
@@ -845,14 +896,14 @@ export const CullingTheoryView: React.FC<CullingTheoryViewProps> = ({ onBack }) 
                 <div className="p-4 bg-neutral-100 dark:bg-[#1e293b] border-2 border-black dark:border-white shadow-[3px_3px_0px_#000]">
                   <h3 className="text-sm font-black uppercase text-amber-500 mb-1 flex items-center gap-2">
                     <span className="px-2 py-0.5 bg-black text-amber-400 text-[10px] font-mono">PHASE 3</span>
-                    The Endgame — Pawns & Teleports
+                    The Endgame — Wing Pawn Promotion & Sovereign Duels
                   </h3>
                   <ul className="text-xs text-neutral-600 dark:text-slate-300 font-bold space-y-1 list-disc list-inside">
                     <li>
-                      Pawns reaching Ranks 8/9 or 1/0 promote immediately to heavy hitters. Push pawns through the unmonitored B0/G0 or B9/G9 back arms.
+                      March pawns through files L and R (only 5 steps to reach the far edge Rank 7 for White, Rank 2 for Black) for rapid Warden promotion.
                     </li>
                     <li>
-                      Save Gojo’s 3-square Teleport or Sukuna’s Dismantle Rush for the final mating net escape.
+                      Hold Domain Step for late-game Sovereign escapes against mating nets. Remember: Domain Step cannot be used while in check, so deploy it before check is delivered!
                     </li>
                   </ul>
                 </div>

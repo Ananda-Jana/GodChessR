@@ -4,6 +4,7 @@ import { useSocket } from '../context/SocketContext';
 import { AvatarDisplay, AVATAR_OPTIONS } from './Avatars';
 import { UserProfile, MatchState, Challenge } from '../types/game';
 import { CullingModeEntry } from './CullingModeEntry';
+import { RoseParadiseEntryButton } from '../rose/RoseParadiseEntryButton';
 import {
   Crown,
   Search,
@@ -30,6 +31,7 @@ interface DashboardProps {
   onOpenBotModal: () => void;
   onOpenCraftedBotModal?: () => void;
   onOpenCraftTheory: () => void;
+  onOpenRose?: () => void;
   lastCompletedMatch?: { match: MatchState; completedAt: number } | null;
   onClearLastGame?: () => void;
 }
@@ -39,6 +41,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
   onOpenBotModal,
   onOpenCraftedBotModal,
   onOpenCraftTheory,
+  onOpenRose,
   lastCompletedMatch,
   onClearLastGame,
 }) => {
@@ -528,6 +531,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
               ⚔️ Culling Mode
             </button>
           </div>
+
+          <RoseParadiseEntryButton onClick={onOpenRose || (() => {})} />
 
           {/* Craft Theory Catalog Button Card (Solid White, Highlighted) */}
           <div className="bg-white text-black border-4 border-black dark:border-white p-4 sm:p-5 shadow-[6px_6px_0px_#000000] dark:shadow-[6px_6px_0px_#ffffff] flex flex-col sm:flex-row sm:items-center justify-between gap-4">

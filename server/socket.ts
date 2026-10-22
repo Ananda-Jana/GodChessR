@@ -1,6 +1,7 @@
 import { WebSocket, WebSocketServer } from 'ws';
 import { Server as HttpServer } from 'http';
 import { initCullingSocket } from './cullingSocket.ts';
+import { registerRoseSocket } from './rose/roseSocket.ts';
 import { db } from './db.ts';
 import { getUserIdFromSession } from './auth.ts';
 import type {
@@ -39,6 +40,7 @@ interface ExtendedWebSocket extends WebSocket {
 export function initWebSocketServer(server: HttpServer) {
   const wss = new WebSocketServer({ server, path: '/ws' });
   initCullingSocket(wss);
+  registerRoseSocket(wss);
 
   // Map of userId -> Set of WebSockets
   const userSockets = new Map<string, Set<ExtendedWebSocket>>();
