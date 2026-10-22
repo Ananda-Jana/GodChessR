@@ -7,7 +7,7 @@
  * 3. Priest (diagonal slide 1-3 + orthogonal leap 2)
  */
 
-import type { PieceType } from '../types/game';
+import type { PieceType } from '../types/game.ts';
 
 export interface PathMove {
   to: { dx: number; dy: number };

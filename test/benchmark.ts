@@ -7,8 +7,8 @@ import {
   getAllLegalMoves,
   expandBoard,
   getPseudoLegalMoves,
-} from '../src/game/engine';
-import { evaluateBoard } from '../src/game/bot';
+} from '../src/game/engine.ts';
+import { evaluateBoard } from '../src/game/bot.ts';
 
 console.log('=== RUNNING MOVE-GENERATION & EVALUATION BENCHMARKS ===');
 

@@ -16,13 +16,13 @@ import {
   INEXPENSIVE_PIECES,
   EXPENSIVE_PIECES,
   getCheckmateGrids,
-} from '../src/game/engine';
+} from '../src/game/engine.ts';
 import {
   MatchState,
   DICE_GRACE_WINDOW_MS,
   DICE_WARNING_WINDOW_MS,
   DICE_AUTOROLL_DELAY_MS,
-} from '../src/types/game';
+} from '../src/types/game.ts';
 
 function assert(condition: boolean, msg: string) {
   if (!condition) {

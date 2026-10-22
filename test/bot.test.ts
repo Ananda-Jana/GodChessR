@@ -2,9 +2,9 @@
  * Unit Test for Grandmaster Chess Bot Engine
  */
 
-import { createInitialBoard, rollAuthoritativeDice, executeMove, handleTimeout, cancelCrafting } from '../src/game/engine';
-import { evaluateBoard, getBestBotMove } from '../src/game/bot';
-import { MatchState } from '../src/types/game';
+import { createInitialBoard, rollAuthoritativeDice, executeMove, handleTimeout, cancelCrafting } from '../src/game/engine.ts';
+import { evaluateBoard, getBestBotMove } from '../src/game/bot.ts';
+import { MatchState } from '../src/types/game.ts';
 
 function assert(cond: boolean, msg: string) {
   if (!cond) throw new Error(`BOT TEST FAILED: ${msg}`);

@@ -2,10 +2,10 @@
  * End-to-End Integration Test for Two-Player Workflow
  */
 
-import { db, UserRecord } from '../server/db';
-import { hashPassword, createSession, sanitizeUser } from '../server/auth';
-import { createInitialBoard, rollAuthoritativeDice, executeMove } from '../src/game/engine';
-import { MatchState, Challenge } from '../src/types/game';
+import { db, UserRecord } from '../server/db.ts';
+import { hashPassword, createSession, sanitizeUser } from '../server/auth.ts';
+import { createInitialBoard, rollAuthoritativeDice, executeMove } from '../src/game/engine.ts';
+import { MatchState, Challenge } from '../src/types/game.ts';
 
 function assert(cond: boolean, msg: string) {
   if (!cond) throw new Error(`INTEGRATION TEST FAILED: ${msg}`);

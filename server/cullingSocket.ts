@@ -6,7 +6,7 @@
  */
 
 import { WebSocket, WebSocketServer } from 'ws';
-import {
+import type {
   CullingMatchState,
   CullingPos,
   CullingPieceColor,

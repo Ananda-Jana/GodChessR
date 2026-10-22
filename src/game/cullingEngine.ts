@@ -10,7 +10,7 @@
  * - Turn transitions, immunity, status effects, and win conditions
  */
 
-import {
+import type {
   CullingPos,
   CullingSquare,
   CullingPiece,
@@ -20,11 +20,13 @@ import {
   CullingMove,
   CullingMatchState,
   CullingSpecialAction,
+} from '../types/cullingGame.ts';
+import {
   isValidCullingPos,
   posToCullingSquare,
   cullingSquareToPos,
   CULLING_ROSTER,
-} from '../types/cullingGame';
+} from '../types/cullingGame.ts';
 
 // Precomputed set of all valid (x,y) position strings for O(1) boundary checks
 const VALID_POS_SET: Set<string> = (() => {

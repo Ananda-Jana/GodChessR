@@ -16,23 +16,23 @@ import {
   validateCraftPlacement,
   applyCraftPlacement,
   isSquareAttacked,
-} from '../src/game/engine';
+} from '../src/game/engine.ts';
 import {
   CRAFTABLE_PIECES,
   CRAFTABLE_MAP,
   getCraftablePreviewOffsets,
-} from '../src/game/craftables';
+} from '../src/game/craftables.ts';
 import {
   getBotExpansionChoice,
   getBotCraftingChoice,
-} from '../src/game/bot';
+} from '../src/game/bot.ts';
 import {
   MatchState,
   Piece,
   Position,
   EXPANSION_LOST_PIECES_THRESHOLD,
   CRAFTING_LOST_EXPENSIVE_THRESHOLD,
-} from '../src/types/game';
+} from '../src/types/game.ts';
 
 function assert(condition: boolean, msg: string) {
   if (!condition) {

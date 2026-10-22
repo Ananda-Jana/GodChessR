@@ -7,7 +7,7 @@ import {
   posToCullingSquare,
   cullingSquareToPos,
   TOTAL_PLAYABLE_SQUARES,
-} from '../src/types/cullingGame';
+} from '../src/types/cullingGame.ts';
 import {
   createInitialCullingBoard,
   createInitialCullingMatch,
@@ -16,8 +16,8 @@ import {
   executeCullingMove,
   isCullingKingInCheck,
   canPieceBeCaptured,
-} from '../src/game/cullingEngine';
-import { getBestCullingBotMove, evaluateCullingBoard } from '../src/game/cullingBot';
+} from '../src/game/cullingEngine.ts';
+import { getBestCullingBotMove, evaluateCullingBoard } from '../src/game/cullingBot.ts';
 
 function assert(condition: boolean, msg: string) {
   if (!condition) {

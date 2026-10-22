@@ -6,7 +6,7 @@
  * Zero external chess engines or AI API calls required (100% free, fast, and local).
  */
 
-import {
+import type {
   Piece,
   PieceColor,
   Position,
@@ -14,15 +14,17 @@ import {
   MatchState,
   PieceType,
   ExpansionSide,
+} from '../types/game.ts';
+import {
   CRAFTED_PIECE_BOT_EVAL_VALUE,
-} from '../types/game';
+} from '../types/game.ts';
 import {
   getDiceEligibleMoves,
   applyMoveToBoard,
   getAllLegalMoves,
   isKingInCheck,
   getCandidateCraftingSquares,
-} from './engine';
+} from './engine.ts';
 
 // Base piece values in centipawns (crafted pieces configurable at 600)
 const PIECE_VALUES: Record<PieceType, number> = {

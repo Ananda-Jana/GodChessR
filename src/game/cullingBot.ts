@@ -6,20 +6,22 @@
  * and tactical capture/shooting evaluation.
  */
 
-import {
+import type {
   CullingPos,
   CullingPieceColor,
   CullingPieceType,
   CullingBoard,
   CullingMove,
   CullingMatchState,
+} from '../types/cullingGame.ts';
+import {
   isValidCullingPos,
-} from '../types/cullingGame';
+} from '../types/cullingGame.ts';
 import {
   getAllLegalMoves,
   applyCullingMoveToBoard,
   isCullingKingInCheck,
-} from './cullingEngine';
+} from './cullingEngine.ts';
 
 export const CULLING_PIECE_VALUES: Record<CullingPieceType, number> = {
   culling_gojo: 20000,
