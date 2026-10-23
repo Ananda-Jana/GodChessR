@@ -10,7 +10,7 @@
  * - Desktop (>= lg): 3-column workspace with left sidebar, center stage, and right sidebar.
  */
 
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import type { HashiraRankId, TrainingToolId, MentorExpression, DojoLesson } from './types';
 import { HASHIRA_RANKS, DOJO_LESSONS, loadHashiraProgress, saveHashiraProgress } from './data';
 import { HashiraMentor } from './HashiraMentor';
@@ -191,6 +191,10 @@ export const HashiraTrainingView: React.FC<HashiraTrainingViewProps> = ({ onBack
     }
     sounds.playMove();
   };
+
+  const handleStepChange = useCallback((stepIdx: number) => {
+    setActiveStepIndex(stepIdx);
+  }, []);
 
   const handleSeekHint = () => {
     if (!activeLesson) return;
@@ -576,7 +580,8 @@ export const HashiraTrainingView: React.FC<HashiraTrainingViewProps> = ({ onBack
                 onResetSignal={resetSignal}
                 maxBoardDimension={maxBoardDimension}
                 onMoveMade={() => setActiveHintText(null)}
-                onStepChange={(stepIdx) => setActiveStepIndex(stepIdx)}
+                onStepChange={handleStepChange}
+                onNext={handleNextKata}
               />
             </div>
           ) : (

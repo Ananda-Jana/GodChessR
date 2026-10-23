@@ -25,6 +25,8 @@ interface ExtendedSocket extends WebSocket {
 }
 
 export function registerRoseSocket(wss: WebSocketServer) {
+  const matchmakingQueue: { ws: ExtendedSocket; userId: string; role?: RoseRole; displayName: string; avatarId?: string }[] = [];
+
   function broadcastRoom(room: RoseRoom, data: any) {
     const payload = JSON.stringify(data);
     for (const ws of room.sockets) {
@@ -66,6 +68,10 @@ export function registerRoseSocket(wss: WebSocketServer) {
     });
 
     ws.on('close', () => {
+      // Remove from matchmaking queue if waiting
+      const qIdx = matchmakingQueue.findIndex((q) => q.ws === ws);
+      if (qIdx !== -1) matchmakingQueue.splice(qIdx, 1);
+
       if (ws.roseRoomId) {
         const room = getRoomById(ws.roseRoomId);
         if (room) {
@@ -112,6 +118,82 @@ export function registerRoseSocket(wss: WebSocketServer) {
           const list = getPublicRoseRooms();
           ws.send(JSON.stringify({ type: 'rose:rooms_list', rooms: list, challenges: list }));
           ws.send(JSON.stringify({ type: 'rose:challenges_list', rooms: list, challenges: list }));
+          break;
+        }
+
+        case 'rose:join_queue': {
+          // Remove existing queue entries for this user
+          const existingIdx = matchmakingQueue.findIndex((q) => q.userId === user.userId);
+          if (existingIdx !== -1) matchmakingQueue.splice(existingIdx, 1);
+
+          if (matchmakingQueue.length > 0) {
+            const opponent = matchmakingQueue.shift()!;
+            if (opponent.ws.readyState === WebSocket.OPEN) {
+              const hostRole: RoseRole = opponent.role || 'boyfriend';
+              const guestRole: RoseRole = hostRole === 'boyfriend' ? 'girlfriend' : 'boyfriend';
+
+              const room = createRoseRoom(
+                opponent.userId,
+                opponent.displayName,
+                opponent.displayName,
+                opponent.avatarId || 'avatar_prince',
+                hostRole,
+                0,
+                true,
+                opponent.ws
+              );
+
+              const joinRes = joinRoseRoom(
+                room.match.code,
+                user.userId,
+                user.username,
+                user.displayName,
+                user.avatarId || 'avatar_queen',
+                ws
+              );
+
+              if (joinRes.success && joinRes.room && joinRes.hostSeat && joinRes.guestSeat) {
+                opponent.ws.roseRoomId = room.match.id;
+                ws.roseRoomId = room.match.id;
+
+                opponent.ws.send(JSON.stringify({
+                  type: 'rose:match_started',
+                  matchId: room.match.id,
+                  match: room.match,
+                  yourColor: joinRes.hostSeat.color,
+                  yourRole: joinRes.hostSeat.role,
+                }));
+
+                ws.send(JSON.stringify({
+                  type: 'rose:match_started',
+                  matchId: room.match.id,
+                  match: room.match,
+                  yourColor: joinRes.guestSeat.color,
+                  yourRole: joinRes.guestSeat.role,
+                }));
+
+                broadcastRoom(room, { type: 'rose:state', match: room.match });
+                broadcastPublicRoseRooms();
+                return;
+              }
+            }
+          }
+
+          matchmakingQueue.push({
+            ws,
+            userId: user.userId,
+            role: role || 'boyfriend',
+            displayName: user.displayName,
+            avatarId: user.avatarId,
+          });
+          ws.send(JSON.stringify({ type: 'rose:queued' }));
+          break;
+        }
+
+        case 'rose:cancel_queue': {
+          const qIdx = matchmakingQueue.findIndex((q) => q.ws === ws);
+          if (qIdx !== -1) matchmakingQueue.splice(qIdx, 1);
+          ws.send(JSON.stringify({ type: 'rose:cancelled' }));
           break;
         }
 

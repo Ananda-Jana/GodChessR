@@ -7,7 +7,7 @@
  * Culling Game cross-board + character piece integration.
  */
 
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import type { DojoLesson, MentorExpression, KataStep } from './types';
 import type { Position, Piece, Move } from '../types/game';
 import type {
@@ -37,6 +37,7 @@ interface InteractiveKataBoardProps {
   maxBoardDimension?: number;
   onMoveMade?: () => void;
   onStepChange?: (stepIndex: number) => void;
+  onNext?: () => void;
 }
 
 export const InteractiveKataBoard: React.FC<InteractiveKataBoardProps> = ({
@@ -47,6 +48,7 @@ export const InteractiveKataBoard: React.FC<InteractiveKataBoardProps> = ({
   maxBoardDimension,
   onMoveMade,
   onStepChange,
+  onNext,
 }) => {
   const isCullingMode = lesson.tool === 'culling' || Boolean(lesson.cullingBoard);
 
@@ -77,12 +79,18 @@ export const InteractiveKataBoard: React.FC<InteractiveKataBoardProps> = ({
   const [lastMove, setLastMove] = useState<{ from: Position; to: Position } | null>(null);
   const [consecutiveMistakes, setConsecutiveMistakes] = useState(0);
 
+  // Use ref for onStepChange callback to avoid effect re-execution
+  const onStepChangeRef = useRef(onStepChange);
+  useEffect(() => {
+    onStepChangeRef.current = onStepChange;
+  }, [onStepChange]);
+
   // Notify parent of step changes for dynamic multi-step hints
   useEffect(() => {
-    onStepChange?.(currentStepIndex);
-  }, [currentStepIndex, onStepChange]);
+    onStepChangeRef.current?.(currentStepIndex);
+  }, [currentStepIndex]);
 
-  // Reset state whenever lesson or resetSignal triggers
+  // Reset state ONLY when lesson.id or resetSignal triggers
   useEffect(() => {
     if (lesson.initialBoard) {
       setBoard(cloneBoard(lesson.initialBoard));
@@ -104,8 +112,8 @@ export const InteractiveKataBoard: React.FC<InteractiveKataBoardProps> = ({
     setIsFinished(false);
     setLastMove(null);
     setConsecutiveMistakes(0);
-    onStepChange?.(0);
-  }, [lesson.id, onResetSignal, onStepChange]);
+    onStepChangeRef.current?.(0);
+  }, [lesson.id, onResetSignal]);
 
   const expectedStep: KataStep | undefined = lesson.correctSteps[currentStepIndex];
 
@@ -386,9 +394,18 @@ export const InteractiveKataBoard: React.FC<InteractiveKataBoardProps> = ({
               <h4 className="text-base sm:text-lg font-black uppercase text-amber-400 tracking-wider">
                 Culling Kata Cleared
               </h4>
-              <p className="text-[11px] sm:text-xs font-bold text-white max-w-xs mt-0.5">
+              <p className="text-[11px] sm:text-xs font-bold text-white max-w-xs mt-0.5 mb-2">
                 Domain Mastery achieved. Your cursed tactics meet Thukuna's high standard.
               </p>
+              <button
+                onClick={() => {
+                  setIsFinished(false);
+                  if (onNext) onNext();
+                }}
+                className="px-3.5 py-1.5 bg-amber-400 hover:bg-amber-300 text-black font-black text-xs uppercase border-2 border-black shadow-[2px_2px_0px_#000] cursor-pointer"
+              >
+                Continue / Next Kata →
+              </button>
             </div>
           )}
         </div>
@@ -479,9 +496,18 @@ export const InteractiveKataBoard: React.FC<InteractiveKataBoardProps> = ({
               <h4 className="text-base sm:text-lg font-black uppercase text-amber-400 tracking-wider">
                 Kata Cleared
               </h4>
-              <p className="text-[11px] sm:text-xs font-bold text-white max-w-xs mt-0.5">
+              <p className="text-[11px] sm:text-xs font-bold text-white max-w-xs mt-0.5 mb-2">
                 Thukuna nods in approval. Your discipline honors the Dojo.
               </p>
+              <button
+                onClick={() => {
+                  setIsFinished(false);
+                  if (onNext) onNext();
+                }}
+                className="px-3.5 py-1.5 bg-amber-400 hover:bg-amber-300 text-black font-black text-xs uppercase border-2 border-black shadow-[2px_2px_0px_#000] cursor-pointer"
+              >
+                Continue / Next Kata →
+              </button>
             </div>
           )}
         </div>
