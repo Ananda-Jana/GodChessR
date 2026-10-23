@@ -18,10 +18,13 @@ import { InteractiveKataBoard } from './InteractiveKataBoard';
 import { PracticeBoard } from './PracticeBoard';
 import { TheoryLibraryView } from './TheoryLibraryView';
 import { TrophyRoomModal } from '../components/TrophyRoomModal';
+import { RulesModal } from '../components/RulesModal';
+import { CullingRulesModal } from '../components/CullingRulesModal';
 import { sounds } from '../utils/audio';
 import {
   ArrowLeft,
   ArrowRight,
+  BookOpen,
   CheckCircle2,
   ChevronDown,
   Flame,
@@ -44,6 +47,8 @@ export const HashiraTrainingView: React.FC<HashiraTrainingViewProps> = ({ onBack
   const [isMobileRankOpen, setIsMobileRankOpen] = useState(false);
   const [isMobileDojoOpen, setIsMobileDojoOpen] = useState(false);
   const [isMobileKatasOpen, setIsMobileKatasOpen] = useState(false);
+  const [isRulebookOpen, setIsRulebookOpen] = useState(false);
+  const [isCullingRulesOpen, setIsCullingRulesOpen] = useState(false);
 
   const closeAllMobileMenus = () => {
     setIsMobileRankOpen(false);
@@ -115,6 +120,7 @@ export const HashiraTrainingView: React.FC<HashiraTrainingViewProps> = ({ onBack
 
   const [activeLessonIndex, setActiveLessonIndex] = useState(0);
   const activeLesson: DojoLesson | undefined = currentLessons[activeLessonIndex] || currentLessons[0];
+  const [activeStepIndex, setActiveStepIndex] = useState(0);
 
   // Sensei Mentor Expression & Dialogue State
   const [mentorExpression, setMentorExpression] = useState<MentorExpression>('stern');
@@ -122,6 +128,7 @@ export const HashiraTrainingView: React.FC<HashiraTrainingViewProps> = ({ onBack
     activeLesson?.mentorPrompt || 'Welcome to the Dojo, pupil. Choose your form and discipline.'
   );
   const [resetSignal, setResetSignal] = useState(0);
+  const [activeHintText, setActiveHintText] = useState<string | null>(null);
 
   // Save progress helper
   const updateProgress = (updater: (prev: typeof progress) => typeof progress) => {
@@ -135,6 +142,8 @@ export const HashiraTrainingView: React.FC<HashiraTrainingViewProps> = ({ onBack
   // Reset lesson and prompt when tool or rank changes
   useEffect(() => {
     setActiveLessonIndex(0);
+    setActiveHintText(null);
+    setActiveStepIndex(0);
     if (activeLesson) {
       setMentorExpression('stern');
       setMentorMessage(activeLesson.mentorPrompt);
@@ -152,6 +161,7 @@ export const HashiraTrainingView: React.FC<HashiraTrainingViewProps> = ({ onBack
   // Handle kata completion
   const handleKataCompleted = () => {
     if (!activeLesson) return;
+    setActiveHintText(null);
     updateProgress((prev) => ({
       ...prev,
       completedKataIds: Array.from(new Set([...prev.completedKataIds, activeLesson.id])),
@@ -162,6 +172,8 @@ export const HashiraTrainingView: React.FC<HashiraTrainingViewProps> = ({ onBack
     if (activeLessonIndex < currentLessons.length - 1) {
       const nextIdx = activeLessonIndex + 1;
       setActiveLessonIndex(nextIdx);
+      setActiveHintText(null);
+      setActiveStepIndex(0);
       const nextLesson = currentLessons[nextIdx];
       setMentorExpression('stern');
       setMentorMessage(nextLesson.mentorPrompt);
@@ -171,6 +183,8 @@ export const HashiraTrainingView: React.FC<HashiraTrainingViewProps> = ({ onBack
 
   const handleResetKata = () => {
     setResetSignal((s) => s + 1);
+    setActiveHintText(null);
+    setActiveStepIndex(0);
     if (activeLesson) {
       setMentorExpression('stern');
       setMentorMessage(activeLesson.mentorPrompt);
@@ -179,9 +193,13 @@ export const HashiraTrainingView: React.FC<HashiraTrainingViewProps> = ({ onBack
   };
 
   const handleSeekHint = () => {
-    if (activeLesson?.hint) {
+    if (!activeLesson) return;
+    const currentStep = activeLesson.correctSteps[activeStepIndex];
+    const dynamicHint = currentStep?.hint || activeLesson.hint;
+    if (dynamicHint) {
+      setActiveHintText(dynamicHint);
       setMentorExpression('analytical');
-      setMentorMessage(`Insight: ${activeLesson.hint}`);
+      sounds.playSelect();
     }
   };
 
@@ -217,6 +235,23 @@ export const HashiraTrainingView: React.FC<HashiraTrainingViewProps> = ({ onBack
             <Flame className="w-4 h-4 text-amber-400 fill-amber-400" />
             CHESS HASHIRA TRAINING
           </h1>
+
+          {/* Desktop Rulebook Button */}
+          <button
+            onClick={() => {
+              sounds.playMove();
+              if (activeTool === 'culling' || activeLesson?.mode === 'culling') {
+                setIsCullingRulesOpen(true);
+              } else {
+                setIsRulebookOpen(true);
+              }
+            }}
+            className="hidden lg:flex px-2.5 py-1 bg-neutral-900 hover:bg-neutral-800 border border-neutral-700 hover:border-amber-400 text-amber-400 items-center gap-1.5 text-xs font-black uppercase cursor-pointer active:translate-x-0.5 active:translate-y-0.5"
+            title="Open Rules & Codex"
+          >
+            <BookOpen className="w-3.5 h-3.5 text-amber-400" />
+            <span>Rulebook</span>
+          </button>
         </div>
 
         {/* Mobile 3 Horizontal Buttons in Top Navigation Bar */}
@@ -267,6 +302,22 @@ export const HashiraTrainingView: React.FC<HashiraTrainingViewProps> = ({ onBack
               {dojoTabs.find((t) => t.id === activeTool)?.label.replace(' Dojo', '')}
             </span>
             <ChevronDown className="w-2.5 h-2.5 shrink-0" />
+          </button>
+
+          {/* Small Square Rulebook Opening Button next to Dojo Selector */}
+          <button
+            onClick={() => {
+              sounds.playMove();
+              if (activeTool === 'culling' || activeLesson?.mode === 'culling') {
+                setIsCullingRulesOpen(true);
+              } else {
+                setIsRulebookOpen(true);
+              }
+            }}
+            className="w-7 h-7 sm:w-8 sm:h-8 bg-neutral-900 hover:bg-neutral-800 border border-neutral-700 hover:border-amber-400 text-amber-400 flex items-center justify-center cursor-pointer shadow-[1px_1px_0px_#000] active:translate-x-0.5 active:translate-y-0.5 z-40 shrink-0"
+            title="Open Rules & Codex"
+          >
+            <BookOpen className="w-3.5 h-3.5 text-amber-400" />
           </button>
 
           {/* 3. Katas Trigger OR Trophy Button */}
@@ -433,6 +484,7 @@ export const HashiraTrainingView: React.FC<HashiraTrainingViewProps> = ({ onBack
           expression={mentorExpression}
           message={mentorMessage}
           hintText={activeLesson?.hint}
+          activeHint={activeHintText}
           isCompleted={isCurrentKataCompleted}
           onAskHint={handleSeekHint}
           onReset={handleResetKata}
@@ -446,12 +498,13 @@ export const HashiraTrainingView: React.FC<HashiraTrainingViewProps> = ({ onBack
 
       {/* 3. Main Studio Workspace (Desktop 3-Column / Mobile Single Fixed View) */}
       <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
-        {/* Desktop Left Sidebar: Sensei Gensei Avatar & Dialogue */}
+        {/* Desktop Left Sidebar: Thukuna Avatar & Dialogue */}
         <aside className="hidden lg:flex w-80 h-full flex-col p-3 border-r-2 border-neutral-800 bg-[#0b0b0e] shrink-0 overflow-y-auto">
           <HashiraMentor
             expression={mentorExpression}
             message={mentorMessage}
             hintText={activeLesson?.hint}
+            activeHint={activeHintText}
             isCompleted={isCurrentKataCompleted}
             onAskHint={handleSeekHint}
             onReset={handleResetKata}
@@ -522,6 +575,8 @@ export const HashiraTrainingView: React.FC<HashiraTrainingViewProps> = ({ onBack
                 }}
                 onResetSignal={resetSignal}
                 maxBoardDimension={maxBoardDimension}
+                onMoveMade={() => setActiveHintText(null)}
+                onStepChange={(stepIdx) => setActiveStepIndex(stepIdx)}
               />
             </div>
           ) : (
@@ -642,7 +697,11 @@ export const HashiraTrainingView: React.FC<HashiraTrainingViewProps> = ({ onBack
           {activeLesson?.hint && (
             <button
               onClick={handleSeekHint}
-              className="px-2 py-1 bg-sky-400 hover:bg-sky-300 text-black font-black text-[10px] uppercase border border-black shadow-[1px_1px_0px_#000] cursor-pointer active:translate-x-0.5 active:translate-y-0.5"
+              className={`px-2 py-1 font-black text-[10px] uppercase border cursor-pointer active:translate-x-0.5 active:translate-y-0.5 transition-all ${
+                activeHintText
+                  ? 'bg-sky-300 text-black border-black shadow-[1px_1px_0px_#000] ring-2 ring-sky-400'
+                  : 'bg-sky-400 hover:bg-sky-300 text-black border-black shadow-[1px_1px_0px_#000]'
+              }`}
               title="Seek tactical advice from Sensei"
             >
               Hint
@@ -675,6 +734,18 @@ export const HashiraTrainingView: React.FC<HashiraTrainingViewProps> = ({ onBack
       <TrophyRoomModal
         isOpen={isTrophyRoomOpen}
         onClose={() => setIsTrophyRoomOpen(false)}
+      />
+
+      {/* Rules & Codex Modals */}
+      <RulesModal
+        isOpen={isRulebookOpen}
+        onClose={() => setIsRulebookOpen(false)}
+        isBotMatch={true}
+        activeMatch={{ gameMode: activeLesson?.mode || 'standard' } as any}
+      />
+      <CullingRulesModal
+        isOpen={isCullingRulesOpen}
+        onClose={() => setIsCullingRulesOpen(false)}
       />
     </div>
   );

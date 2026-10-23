@@ -51,6 +51,7 @@ export interface KataStep {
   from: Position;
   to: Position;
   explanation: string;
+  hint?: string;
   mentorReaction?: MentorExpression;
   mentorCommentary?: string;
   cullingActionType?: CullingSpecialAction;

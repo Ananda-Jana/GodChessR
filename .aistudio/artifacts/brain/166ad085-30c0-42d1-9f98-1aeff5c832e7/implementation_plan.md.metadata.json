@@ -1,0 +1,6 @@
+{
+  "summary":  "Implementation plan to audit and resolve all illegal move fallacies across Dojo katas (including Prince movement geometry in Iron Stance Kata), integrate a context-aware small square rulebook button in the top navigation stripe, add 4-5 multi-step lessons and Hashira trial matches per dojo/rank with post-match tactical debrief cards, and set darker board squares to #BC1434 for all non-Culling training modes.",
+  "updatedAt":  "2026-10-23T12:43:08.621337767Z",
+  "requestFeedback":  true,
+  "userFacing":  true
+}

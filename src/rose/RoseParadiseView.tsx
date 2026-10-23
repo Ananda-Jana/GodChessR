@@ -37,6 +37,10 @@ import {
   Bot,
   Crown,
   Download,
+  Loader2,
+  ShieldAlert,
+  Plus,
+  KeyRound,
 } from 'lucide-react';
 import './rose.css';
 import { usePredictor } from '../predictor/PredictorContext';
@@ -96,7 +100,11 @@ export const RoseParadiseView: React.FC<RoseParadiseViewProps> = ({ onBack }) =>
     myColor: socketMyColor,
     publicRooms,
     hostedCode,
+    isCreatingChallenge,
+    isJoiningChallenge,
+    statusMessage,
     error: socketError,
+    setError: setSocketError,
     reactions: socketReactions,
     chatMessages: socketChatMessages,
     createRoom,
@@ -753,10 +761,20 @@ export const RoseParadiseView: React.FC<RoseParadiseViewProps> = ({ onBack }) =>
         </div>
       </header>
 
+      {statusMessage && (
+        <div className="z-10 mb-4 p-3 bg-amber-400 text-black border-2 border-black font-black text-xs uppercase flex items-center gap-2 shadow-[3px_3px_0px_#000] animate-in fade-in">
+          <Loader2 className="w-4 h-4 animate-spin shrink-0" />
+          <span>{statusMessage}</span>
+        </div>
+      )}
+
       {socketError && (
         <div className="z-10 mb-4 p-3 brutal-card border-red-500 bg-red-950 text-red-200 text-xs sm:text-sm font-black uppercase flex items-center justify-between">
-          <span>⚠️ {socketError}</span>
-          <button onClick={() => refreshRooms()} className="text-xs underline hover:text-white cursor-pointer">
+          <div className="flex items-center gap-2">
+            <ShieldAlert className="w-4 h-4 shrink-0 text-red-400" />
+            <span>⚠️ {socketError}</span>
+          </div>
+          <button onClick={() => setSocketError(null)} className="text-xs underline hover:text-white cursor-pointer">
             Dismiss
           </button>
         </div>
@@ -817,10 +835,21 @@ export const RoseParadiseView: React.FC<RoseParadiseViewProps> = ({ onBack }) =>
 
                     <button
                       type="button"
+                      disabled={isCreatingChallenge}
                       onClick={() => createRoom(selectedRole)}
-                      className="w-full brutal-button-primary py-3 text-xs sm:text-sm font-black uppercase tracking-wider cursor-pointer"
+                      className="w-full brutal-button-primary py-3 text-xs sm:text-sm font-black uppercase tracking-wider cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50"
                     >
-                      Generate Room Code
+                      {isCreatingChallenge ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          <span>Generating Code...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Plus className="w-4 h-4" />
+                          <span>Generate Room Code</span>
+                        </>
+                      )}
                     </button>
                   </div>
                 ) : (
@@ -849,13 +878,23 @@ export const RoseParadiseView: React.FC<RoseParadiseViewProps> = ({ onBack }) =>
                       <span>Waiting for partner to enter this code on their device...</span>
                     </div>
 
-                    <button
-                      type="button"
-                      onClick={() => cancelRoom()}
-                      className="text-xs text-red-400 hover:text-red-300 underline font-black uppercase text-center cursor-pointer"
-                    >
-                      Cancel Room
-                    </button>
+                    <div className="flex items-center justify-center gap-3">
+                      <button
+                        type="button"
+                        onClick={() => cancelRoom()}
+                        className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white font-black text-xs uppercase border border-white cursor-pointer"
+                      >
+                        Cancel Room
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setShowRulebook(true)}
+                        className="px-3 py-1.5 bg-neutral-900 hover:bg-neutral-800 text-amber-300 font-black text-xs uppercase border border-amber-300 cursor-pointer flex items-center gap-1"
+                      >
+                        <BookOpen className="w-3.5 h-3.5" />
+                        <span>Read Rules</span>
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>
@@ -873,7 +912,7 @@ export const RoseParadiseView: React.FC<RoseParadiseViewProps> = ({ onBack }) =>
                   <Heart className="w-4 h-4 text-rose-500" /> 2. Join Partner
                 </h2>
                 <p className="text-xs text-neutral-400 mb-4 font-mono">
-                  Enter your partner's 6-character room code to join instantly.
+                  Enter your partner's room code to join instantly.
                 </p>
 
                 <form
@@ -889,8 +928,9 @@ export const RoseParadiseView: React.FC<RoseParadiseViewProps> = ({ onBack }) =>
                     </label>
                     <input
                       type="text"
-                      placeholder="e.g. ROSE-A1B2C3"
+                      placeholder="e.g. ROSE7K or ROSE-7K"
                       value={joinCodeInput}
+                      maxLength={10}
                       onChange={(e) => setJoinCodeInput(e.target.value.toUpperCase())}
                       className="w-full bg-neutral-950 border-2 border-white px-3.5 py-2.5 font-mono text-sm tracking-wider uppercase text-white focus:outline-none focus:border-amber-400 shadow-[2px_2px_0px_#fff]"
                     />
@@ -898,10 +938,20 @@ export const RoseParadiseView: React.FC<RoseParadiseViewProps> = ({ onBack }) =>
 
                   <button
                     type="submit"
-                    disabled={!joinCodeInput.trim()}
-                    className="w-full brutal-button-primary py-3 text-xs sm:text-sm font-black uppercase tracking-wider cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                    disabled={isJoiningChallenge || !joinCodeInput.trim()}
+                    className="w-full brutal-button-primary py-3 text-xs sm:text-sm font-black uppercase tracking-wider cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                   >
-                    Join Room Now
+                    {isJoiningChallenge ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span>Connecting to Room...</span>
+                      </>
+                    ) : (
+                      <>
+                        <KeyRound className="w-4 h-4" />
+                        <span>Join Room Now</span>
+                      </>
+                    )}
                   </button>
                 </form>
               </div>
@@ -987,9 +1037,10 @@ export const RoseParadiseView: React.FC<RoseParadiseViewProps> = ({ onBack }) =>
                     </div>
                     <button
                       onClick={() => joinRoom(room.code)}
-                      className="brutal-button-primary py-1.5 px-3 text-xs font-black uppercase cursor-pointer shrink-0"
+                      disabled={isJoiningChallenge}
+                      className="brutal-button-primary py-1.5 px-3 text-xs font-black uppercase cursor-pointer shrink-0 disabled:opacity-50"
                     >
-                      Join
+                      {isJoiningChallenge ? 'Joining...' : 'Join'}
                     </button>
                   </div>
                 ))}

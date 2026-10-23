@@ -247,7 +247,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
         {/* Latest Edition Banner (Mobile) */}
         <div className="lg:hidden w-full">
           <img
-            src="/assets/aistudio/672e88a7-582e-43c9-8312-2ee33c37b24e_c348a496.png"
+            src="/assets/aistudio/image_8cc24db1.png"
             alt="Latest Edition"
             className="w-full pointer-events-none border-2 border-black dark:border-white shadow-[4px_4px_0px_#000000]"
           />
@@ -258,7 +258,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
           {/* Latest Edition Banner (Desktop) */}
           <div className="hidden lg:block">
             <img
-              src="/assets/aistudio/672e88a7-582e-43c9-8312-2ee33c37b24e_c348a496.png"
+              src="/assets/aistudio/image_8cc24db1.png"
               alt="Latest Edition"
               className="w-full pointer-events-none border-3 border-black dark:border-white shadow-[5px_5px_0px_#000000] dark:shadow-[5px_5px_0px_#ffffff]"
             />
@@ -509,7 +509,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                   </span>
                 </div>
                 <p className="text-xs font-bold text-neutral-300 mt-0.5">
-                  Train under Sensei Gensei across Opening, Tactical & Culling Dojos. Practice sparring, earn authentic badges, and ascend to the Hashira Pillar!
+                  Train under Thukuna : The Plasma Hashira across Opening, Tactical & Culling Dojos. Practice sparring, earn authentic badges, and ascend to the Hashira Pillar!
                 </p>
               </div>
             </div>
@@ -551,36 +551,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
             </button>
           </div>
 
-          {/* NEW: Instant Grandmaster Bot with Crafted Pieces Challenge Card (Navy Blue Background) */}
-          <div className="bg-[#0f172a] text-white border-4 border-black dark:border-white p-4 sm:p-5 shadow-[6px_6px_0px_#000000] dark:shadow-[6px_6px_0px_#ffffff] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-3.5">
-              <div className="w-12 h-12 bg-amber-400 border-2 border-black flex items-center justify-center text-black shrink-0 shadow-[2px_2px_0px_#000]">
-                <Sparkles className="w-7 h-7 text-black" />
-              </div>
-              <div>
-                <div className="flex items-center gap-2 flex-wrap">
-                  <h3 className="text-sm sm:text-base font-black uppercase text-amber-400">
-                    Play vs Grandmaster Bot with Crafted Pieces
-                  </h3>
-                  <span className="text-[10px] px-1.5 py-0.5 bg-amber-400 text-black font-black uppercase">
-                    New Mode
-                  </span>
-                </div>
-                <p className="text-xs font-bold text-slate-300 mt-0.5">
-                  Custom crafted army: Bishops replaced with Communists, Knights with Priests, and a Rook with Supreme Rook. Same tactical dice rules!
-                </p>
-              </div>
-            </div>
-
-            <button
-              onClick={onOpenCraftedBotModal || onOpenBotModal}
-              className="py-3 px-5 bg-amber-400 hover:bg-amber-300 text-black font-black text-xs sm:text-sm uppercase tracking-wider border-2 border-black shadow-[3px_3px_0px_#000000] flex items-center justify-center gap-2 shrink-0 cursor-pointer"
-            >
-              <Swords className="w-4 h-4" />
-              Play vs Bot (Crafted)
-            </button>
-          </div>
-
           {/* Jujutsu Kaisen Culling Game Mode Challenge Card */}
           <div className="bg-[#1a0505] text-white border-4 border-[#8b0000] p-4 sm:p-5 shadow-[6px_6px_0px_#8b0000] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-center gap-3.5">
@@ -608,6 +578,36 @@ export const Dashboard: React.FC<DashboardProps> = ({
             >
               <Swords className="w-4 h-4" />
               ⚔️ Culling Mode
+            </button>
+          </div>
+
+          {/* NEW: Instant Grandmaster Bot with Crafted Pieces Challenge Card (Navy Blue Background) */}
+          <div className="bg-[#0f172a] text-white border-4 border-black dark:border-white p-4 sm:p-5 shadow-[6px_6px_0px_#000000] dark:shadow-[6px_6px_0px_#ffffff] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-3.5">
+              <div className="w-12 h-12 bg-amber-400 border-2 border-black flex items-center justify-center text-black shrink-0 shadow-[2px_2px_0px_#000]">
+                <Sparkles className="w-7 h-7 text-black" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h3 className="text-sm sm:text-base font-black uppercase text-amber-400">
+                    Play vs Grandmaster Bot with Crafted Pieces
+                  </h3>
+                  <span className="text-[10px] px-1.5 py-0.5 bg-amber-400 text-black font-black uppercase">
+                    New Mode
+                  </span>
+                </div>
+                <p className="text-xs font-bold text-slate-300 mt-0.5">
+                  Custom crafted army: Bishops replaced with Communists, Knights with Priests, and a Rook with Supreme Rook. Same tactical dice rules!
+                </p>
+              </div>
+            </div>
+
+            <button
+              onClick={onOpenCraftedBotModal || onOpenBotModal}
+              className="py-3 px-5 bg-amber-400 hover:bg-amber-300 text-black font-black text-xs sm:text-sm uppercase tracking-wider border-2 border-black shadow-[3px_3px_0px_#000000] flex items-center justify-center gap-2 shrink-0 cursor-pointer"
+            >
+              <Swords className="w-4 h-4" />
+              Play vs Bot (Crafted)
             </button>
           </div>
 

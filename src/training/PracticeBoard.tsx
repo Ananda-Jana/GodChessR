@@ -542,20 +542,24 @@ export const PracticeBoard: React.FC<PracticeBoardProps> = ({
                           ? 'bg-amber-300 dark:bg-amber-600'
                           : isLastMoveFrom || isLastMoveTo
                           ? isDark
-                            ? 'bg-[#854d0e]'
-                            : 'bg-[#fef08a]'
+                            ? 'bg-[#800d23]'
+                            : 'bg-[#fde68a]'
                           : isDark
-                          ? 'bg-[#334155] dark:bg-[#1e293b]'
-                          : 'bg-[#cbd5e1] dark:bg-[#475569]'
+                          ? 'bg-[#BC1434]'
+                          : 'bg-[#F2EFE4]'
                       }`}
                     >
                       {fileIdx === 0 && (
-                        <span className="absolute top-0.5 left-1 text-[9px] font-black pointer-events-none opacity-60">
+                        <span className={`absolute top-0.5 left-1 text-[9px] font-black pointer-events-none ${
+                          isDark ? 'text-rose-100/70' : 'text-neutral-800/70'
+                        }`}>
                           {y + 1}
                         </span>
                       )}
                       {rankIdx === 7 && (
-                        <span className="absolute bottom-0.5 right-1 text-[9px] font-black pointer-events-none opacity-60 uppercase">
+                        <span className={`absolute bottom-0.5 right-1 text-[9px] font-black pointer-events-none uppercase ${
+                          isDark ? 'text-rose-100/70' : 'text-neutral-800/70'
+                        }`}>
                           {String.fromCharCode(97 + x)}
                         </span>
                       )}
@@ -590,26 +594,84 @@ export const PracticeBoard: React.FC<PracticeBoardProps> = ({
           </div>
         )}
 
-        {/* Match Outcome Banner Overlay */}
+        {/* Dedicated Hashira Debrief Card */}
         {matchOutcome && (
-          <div className="mt-3 w-full bg-black/90 border-2 border-amber-400 p-4 text-center z-20 animate-fade-in shadow-[4px_4px_0px_#000]">
-            <h3 className={`text-xl font-black uppercase tracking-wider ${
-              matchOutcome === 'win' ? 'text-amber-400' : 'text-red-500'
+          <div className="mt-3 w-full bg-[#0a0a0f] border-2 border-amber-400 p-4 text-left z-20 animate-fade-in shadow-[4px_4px_0px_#000]">
+            <div className="flex items-center justify-between border-b border-neutral-700 pb-2 mb-3">
+              <div className="flex items-center gap-2">
+                <span className="font-serif text-lg text-amber-400">{rankInfo.kanji}</span>
+                <span className="text-xs font-black uppercase text-amber-400 tracking-wider">
+                  {rankInfo.name} Sparring Debrief
+                </span>
+              </div>
+              <span className={`px-2 py-0.5 text-[10px] font-black uppercase border ${
+                matchOutcome === 'win'
+                  ? 'bg-amber-400 text-black border-black'
+                  : matchOutcome === 'loss'
+                  ? 'bg-red-950 text-red-300 border-red-500'
+                  : 'bg-neutral-800 text-neutral-300 border-neutral-600'
+              }`}>
+                {matchOutcome === 'win' ? 'Victory' : matchOutcome === 'loss' ? 'Defeat' : 'Stalemate'}
+              </span>
+            </div>
+
+            <h3 className={`text-base sm:text-lg font-black uppercase tracking-wider mb-1 ${
+              matchOutcome === 'win' ? 'text-amber-400' : 'text-red-400'
             }`}>
-              {matchOutcome === 'win' ? 'Checkmate — Sparring Victory!' : matchOutcome === 'loss' ? 'Defeated by Checkmate' : 'Stalemate Draw'}
-            </h3>
-            <p className="text-xs font-bold text-slate-200 mt-1">
               {matchOutcome === 'win'
-                ? `You triumphed over the ${rankInfo.name} trial. Badges awarded to your Trophy Room!`
-                : `Reflect upon your structure and strike again.`}
-            </p>
+                ? 'Checkmate — Martial Triumph!'
+                : matchOutcome === 'loss'
+                ? 'Checkmated by Sparring Partner'
+                : 'Stalemate Draw'}
+            </h3>
+
+            {/* Diagnostic Tactical Metrics */}
+            <div className="grid grid-cols-4 gap-1.5 my-3 p-2 bg-neutral-900 border border-neutral-800 text-center font-mono">
+              <div className="p-1 bg-black border border-neutral-800">
+                <div className="text-[9px] text-neutral-500 font-bold uppercase">Turns</div>
+                <div className="text-xs font-black text-white">{tacticalMetrics.turnsSurvived}</div>
+              </div>
+              <div className="p-1 bg-black border border-neutral-800">
+                <div className="text-[9px] text-neutral-500 font-bold uppercase">Captures</div>
+                <div className="text-xs font-black text-amber-400">{tacticalMetrics.capturesMade}</div>
+              </div>
+              <div className="p-1 bg-black border border-neutral-800">
+                <div className="text-[9px] text-neutral-500 font-bold uppercase">Lost</div>
+                <div className="text-xs font-black text-red-400">{tacticalMetrics.piecesLost}</div>
+              </div>
+              <div className="p-1 bg-black border border-neutral-800">
+                <div className="text-[9px] text-neutral-500 font-bold uppercase">Checks</div>
+                <div className="text-xs font-black text-sky-400">{tacticalMetrics.inCheckCount}</div>
+              </div>
+            </div>
+
+            {/* Sensei Gensei Tactical Diagnostics & Critique */}
+            <div className="p-2.5 bg-neutral-950 border border-amber-400/50 mb-3 text-xs">
+              <div className="text-[10px] font-black uppercase tracking-wider text-amber-400 flex items-center gap-1.5 mb-1.5">
+                <span>🥋 Thukuna's Tactical Critique:</span>
+              </div>
+              <ul className="text-[11px] text-neutral-300 space-y-1 font-medium list-disc list-inside">
+                {matchOutcome === 'win' ? (
+                  <>
+                    <li>Exemplary martial discipline! You seized central squares and punished the opponent's overextended structure.</li>
+                    <li>Clean conversion of material advantage into checkmate pressure. Keep this tempo in higher Hashira ranks!</li>
+                  </>
+                ) : (
+                  <>
+                    <li>Do not leave officers exposed on undefended diagonals. Coordinate minor pieces before advancing your pawns.</li>
+                    <li>Always verify whether the enemy has discovered checks or knight forks before capturing on distant squares.</li>
+                    <li>Create an escape square ('luft') for your King early to deny back-rank corridor mating nets.</li>
+                  </>
+                )}
+              </ul>
+            </div>
 
             {earnedBadges.length > 0 && (
-              <div className="mt-2 p-2 bg-neutral-900 border border-amber-400">
+              <div className="mb-3 p-2 bg-neutral-900 border border-amber-400">
                 <span className="text-[10px] font-black text-amber-400 uppercase tracking-widest block mb-1">
-                  Badges Awarded:
+                  Badges Awarded to Trophy Room:
                 </span>
-                <div className="flex items-center justify-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   {earnedBadges.map((b) => (
                     <span key={b.id} className="text-[10px] font-black text-white px-2 py-0.5 bg-neutral-800 border border-neutral-600">
                       {b.title}
@@ -619,17 +681,17 @@ export const PracticeBoard: React.FC<PracticeBoardProps> = ({
               </div>
             )}
 
-            <div className="flex items-center justify-center gap-2 mt-3">
+            <div className="flex items-center justify-end gap-2 pt-1">
               <button
                 onClick={handleResetBoard}
-                className="px-3.5 py-1.5 bg-white text-black font-black text-xs uppercase border-2 border-black cursor-pointer shadow-[2px_2px_0px_#000]"
+                className="px-3.5 py-1.5 bg-white text-black font-black text-xs uppercase border-2 border-black cursor-pointer shadow-[2px_2px_0px_#000] active:translate-x-0.5 active:translate-y-0.5"
               >
                 Play Again
               </button>
               {earnedBadges.length > 0 && (
                 <button
                   onClick={onOpenTrophyRoom}
-                  className="px-3.5 py-1.5 bg-amber-400 text-black font-black text-xs uppercase border-2 border-black flex items-center gap-1 cursor-pointer shadow-[2px_2px_0px_#000]"
+                  className="px-3.5 py-1.5 bg-amber-400 text-black font-black text-xs uppercase border-2 border-black flex items-center gap-1 cursor-pointer shadow-[2px_2px_0px_#000] active:translate-x-0.5 active:translate-y-0.5"
                 >
                   <Trophy className="w-3.5 h-3.5" />
                   Trophy Room

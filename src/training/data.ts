@@ -248,25 +248,25 @@ export const DOJO_LESSONS: DojoLesson[] = [
     initialBoard: (() => {
       const b = createEmptyBoard();
       b[0][4] = p('king', 'white', 'wk1');
-      b[2][2] = p('knight', 'white', 'wn1'); // c3
-      b[7][4] = p('king', 'black', 'bk1');  // e8
-      b[7][7] = p('rook', 'black', 'br1');  // h8
-      b[6][2] = p('pawn', 'black', 'bp1');  // c7 target
+      b[4][3] = p('knight', 'white', 'wn1'); // d5 Knight
+      b[7][4] = p('king', 'black', 'bk1');   // e8 King
+      b[7][0] = p('rook', 'black', 'br1');   // a8 Rook
+      b[6][2] = p('pawn', 'black', 'bp1');   // c7 pawn target
       return b;
     })(),
-    mentorPrompt: 'Observe the enemy King on e8 and the undefended Rook on h8. Leaping through the air, strike the c7 square to deliver a fatal double assault!',
-    hint: 'Move your Knight from c3 (x=2, y=2) to c7 (x=2, y=6) to check the black King while threatening the Rook!',
+    mentorPrompt: 'Observe the enemy King on e8 and the undefended Rook on a8. Leaping through the air, strike the c7 square to deliver a fatal double assault!',
+    hint: 'Move your Knight from d5 (x=3, y=4) to c7 (x=2, y=6) to check the black King while threatening the Rook!',
     mentorFailure: 'Blindness! You strike air while the enemy monarch slips away. Focus your leap on c7!',
     mentorSuccess: 'Flawless execution! A classic twin-fang fork. The enemy King must flee, leaving the Rook to your blade.',
     mistakeExplanations: {
-      '2,2->3,4': 'Moving to d5 misses the fork! Look closely at the c7 square where King and Rook align!',
-      '2,2->4,3': 'Ne4 creates no threat! Strike c7 with check!',
+      '3,4->4,6': 'Moving to e7 gives check, but misses the fork on the a8 Rook! Strike c7!',
+      '3,4->1,3': 'Nb4 misses the attack completely! Strike c7 with check!',
     },
     correctSteps: [
       {
-        from: { x: 2, y: 2 },
+        from: { x: 3, y: 4 },
         to: { x: 2, y: 6 },
-        explanation: 'Knight leaps to c7, delivering check to e8 King while skewering the h8 Rook.',
+        explanation: 'Knight leaps to c7, delivering check to e8 King while forking the a8 Rook.',
         mentorReaction: 'approving',
         mentorCommentary: 'Notice how the Knight bypasses enemy sightlines completely. This is the essence of tactical fangs.',
       },
@@ -401,20 +401,24 @@ export const DOJO_LESSONS: DojoLesson[] = [
       const b = createEmptyBoard();
       b[0][4] = p('king', 'white', 'wk1');
       b[0][3] = p('prince', 'white', 'wpr1'); // d1 Prince
-      b[1][3] = p('pawn', 'white', 'wp_d');   // d2
-      b[1][4] = p('pawn', 'white', 'wp_e');   // e2
+      b[1][3] = p('pawn', 'white', 'wp_d');   // d2 pawn
+      b[1][4] = p('pawn', 'white', 'wp_e');   // e2 pawn
       b[7][4] = p('king', 'black', 'bk1');
       return b;
     })(),
-    mentorPrompt: 'The Prince possesses royal blood: moving one square in any direction or striking as a Knight. Advance the Prince to d3 to support the monarch!',
-    hint: 'Move your Prince from d1 (x=3, y=0) to d3 (x=3, y=2).',
-    mentorFailure: 'Do not leave the Prince idle in the back rank! Deploy him forward to anchor the center!',
-    mentorSuccess: 'Resolute discipline! With the Prince guarding d3, your King is safe and your center is fortified.',
+    mentorPrompt: 'The Prince possesses royal blood: moving one square in any direction or vaulting like a Knight. Leap your Prince over the pawn line to c3 to support the monarch and stake central control!',
+    hint: 'Move your Prince from d1 (x=3, y=0) to c3 (x=2, y=2) using a Knight leap.',
+    mentorFailure: 'Do not leave the Prince idle in the back rank! Leap forward to c3!',
+    mentorSuccess: 'Resolute discipline! With the Prince guarding c3, your King is safe and your center is fortified.',
+    mistakeExplanations: {
+      '3,0->3,2': 'Illegal jump! The Prince cannot jump straight over d2 without Knight angles! Leap to c3!',
+      '3,0->4,2': 'e3 is acceptable in battle, but c3 is the disciplined kata stance of this drill!',
+    },
     correctSteps: [
       {
         from: { x: 3, y: 0 },
-        to: { x: 3, y: 2 },
-        explanation: 'Prince leaps to d3, controlling e5 and c5 with Knight flexibility while maintaining royal proximity.',
+        to: { x: 2, y: 2 },
+        explanation: 'Prince leaps to c3 like a Knight, controlling d5 and e4 while maintaining royal proximity.',
         mentorReaction: 'approving',
         mentorCommentary: 'Remember: if your King falls, the Prince ascends to the throne! Keep him active and vigilant.',
       },
@@ -431,20 +435,23 @@ export const DOJO_LESSONS: DojoLesson[] = [
     initialBoard: (() => {
       const b = createEmptyBoard();
       b[0][4] = p('king', 'white', 'wk1');
-      b[0][2] = p('bishop', 'white', 'wb1'); // c1 Bishop
+      b[3][0] = p('bishop', 'white', 'wb1'); // a4 Bishop
       b[7][4] = p('king', 'black', 'bk1');   // e8 King
-      b[4][4] = p('knight', 'black', 'bn1'); // e5 Knight
+      b[6][3] = p('knight', 'black', 'bn1'); // d7 Knight
       return b;
     })(),
-    mentorPrompt: 'The black Knight on e5 stands directly in line with the black King on e8. Slide your Bishop to g3 to pin the Knight with iron shackles!',
-    hint: 'Move Bishop from c1 (x=2, y=0) to g3 (x=6, y=2). It skewers the Knight to the King.',
-    mentorFailure: 'That square misses the diagonal line of fire! Aim for g3 to pin the Knight against e8!',
+    mentorPrompt: 'The black Knight on d7 shields the King on e8. Slide your Bishop from a4 to b5 along the diagonal to pin the Knight with iron shackles!',
+    hint: 'Move Bishop from a4 (x=0, y=3) to b5 (x=1, y=4). It pins the Knight to the King along the a4-e8 diagonal.',
+    mentorFailure: 'That square misses the diagonal line of fire! Aim for b5 to pin the Knight against e8!',
     mentorSuccess: 'Immovable iron pin! The black Knight cannot move without exposing its King to death.',
+    mistakeExplanations: {
+      '0,3->2,5': 'Bc6 is captured by the Knight! Anchor on b5 to maintain the pin safely!',
+    },
     correctSteps: [
       {
-        from: { x: 2, y: 0 },
-        to: { x: 6, y: 2 },
-        explanation: 'Bg3 creates an absolute pin on the e5 Knight along the g3-e8 diagonal.',
+        from: { x: 0, y: 3 },
+        to: { x: 1, y: 4 },
+        explanation: 'Bb5 creates an absolute pin on the d7 Knight along the a4-e8 diagonal.',
         mentorReaction: 'approving',
         mentorCommentary: 'A pinned piece ceases to be an attacker. Use pins to shatter enemy coordination.',
       },
@@ -491,7 +498,7 @@ export const DOJO_LESSONS: DojoLesson[] = [
     rank: 'tsuchinoe',
     tool: 'tactics',
     title: 'Earth Breaker: Communist Infiltration',
-    subtitle: 'Using crafted piece diagonal leaps through enemy defenses',
+    subtitle: 'Using crafted piece zigzag penetration through enemy defenses',
     mode: 'crafted',
     playerColor: 'white',
     initialBoard: (() => {
@@ -499,19 +506,22 @@ export const DOJO_LESSONS: DojoLesson[] = [
       b[0][4] = p('king', 'white', 'wk1');
       b[2][1] = p('communist', 'white', 'wcom1'); // b3 Communist
       b[7][4] = p('king', 'black', 'bk1');
-      b[5][4] = p('queen', 'black', 'bq1');      // e6 Queen
-      b[6][3] = p('pawn', 'black', 'bp_d');      // d7 pawn
+      b[6][1] = p('queen', 'black', 'bq1');       // b7 Queen target
+      b[6][3] = p('pawn', 'black', 'bp_d');       // d7 pawn
       return b;
     })(),
-    mentorPrompt: 'The Communist moves like a King but leaps like an extended Bishop over barriers! Penetrate the black defense to capture the Queen on e6!',
-    hint: 'Attack the Queen directly at e6 (x=4, y=5) using your Communist from b3 (x=1, y=2).',
-    mentorFailure: 'Hesitation is death! Strike the enemy Queen directly!',
-    mentorSuccess: 'Devastating strike! The Communist crushed the enemy Queen without hesitation.',
+    mentorPrompt: 'The Communist moves along orthogonal lines via alternating diagonal zigzags (distances ±2 or ±4). Advance 4 strides up the b-file to capture the enemy Queen on b7!',
+    hint: 'Move Communist from b3 (x=1, y=2) straight up the b-file to b7 (x=1, y=6) to capture the Queen.',
+    mentorFailure: 'Hesitation is death! Strike the enemy Queen directly on b7!',
+    mentorSuccess: 'Devastating strike! The Communist penetrated with zigzag velocity, crushing the enemy Queen.',
+    mistakeExplanations: {
+      '1,2->1,4': 'Stopping on b5 leaves the Queen alive to counter-attack! Advance all 4 steps to b7!',
+    },
     correctSteps: [
       {
         from: { x: 1, y: 2 },
-        to: { x: 4, y: 5 },
-        explanation: 'Communist executes an unstoppable diagonal leap strike, capturing the black Queen on e6.',
+        to: { x: 1, y: 6 },
+        explanation: 'Communist executes an orthogonal 4-square zigzag advance up the b-file, capturing the black Queen on b7.',
         mentorReaction: 'approving',
         mentorCommentary: 'Formidable! Crafted pieces shatter ordinary chess assumptions. Master their geometry.',
       },
@@ -752,6 +762,300 @@ export const DOJO_LESSONS: DojoLesson[] = [
         explanation: 'Yuji reaches B8, attacking Sukuna while Gojo cuts off all retreat squares. Checkmate!',
         mentorReaction: 'approving',
         mentorCommentary: 'You have conquered the Culling Game. The Chess Hashira acknowledges your supreme mastery.',
+      },
+    ],
+  },
+  // ==========================================
+  // EXPANDED MULTI-STEP LESSONS & CHALLENGES
+  // ==========================================
+  {
+    id: 'mizunoto_opening_3',
+    rank: 'mizunoto',
+    tool: 'opening',
+    title: 'Third Form: Classical Harmonious Triad',
+    subtitle: 'Executing a 3-step fundamental development against enemy responses',
+    mode: 'standard',
+    playerColor: 'white',
+    initialBoard: (() => {
+      const b = createEmptyBoard();
+      b[0][4] = p('king', 'white', 'wk1');
+      b[0][3] = p('queen', 'white', 'wq1');
+      b[0][2] = p('bishop', 'white', 'wb_c');
+      b[0][5] = p('bishop', 'white', 'wb_f');
+      b[0][1] = p('knight', 'white', 'wn_b');
+      b[0][6] = p('knight', 'white', 'wn_g');
+      for (let x = 0; x < 8; x++) b[1][x] = p('pawn', 'white', `wp_${x}`);
+      b[7][4] = p('king', 'black', 'bk1');
+      b[7][3] = p('queen', 'black', 'bq1');
+      b[7][1] = p('knight', 'black', 'bn_b');
+      b[7][6] = p('knight', 'black', 'bn_g');
+      for (let x = 0; x < 8; x++) b[6][x] = p('pawn', 'black', `bp_${x}`);
+      return b;
+    })(),
+    mentorPrompt: 'Pupil! Real martial engagements are conversations of blades. You must advance your center, deploy your steed, and position your bishop across three harmonious strides!',
+    hint: 'Step 1: Advance e2-pawn to e4. Then watch the enemy reply and develop Nf3 and Bc4.',
+    mentorFailure: 'Lacking rhythm! The triad development requires e4, then Nf3, then Bc4!',
+    mentorSuccess: 'EXEMPLARY HARMONY! You completed the Classical Triad. Center commanded, officers mobilized, monarch castling ready.',
+    mistakeExplanations: {
+      '3,1->3,3': 'Advance e4 first to liberate the King\'s Bishop on f1!',
+      '6,0->5,2': 'Stake center claim with e4 before deploying the knight!',
+    },
+    correctSteps: [
+      {
+        from: { x: 4, y: 1 },
+        to: { x: 4, y: 3 },
+        explanation: '1. e4 stakes claim to the high ground and frees diagonals.',
+        mentorReaction: 'approving',
+        mentorCommentary: 'Strong. The opponent mirrors with 1... e5. Now bring out your knight to pressure e5!',
+      },
+      {
+        from: { x: 6, y: 0 },
+        to: { x: 5, y: 2 },
+        explanation: '2. Nf3 develops with tempo, attacking the e5 pawn.',
+        mentorReaction: 'approving',
+        mentorCommentary: 'Black defended with 2... Nc6. Now unleash the Bishop to the active c4 outpost!',
+      },
+      {
+        from: { x: 5, y: 0 },
+        to: { x: 2, y: 3 },
+        explanation: '3. Bc4 aims directly at the sensitive f7 vulnerability.',
+        mentorReaction: 'approving',
+        mentorCommentary: 'Perfection. The Italian Game opening triad is firmly established.',
+      },
+    ],
+    opponentResponses: [
+      {
+        triggerStepIndex: 0,
+        from: { x: 4, y: 6 },
+        to: { x: 4, y: 4 },
+        commentary: 'Enemy plays 1... e5 to dispute the center. Strike e5 with your Knight on f3!',
+      },
+      {
+        triggerStepIndex: 1,
+        from: { x: 1, y: 7 },
+        to: { x: 2, y: 5 },
+        commentary: 'Enemy plays 2... Nc6 to guard e5. Now deploy your Bishop to c4!',
+      },
+    ],
+  },
+  {
+    id: 'kanoe_tactics_2',
+    rank: 'kanoe',
+    tool: 'tactics',
+    title: 'Rook Elevator: Lethal Triple Strike',
+    subtitle: 'Coordinating Rook and Queen to breach the enemy castled shelter',
+    mode: 'standard',
+    playerColor: 'white',
+    initialBoard: (() => {
+      const b = createEmptyBoard();
+      b[0][6] = p('king', 'white', 'wk1');
+      b[2][5] = p('rook', 'white', 'wr1');   // f3 Rook
+      b[4][7] = p('queen', 'white', 'wq1');  // h5 Queen
+      b[7][6] = p('king', 'black', 'bk1');   // g8 King
+      b[6][5] = p('pawn', 'black', 'bp_f');  // f7 pawn
+      b[6][6] = p('pawn', 'black', 'bp_g');  // g7 pawn
+      b[6][7] = p('pawn', 'black', 'bp_h');  // h7 pawn
+      return b;
+    })(),
+    mentorPrompt: 'The black King feels safe behind his pawns. Elevate your Rook across the 3rd rank to h3 to double your battery against h7!',
+    hint: 'Step 1: Move Rook from f3 (x=5, y=2) to h3 (x=7, y=2).',
+    mentorFailure: 'Elevate the Rook to h3 to create the unstoppable battery on the h-file!',
+    mentorSuccess: 'CHECKMATE! The Rook elevator and Queen sacrifice breached the fortress completely.',
+    correctSteps: [
+      {
+        from: { x: 5, y: 2 },
+        to: { x: 7, y: 2 },
+        explanation: '1. Rh3 creates an overwhelming battery with the Queen against h7.',
+        mentorReaction: 'approving',
+        mentorCommentary: 'Black is terrified and pushes h6 to create breathing space. Now strike h6 with your Queen!',
+      },
+      {
+        from: { x: 7, y: 4 },
+        to: { x: 7, y: 5 },
+        explanation: '2. Qxh6! sac forces open the g-file and king shelter.',
+        mentorReaction: 'approving',
+        mentorCommentary: 'Black takes the Queen with gxh6. Now deliver checkmate with your Rook on h6!',
+      },
+      {
+        from: { x: 7, y: 2 },
+        to: { x: 7, y: 5 },
+        explanation: '3. Rxh6# delivers clean checkmate as the g8 King has zero escape.',
+        mentorReaction: 'approving',
+        mentorCommentary: 'Magnificent tactical mastery! The elevator battery shattered the shield.',
+      },
+    ],
+    opponentResponses: [
+      {
+        triggerStepIndex: 0,
+        from: { x: 7, y: 6 },
+        to: { x: 7, y: 5 },
+        commentary: 'Black plays 1... h6 trying to block mate. Shatter the pawn with your Queen on h6!',
+      },
+      {
+        triggerStepIndex: 1,
+        from: { x: 6, y: 6 },
+        to: { x: 7, y: 5 },
+        commentary: 'Black captures gxh6. Finish him with Rxh6# checkmate!',
+      },
+    ],
+  },
+  {
+    id: 'tsuchinoe_opening_2',
+    rank: 'tsuchinoe',
+    tool: 'opening',
+    title: 'Bastion Citadel: King\'s Fianchetto',
+    subtitle: 'Constructing the unbreakable long-diagonal sniper fortress',
+    mode: 'standard',
+    playerColor: 'white',
+    initialBoard: (() => {
+      const b = createEmptyBoard();
+      b[0][4] = p('king', 'white', 'wk1');
+      b[0][5] = p('bishop', 'white', 'wb_f'); // f1 Bishop
+      b[0][6] = p('knight', 'white', 'wn_g'); // g1 Knight
+      b[1][6] = p('pawn', 'white', 'wp_g');   // g2 pawn
+      b[1][4] = p('pawn', 'white', 'wp_e');   // e2 pawn
+      b[1][3] = p('pawn', 'white', 'wp_d');   // d2 pawn
+      b[7][4] = p('king', 'black', 'bk1');
+      b[6][3] = p('pawn', 'black', 'bp_d');   // d7 pawn
+      b[6][2] = p('pawn', 'black', 'bp_c');   // c7 pawn
+      return b;
+    })(),
+    mentorPrompt: 'The Earth Bastion values impenetrable structures. Construct the King\'s Fianchetto: advance g3, place the Bishop on g2, and anchor with Nf3!',
+    hint: 'Step 1: Move g2 pawn to g3 (x=6, y=2).',
+    mentorFailure: 'The fianchetto requires opening the g2 pocket! Play g3 first!',
+    mentorSuccess: 'IMPREGNABLE CITADEL! The Bishop on g2 snipes the entire h1-a8 long diagonal.',
+    correctSteps: [
+      {
+        from: { x: 6, y: 1 },
+        to: { x: 6, y: 2 },
+        explanation: '1. g3 prepares the fianchetto house for the Bishop.',
+        mentorReaction: 'approving',
+        mentorCommentary: 'Black stakes center claim with d5. Now place your Bishop in the pocket on g2!',
+      },
+      {
+        from: { x: 5, y: 0 },
+        to: { x: 6, y: 1 },
+        explanation: '2. Bg2 commands the longest diagonal on the chessboard.',
+        mentorReaction: 'approving',
+        mentorCommentary: 'Black plays c5. Anchor the position by leaping your Knight to f3!',
+      },
+      {
+        from: { x: 6, y: 0 },
+        to: { x: 5, y: 2 },
+        explanation: '3. Nf3 completes the King-side bastion, preparing safe castling.',
+        mentorReaction: 'approving',
+        mentorCommentary: 'Superb! The fianchetto fortress stands unyielding.',
+      },
+    ],
+    opponentResponses: [
+      {
+        triggerStepIndex: 0,
+        from: { x: 3, y: 6 },
+        to: { x: 3, y: 4 },
+        commentary: 'Black plays 1... d5. Place your Bishop on g2!',
+      },
+      {
+        triggerStepIndex: 1,
+        from: { x: 2, y: 6 },
+        to: { x: 2, y: 4 },
+        commentary: 'Black plays 2... c5. Complete the setup by developing Nf3!',
+      },
+    ],
+  },
+  {
+    id: 'hinoe_tactics_2',
+    rank: 'hinoe',
+    tool: 'tactics',
+    title: 'The Greek Gift Sacrificial Hunt',
+    subtitle: 'Classic Bishop sacrifice on h7 shattering the enemy castled King',
+    mode: 'standard',
+    playerColor: 'white',
+    initialBoard: (() => {
+      const b = createEmptyBoard();
+      b[0][6] = p('king', 'white', 'wk1');   // g1 King
+      b[0][3] = p('queen', 'white', 'wq1');  // d1 Queen
+      b[2][3] = p('bishop', 'white', 'wb1'); // d3 Bishop
+      b[2][5] = p('knight', 'white', 'wn1'); // f3 Knight
+      b[3][4] = p('pawn', 'white', 'wp_e');  // e4 pawn
+      b[7][6] = p('king', 'black', 'bk1');   // g8 King
+      b[6][5] = p('pawn', 'black', 'bp_f');  // f7 pawn
+      b[6][6] = p('pawn', 'black', 'bp_g');  // g7 pawn
+      b[6][7] = p('pawn', 'black', 'bp_h');  // h7 pawn
+      return b;
+    })(),
+    mentorPrompt: 'Pupil of the Flame! The enemy castled King is vulnerable on h7. Execute the eternal Greek Gift: sacrifice your Bishop on h7 with check!',
+    hint: 'Step 1: Move Bishop from d3 (x=3, y=2) to h7 (x=7, y=6) with check.',
+    mentorFailure: 'Do not hesitate! Strike h7 with Bxh7+!',
+    mentorSuccess: 'LETHAL CONVERGENCE! The enemy King is flushed into the open. The Queen and Knight battery seals the win.',
+    correctSteps: [
+      {
+        from: { x: 3, y: 2 },
+        to: { x: 7, y: 6 },
+        explanation: '1. Bxh7+! The Greek Gift sacrifice strips the King of his shield.',
+        mentorReaction: 'approving',
+        mentorCommentary: 'Black captures with Kxh7. Now leap your Knight forward to g5 with check!',
+      },
+      {
+        from: { x: 5, y: 2 },
+        to: { x: 6, y: 4 },
+        explanation: '2. Ng5+ forces the King back while clearing d1-h5 for the Queen.',
+        mentorReaction: 'approving',
+        mentorCommentary: 'Black retreats King to g8. Now slide your Queen to h5 to threaten unstoppable mate on h7!',
+      },
+      {
+        from: { x: 3, y: 0 },
+        to: { x: 7, y: 4 },
+        explanation: '3. Qh5 delivers a terminal mating threat on h7 and f7.',
+        mentorReaction: 'approving',
+        mentorCommentary: 'Masterful! A classic tactical combination recognized by grandmasters worldwide.',
+      },
+    ],
+    opponentResponses: [
+      {
+        triggerStepIndex: 0,
+        from: { x: 6, y: 7 },
+        to: { x: 7, y: 6 },
+        commentary: 'Black captures Kxh7. Follow up immediately with Ng5+ check!',
+      },
+      {
+        triggerStepIndex: 1,
+        from: { x: 7, y: 6 },
+        to: { x: 6, y: 7 },
+        commentary: 'Black retreats to g8. Now launch Queen to h5!',
+      },
+    ],
+  },
+  {
+    id: 'kinoe_culling_2',
+    rank: 'kinoe',
+    tool: 'culling',
+    title: 'Artillery Pincer: Mechamaru & Nanami',
+    subtitle: 'Combining long-range artillery with Warden aura suppression',
+    mode: 'culling',
+    playerColor: 'white',
+    cullingPlayerColor: 'white',
+    initialBoard: createEmptyBoard(),
+    cullingBoard: (() => {
+      const b = createEmptyCullingKataBoard();
+      b[1][8] = cp('culling_gojo', 'white', 'w_gojo');
+      b[1][5] = cp('culling_mechamaru', 'white', 'w_mecha'); // E1 Mechamaru
+      b[2][4] = cp('culling_nanami', 'white', 'w_nanami');   // D2 Nanami
+      b[5][5] = cp('culling_uraume', 'black', 'b_uraume');   // E5 Uraume
+      b[8][1] = cp('culling_sukuna', 'black', 'b_sukuna');
+      return b;
+    })(),
+    mentorPrompt: 'Ultimate Mechamaru possesses Long-Range Artillery: he can blast any straight-line square within 4 tiles! Fire Mechamaru\'s cannon straight at Uraume on E5!',
+    hint: 'Select Mechamaru at E1 (x=5, y=1) and click E5 (x=5, y=5) to unleash the artillery shot.',
+    mentorFailure: 'Aim straight down the E-file! Blast Uraume at E5!',
+    mentorSuccess: 'DIRECT ARTILLERY HIT! Mechamaru vaporized the cursed officer from across the board.',
+    correctSteps: [
+      {
+        from: { x: 5, y: 1 },
+        to: { x: 5, y: 5 },
+        explanation: 'Mechamaru uses Artillery shot to eliminate Uraume along the clear E-file.',
+        mentorReaction: 'approving',
+        mentorCommentary: 'Excellent! Artillery pieces allow you to eliminate threats without endangering your position.',
+        cullingActionType: 'shoot',
       },
     ],
   },

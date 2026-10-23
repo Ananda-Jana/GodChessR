@@ -1287,6 +1287,320 @@ app.delete('/api/account', authMiddleware, async (req, res) => {
    }
    ```
 
+# Chess Hashira Training Hub — Implementation Documentation
+
+## 1. Overview
+
+Chess Hashira Training (鬼殺チェス柱稽古) is an integrated training environment within the existing chess application. It provides interactive lessons, tactical exercises, specialized Culling Game training, practice boards, theory explanations, and a guided mentor experience.
+
+The feature follows the existing brutalist design language, using dark backgrounds, sharp rectangular panels, contrasting borders, bold typography, and restrained gold accents.
+
+The primary objective is to provide a comprehensive training environment without rewriting the existing game or interfering with live matches, multiplayer sessions, competitive ratings, or established game rules.
+
+## 2. Architecture and Main Files
+
+Training functionality is organized under `src/training/`.
+
+| File | Responsibility |
+|---|---|
+| `src/training/types.ts` | Shared TypeScript types for training ranks, lessons, and training state. |
+| `src/training/data.ts` | Static lesson definitions, instructional content, and training scenarios. |
+| `src/training/HashiraMentor.tsx` | Sensei Gensei's 2D avatar, expressions, dialogue, and guidance interface. |
+| `src/training/InteractiveKataBoard.tsx` | Interactive lesson board, move attempts, and instructional guidance. |
+| `src/training/PracticeBoard.tsx` | Isolated practice board, mode selection, position controls, and sparring functionality. |
+| `src/training/TheoryLibraryView.tsx` | Guided explanations of mechanics and strategic concepts. |
+| `src/training/HashiraTrainingView.tsx` | Main training interface, navigation, rank selection, mentor panel, and responsive layout. |
+| `src/components/Dashboard.tsx` | Training hub entry point on the main dashboard. |
+| `src/App.tsx` | Application-level integration and in-site navigation. |
+| `src/components/CullingBoard.tsx` | Existing specialized Culling Game board component. |
+| `src/game/cullingEngine.ts` | Existing Culling Game rules and engine functionality. |
+| `src/components/TrophyRoomModal.tsx` | Existing trophy and achievement presentation infrastructure. |
+
+The training system reuses existing game components and engine infrastructure wherever appropriate. Training-specific state and interactions are intended to remain isolated from production matches.
+
+## 3. Martial Rank Progression
+
+The training hub includes six freely selectable ranks.
+
+| Rank | Theme | Training Focus |
+|---|---|---|
+| Mizunoto | Water Initiate | Basic movement, positioning, and beginner-friendly practice. |
+| Kanoe | Iron Blade | Development, tactical awareness, and defensive coordination. |
+| Tsuchinoe | Earth Bastion | Defensive structures, pawn formations, and positional discipline. |
+| Hinoe | Flame Strategist | Tactical combinations, sacrifices, and attacking play. |
+| Kinoe | Tree of Mastery | Advanced calculation, positioning, and counterattacks. |
+| Hashira | Supreme Pillar | High-difficulty calculation, precise play, and punishment of mistakes. |
+
+Players can select any rank without mandatory progression locks. Rank selection establishes the intended difficulty and instructional context.
+
+## 4. Unified Training Tools
+
+### 4.1 Opening Dojo
+
+Provides guided lessons covering:
+
+- Opening development and central control.
+- Prince deployment and coordination.
+- Pawn advancement and positioning.
+- Dice-aware planning where supported by the selected game mode.
+- Preparation for special-piece interactions.
+
+Lessons explain the strategic purpose of moves rather than relying exclusively on move memorization.
+
+### 4.2 Tactical Dojo
+
+Provides interactive exercises covering:
+
+- Forks and multi-target attacks.
+- Check and checkmate patterns.
+- Defensive moves and threat prevention.
+- Sacrifices and tactical combinations.
+- Positional weaknesses and tactical suppression where supported by the game's rules.
+
+The mentor provides feedback during lesson attempts.
+
+### 4.3 Culling Game Dojo
+
+Provides dedicated training for the Culling Game mode, using its specialized board geometry, character pieces, and mode-specific mechanics.
+
+The implementation integrates the existing `src/components/CullingBoard.tsx` component and Culling Game engine infrastructure, including `src/game/cullingEngine.ts`, where applicable.
+
+Training scenarios cover:
+
+- Character-specific abilities and movement.
+- Tactical positioning and suppression.
+- Defensive survival and special-piece interactions.
+- Mode-specific tactical situations and victory conditions.
+- Understanding the effects of special abilities through guided exercises.
+
+Implemented scenario themes include:
+
+- **Sovereign Domain Step:** Gojo-inspired spatial movement.
+- **Vanguard Black Flash Incursion:** Yuji-inspired offensive movement.
+- **Warden 7:3 Ratio Field:** Nanami-inspired tactical suppression.
+- **Artillery Ranged Bombardment:** Mechamaru-inspired ranged attacks.
+- **Heavenly Restriction:** Maki-inspired interactions with suppression mechanics.
+- **Bulwark Shell Resilience:** Panda-inspired defensive resilience.
+- **Fever Jackpot:** Hakari-inspired capture and repositioning.
+- **Malevolent Shrine Cross Checkmate:** A boundary-oriented tactical scenario.
+
+These scenarios must follow the actual Culling Game implementation. Their precise legality and behavior should be verified against the current engine whenever game mechanics change.
+
+### 4.4 Practice Board
+
+Provides an isolated environment for experimenting with positions, practicing moves, and playing training scenarios.
+
+Supported environments include:
+
+- **Standard Chess:** 8×8 board.
+- **Crafted Chess:** Custom armies and special-piece configurations.
+- **Culling Game:** Specialized cross-shaped board.
+- **Rose Paradise:** 10×10 board.
+
+Available practice functionality includes mode selection, lesson loading, position experimentation, reset, undo or position controls where supported, board flipping, and sparring.
+
+Practice actions are intended to remain separate from official matches.
+
+### 4.5 Theory Library
+
+Provides guided explanations of game mechanics, special pieces, strategic concepts, and mode-specific rules.
+
+Topics include the Prince, Communists, Priests, Supreme Rooks, dice-related mechanics, and other supported game features.
+
+The Theory Library is a reading-oriented interface and may scroll independently of the fixed gameplay layout.
+
+## 5. Interactive Sensei Mentor
+
+The training hub includes Sensei Gensei, a lightweight 2D mentor implemented with inline vector graphics and React.
+
+The mentor supports instructional feedback through:
+
+- Stern expressions for guidance.
+- Disappointed or scowling expressions for mistakes.
+- Analytical expressions during tactical instruction.
+- Approving expressions and success feedback.
+- Contextual dialogue, hints, and reset guidance.
+- Lesson progression feedback.
+
+### Mistake Diagnosis and Move Guidance
+
+The interactive training board provides feedback when a player attempts an incorrect move.
+
+After two failed attempts on a lesson step, the guidance system is designed to highlight the origin piece and intended destination square using a pulsing golden indicator.
+
+This mechanism helps players identify the intended move while retaining the interactive learning experience.
+
+The accuracy of mistake diagnosis depends on the lesson definitions and validation logic. Individual scenarios should be tested to ensure that feedback accurately describes the player's error.
+
+## 6. Progress Tracking and Rewards
+
+The training system includes rank-based organization, lesson progression, and local progress persistence where implemented.
+
+The intended architecture uses browser storage for basic training progress without requiring a new database or backend service.
+
+Training sparring also includes achievement reward integration. Qualifying victories are intended to award square achievement badges that can be viewed through the existing Trophy Room infrastructure.
+
+Relevant integration includes `src/components/TrophyRoomModal.tsx`.
+
+Training rewards must remain distinct from competitive match results. Practice actions must not unintentionally change official ratings or live-match outcomes.
+
+## 7. Check, Checkmate, and Sparring
+
+Training sparring includes support for evaluating check and checkmate conditions in applicable game modes.
+
+The implementation reuses existing game-rule infrastructure where possible, including the standard engine and Culling Game engine.
+
+The goal is to provide meaningful practice scenarios rather than a purely decorative board.
+
+Because Standard, Crafted, Culling Game, and Rose Paradise use different board configurations and potentially different movement rules, move validation and victory conditions must remain mode-specific.
+
+Conventional chess rules must not override custom Mugen game mechanics.
+
+Verification should cover:
+
+- Legal and illegal move detection.
+- Check detection.
+- Checkmate detection.
+- Turn progression.
+- Special-piece abilities.
+- Capture behavior.
+- Mode-specific victory and draw conditions.
+- Sparring completion and reward handling.
+
+## 8. Responsive Interface Design
+
+The training hub supports separate desktop and mobile layouts.
+
+### 8.1 Desktop Layout
+
+The desktop interface follows a three-column studio arrangement:
+
+1. **Mentor sidebar:** Sensei avatar, dialogue, rank information, and training controls.
+2. **Central board stage:** Interactive board positioned as the primary visual element.
+3. **Training sidebar:** Dojo navigation, lesson selection, and progress indicators.
+
+The objective is to minimize unnecessary scrolling between the board, lesson instructions, and mentor feedback.
+
+### 8.2 Mobile Layout
+
+The intended mobile interface follows a compact, single-screen game-console design.
+
+**Top navigation bar**
+
+- Compact Rank selector.
+- Compact Dojo selector.
+- Compact Lesson selector.
+- Dropdown menus that open beneath the navigation without expanding the main layout.
+- Automatic dropdown closure after selection.
+- No large training title inside the mobile training view.
+
+**Sensei panel**
+
+- Small avatar positioned on the left.
+- Concise instructional message on the right.
+- Limited vertical height to preserve board space.
+- No layout expansion when the mentor's message changes.
+
+**Central board stage**
+
+- Centered within the available viewport.
+- Sized according to available width and height.
+- Fully visible without clipping.
+- Responsive to different board geometries and mobile screen sizes.
+- Interactive without document-level scrolling.
+
+**Bottom navigation bar**
+
+- Current lesson or kata title.
+- Hint control.
+- Reset control.
+- Next control where applicable.
+- Compact horizontal buttons rather than oversized stacked controls.
+
+The intended gameplay experience is a single-screen mobile interface. Reading-oriented screens, including the Theory Library, may scroll when necessary.
+
+### 8.3 Mobile Layout Requirements
+
+The layout should use viewport-aware sizing, constrained flex or grid containers, and appropriate `min-height: 0` and `min-width: 0` rules.
+
+The board size must be calculated from both the available width and available height after accounting for the navigation bars, Sensei panel, safe areas, and spacing.
+
+Applying `overflow: hidden` alone is insufficient if the internal sections exceed the available viewport.
+
+The complete board, Sensei panel, top navigation, and bottom controls must remain visible simultaneously.
+
+**Responsive layout verification remains important:** Earlier implementation iterations introduced fixed-height containers and overflow restrictions, but the supplied mobile screenshot still showed excessive panel sizing and a partially clipped board. A successful build does not establish that the rendered mobile experience meets the single-screen requirement.
+
+## 9. Visual Design Principles
+
+The training interface follows a restrained brutalist visual identity:
+
+- Near-black or charcoal backgrounds.
+- Sharp rectangular panels and thin contrasting borders.
+- Gold or yellow highlights for active selections and move guidance.
+- Bold, compact typography for navigation.
+- Clear visual separation between navigation, instruction, gameplay, and controls.
+- Minimal decoration and unnecessary padding.
+- The chessboard as the primary visual element.
+
+Mobile controls should remain compact without compromising readability, accessibility, or touch interaction.
+
+## 10. Game Isolation and Compatibility
+
+The training hub is intended to be an additive feature rather than a rewrite of the existing game.
+
+Compatibility requirements include:
+
+- No unintended mutations of active live-match state.
+- No unintended multiplayer synchronization or socket events.
+- No competitive rating changes caused by training moves.
+- No interference with matchmaking or existing bot behavior.
+- No changes to established win/draw conditions in existing modes.
+- No unintended changes to Culling Game or Rose Paradise mechanics.
+- Reuse of existing board and engine components wherever practical.
+- No unnecessary backend services or dependencies.
+
+Future modifications must preserve these isolation boundaries.
+
+## 11. Testing and Verification
+
+Previous implementation iterations reported successful build and quality-control checks. However, these checks do not independently prove that every training scenario, game mode, or responsive layout is correct.
+
+Recommended verification includes:
+
+- Production build and TypeScript checks.
+- Desktop and mobile visual inspection.
+- Rank, dojo, and lesson navigation.
+- Hint, reset, undo, and lesson progression.
+- Local progress persistence.
+- Legal-move validation for every board type.
+- Culling Game character abilities and board geometry.
+- Check and checkmate detection.
+- Sparring victory conditions.
+- Badge awarding and Trophy Room presentation.
+- Regression testing of existing live-match and multiplayer behavior.
+
+Recommended mobile test viewports:
+
+| Viewport | Primary verification |
+|---|---|
+| 320×568 CSS pixels | Small-screen fit and control accessibility. |
+| 360×640 CSS pixels | Compact navigation and complete board visibility. |
+| 390×844 CSS pixels | Standard mobile gameplay layout. |
+| 430×932 CSS pixels | Wider-screen board sizing and spacing. |
+
+For each viewport, verify that the active gameplay screen has no document-level vertical or horizontal scrolling and that no essential controls or board squares are clipped.
+
+## 12. Implementation Summary
+
+Chess Hashira Training provides a unified environment for opening instruction, tactical exercises, Culling Game training, isolated practice, and theory learning.
+
+The feature includes six selectable martial ranks, a reusable 2D mentor, instructional move feedback, specialized board integration, sparring functionality, and achievement reward integration.
+
+The implementation is integrated into the existing application and is designed to preserve the underlying game's behavior.
+
+**Outstanding quality requirement:** The mobile gameplay layout must be visually inspected and corrected until the complete board, compact Sensei panel, top navigation, and bottom navigation fit within a single viewport without clipping or gameplay scrolling. Desktop layout, mode-specific rules, and live-match isolation must remain intact.
+
 ---
 
 *(MugenChessX is an open-source intellectual property created by ANANDA JANA. Designed for strategy enthusiasts who demand both deep tactical rigor and electrifying volatility.)*

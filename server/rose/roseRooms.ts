@@ -19,15 +19,20 @@ const roomsByCode = new Map<string, string>(); // code (uppercase) -> roomId
 const userActiveRoom = new Map<string, string>(); // userId -> roomId
 
 export function generateRoseCode(): string {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // Crockford unambiguous characters
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // Unambiguous characters
   for (let attempts = 0; attempts < 100; attempts++) {
-    let code = 'ROSE-';
-    for (let i = 0; i < 6; i++) {
+    let code = 'ROSE';
+    for (let i = 0; i < 3; i++) {
       code += chars.charAt(Math.floor(Math.random() * chars.length));
     }
     if (!roomsByCode.has(code)) return code;
   }
-  return `ROSE-${Date.now().toString(36).slice(-6).toUpperCase()}`;
+  return `ROSE${Date.now().toString(36).slice(-3).toUpperCase()}`;
+}
+
+export function normalizeRoseCode(rawCode: string): string {
+  const cleaned = rawCode.trim().toUpperCase().replace(/[\s-]/g, '');
+  return cleaned;
 }
 
 export function getPublicRoseRooms(): PublicRoseRoom[] {
@@ -126,15 +131,18 @@ export function joinRoseRoom(
   guestAvatarId: string,
   guestWs?: WebSocket
 ): { success: boolean; room?: RoseRoom; hostSeat?: RoseSeat; guestSeat?: RoseSeat; error?: string } {
-  const upperCode = code.trim().toUpperCase();
-  const roomId = roomsByCode.get(upperCode);
+  const norm = normalizeRoseCode(code);
+  let roomId = roomsByCode.get(norm);
+  if (!roomId && !norm.startsWith('ROSE')) {
+    roomId = roomsByCode.get(`ROSE${norm}`);
+  }
   if (!roomId) {
     return { success: false, error: 'Rose room code not found or expired.' };
   }
 
   const room = rooms.get(roomId);
   if (!room) {
-    roomsByCode.delete(upperCode);
+    roomsByCode.delete(norm);
     return { success: false, error: 'Room does not exist.' };
   }
 
@@ -202,8 +210,11 @@ export function getRoomById(roomId: string): RoseRoom | undefined {
 }
 
 export function getRoomByCode(code: string): RoseRoom | undefined {
-  const upper = code.trim().toUpperCase();
-  const roomId = roomsByCode.get(upper);
+  const norm = normalizeRoseCode(code);
+  let roomId = roomsByCode.get(norm);
+  if (!roomId && !norm.startsWith('ROSE')) {
+    roomId = roomsByCode.get(`ROSE${norm}`);
+  }
   return roomId ? rooms.get(roomId) : undefined;
 }
 

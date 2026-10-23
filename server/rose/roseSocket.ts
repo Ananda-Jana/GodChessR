@@ -36,10 +36,20 @@ export function registerRoseSocket(wss: WebSocketServer) {
 
   function broadcastPublicRoseRooms() {
     const list = getPublicRoseRooms();
-    const payload = JSON.stringify({ type: 'rose:rooms_list', rooms: list });
+    const payload = JSON.stringify({
+      type: 'rose:rooms_list',
+      rooms: list,
+      challenges: list,
+    });
+    const challengesPayload = JSON.stringify({
+      type: 'rose:challenges_list',
+      rooms: list,
+      challenges: list,
+    });
     for (const client of wss.clients) {
       if (client.readyState === WebSocket.OPEN) {
         client.send(payload);
+        client.send(challengesPayload);
       }
     }
   }
@@ -97,14 +107,18 @@ export function registerRoseSocket(wss: WebSocketServer) {
       ws.userId = user.userId;
 
       switch (type) {
+        case 'rose:list_challenges':
         case 'rose:list_rooms': {
-          ws.send(JSON.stringify({ type: 'rose:rooms_list', rooms: getPublicRoseRooms() }));
+          const list = getPublicRoseRooms();
+          ws.send(JSON.stringify({ type: 'rose:rooms_list', rooms: list, challenges: list }));
+          ws.send(JSON.stringify({ type: 'rose:challenges_list', rooms: list, challenges: list }));
           break;
         }
 
+        case 'rose:create_challenge':
         case 'rose:create':
         case 'rose:create_room': {
-          const chosenRole: RoseRole = role === 'girlfriend' ? 'girlfriend' : 'boyfriend';
+          const chosenRole: RoseRole = (role === 'girlfriend' || data.preferredSide === 'black') ? 'girlfriend' : 'boyfriend';
           // Untimed couples chess by default (timeControl = 0)
           const room = createRoseRoom(
             user.userId,
@@ -119,18 +133,23 @@ export function registerRoseSocket(wss: WebSocketServer) {
 
           ws.roseRoomId = room.match.id;
 
-          ws.send(JSON.stringify({
-            type: 'rose:created',
+          const createdPayload = {
+            type: 'rose:challenge_created',
             code: room.match.code,
+            matchId: room.match.id,
             match: room.match,
             yourColor: room.match.whiteSeat?.userId === user.userId ? 'white' : 'black',
             yourRole: chosenRole,
-          }));
+          };
+
+          ws.send(JSON.stringify(createdPayload));
+          ws.send(JSON.stringify({ ...createdPayload, type: 'rose:created' }));
 
           broadcastPublicRoseRooms();
           break;
         }
 
+        case 'rose:join_challenge':
         case 'rose:join':
         case 'rose:join_room': {
           const targetCode = String(code || '').trim().toUpperCase();
@@ -160,6 +179,7 @@ export function registerRoseSocket(wss: WebSocketServer) {
           if (room.hostWs && room.hostWs.readyState === WebSocket.OPEN) {
             room.hostWs.send(JSON.stringify({
               type: 'rose:match_started',
+              matchId: room.match.id,
               match: room.match,
               yourColor: res.hostSeat.color,
               yourRole: res.hostSeat.role,
@@ -168,6 +188,7 @@ export function registerRoseSocket(wss: WebSocketServer) {
 
           ws.send(JSON.stringify({
             type: 'rose:match_started',
+            matchId: room.match.id,
             match: room.match,
             yourColor: res.guestSeat.color,
             yourRole: res.guestSeat.role,
@@ -181,6 +202,7 @@ export function registerRoseSocket(wss: WebSocketServer) {
           break;
         }
 
+        case 'rose:cancel_challenge':
         case 'rose:cancel':
         case 'rose:cancel_room': {
           const rId = ws.roseRoomId || roomId;
@@ -188,6 +210,7 @@ export function registerRoseSocket(wss: WebSocketServer) {
             destroyRoom(rId);
             ws.roseRoomId = undefined;
           }
+          ws.send(JSON.stringify({ type: 'rose:challenge_cancelled' }));
           ws.send(JSON.stringify({ type: 'rose:cancelled' }));
           broadcastPublicRoseRooms();
           break;

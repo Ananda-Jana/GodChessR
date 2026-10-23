@@ -20,6 +20,9 @@ export function useRoseRoom() {
   const [publicRooms, setPublicRooms] = useState<PublicRoseRoom[]>([]);
   const [hostedCode, setHostedCode] = useState<string | null>(null);
   const [isWaitingForPartner, setIsWaitingForPartner] = useState(false);
+  const [isCreatingChallenge, setIsCreatingChallenge] = useState(false);
+  const [isJoiningChallenge, setIsJoiningChallenge] = useState(false);
+  const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pendingMove, setPendingMove] = useState(false);
   const [reactions, setReactions] = useState<RoseReaction[]>([]);
@@ -41,6 +44,7 @@ export function useRoseRoom() {
         ws.send(JSON.stringify({ type: 'auth', token }));
       }
       // Request active open rooms for the lobby
+      ws.send(JSON.stringify({ type: 'rose:list_challenges' }));
       ws.send(JSON.stringify({ type: 'rose:list_rooms' }));
     };
 
@@ -49,29 +53,38 @@ export function useRoseRoom() {
         const data = JSON.parse(event.data);
         switch (data.type) {
           case 'rose:rooms_list':
-            setPublicRooms(data.rooms || []);
+          case 'rose:challenges_list':
+            setPublicRooms(data.challenges || data.rooms || []);
             break;
 
           case 'rose:created':
-            // CRITICAL FIX: Only save the hosted code and waiting state.
-            // DO NOT set match yet so the UI stays on the same window and shows the generated code!
+          case 'rose:challenge_created':
             setHostedCode(data.code);
             setIsWaitingForPartner(true);
+            setIsCreatingChallenge(false);
+            setStatusMessage('Waiting for partner to join...');
             if (data.yourColor) setMyColor(data.yourColor);
             if (data.yourRole) setMyRole(data.yourRole);
             setError(null);
             break;
 
           case 'rose:match_started':
-            // The match ONLY starts when the second player joins!
-            setMatch(data.match);
-            if (data.yourColor) setMyColor(data.yourColor);
-            if (data.yourRole) setMyRole(data.yourRole);
+            setStatusMessage('Partner joined! Launching romantic duel...');
+            setIsJoiningChallenge(false);
+            setIsCreatingChallenge(false);
             setIsWaitingForPartner(false);
             setHostedCode(null);
             setPendingMove(false);
             setError(null);
             sounds.playChallenge();
+
+            // Smooth 300ms transition matching Culling Game
+            setTimeout(() => {
+              setMatch(data.match);
+              if (data.yourColor) setMyColor(data.yourColor);
+              if (data.yourRole) setMyRole(data.yourRole);
+              setStatusMessage(null);
+            }, 300);
             break;
 
           case 'rose:state':
@@ -94,12 +107,19 @@ export function useRoseRoom() {
             break;
 
           case 'rose:cancelled':
+          case 'rose:challenge_cancelled':
             setIsWaitingForPartner(false);
+            setIsCreatingChallenge(false);
+            setIsJoiningChallenge(false);
+            setStatusMessage(null);
             setHostedCode(null);
             break;
 
           case 'rose:error':
             setError(data.message || 'Operation failed');
+            setIsCreatingChallenge(false);
+            setIsJoiningChallenge(false);
+            setStatusMessage(null);
             setPendingMove(false);
             break;
 
@@ -124,10 +144,14 @@ export function useRoseRoom() {
 
     ws.onclose = () => {
       wsRef.current = null;
+      setIsCreatingChallenge(false);
+      setIsJoiningChallenge(false);
       reconnectTimeoutRef.current = setTimeout(connect, 3000);
     };
 
     ws.onerror = () => {
+      setIsCreatingChallenge(false);
+      setIsJoiningChallenge(false);
       ws.close();
     };
   }, [token]);
@@ -151,8 +175,10 @@ export function useRoseRoom() {
 
   const createRoom = useCallback((role: RoseRole) => {
     setError(null);
+    setStatusMessage('Creating challenge room...');
+    setIsCreatingChallenge(true);
     send({
-      type: 'rose:create',
+      type: 'rose:create_challenge',
       role,
       userId: user?.id,
       displayName: user?.displayName,
@@ -162,10 +188,17 @@ export function useRoseRoom() {
   }, [send, user, token]);
 
   const joinRoom = useCallback((code: string) => {
+    const cleanCode = code.trim().toUpperCase();
+    if (!cleanCode) {
+      setError('Please enter a room code.');
+      return;
+    }
     setError(null);
+    setIsJoiningChallenge(true);
+    setStatusMessage('Connecting to room...');
     send({
-      type: 'rose:join',
-      code: code.trim().toUpperCase(),
+      type: 'rose:join_challenge',
+      code: cleanCode,
       userId: user?.id,
       displayName: user?.displayName,
       avatarId: user?.avatarId,
@@ -174,8 +207,11 @@ export function useRoseRoom() {
   }, [send, user, token]);
 
   const cancelRoom = useCallback(() => {
-    send({ type: 'rose:cancel' });
+    send({ type: 'rose:cancel_challenge' });
+    setIsCreatingChallenge(false);
+    setIsJoiningChallenge(false);
     setIsWaitingForPartner(false);
+    setStatusMessage(null);
     setHostedCode(null);
   }, [send]);
 
@@ -230,13 +266,16 @@ export function useRoseRoom() {
   }, [send, match?.id, user?.id]);
 
   const refreshRooms = useCallback(() => {
-    send({ type: 'rose:list_rooms' });
+    send({ type: 'rose:list_challenges' });
   }, [send]);
 
   const clearMatch = useCallback(() => {
     setMatch(null);
     setHostedCode(null);
     setIsWaitingForPartner(false);
+    setIsCreatingChallenge(false);
+    setIsJoiningChallenge(false);
+    setStatusMessage(null);
     setError(null);
     setChatMessages([]);
     refreshRooms();
@@ -249,7 +288,11 @@ export function useRoseRoom() {
     publicRooms,
     hostedCode,
     isWaitingForPartner,
+    isCreatingChallenge,
+    isJoiningChallenge,
+    statusMessage,
     error,
+    setError,
     pendingMove,
     reactions,
     chatMessages,

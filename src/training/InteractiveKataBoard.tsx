@@ -35,6 +35,8 @@ interface InteractiveKataBoardProps {
   onReaction: (expression: MentorExpression, text: string) => void;
   onResetSignal?: number;
   maxBoardDimension?: number;
+  onMoveMade?: () => void;
+  onStepChange?: (stepIndex: number) => void;
 }
 
 export const InteractiveKataBoard: React.FC<InteractiveKataBoardProps> = ({
@@ -43,6 +45,8 @@ export const InteractiveKataBoard: React.FC<InteractiveKataBoardProps> = ({
   onReaction,
   onResetSignal = 0,
   maxBoardDimension,
+  onMoveMade,
+  onStepChange,
 }) => {
   const isCullingMode = lesson.tool === 'culling' || Boolean(lesson.cullingBoard);
 
@@ -73,6 +77,11 @@ export const InteractiveKataBoard: React.FC<InteractiveKataBoardProps> = ({
   const [lastMove, setLastMove] = useState<{ from: Position; to: Position } | null>(null);
   const [consecutiveMistakes, setConsecutiveMistakes] = useState(0);
 
+  // Notify parent of step changes for dynamic multi-step hints
+  useEffect(() => {
+    onStepChange?.(currentStepIndex);
+  }, [currentStepIndex, onStepChange]);
+
   // Reset state whenever lesson or resetSignal triggers
   useEffect(() => {
     if (lesson.initialBoard) {
@@ -95,7 +104,8 @@ export const InteractiveKataBoard: React.FC<InteractiveKataBoardProps> = ({
     setIsFinished(false);
     setLastMove(null);
     setConsecutiveMistakes(0);
-  }, [lesson.id, onResetSignal]);
+    onStepChange?.(0);
+  }, [lesson.id, onResetSignal, onStepChange]);
 
   const expectedStep: KataStep | undefined = lesson.correctSteps[currentStepIndex];
 
@@ -210,6 +220,9 @@ export const InteractiveKataBoard: React.FC<InteractiveKataBoardProps> = ({
       setLastMove({ from: selectedSquare, to: { x, y } });
       setSelectedSquare(null);
 
+      // Dismiss temporary hint as move is made
+      onMoveMade?.();
+
       if (targetPiece) sounds.playCapture();
       else sounds.playMove();
 
@@ -302,6 +315,9 @@ export const InteractiveKataBoard: React.FC<InteractiveKataBoardProps> = ({
     setLastMove({ from, to });
     sounds.playMove();
 
+    // Dismiss temporary hint as move is made
+    onMoveMade?.();
+
     const nextIndex = currentStepIndex + 1;
     setCurrentStepIndex(nextIndex);
 
@@ -371,7 +387,7 @@ export const InteractiveKataBoard: React.FC<InteractiveKataBoardProps> = ({
                 Culling Kata Cleared
               </h4>
               <p className="text-[11px] sm:text-xs font-bold text-white max-w-xs mt-0.5">
-                Domain Mastery achieved. Your cursed tactics meet Sensei Gensei's high standard.
+                Domain Mastery achieved. Your cursed tactics meet Thukuna's high standard.
               </p>
             </div>
           )}
@@ -412,20 +428,24 @@ export const InteractiveKataBoard: React.FC<InteractiveKataBoardProps> = ({
                         ? 'ring-3 ring-amber-400 border-2 border-dashed border-amber-300 bg-amber-400/25 animate-pulse z-30 shadow-[0_0_18px_#f59e0b]'
                         : isLastMoveFrom || isLastMoveTo
                         ? isDark
-                          ? 'bg-[#854d0e]'
-                          : 'bg-[#fef08a]'
+                          ? 'bg-[#800d23]'
+                          : 'bg-[#fde68a]'
                         : isDark
-                        ? 'bg-[#334155] dark:bg-[#1e293b]'
-                        : 'bg-[#cbd5e1] dark:bg-[#475569]'
+                        ? 'bg-[#BC1434]'
+                        : 'bg-[#F2EFE4]'
                     }`}
                   >
                     {showRankLabel && (
-                      <span className="absolute top-0.5 left-1 text-[8px] sm:text-[9px] font-black pointer-events-none opacity-60">
+                      <span className={`absolute top-0.5 left-1 text-[8px] sm:text-[9px] font-black pointer-events-none ${
+                        isDark ? 'text-rose-100/70' : 'text-neutral-800/70'
+                      }`}>
                         {y + 1}
                       </span>
                     )}
                     {showFileLabel && (
-                      <span className="absolute bottom-0.5 right-1 text-[8px] sm:text-[9px] font-black pointer-events-none opacity-60 uppercase">
+                      <span className={`absolute bottom-0.5 right-1 text-[8px] sm:text-[9px] font-black pointer-events-none uppercase ${
+                        isDark ? 'text-rose-100/70' : 'text-neutral-800/70'
+                      }`}>
                         {String.fromCharCode(97 + x)}
                       </span>
                     )}
@@ -460,7 +480,7 @@ export const InteractiveKataBoard: React.FC<InteractiveKataBoardProps> = ({
                 Kata Cleared
               </h4>
               <p className="text-[11px] sm:text-xs font-bold text-white max-w-xs mt-0.5">
-                Sensei Gensei nods in approval. Your discipline honors the Dojo.
+                Thukuna nods in approval. Your discipline honors the Dojo.
               </p>
             </div>
           )}
