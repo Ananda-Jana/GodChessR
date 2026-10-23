@@ -37,9 +37,17 @@ import {
   Zap,
   Send,
   Search,
-  FileText,
   ChevronDown,
+  Download,
+  Sparkles,
+  FileText,
 } from 'lucide-react';
+import { usePredictor } from '../predictor/PredictorContext';
+import { PredictorPanel } from './PredictorPanel';
+import { extractCullingMetrics, observeCullingMove } from '../predictor/adapters/cullingAdapter';
+import { downloadCardAsPng } from '../predictor/canvasCardRenderer';
+import { TrophyRoomModal } from './TrophyRoomModal';
+import type { AchievementCard } from '../predictor/types';
 
 interface CullingMatchViewProps {
   initialMatch: CullingMatchState;
@@ -108,6 +116,43 @@ export const CullingMatchView: React.FC<CullingMatchViewProps> = ({
   const mobileMoveLogEndRef = useRef<HTMLDivElement | null>(null);
   const botTimerRef = useRef<NodeJS.Timeout | null>(null);
   const toastTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const { observeMoveAction, finalizeMatch } = usePredictor();
+  const [earnedCullingCards, setEarnedCullingCards] = useState<AchievementCard[]>([]);
+  const [isCullingTrophyRoomOpen, setIsCullingTrophyRoomOpen] = useState(false);
+  const [selectedCullingCard, setSelectedCullingCard] = useState<AchievementCard | null>(null);
+  const hasCullingFinalizedRef = useRef(false);
+
+  // Real-time Culling move tracking
+  useEffect(() => {
+    if (match && match.history.length > 0) {
+      const metrics = extractCullingMetrics(match, userColor);
+      const action = observeCullingMove(match, userColor);
+      if (action) {
+        observeMoveAction(action, metrics);
+      }
+    }
+  }, [match?.history.length, userColor, match, observeMoveAction]);
+
+  // Culling match finalization
+  useEffect(() => {
+    if (match && match.status === 'completed' && !hasCullingFinalizedRef.current) {
+      hasCullingFinalizedRef.current = true;
+      const metrics = extractCullingMetrics(match, userColor);
+      const outcome = match.winner === userColor ? 'win' : match.winner === null ? 'draw' : 'loss';
+      const opponentName = userColor === 'white' ? match.blackPlayer.displayName : match.whitePlayer.displayName;
+      const cards = finalizeMatch(
+        match.id,
+        'culling',
+        userColor,
+        outcome,
+        metrics,
+        opponentName,
+        isBotMatch ? 'grandmaster' : 'pvp_human'
+      );
+      setEarnedCullingCards(cards);
+    }
+  }, [match?.status, match, userColor, isBotMatch, finalizeMatch]);
 
   // When match completes, trigger red modal and game-over audio
   useEffect(() => {
@@ -509,7 +554,41 @@ export const CullingMatchView: React.FC<CullingMatchViewProps> = ({
               <p className="text-xs font-bold text-red-100 bg-red-700/80 border border-red-500 px-3 py-1.5 mb-4 w-full">
                 {match.winReason || 'Game Finished'}
               </p>
+              {earnedCullingCards.length > 0 && (
+                <div className="w-full bg-[#0f172a] border-2 border-amber-400 p-2.5 mb-4 text-left">
+                  <div className="text-[10px] font-black uppercase text-amber-400 mb-1.5 flex items-center gap-1">
+                    <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                    Earned Culling Badges (Click badge to inspect & download)
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    {earnedCullingCards.map((card) => (
+                      <div
+                        key={card.id}
+                        onClick={() => {
+                          setSelectedCullingCard(card);
+                          setIsCullingTrophyRoomOpen(true);
+                        }}
+                        className="p-2 bg-black/80 hover:bg-black border-2 border-amber-400 cursor-pointer flex items-center gap-2 shadow-[2px_2px_0px_#000] hover:scale-105 transition-all"
+                      >
+                        <span className="text-xl">{card.motifSymbol}</span>
+                        <div>
+                          <div className="font-extrabold text-xs text-white uppercase">{card.title}</div>
+                          <div className="text-[10px] text-amber-300 font-mono">Rating: {card.predictedRating}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               <div className="flex flex-col gap-2 w-full">
+                <button
+                  onClick={() => setIsCullingTrophyRoomOpen(true)}
+                  className="w-full py-2 bg-amber-400 hover:bg-amber-300 text-black font-black text-xs uppercase border-2 border-black shadow-[2px_2px_0px_#000] cursor-pointer flex items-center justify-center gap-1.5"
+                >
+                  <Trophy className="w-4 h-4 text-black" />
+                  View Session Trophy Room
+                </button>
                 {onPlaySimilarBot && (
                   <button
                     onClick={() => {
@@ -645,10 +724,24 @@ export const CullingMatchView: React.FC<CullingMatchViewProps> = ({
         </div>
       </header>
 
+      {/* Mobile-Only 1-Line Predictor Bar */}
+      <div className="lg:hidden shrink-0 w-full border-b border-neutral-800">
+        <PredictorPanel
+          metrics={extractCullingMetrics(match, userColor)}
+          modeLabel="Culling Game"
+        />
+      </div>
+
       {/* MAIN VIEWPORT: ROCK-SOLID BOARD (Fixed Center on Mobile, Scrollable on Desktop) */}
       <main className="flex-1 w-full max-w-[1700px] mx-auto p-1 lg:p-3 flex flex-row items-center lg:items-start justify-between gap-4 overflow-hidden lg:overflow-y-auto relative">
-        {/* DESKTOP-ONLY LEFT SIDEBAR: Logs, Abilities & Roster */}
+        {/* DESKTOP-ONLY LEFT SIDEBAR: Predictor, Logs, Abilities & Roster */}
         <aside className="hidden lg:flex w-72 xl:w-80 flex-col gap-2 shrink-0 h-full overflow-hidden">
+          {/* Universal Live Skill Predictor Panel */}
+          <PredictorPanel
+            metrics={extractCullingMetrics(match, userColor)}
+            modeLabel="Culling Game"
+          />
+
           {/* 1. Step Announcements Box */}
           <div className="bg-[#0f172a] border-2 border-white/20 shadow-[2px_2px_0px_#000] flex flex-col h-44 shrink-0 overflow-hidden">
             <div className="px-2.5 py-1 bg-[#1e293b] border-b border-white/20 flex items-center justify-between text-[11px] font-black uppercase text-amber-400">
@@ -1153,6 +1246,12 @@ export const CullingMatchView: React.FC<CullingMatchViewProps> = ({
           </React.Suspense>
         </div>
       )}
+
+      <TrophyRoomModal
+        isOpen={isCullingTrophyRoomOpen}
+        onClose={() => setIsCullingTrophyRoomOpen(false)}
+        initialSelectedCard={selectedCullingCard}
+      />
     </div>
   );
 };

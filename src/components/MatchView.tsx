@@ -37,8 +37,15 @@ import {
   Sun,
   Moon,
   Hammer,
+  Download,
 } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
+import { usePredictor } from '../predictor/PredictorContext';
+import { PredictorPanel } from './PredictorPanel';
+import { extractStandardMetrics, observeStandardMove } from '../predictor/adapters/standardAdapter';
+import { downloadCardAsPng } from '../predictor/canvasCardRenderer';
+import { TrophyRoomModal } from './TrophyRoomModal';
+import type { AchievementCard } from '../predictor/types';
 
 const ExpansionModal = React.lazy(() => import('./ExpansionModal'));
 const CraftingModal = React.lazy(() => import('./CraftingModal'));
@@ -150,6 +157,42 @@ export const MatchView: React.FC<MatchViewProps> = ({
   }, [activeMatch.board, isGameOver, isCheckmate, defeatedColor]);
 
   const [showEndGameNotice, setShowEndGameNotice] = useState(!isCheckmate);
+
+  const { observeMoveAction, finalizeMatch } = usePredictor();
+  const [earnedMatchCards, setEarnedMatchCards] = useState<AchievementCard[]>([]);
+  const [isMatchTrophyRoomOpen, setIsMatchTrophyRoomOpen] = useState(false);
+  const [selectedTrophyCard, setSelectedTrophyCard] = useState<AchievementCard | null>(null);
+  const hasFinalizedRef = useRef(false);
+
+  // Real-time predictor move observation
+  useEffect(() => {
+    if (activeMatch && activeMatch.moveHistory.length > 0) {
+      const metrics = extractStandardMetrics(activeMatch, myColor);
+      const action = observeStandardMove(activeMatch, myColor);
+      if (action) {
+        observeMoveAction(action, metrics);
+      }
+    }
+  }, [activeMatch?.moveHistory.length, myColor, activeMatch, observeMoveAction]);
+
+  // Predictor match finalization
+  useEffect(() => {
+    if (activeMatch && activeMatch.status === 'completed' && activeMatch.result && !hasFinalizedRef.current) {
+      hasFinalizedRef.current = true;
+      const metrics = extractStandardMetrics(activeMatch, myColor);
+      const outcome = activeMatch.result.winner === myColor ? 'win' : activeMatch.result.winner === 'draw' ? 'draw' : 'loss';
+      const cards = finalizeMatch(
+        activeMatch.id,
+        activeMatch.gameMode === 'crafted' ? 'crafted' : 'standard',
+        myColor,
+        outcome,
+        metrics,
+        opponent.displayName,
+        isBotMatch ? 'grandmaster' : 'pvp_human'
+      );
+      setEarnedMatchCards(cards);
+    }
+  }, [activeMatch?.status, activeMatch?.result, activeMatch, myColor, isBotMatch, opponent.displayName, finalizeMatch]);
 
   useEffect(() => {
     if (isGameOver) {
@@ -866,13 +909,49 @@ export const MatchView: React.FC<MatchViewProps> = ({
                   </div>
                 </div>
 
-                <button
-                  onClick={onExit}
-                  className="w-full sm:w-auto py-2 px-4 bg-black hover:bg-neutral-900 text-white font-black text-xs sm:text-sm uppercase tracking-wider border-2 border-white shadow-[2px_2px_0px_#000] cursor-pointer shrink-0"
-                >
-                  Return to Dashboard
-                </button>
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    onClick={() => setIsMatchTrophyRoomOpen(true)}
+                    className="w-full sm:w-auto py-2 px-3 bg-amber-400 hover:bg-amber-300 text-black font-black text-xs uppercase tracking-wider border-2 border-black shadow-[2px_2px_0px_#000] cursor-pointer shrink-0 flex items-center justify-center gap-1.5"
+                  >
+                    <Trophy className="w-4 h-4 text-black" />
+                    Trophy Room
+                  </button>
+                  <button
+                    onClick={onExit}
+                    className="w-full sm:w-auto py-2 px-4 bg-black hover:bg-neutral-900 text-white font-black text-xs sm:text-sm uppercase tracking-wider border-2 border-white shadow-[2px_2px_0px_#000] cursor-pointer shrink-0"
+                  >
+                    Return to Dashboard
+                  </button>
+                </div>
               </div>
+
+              {earnedMatchCards.length > 0 && (
+                <div className="mt-2 pt-2 border-t border-black/20 dark:border-white/20">
+                  <div className="text-[11px] font-black uppercase text-black dark:text-white mb-2 flex items-center gap-1.5">
+                    <Sparkles className="w-4 h-4 text-amber-300" />
+                    Earned Achievement Badges (Click badge to inspect & download)
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    {earnedMatchCards.map((card) => (
+                      <div
+                        key={card.id}
+                        onClick={() => {
+                          setSelectedTrophyCard(card);
+                          setIsMatchTrophyRoomOpen(true);
+                        }}
+                        className="p-2 bg-black/70 hover:bg-black border-2 border-amber-400 cursor-pointer flex items-center gap-2 shadow-[2px_2px_0px_#000] hover:scale-105 transition-all"
+                      >
+                        <span className="text-xl">{card.motifSymbol}</span>
+                        <div>
+                          <div className="font-extrabold text-xs text-white uppercase">{card.title}</div>
+                          <div className="text-[10px] text-amber-300 font-mono">Rating: {card.predictedRating}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {activeMatch.result.explanation && (
                 <p className="text-[11px] font-bold border-t border-black/20 dark:border-white/20 pt-1.5 opacity-90 font-mono">
@@ -907,8 +986,13 @@ export const MatchView: React.FC<MatchViewProps> = ({
           />
         </div>
 
-        {/* Right Column: Move Log, Dice Roller & Prince Rules Panel */}
+        {/* Right Column: Predictor, Move Log, Dice Roller & Prince Rules Panel */}
         <div className="col-span-1 md:col-span-5 lg:col-span-4 flex flex-col gap-4">
+          {/* Universal Live Skill Predictor Side Panel */}
+          <PredictorPanel
+            metrics={extractStandardMetrics(activeMatch, myColor)}
+            modeLabel={activeMatch.gameMode === 'crafted' ? 'Crafted Chess' : 'Standard Chess'}
+          />
           {/* Permanent 3-Message Live Game Message Feed Panel (Always visible directly above dice roller on all devices) */}
           {renderLiveMoveFeed()}
 
@@ -1034,6 +1118,12 @@ export const MatchView: React.FC<MatchViewProps> = ({
             />
           </React.Suspense>
         )}
+
+      <TrophyRoomModal
+        isOpen={isMatchTrophyRoomOpen}
+        onClose={() => setIsMatchTrophyRoomOpen(false)}
+        initialSelectedCard={selectedTrophyCard}
+      />
     </div>
   );
 };

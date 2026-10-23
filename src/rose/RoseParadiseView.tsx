@@ -36,8 +36,15 @@ import {
   MessageSquare,
   Bot,
   Crown,
+  Download,
 } from 'lucide-react';
 import './rose.css';
+import { usePredictor } from '../predictor/PredictorContext';
+import { PredictorPanel } from '../components/PredictorPanel';
+import { extractRoseMetrics, observeRoseMove } from '../predictor/adapters/roseAdapter';
+import { downloadCardAsPng } from '../predictor/canvasCardRenderer';
+import { TrophyRoomModal } from '../components/TrophyRoomModal';
+import type { AchievementCard } from '../predictor/types';
 
 interface RoseParadiseViewProps {
   onBack: () => void;
@@ -197,6 +204,43 @@ export const RoseParadiseView: React.FC<RoseParadiseViewProps> = ({ onBack }) =>
   }, [activeMatch?.board, effectiveMyColor]);
 
   const isInCheck = checkDetails.inCheck;
+
+  const { observeMoveAction, finalizeMatch } = usePredictor();
+  const [earnedRoseCards, setEarnedRoseCards] = useState<AchievementCard[]>([]);
+  const [isRoseTrophyRoomOpen, setIsRoseTrophyRoomOpen] = useState(false);
+  const [selectedRoseCard, setSelectedRoseCard] = useState<AchievementCard | null>(null);
+  const hasRoseFinalizedRef = useRef(false);
+
+  // Real-time Rose move tracking
+  useEffect(() => {
+    if (activeMatch && activeMatch.history && activeMatch.history.length > 0) {
+      const metrics = extractRoseMetrics(activeMatch, effectiveMyColor);
+      const action = observeRoseMove(activeMatch, effectiveMyColor);
+      if (action) {
+        observeMoveAction(action, metrics);
+      }
+    }
+  }, [activeMatch?.history?.length, effectiveMyColor, activeMatch, observeMoveAction]);
+
+  // Rose match finalization
+  useEffect(() => {
+    if (activeMatch && activeMatch.status === 'completed' && !hasRoseFinalizedRef.current) {
+      hasRoseFinalizedRef.current = true;
+      const metrics = extractRoseMetrics(activeMatch, effectiveMyColor);
+      const outcome = activeMatch.winner === mySeat?.role ? 'win' : activeMatch.winner === 'draw' ? 'draw' : 'loss';
+      const opponentName = opponentSeat?.displayName || 'Partner';
+      const cards = finalizeMatch(
+        activeMatch.id,
+        'rose',
+        effectiveMyColor,
+        outcome,
+        metrics,
+        opponentName,
+        'couples_partner'
+      );
+      setEarnedRoseCards(cards);
+    }
+  }, [activeMatch?.status, activeMatch, effectiveMyColor, mySeat?.role, opponentSeat?.displayName, finalizeMatch]);
 
   const handleCopyCode = (code: string) => {
     navigator.clipboard.writeText(code);
@@ -957,8 +1001,14 @@ export const RoseParadiseView: React.FC<RoseParadiseViewProps> = ({ onBack }) =>
       {/* ==================== 2. ACTIVE MATCH VIEW (PROPER BRUTALISM) ==================== */}
       {activeMatch && (
         <div className="z-10 max-w-6xl mx-auto w-full flex flex-col lg:flex-row gap-6 items-start justify-center flex-1">
-          {/* Left Sidebar: Partner Info & In-Game Love Chat Box */}
+          {/* Left Sidebar: Predictor, Partner Info & In-Game Love Chat Box */}
           <div className="w-full lg:w-72 flex flex-col gap-4">
+            {/* Live Skill Predictor Panel */}
+            <PredictorPanel
+              metrics={extractRoseMetrics(activeMatch, effectiveMyColor)}
+              modeLabel="Rose Paradise"
+            />
+
             {/* Partner Info Box */}
             <div className="brutal-card p-4 flex flex-col gap-3 border-3 border-white shadow-[4px_4px_0px_#fff]">
               <div className="flex items-center justify-between border-b-2 border-neutral-800 pb-2">
@@ -1343,19 +1393,56 @@ export const RoseParadiseView: React.FC<RoseParadiseViewProps> = ({ onBack }) =>
                   </h3>
                   <p className="text-xs text-neutral-400 mt-1 font-mono">{activeMatch.winReason}</p>
                 </div>
-                <button
-                  onClick={() => {
-                    if (isBotMatch) {
-                      setIsBotMatch(false);
-                      setBotMatch(null);
-                    } else {
-                      socketClearMatch();
-                    }
-                  }}
-                  className="brutal-button-primary py-3 px-4 text-xs font-black uppercase tracking-wider cursor-pointer"
-                >
-                  Return to Lobby & Play Again
-                </button>
+
+                {earnedRoseCards.length > 0 && (
+                  <div className="w-full bg-[#1e0712] border-2 border-rose-400 p-3 text-left my-1">
+                    <div className="text-[11px] font-black uppercase text-rose-300 mb-2 flex items-center gap-1">
+                      <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+                      Earned Rose Badges (Click badge to inspect & download)
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      {earnedRoseCards.map((card) => (
+                        <div
+                          key={card.id}
+                          onClick={() => {
+                            setSelectedRoseCard(card);
+                            setIsRoseTrophyRoomOpen(true);
+                          }}
+                          className="p-2 bg-black/80 hover:bg-black border-2 border-rose-400 cursor-pointer flex items-center gap-2 shadow-[2px_2px_0px_#000] hover:scale-105 transition-all"
+                        >
+                          <span className="text-xl">{card.motifSymbol}</span>
+                          <div>
+                            <div className="font-extrabold text-xs text-white uppercase">{card.title}</div>
+                            <div className="text-[10px] text-rose-300 font-mono">Rating: {card.predictedRating}</div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex flex-col sm:flex-row gap-2 w-full">
+                  <button
+                    onClick={() => setIsRoseTrophyRoomOpen(true)}
+                    className="flex-1 py-3 px-4 bg-amber-400 hover:bg-amber-300 text-black font-black text-xs uppercase border-2 border-black shadow-[2px_2px_0px_#000] cursor-pointer flex items-center justify-center gap-1.5"
+                  >
+                    <Trophy className="w-4 h-4 text-black" />
+                    Session Trophy Room
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (isBotMatch) {
+                        setIsBotMatch(false);
+                        setBotMatch(null);
+                      } else {
+                        socketClearMatch();
+                      }
+                    }}
+                    className="flex-1 brutal-button-primary py-3 px-4 text-xs font-black uppercase tracking-wider cursor-pointer"
+                  >
+                    Return to Lobby
+                  </button>
+                </div>
               </div>
             )}
           </div>
@@ -1513,6 +1600,12 @@ export const RoseParadiseView: React.FC<RoseParadiseViewProps> = ({ onBack }) =>
           </div>
         </div>
       )}
+
+      <TrophyRoomModal
+        isOpen={isRoseTrophyRoomOpen}
+        onClose={() => setIsRoseTrophyRoomOpen(false)}
+        initialSelectedCard={selectedRoseCard}
+      />
     </div>
   );
 };

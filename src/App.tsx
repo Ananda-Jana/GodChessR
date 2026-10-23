@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { SocketProvider, useSocket } from './context/SocketContext';
 import { ThemeProvider } from './context/ThemeContext';
+import { PredictorProvider } from './predictor/PredictorContext';
 import { AuthModal } from './components/AuthModal';
 import { Dashboard } from './components/Dashboard';
 import { MatchView } from './components/MatchView';
@@ -555,9 +556,11 @@ export default function App() {
   return (
     <ThemeProvider>
       <AuthProvider>
-        <SocketProvider>
-          <AppContent />
-        </SocketProvider>
+        <PredictorProvider>
+          <SocketProvider>
+            <AppContent />
+          </SocketProvider>
+        </PredictorProvider>
       </AuthProvider>
     </ThemeProvider>
   );

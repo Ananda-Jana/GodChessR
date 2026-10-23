@@ -26,6 +26,8 @@ import {
 } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 import { posToNotation } from '../game/engine';
+import { usePredictor } from '../predictor/PredictorContext';
+import { TrophyRoomModal } from './TrophyRoomModal';
 
 interface DashboardProps {
   onOpenRules: () => void;
@@ -57,6 +59,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
     clearMatchError,
   } = useSocket();
 
+  const { state: predictorState, clearPredictorSession } = usePredictor();
+  const [isTrophyRoomOpen, setIsTrophyRoomOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [players, setPlayers] = useState<UserProfile[]>([]);
   const [activeMatches, setActiveMatches] = useState<MatchState[]>([]);
@@ -208,7 +212,24 @@ export const Dashboard: React.FC<DashboardProps> = ({
           </div>
 
           <button
-            onClick={logout}
+            onClick={() => setIsTrophyRoomOpen(true)}
+            className="px-2.5 py-1.5 text-xs font-black uppercase bg-amber-400 text-black hover:bg-amber-300 border-2 border-black dark:border-white shadow-[2px_2px_0px_var(--shadow)] flex items-center gap-1.5 cursor-pointer"
+            title="Session Trophy Room"
+          >
+            <Trophy className="w-3.5 h-3.5 text-black" />
+            <span className="hidden sm:inline">Trophy Room</span>
+            {predictorState.earnedCards.length > 0 && (
+              <span className="px-1.5 py-0.2 bg-black text-amber-300 text-[10px] font-mono">
+                {predictorState.earnedCards.length}
+              </span>
+            )}
+          </button>
+
+          <button
+            onClick={() => {
+              clearPredictorSession();
+              logout();
+            }}
             className="px-2.5 py-1.5 text-xs font-black uppercase bg-neutral-200 dark:bg-neutral-800 hover:bg-red-500 hover:text-white dark:hover:bg-red-500 border-2 border-black dark:border-white shadow-[2px_2px_0px_var(--shadow)] flex items-center gap-1.5 cursor-pointer"
             title="Sign out"
           >
@@ -300,18 +321,38 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 </button>
               </form>
             ) : (
-              <div className="mt-5 grid grid-cols-3 gap-2 pt-4 border-t-2 border-black dark:border-white text-center font-mono">
-                <div className="bg-neutral-100 dark:bg-[#141416] p-2 border-2 border-black dark:border-white">
-                  <span className="text-lg font-black text-emerald-600 dark:text-emerald-400">{user.stats.wins}</span>
-                  <p className="text-[10px] font-black uppercase mt-0.5">Wins</p>
+              <div className="mt-4 pt-4 border-t-2 border-black dark:border-white space-y-3 font-mono">
+                {/* Predicted Skill Rating ELO Badge */}
+                <div className="p-2.5 bg-amber-400 dark:bg-amber-500 text-black border-2 border-black shadow-[2px_2px_0px_#000] flex items-center justify-between">
+                  <div>
+                    <span className="text-[10px] font-black uppercase tracking-wider block text-black/80">Predicted Rating</span>
+                    <span className="text-xl font-black font-mono leading-none">{predictorState.currentRating} ELO</span>
+                  </div>
+                  <span className="text-[10px] font-black uppercase px-2 py-0.5 bg-black text-amber-300">
+                    Live Session
+                  </span>
                 </div>
-                <div className="bg-neutral-100 dark:bg-[#141416] p-2 border-2 border-black dark:border-white">
-                  <span className="text-lg font-black">{user.stats.losses}</span>
-                  <p className="text-[10px] font-black uppercase mt-0.5">Losses</p>
-                </div>
-                <div className="bg-neutral-100 dark:bg-[#141416] p-2 border-2 border-black dark:border-white">
-                  <span className="text-lg font-black text-amber-500">{user.stats.draws}</span>
-                  <p className="text-[10px] font-black uppercase mt-0.5">Draws</p>
+
+                {/* Session Wins, Losses, Draws Grid */}
+                <div className="grid grid-cols-3 gap-2 text-center">
+                  <div className="bg-neutral-100 dark:bg-[#141416] p-2 border-2 border-black dark:border-white">
+                    <span className="text-lg font-black text-emerald-600 dark:text-emerald-400">
+                      {(user.stats?.wins || 0) + predictorState.wins}
+                    </span>
+                    <p className="text-[10px] font-black uppercase mt-0.5">Wins</p>
+                  </div>
+                  <div className="bg-neutral-100 dark:bg-[#141416] p-2 border-2 border-black dark:border-white">
+                    <span className="text-lg font-black">
+                      {(user.stats?.losses || 0) + predictorState.losses}
+                    </span>
+                    <p className="text-[10px] font-black uppercase mt-0.5">Losses</p>
+                  </div>
+                  <div className="bg-neutral-100 dark:bg-[#141416] p-2 border-2 border-black dark:border-white">
+                    <span className="text-lg font-black text-amber-500">
+                      {(user.stats?.draws || 0) + predictorState.draws}
+                    </span>
+                    <p className="text-[10px] font-black uppercase mt-0.5">Draws</p>
+                  </div>
                 </div>
               </div>
             )}
@@ -870,6 +911,11 @@ export const Dashboard: React.FC<DashboardProps> = ({
           )}
         </div>
       </main>
+
+      <TrophyRoomModal
+        isOpen={isTrophyRoomOpen}
+        onClose={() => setIsTrophyRoomOpen(false)}
+      />
     </div>
   );
 };
