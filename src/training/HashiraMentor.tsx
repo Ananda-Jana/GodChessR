@@ -7,7 +7,8 @@
  */
 
 import React, { useState } from 'react';
-import type { MentorExpression } from './types';
+import type { MentorExpression, TrainerId } from './types';
+import { TRAINER_PROFILES } from './data';
 import { Sparkles, HelpCircle, RotateCcw, ArrowRight, ShieldAlert, Award } from 'lucide-react';
 
 interface HashiraMentorProps {
@@ -22,6 +23,7 @@ interface HashiraMentorProps {
   canNext?: boolean;
   rankTitle?: string;
   kanji?: string;
+  trainerId?: TrainerId;
   layout?: 'vertical' | 'horizontal' | 'compact';
   className?: string;
 }
@@ -38,14 +40,29 @@ export const HashiraMentor: React.FC<HashiraMentorProps> = ({
   canNext = false,
   rankTitle = 'Mizunoto',
   kanji = '癸',
+  trainerId = 'thukuna',
   layout = 'vertical',
   className = '',
 }) => {
   const [showHintModal, setShowHintModal] = useState(false);
 
-
+  const trainer = TRAINER_PROFILES[trainerId] || TRAINER_PROFILES.thukuna;
+  const isGatoru = trainer.id === 'gatoru';
 
   const getExpressionBadge = () => {
+    if (isGatoru) {
+      switch (expression) {
+        case 'scowl':
+          return { text: 'VOID REBUKE · 虚', bg: 'bg-red-600 text-white border-black' };
+        case 'approving':
+          return { text: 'INFINITE MASTERY · 妙手', bg: 'bg-sky-400 text-black border-black' };
+        case 'analytical':
+          return { text: 'SIX EYES · 考', bg: 'bg-cyan-300 text-black border-black' };
+        case 'stern':
+        default:
+          return { text: 'VOID FORM · 訓', bg: 'bg-neutral-800 text-sky-400 border-sky-400' };
+      }
+    }
     switch (expression) {
       case 'scowl':
         return { text: 'REBUKE · 喝', bg: 'bg-red-600 text-white border-black' };
@@ -66,17 +83,17 @@ export const HashiraMentor: React.FC<HashiraMentorProps> = ({
   // When activeHint is active, a glowing blue rectangular popup covers the message until the next move.
   if (layout === 'compact') {
     return (
-      <div className={`bg-[#0c0c0e] border-2 border-amber-400/90 shadow-[2px_2px_0px_#000000] p-2 flex items-center gap-2.5 w-full h-[116px] min-h-[116px] max-h-[120px] shrink-0 overflow-hidden ${className}`}>
+      <div className={`bg-[#0c0c0e] border-2 ${isGatoru ? 'border-sky-400/90' : 'border-amber-400/90'} shadow-[2px_2px_0px_#000000] p-2 flex items-center gap-2.5 w-full h-[116px] min-h-[116px] max-h-[120px] shrink-0 overflow-hidden ${className}`}>
         {/* Compact Avatar - Strictly fixed small size container */}
         <div className="relative shrink-0 flex items-center">
-          <div className="w-11 h-11 bg-[#18181b] border-2 border-amber-400 shadow-[1px_1px_0px_#000] overflow-hidden flex items-center justify-center relative shrink-0">
+          <div className={`w-11 h-11 bg-[#18181b] border-2 ${isGatoru ? 'border-sky-400' : 'border-amber-400'} shadow-[1px_1px_0px_#000] overflow-hidden flex items-center justify-center relative shrink-0`}>
             <img
-              src="/assets/aistudio/image_77c93c63.png"
-              alt="Thukuna : The Plasma Hashira"
+              src={trainer.avatarSrc}
+              alt={`${trainer.name} : ${trainer.title}`}
               className="w-full h-full object-cover"
             />
-            <div className="absolute top-0.5 left-0.5 bg-black/90 text-amber-400 border border-amber-400 font-black text-[8px] w-3.5 h-3.5 flex items-center justify-center leading-none">
-              {kanji}
+            <div className={`absolute top-0.5 left-0.5 bg-black/90 ${isGatoru ? 'text-sky-400 border-sky-400' : 'text-amber-400 border-amber-400'} border font-black text-[8px] w-3.5 h-3.5 flex items-center justify-center leading-none`}>
+              {trainer.kanji}
             </div>
           </div>
         </div>
@@ -84,8 +101,8 @@ export const HashiraMentor: React.FC<HashiraMentorProps> = ({
         {/* Dialogue Bubble (Expanded height to fit full message cleanly) */}
         <div className="flex-1 min-w-0 h-full flex flex-col justify-between bg-neutral-900 border border-neutral-700 px-2.5 py-1.5 relative overflow-hidden">
           <div className="flex items-center justify-between gap-1 mb-1 shrink-0">
-            <span className="font-black text-[10px] uppercase text-amber-400 truncate">
-              THUKUNA : THE PLASMA HASHIRA · {rankTitle}
+            <span className={`font-black text-[10px] uppercase truncate ${isGatoru ? 'text-sky-400' : 'text-amber-400'}`}>
+              {trainer.name.toUpperCase()} : {trainer.title.toUpperCase()} · {rankTitle}
             </span>
             <span className={`text-[8px] font-black uppercase px-1 py-0 border shrink-0 ${badge.bg}`}>
               {badge.text}
@@ -134,18 +151,18 @@ export const HashiraMentor: React.FC<HashiraMentorProps> = ({
 
   return (
     <div className={containerClasses}>
-      {/* Thukuna Avatar Box - Container size kept strictly fixed */}
+      {/* Mentor Avatar Box - Container size kept strictly fixed */}
       <div className="relative shrink-0">
         <div className={`${avatarSize} bg-[#18181b] border-2 sm:border-3 border-black dark:border-white shadow-[2px_2px_0px_#000000] overflow-hidden flex items-center justify-center relative`}>
           <img
-            src="/assets/aistudio/image_77c93c63.png"
-            alt="Thukuna : The Plasma Hashira"
+            src={trainer.avatarSrc}
+            alt={`${trainer.name} : ${trainer.title}`}
             className="w-full h-full object-cover"
           />
 
           {/* Kanji Stamp Badge in Avatar Corner */}
-          <div className="absolute top-1 left-1 bg-black/90 text-amber-400 border border-amber-400 font-black text-[10px] w-5 h-5 flex items-center justify-center shadow-[1px_1px_0px_#000]">
-            {kanji}
+          <div className={`absolute top-1 left-1 bg-black/90 ${isGatoru ? 'text-sky-400 border-sky-400' : 'text-amber-400 border-amber-400'} border font-black text-[10px] w-5 h-5 flex items-center justify-center shadow-[1px_1px_0px_#000]`}>
+            {trainer.kanji}
           </div>
         </div>
 
@@ -162,14 +179,14 @@ export const HashiraMentor: React.FC<HashiraMentorProps> = ({
           <div className="flex items-center justify-between border-b-2 border-black dark:border-white pb-1.5 mb-2 flex-wrap gap-2">
             <div className="flex items-center gap-2">
               <span className="font-black text-xs sm:text-sm uppercase tracking-tight text-black dark:text-white">
-                THUKUNA : THE PLASMA HASHIRA · 宿儺
+                {trainer.name.toUpperCase()} : {trainer.title.toUpperCase()} · {trainer.kanji}
               </span>
-              <span className="text-[10px] font-black px-1.5 py-0.2 bg-amber-400 text-black border border-black uppercase">
+              <span className={`text-[10px] font-black px-1.5 py-0.2 ${isGatoru ? 'bg-sky-400' : 'bg-amber-400'} text-black border border-black uppercase`}>
                 {rankTitle}
               </span>
             </div>
             <div className="flex items-center gap-1 text-[11px] font-bold text-neutral-500">
-              <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+              <Sparkles className={`w-3.5 h-3.5 ${isGatoru ? 'text-sky-400' : 'text-amber-500'}`} />
               <span>Chess Hashira Instruction</span>
             </div>
           </div>

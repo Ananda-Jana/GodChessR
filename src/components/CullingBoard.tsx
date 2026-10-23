@@ -97,18 +97,18 @@ export const CullingBoard: React.FC<CullingBoardProps> = ({
 
   return (
     <div
-      className="relative p-1 sm:p-2 rounded-xl border-3 sm:border-4 border-black dark:border-white shadow-[4px_4px_0px_#000000] dark:shadow-[4px_4px_0px_#ffffff] select-none touch-manipulation max-w-full overflow-hidden shrink-0 flex items-center justify-center"
+      className="relative p-1 sm:p-2 rounded-xl border-3 sm:border-4 border-black dark:border-white shadow-[4px_4px_0px_#000000] dark:shadow-[4px_4px_0px_#ffffff] select-none touch-manipulation max-w-full max-h-full overflow-hidden shrink-0 flex items-center justify-center"
       style={{
         backgroundColor: '#e11d48',
-        ...(maxDimension ? { width: `${maxDimension + 14}px`, height: `${maxDimension + 14}px`, maxWidth: '100%', maxHeight: '100%' } : {}),
+        ...(maxDimension ? { width: `min(100%, ${maxDimension + 14}px)`, height: `min(100%, ${maxDimension + 14}px)` } : {}),
       }}
     >
       {/* 10x10 Cross-Shaped Board Grid: Rock-Solid Dimensions Anchored to Viewport */}
       <div
-        className={`grid grid-cols-10 grid-rows-10 border-2 border-black/40 dark:border-white/20 bg-transparent aspect-square touch-manipulation select-none ${
-          maxDimension ? '' : 'w-[min(calc(100dvh-150px),calc(100vw-18px),540px)] h-[min(calc(100dvh-150px),calc(100vw-18px),540px)] lg:w-[min(calc(100dvh-140px),620px)] lg:h-[min(calc(100dvh-140px),620px)]'
+        className={`grid grid-cols-10 grid-rows-10 border-2 border-black/40 dark:border-white/20 bg-transparent aspect-square touch-manipulation select-none max-w-full max-h-full ${
+          maxDimension ? 'w-full h-full' : 'w-[min(calc(100dvh-150px),calc(100vw-18px),540px)] h-[min(calc(100dvh-150px),calc(100vw-18px),540px)] lg:w-[min(calc(100dvh-140px),620px)] lg:h-[min(calc(100dvh-140px),620px)]'
         }`}
-        style={maxDimension ? { width: `${maxDimension}px`, height: `${maxDimension}px` } : undefined}
+        style={maxDimension ? { maxWidth: `${maxDimension}px`, maxHeight: `${maxDimension}px` } : undefined}
       >
         {rowIndices.map((y) =>
           colIndices.map((x) => {

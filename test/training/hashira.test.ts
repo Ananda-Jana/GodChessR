@@ -245,47 +245,129 @@ for (let g = 0; g < 25; g++) {
 console.log('\n--- 2. Testing All Dojo Lessons Step-by-Step ---');
 
 DOJO_LESSONS.forEach((lesson) => {
-  let stepIdx = 0;
-  let isFinished = false;
+  const isCulling = lesson.tool === 'culling' || Boolean(lesson.cullingBoard);
 
-  for (const step of lesson.correctSteps) {
-    const isCulling = lesson.tool === 'culling' || Boolean(lesson.cullingBoard);
-
-    if (isCulling) {
-      assert(
-        step.from.x >= 0 && step.from.y >= 0 && step.to.x >= 0 && step.to.y >= 0,
-        'dojoKatas',
-        `Lesson ${lesson.id} step ${stepIdx + 1} has valid culling coordinates`
-      );
-    } else {
-      assert(
-        step.from.x >= 0 && step.from.x < 8 && step.to.x >= 0 && step.to.x < 8,
-        'dojoKatas',
-        `Lesson ${lesson.id} step ${stepIdx + 1} has valid 8x8 coordinates`
-      );
+  if (isCulling) {
+    let match = createInitialCullingMatch(
+      `test_${lesson.id}`,
+      { userId: 'player', username: 'Pupil', displayName: 'Pupil' },
+      { userId: 'kata_bot', username: 'Sensei', displayName: 'Sensei' }
+    );
+    if (lesson.cullingBoard) {
+      match.board = cloneCullingBoard(lesson.cullingBoard);
+    }
+    if (lesson.cullingPlayerColor) {
+      match.turn = lesson.cullingPlayerColor;
     }
 
-    stepIdx++;
-  }
+    lesson.correctSteps.forEach((step, sIdx) => {
+      // 1. Verify player move is legal and executable
+      const legalMoves = getCullingLegalMovesForSquare(match, step.from);
+      const isLegal = legalMoves.some((m) => m.to.x === step.to.x && m.to.y === step.to.y);
+      assert(
+        isLegal,
+        'dojoKatas',
+        `Lesson ${lesson.id} step ${sIdx + 1}: Move from (${step.from.x},${step.from.y}) to (${step.to.x},${step.to.y}) is legal in engine`
+      );
 
-  isFinished = true;
+      const action = step.cullingActionType || 'move';
+      const execRes = executeCullingMove(match, step.from, step.to, action);
+      assert(
+        execRes.success,
+        'dojoKatas',
+        `Lesson ${lesson.id} step ${sIdx + 1}: executeCullingMove succeeded (${execRes.error || 'ok'})`
+      );
+      if (execRes.success) {
+        match = execRes.state;
+      }
 
-  // Assert popup state remains true across 5+ simulated re-renders & save
-  let popupVisible = isFinished;
-  for (let reRender = 0; reRender < 5; reRender++) {
-    popupVisible = popupVisible && isFinished;
+      // 2. Process opponent response if configured for this step
+      const oppResp = lesson.opponentResponses?.find((r) => r.triggerStepIndex === sIdx);
+      if (oppResp) {
+        const oppLegal = getCullingLegalMovesForSquare(match, oppResp.from);
+        const oppIsLegal = oppLegal.some((m) => m.to.x === oppResp.to.x && m.to.y === oppResp.to.y);
+        assert(
+          oppIsLegal,
+          'dojoKatas',
+          `Lesson ${lesson.id} step ${sIdx + 1} opponent response: Move from (${oppResp.from.x},${oppResp.from.y}) to (${oppResp.to.x},${oppResp.to.y}) is legal in engine`
+        );
+
+        const oppExec = executeCullingMove(match, oppResp.from, oppResp.to, 'move');
+        assert(
+          oppExec.success,
+          'dojoKatas',
+          `Lesson ${lesson.id} step ${sIdx + 1} opponent response: executeCullingMove succeeded (${oppExec.error || 'ok'})`
+        );
+        if (oppExec.success) {
+          match = oppExec.state;
+        }
+      }
+    });
+  } else {
+    let board = lesson.initialBoard ? cloneBoard(lesson.initialBoard) : [];
+    let turn = lesson.playerColor || 'white';
+
+    lesson.correctSteps.forEach((step, sIdx) => {
+      const piece = board[step.from.y]?.[step.from.x];
+      assert(
+        Boolean(piece && piece.color === turn),
+        'dojoKatas',
+        `Lesson ${lesson.id} step ${sIdx + 1}: Active piece exists at (${step.from.x},${step.from.y}) with color ${turn}`
+      );
+
+      const legalDests = getLegalMovesForSquare(board, step.from);
+      const isLegal = legalDests.some((m) => m.to.x === step.to.x && m.to.y === step.to.y);
+      assert(
+        isLegal,
+        'dojoKatas',
+        `Lesson ${lesson.id} step ${sIdx + 1}: Move from (${step.from.x},${step.from.y}) to (${step.to.x},${step.to.y}) is legal in engine`
+      );
+
+      if (piece) {
+        board = applyMoveToBoard(board, {
+          from: step.from,
+          to: step.to,
+          piece,
+          captured: board[step.to.y]?.[step.to.x] || undefined,
+          timestamp: Date.now(),
+        });
+      }
+      turn = turn === 'white' ? 'black' : 'white';
+
+      const oppResp = lesson.opponentResponses?.find((r) => r.triggerStepIndex === sIdx);
+      if (oppResp) {
+        const oppPiece = board[oppResp.from.y]?.[oppResp.from.x];
+        assert(
+          Boolean(oppPiece && oppPiece.color === turn),
+          'dojoKatas',
+          `Lesson ${lesson.id} step ${sIdx + 1} opponent response: Piece exists at (${oppResp.from.x},${oppResp.from.y}) with color ${turn}`
+        );
+
+        const oppDests = getLegalMovesForSquare(board, oppResp.from);
+        const oppIsLegal = oppDests.some((m) => m.to.x === oppResp.to.x && m.to.y === oppResp.to.y);
+        assert(
+          oppIsLegal,
+          'dojoKatas',
+          `Lesson ${lesson.id} step ${sIdx + 1} opponent response: Move from (${oppResp.from.x},${oppResp.from.y}) to (${oppResp.to.x},${oppResp.to.y}) is legal in engine`
+        );
+
+        if (oppPiece) {
+          board = applyMoveToBoard(board, {
+            from: oppResp.from,
+            to: oppResp.to,
+            piece: oppPiece,
+            captured: board[oppResp.to.y]?.[oppResp.to.x] || undefined,
+            timestamp: Date.now(),
+          });
+        }
+        turn = turn === 'white' ? 'black' : 'white';
+      }
+    });
   }
 
   const progress = loadHashiraProgress();
   progress.completedKataIds = Array.from(new Set([...progress.completedKataIds, lesson.id]));
   saveHashiraProgress(progress);
-
-  const reloaded = loadHashiraProgress();
-  assert(
-    reloaded.completedKataIds.includes(lesson.id) && popupVisible,
-    'dojoKatas',
-    `Lesson ${lesson.id} completed and popup state remains true across 5 re-renders`
-  );
 });
 
 // ============================================================================

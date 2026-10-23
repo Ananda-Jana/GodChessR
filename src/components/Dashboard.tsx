@@ -29,6 +29,8 @@ import { useTheme } from '../context/ThemeContext';
 import { posToNotation } from '../game/engine';
 import { usePredictor } from '../predictor/PredictorContext';
 import { TrophyRoomModal } from './TrophyRoomModal';
+import type { TrainerId } from '../training/types';
+import { TRAINER_PROFILES } from '../training/data';
 
 interface DashboardProps {
   onOpenRules: () => void;
@@ -36,7 +38,7 @@ interface DashboardProps {
   onOpenCraftedBotModal?: () => void;
   onOpenCraftTheory: () => void;
   onOpenRose?: () => void;
-  onOpenHashiraTraining?: () => void;
+  onOpenHashiraTraining?: (trainerId?: TrainerId) => void;
   lastCompletedMatch?: { match: MatchState; completedAt: number } | null;
   onClearLastGame?: () => void;
 }
@@ -244,6 +246,24 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
       {/* Main Content Area */}
       <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* Mobile Top Training Buttons Bar */}
+        <div className="lg:hidden col-span-1 flex items-center justify-center gap-2 w-full mb-1">
+          <button
+            onClick={() => onOpenHashiraTraining && onOpenHashiraTraining('thukuna')}
+            className="flex-1 py-1.5 px-2 bg-gradient-to-r from-amber-900 to-neutral-950 border-2 border-amber-600 text-amber-200 font-black text-[10px] uppercase flex items-center gap-1.5 shadow-[2px_2px_0px_#000] cursor-pointer truncate"
+          >
+            <img src={TRAINER_PROFILES.thukuna.avatarSrc} alt="Thukuna" className="w-5 h-5 object-cover border border-amber-500 shrink-0" />
+            <span className="truncate">Train Thukuna</span>
+          </button>
+          <button
+            onClick={() => onOpenHashiraTraining && onOpenHashiraTraining('gatoru')}
+            className="flex-1 py-1.5 px-2 bg-gradient-to-r from-sky-700 to-neutral-950 border-2 border-sky-400 text-sky-200 font-black text-[10px] uppercase flex items-center gap-1.5 shadow-[2px_2px_0px_#000] cursor-pointer truncate"
+          >
+            <img src={TRAINER_PROFILES.gatoru.avatarSrc} alt="Gatoru" className="w-5 h-5 object-cover border border-sky-400 shrink-0" />
+            <span className="truncate">Train Gatoru</span>
+          </button>
+        </div>
+
         {/* Latest Edition Banner (Mobile) */}
         <div className="lg:hidden w-full">
           <img
@@ -263,6 +283,38 @@ export const Dashboard: React.FC<DashboardProps> = ({
               className="w-full pointer-events-none border-3 border-black dark:border-white shadow-[5px_5px_0px_#000000] dark:shadow-[5px_5px_0px_#ffffff]"
             />
           </div>
+
+          {/* Desktop Left Sidebar: Train with Thukuna & Train with Gatoru */}
+          <div className="hidden lg:flex flex-col gap-3 bg-white dark:bg-[#0a0a0c] border-3 border-black dark:border-white p-4 shadow-[5px_5px_0px_#000000] dark:shadow-[5px_5px_0px_#ffffff]">
+            <h4 className="text-xs font-black uppercase tracking-wider text-amber-600 dark:text-amber-400 flex items-center gap-1.5">
+              <Flame className="w-4 h-4 text-amber-500" />
+              Hashira Training Dojos
+            </h4>
+            <div className="flex flex-col gap-2.5">
+              <button
+                onClick={() => onOpenHashiraTraining && onOpenHashiraTraining('thukuna')}
+                className="w-full py-3 px-3.5 bg-gradient-to-r from-amber-900 to-neutral-950 border-3 border-amber-600 text-amber-200 font-black text-xs uppercase flex items-center gap-3.5 shadow-[3px_3px_0px_#000] cursor-pointer hover:brightness-110 active:translate-x-0.5 active:translate-y-0.5 transition-all text-left"
+              >
+                <img src={TRAINER_PROFILES.thukuna.avatarSrc} alt="Thukuna" className="w-10 h-10 object-cover border-2 border-amber-500 shrink-0 shadow-[1px_1px_0px_#000]" />
+                <div className="flex flex-col min-w-0">
+                  <span className="truncate">Train with Thukuna</span>
+                  <span className="text-[10px] text-amber-400/80 font-normal">Plasma Hashira · Opening & Tactical</span>
+                </div>
+              </button>
+
+              <button
+                onClick={() => onOpenHashiraTraining && onOpenHashiraTraining('gatoru')}
+                className="w-full py-3 px-3.5 bg-gradient-to-r from-sky-700 to-neutral-950 border-3 border-sky-400 text-sky-200 font-black text-xs uppercase flex items-center gap-3.5 shadow-[3px_3px_0px_#000] cursor-pointer hover:brightness-110 active:translate-x-0.5 active:translate-y-0.5 transition-all text-left"
+              >
+                <img src={TRAINER_PROFILES.gatoru.avatarSrc} alt="Gatoru" className="w-10 h-10 object-cover border-2 border-sky-400 shrink-0 shadow-[1px_1px_0px_#000]" />
+                <div className="flex flex-col min-w-0">
+                  <span className="truncate">Train with Gatoru</span>
+                  <span className="text-[10px] text-sky-300/80 font-normal">Void Hashira · Six Eyes & Precision</span>
+                </div>
+              </button>
+            </div>
+          </div>
+
           {/* User Profile Card */}
           <div className="bg-white dark:bg-[#0a0a0c] border-3 border-black dark:border-white p-5 shadow-[5px_5px_0px_#000000] dark:shadow-[5px_5px_0px_#ffffff]">
             <div className="flex items-start justify-between">
@@ -515,7 +567,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
             </div>
 
             <button
-              onClick={onOpenHashiraTraining}
+              onClick={() => onOpenHashiraTraining && onOpenHashiraTraining('thukuna')}
               className="py-3 px-5 bg-amber-400 hover:bg-amber-300 text-black font-black text-xs sm:text-sm uppercase tracking-wider border-2 border-black shadow-[3px_3px_0px_#000000] flex items-center justify-center gap-2 shrink-0 cursor-pointer active:translate-x-0.5 active:translate-y-0.5"
             >
               <Swords className="w-4 h-4" />

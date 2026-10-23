@@ -8,7 +8,7 @@
  */
 
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import type { DojoLesson, MentorExpression, KataStep } from './types';
+import type { DojoLesson, MentorExpression, KataStep, TrainerId } from './types';
 import type { Position, Piece, Move } from '../types/game';
 import type {
   CullingMatchState,
@@ -27,7 +27,18 @@ import {
 import { ChessPiece } from '../components/ChessPiece';
 import { CullingBoard } from '../components/CullingBoard';
 import { sounds } from '../utils/audio';
-import { CheckCircle2, AlertTriangle, Sparkles } from 'lucide-react';
+import { CheckCircle2, AlertTriangle, Sparkles, ArrowRight } from 'lucide-react';
+
+interface CompletedStepModalData {
+  stepNumber: number;
+  totalSteps: number;
+  notation: string;
+  tacticalBreakdown: string;
+  isFinal: boolean;
+  nextIndex: number;
+  completedStep: KataStep;
+  triggerStepIndex: number;
+}
 
 interface InteractiveKataBoardProps {
   lesson: DojoLesson;
@@ -38,6 +49,7 @@ interface InteractiveKataBoardProps {
   onMoveMade?: () => void;
   onStepChange?: (stepIndex: number) => void;
   onNext?: () => void;
+  trainerId?: TrainerId;
 }
 
 export const InteractiveKataBoard: React.FC<InteractiveKataBoardProps> = ({
@@ -49,8 +61,10 @@ export const InteractiveKataBoard: React.FC<InteractiveKataBoardProps> = ({
   onMoveMade,
   onStepChange,
   onNext,
+  trainerId = 'thukuna',
 }) => {
   const isCullingMode = lesson.tool === 'culling' || Boolean(lesson.cullingBoard);
+  const isGatoru = trainerId === 'gatoru';
 
   // Standard Chess State
   const [board, setBoard] = useState<(Piece | null)[][]>(() =>
@@ -78,6 +92,7 @@ export const InteractiveKataBoard: React.FC<InteractiveKataBoardProps> = ({
   const [isFinished, setIsFinished] = useState(false);
   const [lastMove, setLastMove] = useState<{ from: Position; to: Position } | null>(null);
   const [consecutiveMistakes, setConsecutiveMistakes] = useState(0);
+  const [pendingModalData, setPendingModalData] = useState<CompletedStepModalData | null>(null);
 
   // Use ref for onStepChange callback to avoid effect re-execution
   const onStepChangeRef = useRef(onStepChange);
@@ -112,6 +127,7 @@ export const InteractiveKataBoard: React.FC<InteractiveKataBoardProps> = ({
     setIsFinished(false);
     setLastMove(null);
     setConsecutiveMistakes(0);
+    setPendingModalData(null);
     onStepChangeRef.current?.(0);
   }, [lesson.id, onResetSignal]);
 
@@ -165,9 +181,82 @@ export const InteractiveKataBoard: React.FC<InteractiveKataBoardProps> = ({
     return getLegalMovesForSquare(board, selectedSquare);
   }, [isCullingMode, board, selectedSquare, isFinished]);
 
+  // Advance step after pupil reads Tactical Breakdown Modal
+  const handleContinueStep = useCallback(() => {
+    if (!pendingModalData) return;
+    const { isFinal, nextIndex, triggerStepIndex, completedStep } = pendingModalData;
+    setPendingModalData(null);
+
+    if (isFinal) {
+      setIsFinished(true);
+      sounds.playGameOver();
+      onReaction('approving', lesson.mentorSuccess);
+      onComplete();
+      return;
+    }
+
+    // Advance to next step
+    setCurrentStepIndex(nextIndex);
+    onStepChangeRef.current?.(nextIndex);
+
+    // Provide feedback for the transition
+    if (completedStep.mentorReaction && completedStep.mentorCommentary) {
+      onReaction(completedStep.mentorReaction, completedStep.mentorCommentary);
+    } else {
+      const nextStep = lesson.correctSteps[nextIndex];
+      if (nextStep?.mentorPrompt) {
+        onReaction('stern', nextStep.mentorPrompt);
+      }
+    }
+
+    // Scripted opponent response for the completed step
+    const oppResponse = lesson.opponentResponses?.find((r) => r.triggerStepIndex === triggerStepIndex);
+    if (oppResponse) {
+      setTimeout(() => {
+        if (isCullingMode) {
+          setCullingMatch((prev) => {
+            const res = executeCullingMove(prev, oppResponse.from, oppResponse.to, 'move');
+            if (res.success) {
+              setLastMove({ from: oppResponse.from, to: oppResponse.to });
+              sounds.playMove();
+              return res.state;
+            }
+            return prev;
+          });
+        } else {
+          setBoard((prev) => {
+            const oppPiece = prev[oppResponse.from.y]?.[oppResponse.from.x];
+            if (!oppPiece) return prev;
+            const oppMove: Move = {
+              from: oppResponse.from,
+              to: oppResponse.to,
+              piece: oppPiece,
+              captured: prev[oppResponse.to.y]?.[oppResponse.to.x] || undefined,
+              timestamp: Date.now(),
+            };
+            const updated = applyMoveToBoard(prev, oppMove);
+            setLastMove({ from: oppResponse.from, to: oppResponse.to });
+            if (oppMove.captured) sounds.playCapture();
+            else sounds.playMove();
+            return updated;
+          });
+        }
+
+        if (oppResponse.commentary) {
+          onReaction('analytical', oppResponse.commentary);
+        } else {
+          const nextStep = lesson.correctSteps[nextIndex];
+          if (nextStep?.mentorPrompt) {
+            onReaction('stern', nextStep.mentorPrompt);
+          }
+        }
+      }, 350);
+    }
+  }, [pendingModalData, isCullingMode, lesson, onComplete, onReaction]);
+
   // Standard Chess square click
   const handleStandardSquareClick = (x: number, y: number) => {
-    if (isFinished) return;
+    if (isFinished || pendingModalData) return;
     const clickedPiece = board[y]?.[x];
 
     // Case 1: Selecting player's own piece
@@ -235,52 +324,31 @@ export const InteractiveKataBoard: React.FC<InteractiveKataBoardProps> = ({
       else sounds.playMove();
 
       const nextIndex = currentStepIndex + 1;
-      setCurrentStepIndex(nextIndex);
+      const isFinal = nextIndex >= lesson.correctSteps.length;
+      const notation =
+        expectedStep.notation ||
+        `${String.fromCharCode(97 + selectedSquare.x)}${selectedSquare.y + 1} → ${String.fromCharCode(97 + x)}${y + 1}`;
+      const tacticalBreakdown =
+        expectedStep.tacticalBreakdown ||
+        expectedStep.mentorCommentary ||
+        'Decisive tactical precision executed. Maintain positional control and tempo.';
 
-      if (nextIndex >= lesson.correctSteps.length) {
-        setIsFinished(true);
-        sounds.playGameOver();
-        onReaction('approving', lesson.mentorSuccess);
-        onComplete();
-        return;
-      }
-
-      if (expectedStep.mentorReaction && expectedStep.mentorCommentary) {
-        onReaction(expectedStep.mentorReaction, expectedStep.mentorCommentary);
-      }
-
-      // Scripted opponent response
-      const oppResponse = lesson.opponentResponses?.find((r) => r.triggerStepIndex === currentStepIndex);
-      if (oppResponse) {
-        setTimeout(() => {
-          setBoard((prev) => {
-            const oppPiece = prev[oppResponse.from.y][oppResponse.from.x];
-            if (!oppPiece) return prev;
-            const oppMove: Move = {
-              from: oppResponse.from,
-              to: oppResponse.to,
-              piece: oppPiece,
-              captured: prev[oppResponse.to.y][oppResponse.to.x] || undefined,
-              timestamp: Date.now(),
-            };
-            const updated = applyMoveToBoard(prev, oppMove);
-            setLastMove({ from: oppResponse.from, to: oppResponse.to });
-            if (oppMove.captured) sounds.playCapture();
-            else sounds.playMove();
-            return updated;
-          });
-
-          if (oppResponse.commentary) {
-            onReaction('analytical', oppResponse.commentary);
-          }
-        }, 350);
-      }
+      setPendingModalData({
+        stepNumber: currentStepIndex + 1,
+        totalSteps: lesson.correctSteps.length,
+        notation,
+        tacticalBreakdown,
+        isFinal,
+        nextIndex,
+        completedStep: expectedStep,
+        triggerStepIndex: currentStepIndex,
+      });
     }
   };
 
   // Culling Game move execution handler
   const handleCullingMove = (from: CullingPos, to: CullingPos, actionType?: string) => {
-    if (isFinished) return;
+    if (isFinished || pendingModalData) return;
     const movingPiece = cullingMatch.board[from.y]?.[from.x];
     if (!movingPiece) return;
 
@@ -327,39 +395,23 @@ export const InteractiveKataBoard: React.FC<InteractiveKataBoardProps> = ({
     onMoveMade?.();
 
     const nextIndex = currentStepIndex + 1;
-    setCurrentStepIndex(nextIndex);
+    const isFinal = nextIndex >= lesson.correctSteps.length;
+    const notation = expectedStep.notation || `${pieceDisplayName} strike`;
+    const tacticalBreakdown =
+      expectedStep.tacticalBreakdown ||
+      expectedStep.mentorCommentary ||
+      'Flawless cursed energy allocation. Domain control expanded and enemy maneuver denied.';
 
-    if (nextIndex >= lesson.correctSteps.length) {
-      setIsFinished(true);
-      sounds.playGameOver();
-      onReaction('approving', lesson.mentorSuccess);
-      onComplete();
-      return;
-    }
-
-    if (expectedStep.mentorReaction && expectedStep.mentorCommentary) {
-      onReaction(expectedStep.mentorReaction, expectedStep.mentorCommentary);
-    }
-
-    // Scripted opponent response in Culling Dojo
-    const oppResponse = lesson.opponentResponses?.find((r) => r.triggerStepIndex === currentStepIndex);
-    if (oppResponse) {
-      setTimeout(() => {
-        setCullingMatch((prev) => {
-          const res = executeCullingMove(prev, oppResponse.from, oppResponse.to, 'move');
-          if (res.success) {
-            setLastMove({ from: oppResponse.from, to: oppResponse.to });
-            sounds.playMove();
-            return res.state;
-          }
-          return prev;
-        });
-
-        if (oppResponse.commentary) {
-          onReaction('analytical', oppResponse.commentary);
-        }
-      }, 350);
-    }
+    setPendingModalData({
+      stepNumber: currentStepIndex + 1,
+      totalSteps: lesson.correctSteps.length,
+      notation,
+      tacticalBreakdown,
+      isFinal,
+      nextIndex,
+      completedStep: expectedStep,
+      triggerStepIndex: currentStepIndex,
+    });
   };
 
   const showGoldenGuide = consecutiveMistakes >= 2 && Boolean(expectedStep);
@@ -391,18 +443,20 @@ export const InteractiveKataBoard: React.FC<InteractiveKataBoardProps> = ({
               <div className="w-10 h-10 bg-amber-400 text-black border-2 border-black flex items-center justify-center mb-1.5 shadow-[2px_2px_0px_#000]">
                 <CheckCircle2 className="w-6 h-6" />
               </div>
-              <h4 className="text-base sm:text-lg font-black uppercase text-amber-400 tracking-wider">
+              <h4 className={`text-base sm:text-lg font-black uppercase ${isGatoru ? 'text-sky-400' : 'text-amber-400'} tracking-wider`}>
                 Culling Kata Cleared
               </h4>
               <p className="text-[11px] sm:text-xs font-bold text-white max-w-xs mt-0.5 mb-2">
-                Domain Mastery achieved. Your cursed tactics meet Thukuna's high standard.
+                {isGatoru
+                  ? 'Domain Mastery achieved. Your cursed tactics meet Gatoru Luchha\'s absolute void standard.'
+                  : 'Domain Mastery achieved. Your cursed tactics meet Thukuna\'s high standard.'}
               </p>
               <button
                 onClick={() => {
                   setIsFinished(false);
                   if (onNext) onNext();
                 }}
-                className="px-3.5 py-1.5 bg-amber-400 hover:bg-amber-300 text-black font-black text-xs uppercase border-2 border-black shadow-[2px_2px_0px_#000] cursor-pointer"
+                className={`px-3.5 py-1.5 ${isGatoru ? 'bg-sky-400 hover:bg-sky-300' : 'bg-amber-400 hover:bg-amber-300'} text-black font-black text-xs uppercase border-2 border-black shadow-[2px_2px_0px_#000] cursor-pointer`}
               >
                 Continue / Next Kata →
               </button>
@@ -493,18 +547,20 @@ export const InteractiveKataBoard: React.FC<InteractiveKataBoardProps> = ({
               <div className="w-10 h-10 bg-amber-400 text-black border-2 border-black flex items-center justify-center mb-1.5 shadow-[2px_2px_0px_#000]">
                 <CheckCircle2 className="w-6 h-6" />
               </div>
-              <h4 className="text-base sm:text-lg font-black uppercase text-amber-400 tracking-wider">
+              <h4 className={`text-base sm:text-lg font-black uppercase ${isGatoru ? 'text-sky-400' : 'text-amber-400'} tracking-wider`}>
                 Kata Cleared
               </h4>
               <p className="text-[11px] sm:text-xs font-bold text-white max-w-xs mt-0.5 mb-2">
-                Thukuna nods in approval. Your discipline honors the Dojo.
+                {isGatoru
+                  ? 'Gatoru Luchha nods in approval. Perfect void calculation achieved.'
+                  : 'Thukuna nods in approval. Your discipline honors the Dojo.'}
               </p>
               <button
                 onClick={() => {
                   setIsFinished(false);
                   if (onNext) onNext();
                 }}
-                className="px-3.5 py-1.5 bg-amber-400 hover:bg-amber-300 text-black font-black text-xs uppercase border-2 border-black shadow-[2px_2px_0px_#000] cursor-pointer"
+                className={`px-3.5 py-1.5 ${isGatoru ? 'bg-sky-400 hover:bg-sky-300' : 'bg-amber-400 hover:bg-amber-300'} text-black font-black text-xs uppercase border-2 border-black shadow-[2px_2px_0px_#000] cursor-pointer`}
               >
                 Continue / Next Kata →
               </button>
@@ -524,10 +580,102 @@ export const InteractiveKataBoard: React.FC<InteractiveKataBoardProps> = ({
             <span>Attempts: {consecutiveMistakes}/2 {consecutiveMistakes >= 2 ? '(Guide On)' : ''}</span>
           </span>
         )}
-        <span className={isFinished ? 'text-amber-400' : 'text-neutral-500'}>
+        <span className={isFinished ? (isGatoru ? 'text-sky-400' : 'text-amber-400') : 'text-neutral-500'}>
           {isFinished ? '✓ Mastered' : 'Active Kata'}
         </span>
       </div>
+
+      {/* Post-Step Tactical Breakdown Modal Popup */}
+      {pendingModalData && (
+        <div
+          className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-150"
+          role="dialog"
+          aria-modal="true"
+        >
+          <div
+            className={`relative max-w-md w-full bg-[#0d0d12] border-3 ${
+              isGatoru
+                ? 'border-sky-400 shadow-[6px_6px_0px_#0284c7]'
+                : 'border-amber-400 shadow-[6px_6px_0px_#d97706]'
+            } p-4 sm:p-5 flex flex-col gap-3 select-text`}
+          >
+            {/* Modal Header */}
+            <div className="flex items-center justify-between border-b border-neutral-700 pb-2">
+              <div className="flex items-center gap-2">
+                <span
+                  className={`px-2 py-0.5 text-[10px] font-black uppercase border ${
+                    isGatoru
+                      ? 'bg-sky-400 text-black border-black'
+                      : 'bg-amber-400 text-black border-black'
+                  }`}
+                >
+                  Step {pendingModalData.stepNumber} of {pendingModalData.totalSteps}
+                </span>
+                <span className="text-[11px] font-black uppercase tracking-wider text-neutral-300">
+                  {pendingModalData.isFinal ? 'Decisive Victory' : 'Tactical Mastery'}
+                </span>
+              </div>
+              <span
+                className={`font-mono text-xs font-black px-2 py-0.5 bg-neutral-900 border ${
+                  isGatoru ? 'border-sky-400 text-sky-400' : 'border-amber-400 text-amber-400'
+                }`}
+              >
+                {pendingModalData.notation}
+              </span>
+            </div>
+
+            {/* Tactical Breakdown Explanation */}
+            <div className="space-y-1.5">
+              <div className="flex items-center gap-1.5 text-xs font-black uppercase text-amber-300">
+                <Sparkles className="w-3.5 h-3.5 shrink-0" />
+                <span>Why this move matters most:</span>
+              </div>
+              <p className="text-xs sm:text-sm font-medium text-neutral-100 leading-relaxed bg-neutral-900/90 border border-neutral-800 p-3">
+                {pendingModalData.tacticalBreakdown}
+              </p>
+            </div>
+
+            {/* Sensei Validation Stamp */}
+            <div
+              className={`p-2.5 border text-xs flex items-center gap-2.5 ${
+                isGatoru
+                  ? 'bg-sky-950/40 border-sky-500/50 text-sky-200'
+                  : 'bg-amber-950/40 border-amber-500/50 text-amber-200'
+              }`}
+            >
+              <span className="font-serif text-lg select-none">
+                {isGatoru ? '悟' : '宿'}
+              </span>
+              <div className="text-[11px] leading-tight">
+                <span className="font-bold uppercase block mb-0.5">
+                  {isGatoru ? 'Gatoru Luchha confirms:' : 'Thukuna confirms:'}
+                </span>
+                {pendingModalData.isFinal
+                  ? 'The final tactical objective is achieved. Perfect execution.'
+                  : 'Tempo preserved. Opponent is forced onto the defensive.'}
+              </div>
+            </div>
+
+            {/* Action Continue Button */}
+            <button
+              onClick={handleContinueStep}
+              autoFocus
+              className={`w-full py-2.5 px-4 font-black text-xs sm:text-sm uppercase border-2 border-black flex items-center justify-center gap-2 cursor-pointer shadow-[3px_3px_0px_#000] active:translate-x-0.5 active:translate-y-0.5 transition-all ${
+                isGatoru
+                  ? 'bg-sky-400 hover:bg-sky-300 text-black'
+                  : 'bg-amber-400 hover:bg-amber-300 text-black'
+              }`}
+            >
+              <span>
+                {pendingModalData.isFinal
+                  ? 'Complete Kata & Claim Victory 🏆'
+                  : `Continue Strike (Step ${pendingModalData.stepNumber + 1}/${pendingModalData.totalSteps}) →`}
+              </span>
+              <ArrowRight className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

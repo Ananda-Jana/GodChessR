@@ -11,12 +11,13 @@
  */
 
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
-import type { HashiraRankId, TrainingToolId, MentorExpression, DojoLesson } from './types';
-import { HASHIRA_RANKS, DOJO_LESSONS, loadHashiraProgress, saveHashiraProgress } from './data';
+import type { HashiraRankId, TrainingToolId, MentorExpression, DojoLesson, TrainerId } from './types';
+import { HASHIRA_RANKS, DOJO_LESSONS, TRAINER_PROFILES, loadHashiraProgress, saveHashiraProgress } from './data';
 import { HashiraMentor } from './HashiraMentor';
 import { InteractiveKataBoard } from './InteractiveKataBoard';
 import { PracticeBoard } from './PracticeBoard';
 import { TheoryLibraryView } from './TheoryLibraryView';
+import { CullingOpeningDojo } from './CullingOpeningDojo';
 import { TrophyRoomModal } from '../components/TrophyRoomModal';
 import { RulesModal } from '../components/RulesModal';
 import { CullingRulesModal } from '../components/CullingRulesModal';
@@ -35,20 +36,26 @@ import {
 
 interface HashiraTrainingViewProps {
   onBack: () => void;
+  initialTrainerId?: TrainerId;
 }
 
-export const HashiraTrainingView: React.FC<HashiraTrainingViewProps> = ({ onBack }) => {
+export const HashiraTrainingView: React.FC<HashiraTrainingViewProps> = ({ onBack, initialTrainerId }) => {
   // Load persistent user progress
   const [progress, setProgress] = useState(() => loadHashiraProgress());
   const [selectedRankId, setSelectedRankId] = useState<HashiraRankId>(progress.selectedRank || 'mizunoto');
+  const [selectedTrainerId, setSelectedTrainerId] = useState<TrainerId>(initialTrainerId || progress.selectedTrainerId || 'thukuna');
   const [activeTool, setActiveTool] = useState<TrainingToolId>('opening');
 
-  // Mobile Dropdown States
+  // Mobile Dropdown & Collapse States
   const [isMobileRankOpen, setIsMobileRankOpen] = useState(false);
   const [isMobileDojoOpen, setIsMobileDojoOpen] = useState(false);
   const [isMobileKatasOpen, setIsMobileKatasOpen] = useState(false);
+  const [isMobileTrainerCollapsed, setIsMobileTrainerCollapsed] = useState(false);
   const [isRulebookOpen, setIsRulebookOpen] = useState(false);
   const [isCullingRulesOpen, setIsCullingRulesOpen] = useState(false);
+
+  // Timer ref for reversible blunder feedback
+  const promptRestoreTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   const closeAllMobileMenus = () => {
     setIsMobileRankOpen(false);
@@ -139,8 +146,79 @@ export const HashiraTrainingView: React.FC<HashiraTrainingViewProps> = ({ onBack
     });
   };
 
-  // Reset lesson and prompt when tool or rank changes
+  // Dynamic step prompt based on active step, rank, and active trainer
+  const getCurrentStepPrompt = useCallback(() => {
+    if (activeTool === 'practice') {
+      return selectedTrainerId === 'gatoru'
+        ? `Gatoru observes your calculation. Face the ${currentRankInfo.name} sparring partner with absolute composure.`
+        : `Welcome to the Sparring Ground. Face the ${currentRankInfo.name} sparring partner or experiment freely in sandbox.`;
+    }
+    if (activeTool === 'theory') {
+      return selectedTrainerId === 'gatoru'
+        ? 'The Six Eyes perceive infinite geometrical paths. Study the scrolls with clarity.'
+        : 'Knowledge is the sheath that protects the blade. Study the sacred chess scrolls.';
+    }
+    if (activeLesson) {
+      const currentStep = activeLesson.correctSteps[activeStepIndex];
+      return currentStep?.mentorPrompt || activeLesson.mentorPrompt;
+    }
+    return 'Welcome to the Dojo, pupil. Choose your form and discipline.';
+  }, [activeTool, selectedTrainerId, currentRankInfo.name, activeLesson, activeStepIndex]);
+
+  // Sensei Reaction handler with reversible blunder auto-restoration (~3.5s)
+  const handleMentorReaction = useCallback(
+    (expr: MentorExpression, text: string) => {
+      if (promptRestoreTimerRef.current) {
+        clearTimeout(promptRestoreTimerRef.current);
+        promptRestoreTimerRef.current = null;
+      }
+
+      setMentorExpression(expr);
+      setMentorMessage(text);
+
+      // Blunder rebuke: show critique for ~3.5s then automatically bring back the step instruction
+      if (expr === 'scowl') {
+        promptRestoreTimerRef.current = setTimeout(() => {
+          setMentorExpression('stern');
+          setMentorMessage(getCurrentStepPrompt());
+        }, 3500);
+      }
+    },
+    [getCurrentStepPrompt]
+  );
+
+  // Switch between Thukuna (Crimson) and Gatoru Luchha (Neon Blue)
+  const handleToggleTrainer = () => {
+    const nextTrainerId: TrainerId = selectedTrainerId === 'thukuna' ? 'gatoru' : 'thukuna';
+    setSelectedTrainerId(nextTrainerId);
+    updateProgress((p) => ({ ...p, selectedTrainerId: nextTrainerId }));
+    sounds.playMove();
+
+    if (promptRestoreTimerRef.current) {
+      clearTimeout(promptRestoreTimerRef.current);
+      promptRestoreTimerRef.current = null;
+    }
+
+    const profile = TRAINER_PROFILES[nextTrainerId];
+    setMentorExpression('stern');
+    setMentorMessage(profile.greetingPrompt);
+  };
+
+  // Cleanup prompt restore timer on unmount
   useEffect(() => {
+    return () => {
+      if (promptRestoreTimerRef.current) {
+        clearTimeout(promptRestoreTimerRef.current);
+      }
+    };
+  }, []);
+
+  // Reset lesson and prompt when tool, rank, or trainer changes
+  useEffect(() => {
+    if (promptRestoreTimerRef.current) {
+      clearTimeout(promptRestoreTimerRef.current);
+      promptRestoreTimerRef.current = null;
+    }
     setActiveLessonIndex(0);
     setActiveHintText(null);
     setActiveStepIndex(0);
@@ -150,13 +228,19 @@ export const HashiraTrainingView: React.FC<HashiraTrainingViewProps> = ({ onBack
     } else if (activeTool === 'practice') {
       setMentorExpression('analytical');
       setMentorMessage(
-        `Welcome to the Sparring Ground. Face the ${currentRankInfo.name} sparring partner or experiment freely in sandbox.`
+        selectedTrainerId === 'gatoru'
+          ? `Gatoru observes your calculation. Face the ${currentRankInfo.name} sparring partner with absolute composure.`
+          : `Welcome to the Sparring Ground. Face the ${currentRankInfo.name} sparring partner or experiment freely in sandbox.`
       );
     } else if (activeTool === 'theory') {
       setMentorExpression('analytical');
-      setMentorMessage('Knowledge is the sheath that protects the blade. Study the sacred chess scrolls.');
+      setMentorMessage(
+        selectedTrainerId === 'gatoru'
+          ? 'The Six Eyes perceive infinite geometrical paths. Study the scrolls with clarity.'
+          : 'Knowledge is the sheath that protects the blade. Study the sacred chess scrolls.'
+      );
     }
-  }, [selectedRankId, activeTool]);
+  }, [selectedRankId, activeTool, selectedTrainerId]);
 
   // Handle kata completion
   const handleKataCompleted = () => {
@@ -170,6 +254,10 @@ export const HashiraTrainingView: React.FC<HashiraTrainingViewProps> = ({ onBack
 
   const handleNextKata = () => {
     if (activeLessonIndex < currentLessons.length - 1) {
+      if (promptRestoreTimerRef.current) {
+        clearTimeout(promptRestoreTimerRef.current);
+        promptRestoreTimerRef.current = null;
+      }
       const nextIdx = activeLessonIndex + 1;
       setActiveLessonIndex(nextIdx);
       setActiveHintText(null);
@@ -182,6 +270,10 @@ export const HashiraTrainingView: React.FC<HashiraTrainingViewProps> = ({ onBack
   };
 
   const handleResetKata = () => {
+    if (promptRestoreTimerRef.current) {
+      clearTimeout(promptRestoreTimerRef.current);
+      promptRestoreTimerRef.current = null;
+    }
     setResetSignal((s) => s + 1);
     setActiveHintText(null);
     setActiveStepIndex(0);
@@ -193,8 +285,18 @@ export const HashiraTrainingView: React.FC<HashiraTrainingViewProps> = ({ onBack
   };
 
   const handleStepChange = useCallback((stepIdx: number) => {
+    if (promptRestoreTimerRef.current) {
+      clearTimeout(promptRestoreTimerRef.current);
+      promptRestoreTimerRef.current = null;
+    }
     setActiveStepIndex(stepIdx);
-  }, []);
+    if (activeLesson) {
+      const currentStep = activeLesson.correctSteps[stepIdx];
+      const prompt = currentStep?.mentorPrompt || activeLesson.mentorPrompt;
+      setMentorExpression('stern');
+      setMentorMessage(prompt);
+    }
+  }, [activeLesson]);
 
   const handleSeekHint = () => {
     if (!activeLesson) return;
@@ -210,12 +312,17 @@ export const HashiraTrainingView: React.FC<HashiraTrainingViewProps> = ({ onBack
   const isCurrentKataCompleted = activeLesson ? progress.completedKataIds.includes(activeLesson.id) : false;
 
   const dojoTabs: Array<{ id: TrainingToolId; label: string; icon: string }> = [
+    { id: 'culling_opening', label: 'Culling Opening Dojo', icon: '🩸' },
     { id: 'opening', label: 'Opening Dojo', icon: '⛩️' },
     { id: 'tactics', label: 'Tactical Dojo', icon: '⚔️' },
     { id: 'culling', label: 'Culling Dojo', icon: '🩸' },
     { id: 'practice', label: 'Practice Board', icon: '🥋' },
     { id: 'theory', label: 'Theory Library', icon: '📜' },
   ];
+
+  if (activeTool === 'culling_opening') {
+    return <CullingOpeningDojo onBackToDojo={() => setActiveTool('culling')} />;
+  }
 
   return (
     <div className="h-[100dvh] w-full bg-[#070709] text-white flex flex-col font-sans select-none antialiased overflow-hidden">
@@ -256,10 +363,40 @@ export const HashiraTrainingView: React.FC<HashiraTrainingViewProps> = ({ onBack
             <BookOpen className="w-3.5 h-3.5 text-amber-400" />
             <span>Rulebook</span>
           </button>
+
+          {/* Desktop Trainer Switch Button (Thukuna Crimson <-> Gatoru Luchha Neon Blue) */}
+          <button
+            onClick={handleToggleTrainer}
+            className={`hidden lg:flex px-2.5 py-1 items-center gap-1.5 text-xs font-black uppercase cursor-pointer border-2 transition-all shadow-[2px_2px_0px_#000] active:translate-x-0.5 active:translate-y-0.5 ${
+              selectedTrainerId === 'thukuna'
+                ? 'bg-gradient-to-r from-red-950 to-neutral-900 border-amber-400 text-amber-300 hover:border-amber-300'
+                : 'bg-gradient-to-r from-sky-950 to-neutral-900 border-sky-400 text-sky-300 hover:border-sky-300'
+            }`}
+            title="Switch Sensei between Thukuna and Gatoru Luchha"
+          >
+            <span className="font-serif font-black">{selectedTrainerId === 'thukuna' ? '宿' : '悟'}</span>
+            <span>Sensei: {selectedTrainerId === 'thukuna' ? 'Thukuna' : 'Gatoru Luchha'}</span>
+            <span className="text-[9px] opacity-75 font-mono">⇄ Switch Trainer</span>
+          </button>
         </div>
 
-        {/* Mobile 3 Horizontal Buttons in Top Navigation Bar */}
+        {/* Mobile 3 Horizontal Buttons in Top Navigation Bar + Trainer Toggle */}
         <div className="flex lg:hidden items-center gap-1.5 relative">
+          {/* Mobile Trainer Switch Toggle Button */}
+          <button
+            onClick={handleToggleTrainer}
+            className={`px-1.5 py-1 items-center gap-1 text-[10px] sm:text-[11px] font-black uppercase border cursor-pointer active:translate-x-0.5 active:translate-y-0.5 transition-all z-40 flex shrink-0 ${
+              selectedTrainerId === 'thukuna'
+                ? 'bg-red-950 text-amber-300 border-amber-400 shadow-[1px_1px_0px_#000]'
+                : 'bg-sky-950 text-sky-300 border-sky-400 shadow-[1px_1px_0px_#000]'
+            }`}
+            title="Switch Sensei between Thukuna and Gatoru Luchha"
+          >
+            <span className="font-serif font-black">{selectedTrainerId === 'thukuna' ? '宿' : '悟'}</span>
+            <span className="hidden min-[380px]:inline">{selectedTrainerId === 'thukuna' ? 'Thukuna' : 'Gatoru'}</span>
+            <span className="text-[8px] font-mono opacity-80">⇄</span>
+          </button>
+
           {/* Backdrop when any mobile dropdown is open */}
           {(isMobileRankOpen || isMobileDojoOpen || isMobileKatasOpen) && (
             <div
@@ -483,26 +620,56 @@ export const HashiraTrainingView: React.FC<HashiraTrainingViewProps> = ({ onBack
       </header>
 
       {/* 2. Mobile Wide Rectangle Banner for Sensei (Just below top nav) */}
-      <div className="lg:hidden bg-[#0b0b0e] border-b border-neutral-800 px-2 py-1 shrink-0">
-        <HashiraMentor
-          expression={mentorExpression}
-          message={mentorMessage}
-          hintText={activeLesson?.hint}
-          activeHint={activeHintText}
-          isCompleted={isCurrentKataCompleted}
-          onAskHint={handleSeekHint}
-          onReset={handleResetKata}
-          onNext={handleNextKata}
-          canNext={activeLessonIndex < currentLessons.length - 1}
-          rankTitle={currentRankInfo.name}
-          kanji={currentRankInfo.kanji}
-          layout="compact"
-        />
+      <div className="lg:hidden bg-[#0b0b0e] border-b border-neutral-800 px-2 py-1 shrink-0 flex flex-col">
+        {/* Mobile Collapsible Header for Practice Mode */}
+        {activeTool === 'practice' && (
+          <div className="flex items-center justify-between pb-1 text-[9px] font-black uppercase text-neutral-400">
+            <span className="flex items-center gap-1 text-neutral-300">
+              <span className="font-serif">{selectedTrainerId === 'thukuna' ? '宿' : '悟'}</span>
+              <span>{selectedTrainerId === 'thukuna' ? 'Thukuna Sensei' : 'Gatoru Sensei'}</span>
+            </span>
+            <button
+              onClick={() => setIsMobileTrainerCollapsed(!isMobileTrainerCollapsed)}
+              className="px-2 py-0.5 bg-neutral-900 border border-neutral-700 hover:border-amber-400 text-amber-400 font-mono text-[9px] uppercase flex items-center gap-1 cursor-pointer"
+            >
+              <span>{isMobileTrainerCollapsed ? 'Expand Sensei ▼' : 'Collapse ▲'}</span>
+            </button>
+          </div>
+        )}
+
+        {/* If practice mode is collapsed, show compact tap bar */}
+        {activeTool === 'practice' && isMobileTrainerCollapsed ? (
+          <div
+            onClick={() => setIsMobileTrainerCollapsed(false)}
+            className="w-full py-1 px-2 bg-neutral-900/90 border border-neutral-800 text-[10px] font-bold text-neutral-300 flex items-center justify-between cursor-pointer"
+          >
+            <span className="truncate">
+              🥋 {selectedTrainerId === 'thukuna' ? 'Thukuna' : 'Gatoru Luchha'}: &ldquo;{mentorMessage}&rdquo;
+            </span>
+            <span className="text-[9px] text-amber-400 shrink-0 ml-1">Expand ▼</span>
+          </div>
+        ) : (
+          <HashiraMentor
+            expression={mentorExpression}
+            message={mentorMessage}
+            hintText={activeLesson?.hint}
+            activeHint={activeHintText}
+            isCompleted={isCurrentKataCompleted}
+            onAskHint={handleSeekHint}
+            onReset={handleResetKata}
+            onNext={handleNextKata}
+            canNext={activeLessonIndex < currentLessons.length - 1}
+            rankTitle={currentRankInfo.name}
+            kanji={currentRankInfo.kanji}
+            trainerId={selectedTrainerId}
+            layout="compact"
+          />
+        )}
       </div>
 
       {/* 3. Main Studio Workspace (Desktop 3-Column / Mobile Single Fixed View) */}
       <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
-        {/* Desktop Left Sidebar: Thukuna Avatar & Dialogue */}
+        {/* Desktop Left Sidebar: Sensei Avatar & Dialogue */}
         <aside className="hidden lg:flex w-80 h-full flex-col p-3 border-r-2 border-neutral-800 bg-[#0b0b0e] shrink-0 overflow-y-auto">
           <HashiraMentor
             expression={mentorExpression}
@@ -516,13 +683,18 @@ export const HashiraTrainingView: React.FC<HashiraTrainingViewProps> = ({ onBack
             canNext={activeLessonIndex < currentLessons.length - 1}
             rankTitle={currentRankInfo.name}
             kanji={currentRankInfo.kanji}
+            trainerId={selectedTrainerId}
             layout="vertical"
           />
 
           <div className="mt-3 p-2.5 bg-neutral-900 border border-neutral-800 text-xs">
             <div className="flex items-center justify-between mb-1">
-              <span className="text-[10px] font-black uppercase text-neutral-400">Pillar Discipline:</span>
-              <span className="text-[10px] font-bold text-amber-400">{currentRankInfo.element}</span>
+              <span className="text-[10px] font-black uppercase text-neutral-400">
+                {selectedTrainerId === 'gatoru' ? 'Void Hashira Discipline:' : 'Pillar Discipline:'}
+              </span>
+              <span className={`text-[10px] font-bold ${selectedTrainerId === 'gatoru' ? 'text-sky-400' : 'text-amber-400'}`}>
+                {currentRankInfo.element}
+              </span>
             </div>
             <p className="text-[11px] font-medium text-neutral-400 leading-tight">
               {currentRankInfo.description}
@@ -536,13 +708,11 @@ export const HashiraTrainingView: React.FC<HashiraTrainingViewProps> = ({ onBack
           className="flex-1 min-h-0 min-w-0 flex flex-col items-center justify-center p-1 sm:p-2 lg:p-4 overflow-hidden relative bg-[#070709]"
         >
           {activeTool === 'practice' ? (
-            <div className="w-full h-full flex items-center justify-center overflow-y-auto">
+            <div className="w-full h-full flex flex-col items-center justify-start overflow-y-auto pb-24 scroll-smooth">
               <PracticeBoard
                 rankInfo={currentRankInfo}
-                onReaction={(expr, text) => {
-                  setMentorExpression(expr);
-                  setMentorMessage(text);
-                }}
+                trainerId={selectedTrainerId}
+                onReaction={handleMentorReaction}
                 onOpenTrophyRoom={() => setIsTrophyRoomOpen(true)}
                 onRecordResult={(outcome) => {
                   updateProgress((p) => {
@@ -572,11 +742,9 @@ export const HashiraTrainingView: React.FC<HashiraTrainingViewProps> = ({ onBack
               <InteractiveKataBoard
                 key={activeLesson.id}
                 lesson={activeLesson}
+                trainerId={selectedTrainerId}
                 onComplete={handleKataCompleted}
-                onReaction={(expr, text) => {
-                  setMentorExpression(expr);
-                  setMentorMessage(text);
-                }}
+                onReaction={handleMentorReaction}
                 onResetSignal={resetSignal}
                 maxBoardDimension={maxBoardDimension}
                 onMoveMade={() => setActiveHintText(null)}
@@ -593,6 +761,37 @@ export const HashiraTrainingView: React.FC<HashiraTrainingViewProps> = ({ onBack
 
         {/* Desktop Right Sidebar: Dojo Modes & Lessons List */}
         <aside className="hidden lg:flex w-72 h-full flex-col border-l-2 border-neutral-800 bg-[#0c0c10] shrink-0 select-none overflow-hidden">
+          {/* Prominent Red Entry Button for Culling Game Opening Dojo */}
+          <div className="p-2 bg-[#0d0a0d] border-b border-red-900">
+            <div
+              onClick={() => {
+                setActiveTool('culling_opening');
+                sounds.playMove();
+              }}
+              className="p-2.5 bg-gradient-to-r from-red-950 via-neutral-900 to-black border-2 border-red-500 hover:border-red-400 text-white cursor-pointer transition-all shadow-[0_0_15px_rgba(220,38,38,0.4)] hover:shadow-[0_0_20px_rgba(239,68,68,0.6)] active:scale-[0.99] group relative overflow-hidden"
+            >
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-[9px] font-black uppercase text-red-400 tracking-wider flex items-center gap-1">
+                  <Flame className="w-3 h-3 text-red-400 fill-red-400" />
+                  NEW OPENING CLASSROOM
+                </span>
+                <span className="text-[8px] font-mono font-bold bg-red-900/90 text-red-200 px-1.5 py-0.2 border border-red-500">
+                  Tukuna&apos;s Dojo
+                </span>
+              </div>
+              <h3 className="text-xs font-black uppercase text-white tracking-wide group-hover:text-red-300">
+                CULLING GAME OPENING DOJO
+              </h3>
+              <p className="text-[10px] text-neutral-300 font-medium leading-tight mt-0.5">
+                Learn openings, protect your Sovereign, and master the battlefield.
+              </p>
+              <div className="mt-2 text-[10px] font-black uppercase text-red-400 group-hover:translate-x-1 transition-transform flex items-center gap-1">
+                <span>Enter Tukuna&apos;s Classroom</span>
+                <ArrowRight className="w-3 h-3" />
+              </div>
+            </div>
+          </div>
+
           <div className="flex flex-col p-2.5 bg-[#121216] border-b border-neutral-800">
             <span className="text-[10px] font-black uppercase text-neutral-400 mb-1.5 pl-0.5">
               Select Dojo Mode:

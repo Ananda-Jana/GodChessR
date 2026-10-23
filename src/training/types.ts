@@ -14,11 +14,12 @@ export type HashiraRankId =
   | 'hashira';  // Rank 6: The Chess Pillar (Supreme Grandmaster)
 
 export type TrainingToolId =
-  | 'opening'   // Opening Dojo
-  | 'tactics'   // Tactical Dojo
-  | 'culling'   // Culling Game Training
-  | 'practice'  // Practice Board Sandbox & Sparring
-  | 'theory';   // Theory Library Scrolls
+  | 'opening'          // Opening Dojo
+  | 'tactics'          // Tactical Dojo
+  | 'culling'          // Culling Game Training
+  | 'culling_opening'  // Culling Game Opening Dojo - Tukuna's Classroom
+  | 'practice'         // Practice Board Sandbox & Sparring
+  | 'theory';          // Theory Library Scrolls
 
 export type MentorExpression =
   | 'stern'       // Default watchful, exacting gaze
@@ -45,15 +46,34 @@ export interface HashiraRankInfo {
   };
 }
 
-import type { CullingBoard, CullingPieceColor, CullingSpecialAction } from '../types/cullingGame';
+import type { CullingBoard, CullingPieceColor, CullingSpecialAction, CullingPos } from '../types/cullingGame';
+
+export type TrainerId = 'thukuna' | 'gatoru';
+
+export interface TrainerProfile {
+  id: TrainerId;
+  name: string;
+  title: string;
+  kanji: string;
+  themeColor: string;
+  accentBg: string;
+  bannerBadgeBg: string;
+  badgeTextColor: string;
+  personality: 'fiery_mentor' | 'strict_void';
+  avatarSrc: string;
+  greetingPrompt: string;
+}
 
 export interface KataStep {
   from: Position;
   to: Position;
   explanation: string;
+  notation?: string;
+  tacticalBreakdown?: string;
   hint?: string;
   mentorReaction?: MentorExpression;
   mentorCommentary?: string;
+  mentorPrompt?: string;
   cullingActionType?: CullingSpecialAction;
 }
 
@@ -101,8 +121,55 @@ export interface TheoryScroll {
 
 export interface HashiraUserProgress {
   selectedRank: HashiraRankId;
+  selectedTrainerId?: TrainerId;
   completedKataIds: string[];
   practiceWinsByRank: Record<HashiraRankId, number>;
   practiceLossesByRank: Record<HashiraRankId, number>;
   unlockedScrollIds: string[];
 }
+
+export type CullingOpeningTier = 'beginner' | 'intermediate' | 'advanced';
+export type CullingCurriculumType = 'opening' | 'midgame';
+
+export interface CullingVectorArrow {
+  from: CullingPos;
+  to: CullingPos;
+  color: 'crimson' | 'gold'; // crimson = main line, gold = alternative response
+  label?: string; // e.g. "1", "2", "Alt"
+  style?: 'solid' | 'dashed';
+}
+
+export interface CullingOpeningStep {
+  stepNumber: number;
+  from: CullingPos;
+  to: CullingPos;
+  actionType?: CullingSpecialAction;
+  notation: string;
+  tukunaInstruction: string;
+  tacticalBreakdown: string;
+  hint: string;
+  vectorArrows: CullingVectorArrow[];
+  patternHighlights?: CullingPos[]; // Strategic red square highlights
+  opponentResponse?: {
+    from: CullingPos;
+    to: CullingPos;
+    commentary?: string;
+  };
+}
+
+export interface CullingOpeningLesson {
+  id: string;
+  title: string;
+  subtitle: string;
+  namedStrategy?: string; // e.g. "Sovereign Vanguard Gambit"
+  curriculumType?: CullingCurriculumType; // 'opening' | 'midgame'
+  tier: CullingOpeningTier;
+  initialBoard?: CullingBoard;
+  playerColor: CullingPieceColor;
+  tukunaGreeting: string;
+  steps: CullingOpeningStep[];
+  completionMessage: string;
+  patternHighlights?: CullingPos[]; // Overall strategy pattern highlight squares
+}
+
+

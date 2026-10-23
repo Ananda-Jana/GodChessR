@@ -11,8 +11,8 @@
  *    1:1 square achievement badges viewable in the Trophy Room!
  */
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import type { HashiraRankInfo, MentorExpression } from './types';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import type { HashiraRankInfo, MentorExpression, TrainerId } from './types';
 import type { PieceColor, Position, Piece, Move, MatchState } from '../types/game';
 import type { CullingMatchState, CullingPos, CullingPieceColor, CullingMove } from '../types/cullingGame';
 import {
@@ -54,6 +54,7 @@ interface PracticeBoardProps {
   onOpenTrophyRoom: () => void;
   onRecordResult: (outcome: 'win' | 'loss') => void;
   maxBoardDimension?: number;
+  trainerId?: TrainerId;
 }
 
 type SandboxGameMode = 'standard' | 'crafted' | 'culling' | 'rose';
@@ -64,8 +65,11 @@ export const PracticeBoard: React.FC<PracticeBoardProps> = ({
   onOpenTrophyRoom,
   onRecordResult,
   maxBoardDimension,
+  trainerId = 'thukuna',
 }) => {
   const { finalizeMatch } = usePredictor();
+  const isGatoru = trainerId === 'gatoru';
+  const resultRef = useRef<HTMLDivElement>(null);
 
   const [mode, setMode] = useState<SandboxGameMode>('standard');
   const [isBotMatchActive, setIsBotMatchActive] = useState(false);
@@ -102,6 +106,16 @@ export const PracticeBoard: React.FC<PracticeBoardProps> = ({
     turnsSurvived: 0,
     gameOutcome: 'active',
   });
+
+  // Auto-scroll down smoothly to debrief outcome when match concludes
+  useEffect(() => {
+    if (matchOutcome) {
+      const scrollTimer = setTimeout(() => {
+        resultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }, 120);
+      return () => clearTimeout(scrollTimer);
+    }
+  }, [matchOutcome]);
 
   // Reset board when mode changes
   const initializeBoardForMode = useCallback((newMode: SandboxGameMode) => {
@@ -596,17 +610,26 @@ export const PracticeBoard: React.FC<PracticeBoardProps> = ({
 
         {/* Dedicated Hashira Debrief Card */}
         {matchOutcome && (
-          <div className="mt-3 w-full bg-[#0a0a0f] border-2 border-amber-400 p-4 text-left z-20 animate-fade-in shadow-[4px_4px_0px_#000]">
+          <div
+            ref={resultRef}
+            className={`mt-3 w-full bg-[#0a0a0f] border-2 ${
+              isGatoru ? 'border-sky-400' : 'border-amber-400'
+            } p-4 text-left z-20 animate-fade-in shadow-[4px_4px_0px_#000]`}
+          >
             <div className="flex items-center justify-between border-b border-neutral-700 pb-2 mb-3">
               <div className="flex items-center gap-2">
-                <span className="font-serif text-lg text-amber-400">{rankInfo.kanji}</span>
-                <span className="text-xs font-black uppercase text-amber-400 tracking-wider">
+                <span className={`font-serif text-lg ${isGatoru ? 'text-sky-400' : 'text-amber-400'}`}>
+                  {rankInfo.kanji}
+                </span>
+                <span className={`text-xs font-black uppercase ${isGatoru ? 'text-sky-400' : 'text-amber-400'} tracking-wider`}>
                   {rankInfo.name} Sparring Debrief
                 </span>
               </div>
               <span className={`px-2 py-0.5 text-[10px] font-black uppercase border ${
                 matchOutcome === 'win'
-                  ? 'bg-amber-400 text-black border-black'
+                  ? isGatoru
+                    ? 'bg-sky-400 text-black border-black'
+                    : 'bg-amber-400 text-black border-black'
                   : matchOutcome === 'loss'
                   ? 'bg-red-950 text-red-300 border-red-500'
                   : 'bg-neutral-800 text-neutral-300 border-neutral-600'
@@ -616,7 +639,9 @@ export const PracticeBoard: React.FC<PracticeBoardProps> = ({
             </div>
 
             <h3 className={`text-base sm:text-lg font-black uppercase tracking-wider mb-1 ${
-              matchOutcome === 'win' ? 'text-amber-400' : 'text-red-400'
+              matchOutcome === 'win'
+                ? isGatoru ? 'text-sky-400' : 'text-amber-400'
+                : 'text-red-400'
             }`}>
               {matchOutcome === 'win'
                 ? 'Checkmate — Martial Triumph!'
@@ -633,7 +658,7 @@ export const PracticeBoard: React.FC<PracticeBoardProps> = ({
               </div>
               <div className="p-1 bg-black border border-neutral-800">
                 <div className="text-[9px] text-neutral-500 font-bold uppercase">Captures</div>
-                <div className="text-xs font-black text-amber-400">{tacticalMetrics.capturesMade}</div>
+                <div className={`text-xs font-black ${isGatoru ? 'text-sky-400' : 'text-amber-400'}`}>{tacticalMetrics.capturesMade}</div>
               </div>
               <div className="p-1 bg-black border border-neutral-800">
                 <div className="text-[9px] text-neutral-500 font-bold uppercase">Lost</div>
@@ -645,17 +670,24 @@ export const PracticeBoard: React.FC<PracticeBoardProps> = ({
               </div>
             </div>
 
-            {/* Sensei Gensei Tactical Diagnostics & Critique */}
-            <div className="p-2.5 bg-neutral-950 border border-amber-400/50 mb-3 text-xs">
-              <div className="text-[10px] font-black uppercase tracking-wider text-amber-400 flex items-center gap-1.5 mb-1.5">
-                <span>🥋 Thukuna's Tactical Critique:</span>
+            {/* Sensei Tactical Diagnostics & Critique */}
+            <div className={`p-2.5 bg-neutral-950 border ${isGatoru ? 'border-sky-400/50' : 'border-amber-400/50'} mb-3 text-xs`}>
+              <div className={`text-[10px] font-black uppercase tracking-wider ${isGatoru ? 'text-sky-400' : 'text-amber-400'} flex items-center gap-1.5 mb-1.5`}>
+                <span>{isGatoru ? '悟 Gatoru\'s Tactical Critique:' : '🥋 Thukuna\'s Tactical Critique:'}</span>
               </div>
               <ul className="text-[11px] text-neutral-300 space-y-1 font-medium list-disc list-inside">
                 {matchOutcome === 'win' ? (
-                  <>
-                    <li>Exemplary martial discipline! You seized central squares and punished the opponent's overextended structure.</li>
-                    <li>Clean conversion of material advantage into checkmate pressure. Keep this tempo in higher Hashira ranks!</li>
-                  </>
+                  isGatoru ? (
+                    <>
+                      <li>Infinite void precision executed! You locked down open files and forced the sparring partner into total positional collapse.</li>
+                      <li>Calculated conversion of tempo advantage into an airtight checkmate net. Maintain this focus against grandmasters.</li>
+                    </>
+                  ) : (
+                    <>
+                      <li>Exemplary martial discipline! You seized central squares and punished the opponent\'s overextended structure.</li>
+                      <li>Clean conversion of material advantage into checkmate pressure. Keep this tempo in higher Hashira ranks!</li>
+                    </>
+                  )
                 ) : (
                   <>
                     <li>Do not leave officers exposed on undefended diagonals. Coordinate minor pieces before advancing your pawns.</li>
