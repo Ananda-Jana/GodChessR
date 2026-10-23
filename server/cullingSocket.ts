@@ -30,6 +30,8 @@ interface CullingRoom {
   sockets: Set<ExtendedSocket>;
 }
 
+const SERVER_INSTANCE_ID = process.env.INSTANCE_ID || process.env.HOSTNAME || 'srv_1';
+
 export function initCullingSocket(io: WebSocketServer) {
   const rooms = new Map<string, CullingRoom>();
   const matchmakingQueue: { ws: ExtendedSocket; userId: string; timeControl: 120 | 300 }[] = [];
@@ -85,7 +87,9 @@ export function initCullingSocket(io: WebSocketServer) {
     const payload = JSON.stringify({ type: 'culling:challenges_list', challenges: list });
     for (const client of io.clients) {
       if (client.readyState === WebSocket.OPEN) {
-        client.send(payload);
+        try {
+          client.send(payload);
+        } catch {}
       }
     }
   }
@@ -96,7 +100,11 @@ export function initCullingSocket(io: WebSocketServer) {
     const payload = JSON.stringify(data);
     for (const ws of room.sockets) {
       if (ws.readyState === WebSocket.OPEN) {
-        ws.send(payload);
+        try {
+          ws.send(payload);
+        } catch (sendErr) {
+          console.error(`[WS REJECTED SEND] Instance: ${SERVER_INSTANCE_ID} | Mode: culling | Room: ${matchId} | Error:`, sendErr);
+        }
       }
     }
   }
@@ -149,6 +157,8 @@ export function initCullingSocket(io: WebSocketServer) {
   }, 1000);
 
   io.on('connection', (ws: ExtendedSocket) => {
+    console.log(`[WS CONNECT] Instance: ${SERVER_INSTANCE_ID} | Mode: culling`);
+
     ws.on('message', (rawData: string) => {
       try {
         const msg = JSON.parse(rawData.toString());
@@ -158,6 +168,21 @@ export function initCullingSocket(io: WebSocketServer) {
         const effectiveUserId = msg.userId || ws.userId || `guest_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
         if (!ws.userId) {
           ws.userId = effectiveUserId;
+        }
+
+        // Re-associate socket with any active culling match for this user
+        if (!ws.cullingMatchId) {
+          for (const [mId, room] of rooms.entries()) {
+            if (
+              room.match.status === 'active' &&
+              (room.match.whitePlayer.userId === effectiveUserId || room.match.blackPlayer.userId === effectiveUserId)
+            ) {
+              ws.cullingMatchId = mId;
+              room.sockets.add(ws);
+              console.log(`[WS RECONNECT/AUTH] Instance: ${SERVER_INSTANCE_ID} | Mode: culling | User: ${effectiveUserId} | MatchReassociated: ${mId}`);
+              break;
+            }
+          }
         }
 
         switch (msg.type) {
@@ -233,39 +258,42 @@ export function initCullingSocket(io: WebSocketServer) {
           /**
            * JOIN SPECIFIC ROOM OR RECONNECT
            */
-          case 'culling:join': {
-            const matchId = msg.matchId;
-            let room = rooms.get(matchId);
-            if (!room) {
-              const timeControl = msg.timeControl === 120 ? 120 : 300;
-              const newMatch = createInitialCullingMatch(
-                matchId,
-                {
-                  userId: effectiveUserId || 'p1',
-                  username: 'Sorcerer White',
-                  displayName: 'Sorcerer White',
-                },
-                {
-                  userId: 'p2',
-                  username: 'Curse Black',
-                  displayName: 'Curse Black',
-                },
-                timeControl
-              );
-              room = { match: newMatch, sockets: new Set() };
-              rooms.set(matchId, room);
+          case 'culling:join':
+          case 'culling:resync': {
+            const matchId = msg.matchId || ws.cullingMatchId;
+            let room = matchId ? rooms.get(matchId) : undefined;
+
+            if (room) {
+              const isParticipant =
+                effectiveUserId === room.match.whitePlayer.userId ||
+                effectiveUserId === room.match.blackPlayer.userId;
+
+              if (!isParticipant) {
+                ws.send(JSON.stringify({ type: 'culling:error', message: 'Unauthorized room access.' }));
+                return;
+              }
+
+              // Prune dead/closed sockets
+              for (const s of Array.from(room.sockets)) {
+                if (s.readyState !== WebSocket.OPEN) {
+                  room.sockets.delete(s);
+                }
+              }
+
+              room.sockets.add(ws);
+              ws.cullingMatchId = room.match.id;
+
+              const yourColor =
+                effectiveUserId === room.match.whitePlayer.userId
+                  ? 'white'
+                  : effectiveUserId === room.match.blackPlayer.userId
+                  ? 'black'
+                  : undefined;
+
+              ws.send(JSON.stringify({ type: 'culling:state', match: room.match, yourColor }));
+            } else {
+              ws.send(JSON.stringify({ type: 'culling:error', message: 'Room not found.' }));
             }
-
-            room.sockets.add(ws);
-            ws.cullingMatchId = matchId;
-            const yourColor =
-              effectiveUserId === room.match.whitePlayer.userId
-                ? 'white'
-                : effectiveUserId === room.match.blackPlayer.userId
-                ? 'black'
-                : undefined;
-
-            ws.send(JSON.stringify({ type: 'culling:state', match: room.match, yourColor }));
             break;
           }
 
@@ -277,6 +305,7 @@ export function initCullingSocket(io: WebSocketServer) {
             const matchId = ws.cullingMatchId || msg.matchId;
             const room = rooms.get(matchId);
             if (!room) {
+              console.log(`[MOVE] Instance: ${SERVER_INSTANCE_ID} | Mode: culling | Room: ${matchId} | Sender: ${ws.userId} | Status: rejected (Room not found)`);
               ws.send(JSON.stringify({ type: 'culling:error', message: 'Match room not found.' }));
               return;
             }
@@ -288,6 +317,7 @@ export function initCullingSocket(io: WebSocketServer) {
             // Authoritative turn validation
             const match = room.match;
             if (match.status !== 'active') {
+              console.log(`[MOVE] Instance: ${SERVER_INSTANCE_ID} | Mode: culling | Room: ${matchId} | Sender: ${ws.userId} | Status: rejected (Match completed)`);
               ws.send(JSON.stringify({ type: 'culling:error', message: 'Match is already completed.' }));
               return;
             }
@@ -295,6 +325,7 @@ export function initCullingSocket(io: WebSocketServer) {
             const activeExpectedUserId = match.turn === 'white' ? match.whitePlayer.userId : match.blackPlayer.userId;
             const callingUserId = msg.userId || ws.userId;
             if (callingUserId && activeExpectedUserId && callingUserId !== activeExpectedUserId) {
+              console.log(`[MOVE] Instance: ${SERVER_INSTANCE_ID} | Mode: culling | Room: ${matchId} | Sender: ${callingUserId} | Turn: ${match.turn} | Expected: ${activeExpectedUserId} | Status: rejected (Not turn)`);
               ws.send(JSON.stringify({ type: 'culling:error', message: 'Not your turn.' }));
               return;
             }
@@ -302,6 +333,7 @@ export function initCullingSocket(io: WebSocketServer) {
             const res = executeCullingMove(match, from, to, actionType);
             if (res.success) {
               room.match = res.state;
+              console.log(`[MOVE] Instance: ${SERVER_INSTANCE_ID} | Mode: culling | Room: ${matchId} | Sender: ${callingUserId} | Turn: ${res.state.turn} | HistoryCount: ${res.state.history.length} | Status: accepted`);
               // Broadcast delta event + updated state
               broadcastRoom(matchId, {
                 type: 'culling:moved',
@@ -317,6 +349,7 @@ export function initCullingSocket(io: WebSocketServer) {
                 }, 60000);
               }
             } else {
+              console.log(`[MOVE] Instance: ${SERVER_INSTANCE_ID} | Mode: culling | Room: ${matchId} | Sender: ${callingUserId} | Turn: ${match.turn} | Status: rejected (${res.error || 'Illegal move'})`);
               ws.send(JSON.stringify({ type: 'culling:error', message: res.error || 'Illegal move.' }));
             }
             break;

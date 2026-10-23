@@ -43,7 +43,8 @@ export function useRoseRoom() {
       if (token) {
         ws.send(JSON.stringify({ type: 'auth', token }));
       }
-      // Request active open rooms for the lobby
+      // Request active room resync & list open rooms for lobby
+      ws.send(JSON.stringify({ type: 'rose:resync' }));
       ws.send(JSON.stringify({ type: 'rose:list_challenges' }));
       ws.send(JSON.stringify({ type: 'rose:list_rooms' }));
     };

@@ -37,6 +37,8 @@ interface ExtendedWebSocket extends WebSocket {
   isAlive?: boolean;
 }
 
+const SERVER_INSTANCE_ID = process.env.INSTANCE_ID || process.env.HOSTNAME || 'srv_1';
+
 export function initWebSocketServer(server: HttpServer) {
   const wss = new WebSocketServer({ server, path: '/ws' });
   initCullingSocket(wss);
@@ -53,7 +55,11 @@ export function initWebSocketServer(server: HttpServer) {
       const payload = JSON.stringify(data);
       for (const ws of sockets) {
         if (ws.readyState === WebSocket.OPEN) {
-          ws.send(payload);
+          try {
+            ws.send(payload);
+          } catch (sendErr) {
+            console.error(`[WS REJECTED SEND] Instance: ${SERVER_INSTANCE_ID} | User: ${userId} | Error:`, sendErr);
+          }
         }
       }
     }
@@ -65,7 +71,11 @@ export function initWebSocketServer(server: HttpServer) {
       const payload = JSON.stringify(data);
       for (const ws of sockets) {
         if (ws.readyState === WebSocket.OPEN) {
-          ws.send(payload);
+          try {
+            ws.send(payload);
+          } catch (sendErr) {
+            console.error(`[WS REJECTED SEND] Instance: ${SERVER_INSTANCE_ID} | Match: ${matchId} | Error:`, sendErr);
+          }
         }
       }
     }
@@ -76,16 +86,20 @@ export function initWebSocketServer(server: HttpServer) {
     const payload = JSON.stringify({ type: 'presence:update', onlineUserIds });
     for (const client of wss.clients) {
       if (client.readyState === WebSocket.OPEN) {
-        client.send(payload);
+        try {
+          client.send(payload);
+        } catch {}
       }
     }
   }
 
   wss.on('connection', (ws: ExtendedWebSocket) => {
     ws.isAlive = true;
+    console.log(`[WS CONNECT] Instance: ${SERVER_INSTANCE_ID} | Sockets: ${wss.clients.size}`);
 
     ws.on('pong', () => {
       ws.isAlive = true;
+      console.log(`[WS PING/PONG] Instance: ${SERVER_INSTANCE_ID} | User: ${ws.userId || 'unauth'}`);
     });
 
     ws.on('message', (message: string) => {
@@ -93,11 +107,12 @@ export function initWebSocketServer(server: HttpServer) {
         const data = JSON.parse(message.toString());
         handleMessage(ws, data);
       } catch (err) {
-        console.error('WebSocket message parsing error:', err);
+        console.error(`[WS UNCAUGHT ERROR] Instance: ${SERVER_INSTANCE_ID} | User: ${ws.userId} | Error:`, err);
       }
     });
 
-    ws.on('close', () => {
+    ws.on('close', (code, reason) => {
+      console.log(`[WS CLOSE] Instance: ${SERVER_INSTANCE_ID} | User: ${ws.userId || 'unauth'} | Code: ${code} | Reason: ${reason}`);
       if (ws.userId) {
         const set = userSockets.get(ws.userId);
         if (set) {
@@ -118,6 +133,10 @@ export function initWebSocketServer(server: HttpServer) {
           }
         }
       }
+    });
+
+    ws.on('error', (err) => {
+      console.error(`[WS ERROR] Instance: ${SERVER_INSTANCE_ID} | User: ${ws.userId || 'unauth'} | Error:`, err);
     });
   });
 
@@ -148,7 +167,7 @@ export function initWebSocketServer(server: HttpServer) {
         }
       }
       if (!matchId) return null;
-      if (!ws.matchId) {
+      if (!ws.matchId || !matchRooms.get(matchId)?.has(ws)) {
         ws.matchId = matchId;
         if (!matchRooms.has(matchId)) {
           matchRooms.set(matchId, new Set());
@@ -168,6 +187,23 @@ export function initWebSocketServer(server: HttpServer) {
             userSockets.set(userId, new Set());
           }
           userSockets.get(userId)!.add(ws);
+
+          // Auto-reassociate active match on reconnection
+          const activeMatch = Array.from(db.matches.values()).find(
+            (m) => m.status === 'active' && (m.whitePlayer.userId === userId || m.blackPlayer.userId === userId)
+          );
+          if (activeMatch) {
+            ws.matchId = activeMatch.id;
+            if (!matchRooms.has(activeMatch.id)) {
+              matchRooms.set(activeMatch.id, new Set());
+            }
+            matchRooms.get(activeMatch.id)!.add(ws);
+            ws.send(JSON.stringify({ type: 'match:state', match: activeMatch }));
+            console.log(`[WS RECONNECT/AUTH] Instance: ${SERVER_INSTANCE_ID} | Mode: standard | User: ${userId} | MatchReassociated: ${activeMatch.id}`);
+          } else {
+            console.log(`[WS RECONNECT/AUTH] Instance: ${SERVER_INSTANCE_ID} | Mode: standard | User: ${userId} | NoActiveMatch`);
+          }
+
           ws.send(JSON.stringify({ type: 'auth:success', userId }));
           broadcastPresence();
         } else {
@@ -412,6 +448,7 @@ export function initWebSocketServer(server: HttpServer) {
       case 'match:move': {
         const match = resolveMatch(data.matchId);
         if (!match || match.status !== 'active') {
+          console.log(`[MOVE] Instance: ${SERVER_INSTANCE_ID} | Mode: standard | Room: ${data.matchId} | Sender: ${ws.userId} | Status: rejected (Match not active)`);
           ws.send(JSON.stringify({ type: 'error', message: 'Match is not active' }));
           return;
         }
@@ -424,6 +461,7 @@ export function initWebSocketServer(server: HttpServer) {
             : null;
 
         if (userColor !== match.turn) {
+          console.log(`[MOVE] Instance: ${SERVER_INSTANCE_ID} | Mode: standard | Room: ${match.id} | Sender: ${ws.userId} | Turn: ${match.turn} | Status: rejected (Not turn)`);
           ws.send(JSON.stringify({ type: 'error', message: 'Not your turn to move' }));
           return;
         }
@@ -432,12 +470,14 @@ export function initWebSocketServer(server: HttpServer) {
         const result = executeMove(match, from, to);
 
         if (!result.success) {
+          console.log(`[MOVE] Instance: ${SERVER_INSTANCE_ID} | Mode: standard | Room: ${match.id} | Sender: ${ws.userId} | Turn: ${match.turn} | Status: rejected (${result.error || 'Invalid move'})`);
           ws.send(JSON.stringify({ type: 'error', message: result.error || 'Invalid move' }));
           return;
         }
 
         const updatedMatch = result.state;
         db.saveMatch(updatedMatch);
+        console.log(`[MOVE] Instance: ${SERVER_INSTANCE_ID} | Mode: standard | Room: ${match.id} | Sender: ${ws.userId} | Turn: ${updatedMatch.turn} | MoveCount: ${updatedMatch.moveHistory.length} | Status: accepted`);
 
         // If completed, update win/loss statistics
         if (updatedMatch.status === 'completed' && updatedMatch.result) {

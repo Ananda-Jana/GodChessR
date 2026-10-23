@@ -24,6 +24,8 @@ interface ExtendedSocket extends WebSocket {
   isAlive?: boolean;
 }
 
+const SERVER_INSTANCE_ID = process.env.INSTANCE_ID || process.env.HOSTNAME || 'srv_1';
+
 export function registerRoseSocket(wss: WebSocketServer) {
   const matchmakingQueue: { ws: ExtendedSocket; userId: string; role?: RoseRole; displayName: string; avatarId?: string }[] = [];
 
@@ -31,7 +33,11 @@ export function registerRoseSocket(wss: WebSocketServer) {
     const payload = JSON.stringify(data);
     for (const ws of room.sockets) {
       if (ws.readyState === WebSocket.OPEN) {
-        ws.send(payload);
+        try {
+          ws.send(payload);
+        } catch (sendErr) {
+          console.error(`[WS REJECTED SEND] Instance: ${SERVER_INSTANCE_ID} | Mode: rose | Room: ${room.match.id} | Error:`, sendErr);
+        }
       }
     }
   }
@@ -50,24 +56,29 @@ export function registerRoseSocket(wss: WebSocketServer) {
     });
     for (const client of wss.clients) {
       if (client.readyState === WebSocket.OPEN) {
-        client.send(payload);
-        client.send(challengesPayload);
+        try {
+          client.send(payload);
+          client.send(challengesPayload);
+        } catch {}
       }
     }
   }
 
   wss.on('connection', (ws: ExtendedSocket) => {
+    console.log(`[WS CONNECT] Instance: ${SERVER_INSTANCE_ID} | Mode: rose`);
+
     ws.on('message', (message: string) => {
       try {
         const data = JSON.parse(message.toString());
         if (!data.type || !data.type.startsWith('rose:')) return;
         handleRoseMessage(ws, data);
       } catch (err) {
-        console.error('Rose socket message error:', err);
+        console.error(`[WS UNCAUGHT ERROR] Instance: ${SERVER_INSTANCE_ID} | Mode: rose | Error:`, err);
       }
     });
 
-    ws.on('close', () => {
+    ws.on('close', (code, reason) => {
+      console.log(`[WS CLOSE] Instance: ${SERVER_INSTANCE_ID} | Mode: rose | User: ${ws.userId || 'unauth'} | Code: ${code} | Reason: ${reason}`);
       // Remove from matchmaking queue if waiting
       const qIdx = matchmakingQueue.findIndex((q) => q.ws === ws);
       if (qIdx !== -1) matchmakingQueue.splice(qIdx, 1);
@@ -111,6 +122,26 @@ export function registerRoseSocket(wss: WebSocketServer) {
       const { type, roomId, code, role, from, to, pieceType, text } = data;
       const user = resolveUser(ws, data);
       ws.userId = user.userId;
+
+      // Auto-reassociate socket with active Rose room for this user
+      if (!ws.roseRoomId) {
+        const activeRoomId = getUserActiveRoomId(user.userId);
+        if (activeRoomId) {
+          const room = getRoomById(activeRoomId);
+          if (room && room.match.status === 'active') {
+            ws.roseRoomId = room.match.id;
+            room.sockets.add(ws);
+            if (room.hostUserId === user.userId) {
+              room.hostWs = ws;
+            } else {
+              room.guestWs = ws;
+            }
+            const seat = getSeatByUserId(room.match, user.userId);
+            if (seat) seat.isConnected = true;
+            console.log(`[WS RECONNECT/AUTH] Instance: ${SERVER_INSTANCE_ID} | Mode: rose | User: ${user.userId} | MatchReassociated: ${room.match.id}`);
+          }
+        }
+      }
 
       switch (type) {
         case 'rose:list_challenges':
@@ -302,6 +333,7 @@ export function registerRoseSocket(wss: WebSocketServer) {
           const rId = ws.roseRoomId || roomId;
           const room = getRoomById(rId);
           if (!room || room.match.status !== 'active') {
+            console.log(`[MOVE] Instance: ${SERVER_INSTANCE_ID} | Mode: rose | Room: ${rId} | Sender: ${user.userId} | Status: rejected (Match not active)`);
             ws.send(JSON.stringify({ type: 'rose:error', message: 'Match is not active.' }));
             return;
           }
@@ -319,17 +351,20 @@ export function registerRoseSocket(wss: WebSocketServer) {
           }
 
           if (!seat || seat.color !== room.match.turn) {
+            console.log(`[MOVE] Instance: ${SERVER_INSTANCE_ID} | Mode: rose | Room: ${room.match.id} | Sender: ${user.userId} | Turn: ${room.match.turn} | Status: rejected (Not turn)`);
             ws.send(JSON.stringify({ type: 'rose:error', message: 'Not your turn.' }));
             return;
           }
 
           const res = applyRoseMove(room.match, from, to);
           if (!res.success || !res.state) {
+            console.log(`[MOVE] Instance: ${SERVER_INSTANCE_ID} | Mode: rose | Room: ${room.match.id} | Sender: ${user.userId} | Turn: ${room.match.turn} | Status: rejected (${res.error || 'Invalid move'})`);
             ws.send(JSON.stringify({ type: 'rose:error', message: res.error || 'Invalid move.' }));
             return;
           }
 
           room.match = res.state;
+          console.log(`[MOVE] Instance: ${SERVER_INSTANCE_ID} | Mode: rose | Room: ${room.match.id} | Sender: ${user.userId} | Turn: ${res.state.turn} | Status: accepted`);
           broadcastRoom(room, {
             type: 'rose:moved',
             match: room.match,

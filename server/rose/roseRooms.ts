@@ -21,13 +21,13 @@ const userActiveRoom = new Map<string, string>(); // userId -> roomId
 export function generateRoseCode(): string {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // Unambiguous characters
   for (let attempts = 0; attempts < 100; attempts++) {
-    let code = 'ROSE';
-    for (let i = 0; i < 3; i++) {
+    let code = 'ROSE-';
+    for (let i = 0; i < 6; i++) {
       code += chars.charAt(Math.floor(Math.random() * chars.length));
     }
     if (!roomsByCode.has(code)) return code;
   }
-  return `ROSE${Date.now().toString(36).slice(-3).toUpperCase()}`;
+  return `ROSE-${Date.now().toString(36).slice(-6).toUpperCase()}`;
 }
 
 export function normalizeRoseCode(rawCode: string): string {
@@ -118,7 +118,7 @@ export function createRoseRoom(
   };
 
   rooms.set(roomId, room);
-  roomsByCode.set(code.toUpperCase(), roomId);
+  roomsByCode.set(normalizeRoseCode(code), roomId);
   userActiveRoom.set(hostUserId, roomId);
   return room;
 }
@@ -225,7 +225,7 @@ export function getUserActiveRoomId(userId: string): string | undefined {
 export function destroyRoom(roomId: string) {
   const room = rooms.get(roomId);
   if (room) {
-    roomsByCode.delete(room.match.code.toUpperCase());
+    roomsByCode.delete(normalizeRoseCode(room.match.code));
     if (room.match.whiteSeat) userActiveRoom.delete(room.match.whiteSeat.userId);
     if (room.match.blackSeat) userActiveRoom.delete(room.match.blackSeat.userId);
     userActiveRoom.delete(room.hostUserId);

@@ -66,77 +66,102 @@ export const CullingModeEntry: React.FC<CullingModeEntryProps> = ({ onBack }) =>
   const [socket, setSocket] = useState<WebSocket | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
 
+  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
   // Initialize single robust WebSocket connection for Culling Mode
   useEffect(() => {
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const wsUrl = `${protocol}//${window.location.host}/ws`;
-    const ws = new WebSocket(wsUrl);
-    wsRef.current = ws;
-    setSocket(ws);
+    let isMounted = true;
 
-    ws.onopen = () => {
-      if (token) {
-        ws.send(JSON.stringify({ type: 'auth', token }));
-      }
-      ws.send(JSON.stringify({ type: 'culling:list_challenges' }));
-    };
+    const connectSocket = () => {
+      if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) return;
 
-    ws.onmessage = (event) => {
-      try {
-        const msg = JSON.parse(event.data);
+      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      const wsUrl = `${protocol}//${window.location.host}/ws`;
+      const ws = new WebSocket(wsUrl);
+      wsRef.current = ws;
+      setSocket(ws);
 
-        if (msg.type === 'culling:challenge_created') {
-          setHostedCode(msg.code);
-          setIsCreatingChallenge(false);
-          setStatusMessage('Waiting for opponent to join...');
-          setErrorMessage(null);
-        } else if (msg.type === 'culling:challenges_list') {
-          setPublicChallenges(msg.challenges || []);
-        } else if (msg.type === 'culling:challenge_cancelled') {
-          setHostedCode(null);
-          setIsCreatingChallenge(false);
-          setStatusMessage(null);
-        } else if (msg.type === 'culling:match_started' && msg.match) {
-          const match: CullingMatchState = msg.match;
-          // Exact color assignment: prefer explicit yourColor from server
-          const assignedColor: CullingPieceColor =
-            msg.yourColor || (match.whitePlayer.userId === user?.id ? 'white' : 'black');
-
-          setStatusMessage('Opponent joined! Launching game...');
-          setIsJoiningChallenge(false);
-          setIsCreatingChallenge(false);
-          setHostedCode(null);
-
-          // Brief smooth transition
-          setTimeout(() => {
-            setIsBotMatch(false);
-            setUserColor(assignedColor);
-            setActiveMatch(match);
-            setStatusMessage(null);
-          }, 300);
-        } else if (msg.type === 'culling:error') {
-          setErrorMessage(msg.message || 'Operation failed');
-          setIsJoiningChallenge(false);
-          setIsCreatingChallenge(false);
-          setStatusMessage(null);
+      ws.onopen = () => {
+        if (token) {
+          ws.send(JSON.stringify({ type: 'auth', token }));
         }
-      } catch (err) {
-        console.error('Socket message parse error:', err);
-      }
+        if (activeMatchRef.current) {
+          ws.send(
+            JSON.stringify({
+              type: 'culling:resync',
+              matchId: activeMatchRef.current.id,
+              userId: user?.id,
+            })
+          );
+        } else {
+          ws.send(JSON.stringify({ type: 'culling:list_challenges' }));
+        }
+      };
+
+      ws.onmessage = (event) => {
+        try {
+          const msg = JSON.parse(event.data);
+
+          if (msg.type === 'culling:challenge_created') {
+            setHostedCode(msg.code);
+            setIsCreatingChallenge(false);
+            setStatusMessage('Waiting for opponent to join...');
+            setErrorMessage(null);
+          } else if (msg.type === 'culling:challenges_list') {
+            setPublicChallenges(msg.challenges || []);
+          } else if (msg.type === 'culling:challenge_cancelled') {
+            setHostedCode(null);
+            setIsCreatingChallenge(false);
+            setStatusMessage(null);
+          } else if (msg.type === 'culling:match_started' && msg.match) {
+            const match: CullingMatchState = msg.match;
+            const assignedColor: CullingPieceColor =
+              msg.yourColor || (match.whitePlayer.userId === user?.id ? 'white' : 'black');
+
+            setStatusMessage('Opponent joined! Launching game...');
+            setIsJoiningChallenge(false);
+            setIsCreatingChallenge(false);
+            setHostedCode(null);
+
+            setTimeout(() => {
+              setIsBotMatch(false);
+              setUserColor(assignedColor);
+              setActiveMatch(match);
+              setStatusMessage(null);
+            }, 300);
+          } else if (msg.type === 'culling:error') {
+            setErrorMessage(msg.message || 'Operation failed');
+            setIsJoiningChallenge(false);
+            setIsCreatingChallenge(false);
+            setStatusMessage(null);
+          }
+        } catch (err) {
+          console.error('Socket message parse error:', err);
+        }
+      };
+
+      ws.onerror = () => {
+        setIsJoiningChallenge(false);
+        setIsCreatingChallenge(false);
+      };
+
+      ws.onclose = () => {
+        setIsJoiningChallenge(false);
+        setIsCreatingChallenge(false);
+        wsRef.current = null;
+        if (isMounted) {
+          reconnectTimeoutRef.current = setTimeout(connectSocket, 3000);
+        }
+      };
     };
 
-    ws.onerror = () => {
-      setIsJoiningChallenge(false);
-      setIsCreatingChallenge(false);
-    };
-
-    ws.onclose = () => {
-      setIsJoiningChallenge(false);
-      setIsCreatingChallenge(false);
-    };
+    connectSocket();
 
     return () => {
-      // Clean up when unmounting CullingModeEntry entirely back to dashboard
+      isMounted = false;
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current);
+      }
       if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN && !activeMatchRef.current) {
         wsRef.current.close();
       }

@@ -66,6 +66,12 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       try {
         const msg = JSON.parse(event.data);
         switch (msg.type) {
+          case 'auth:success':
+            if (activeMatch?.id) {
+              send({ type: 'match:join', matchId: activeMatch.id });
+            }
+            break;
+
           case 'presence:update':
             setOnlineUserIds(msg.onlineUserIds || []);
             break;
