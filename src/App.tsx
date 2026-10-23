@@ -12,6 +12,7 @@ import { BotMatchModal } from './components/BotMatchModal';
 import { PopupAd } from './components/PopupAd';
 import { CraftTheoryView } from './components/CraftTheoryView';
 import { RoseParadiseView } from './rose/RoseParadiseView';
+import { HashiraTrainingView } from './training/HashiraTrainingView';
 import {
   MatchState,
   PieceColor,
@@ -57,6 +58,7 @@ function AppContent() {
   const [isBotModalOpen, setIsBotModalOpen] = useState(false);
   const [showCraftTheory, setShowCraftTheory] = useState(false);
   const [isRoseOpen, setIsRoseOpen] = useState(false);
+  const [isHashiraTrainingOpen, setIsHashiraTrainingOpen] = useState(false);
   const [botInitialGameMode, setBotInitialGameMode] = useState<'standard' | 'crafted'>('standard');
 
   // Last completed game review state (retained for 10 minutes then auto-flushed)
@@ -486,6 +488,10 @@ function AppContent() {
     return <RoseParadiseView onBack={() => setIsRoseOpen(false)} />;
   }
 
+  if (isHashiraTrainingOpen) {
+    return <HashiraTrainingView onBack={() => setIsHashiraTrainingOpen(false)} />;
+  }
+
   const activeGame = botMatch || socketMatch;
 
   return (
@@ -518,6 +524,7 @@ function AppContent() {
           }}
           onOpenCraftTheory={() => setShowCraftTheory(true)}
           onOpenRose={() => setIsRoseOpen(true)}
+          onOpenHashiraTraining={() => setIsHashiraTrainingOpen(true)}
           lastCompletedMatch={lastCompletedMatch}
           onClearLastGame={() => {
             setLastCompletedMatch(null);

@@ -158,8 +158,9 @@ export const MatchView: React.FC<MatchViewProps> = ({
 
   const [showEndGameNotice, setShowEndGameNotice] = useState(!isCheckmate);
 
-  const { observeMoveAction, finalizeMatch } = usePredictor();
+  const { observeMoveAction, finalizeMatch, latestMatchCards } = usePredictor();
   const [earnedMatchCards, setEarnedMatchCards] = useState<AchievementCard[]>([]);
+  const displayMatchCards = earnedMatchCards.length > 0 ? earnedMatchCards : latestMatchCards;
   const [isMatchTrophyRoomOpen, setIsMatchTrophyRoomOpen] = useState(false);
   const [selectedTrophyCard, setSelectedTrophyCard] = useState<AchievementCard | null>(null);
   const hasFinalizedRef = useRef(false);
@@ -911,7 +912,12 @@ export const MatchView: React.FC<MatchViewProps> = ({
 
                 <div className="flex flex-wrap items-center gap-2">
                   <button
-                    onClick={() => setIsMatchTrophyRoomOpen(true)}
+                    onClick={() => {
+                      if (displayMatchCards.length > 0) {
+                        setSelectedTrophyCard(displayMatchCards[0]);
+                      }
+                      setIsMatchTrophyRoomOpen(true);
+                    }}
                     className="w-full sm:w-auto py-2 px-3 bg-amber-400 hover:bg-amber-300 text-black font-black text-xs uppercase tracking-wider border-2 border-black shadow-[2px_2px_0px_#000] cursor-pointer shrink-0 flex items-center justify-center gap-1.5"
                   >
                     <Trophy className="w-4 h-4 text-black" />
@@ -926,14 +932,14 @@ export const MatchView: React.FC<MatchViewProps> = ({
                 </div>
               </div>
 
-              {earnedMatchCards.length > 0 && (
+              {displayMatchCards.length > 0 && (
                 <div className="mt-2 pt-2 border-t border-black/20 dark:border-white/20">
                   <div className="text-[11px] font-black uppercase text-black dark:text-white mb-2 flex items-center gap-1.5">
                     <Sparkles className="w-4 h-4 text-amber-300" />
                     Earned Achievement Badges (Click badge to inspect & download)
                   </div>
                   <div className="flex flex-wrap items-center gap-2">
-                    {earnedMatchCards.map((card) => (
+                    {displayMatchCards.map((card) => (
                       <div
                         key={card.id}
                         onClick={() => {

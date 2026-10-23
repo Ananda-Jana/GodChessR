@@ -205,8 +205,9 @@ export const RoseParadiseView: React.FC<RoseParadiseViewProps> = ({ onBack }) =>
 
   const isInCheck = checkDetails.inCheck;
 
-  const { observeMoveAction, finalizeMatch } = usePredictor();
+  const { observeMoveAction, finalizeMatch, latestMatchCards } = usePredictor();
   const [earnedRoseCards, setEarnedRoseCards] = useState<AchievementCard[]>([]);
+  const displayRoseCards = earnedRoseCards.length > 0 ? earnedRoseCards : latestMatchCards;
   const [isRoseTrophyRoomOpen, setIsRoseTrophyRoomOpen] = useState(false);
   const [selectedRoseCard, setSelectedRoseCard] = useState<AchievementCard | null>(null);
   const hasRoseFinalizedRef = useRef(false);
@@ -1401,7 +1402,7 @@ export const RoseParadiseView: React.FC<RoseParadiseViewProps> = ({ onBack }) =>
                       Earned Rose Badges (Click badge to inspect & download)
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
-                      {earnedRoseCards.map((card) => (
+                      {displayRoseCards.map((card) => (
                         <div
                           key={card.id}
                           onClick={() => {
@@ -1423,7 +1424,12 @@ export const RoseParadiseView: React.FC<RoseParadiseViewProps> = ({ onBack }) =>
 
                 <div className="flex flex-col sm:flex-row gap-2 w-full">
                   <button
-                    onClick={() => setIsRoseTrophyRoomOpen(true)}
+                    onClick={() => {
+                      if (displayRoseCards.length > 0) {
+                        setSelectedRoseCard(displayRoseCards[0]);
+                      }
+                      setIsRoseTrophyRoomOpen(true);
+                    }}
                     className="flex-1 py-3 px-4 bg-amber-400 hover:bg-amber-300 text-black font-black text-xs uppercase border-2 border-black shadow-[2px_2px_0px_#000] cursor-pointer flex items-center justify-center gap-1.5"
                   >
                     <Trophy className="w-4 h-4 text-black" />

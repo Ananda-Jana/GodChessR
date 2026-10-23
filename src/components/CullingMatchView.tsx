@@ -117,8 +117,9 @@ export const CullingMatchView: React.FC<CullingMatchViewProps> = ({
   const botTimerRef = useRef<NodeJS.Timeout | null>(null);
   const toastTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  const { observeMoveAction, finalizeMatch } = usePredictor();
+  const { observeMoveAction, finalizeMatch, latestMatchCards } = usePredictor();
   const [earnedCullingCards, setEarnedCullingCards] = useState<AchievementCard[]>([]);
+  const displayCullingCards = earnedCullingCards.length > 0 ? earnedCullingCards : latestMatchCards;
   const [isCullingTrophyRoomOpen, setIsCullingTrophyRoomOpen] = useState(false);
   const [selectedCullingCard, setSelectedCullingCard] = useState<AchievementCard | null>(null);
   const hasCullingFinalizedRef = useRef(false);
@@ -554,14 +555,14 @@ export const CullingMatchView: React.FC<CullingMatchViewProps> = ({
               <p className="text-xs font-bold text-red-100 bg-red-700/80 border border-red-500 px-3 py-1.5 mb-4 w-full">
                 {match.winReason || 'Game Finished'}
               </p>
-              {earnedCullingCards.length > 0 && (
+              {displayCullingCards.length > 0 && (
                 <div className="w-full bg-[#0f172a] border-2 border-amber-400 p-2.5 mb-4 text-left">
                   <div className="text-[10px] font-black uppercase text-amber-400 mb-1.5 flex items-center gap-1">
                     <Sparkles className="w-3.5 h-3.5 text-amber-400" />
                     Earned Culling Badges (Click badge to inspect & download)
                   </div>
                   <div className="flex flex-wrap items-center gap-2">
-                    {earnedCullingCards.map((card) => (
+                    {displayCullingCards.map((card) => (
                       <div
                         key={card.id}
                         onClick={() => {
@@ -583,7 +584,12 @@ export const CullingMatchView: React.FC<CullingMatchViewProps> = ({
 
               <div className="flex flex-col gap-2 w-full">
                 <button
-                  onClick={() => setIsCullingTrophyRoomOpen(true)}
+                  onClick={() => {
+                    if (displayCullingCards.length > 0) {
+                      setSelectedCullingCard(displayCullingCards[0]);
+                    }
+                    setIsCullingTrophyRoomOpen(true);
+                  }}
                   className="w-full py-2 bg-amber-400 hover:bg-amber-300 text-black font-black text-xs uppercase border-2 border-black shadow-[2px_2px_0px_#000] cursor-pointer flex items-center justify-center gap-1.5"
                 >
                   <Trophy className="w-4 h-4 text-black" />

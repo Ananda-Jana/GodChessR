@@ -18,6 +18,8 @@ interface CullingBoardProps {
   onMove: (from: CullingPos, to: CullingPos, actionType?: string) => void;
   flipped?: boolean;
   onPieceClick?: (piece: { type: string; color: string; pos?: CullingPos }) => void;
+  pulseGuide?: { from?: CullingPos; to?: CullingPos };
+  maxDimension?: number;
 }
 
 export const CullingBoard: React.FC<CullingBoardProps> = ({
@@ -27,6 +29,8 @@ export const CullingBoard: React.FC<CullingBoardProps> = ({
   onMove,
   flipped = false,
   onPieceClick,
+  pulseGuide,
+  maxDimension,
 }) => {
   const [selectedPos, setSelectedPos] = useState<CullingPos | null>(null);
 
@@ -93,11 +97,19 @@ export const CullingBoard: React.FC<CullingBoardProps> = ({
 
   return (
     <div
-      className="relative p-1 sm:p-2 rounded-xl border-3 sm:border-4 border-black dark:border-white shadow-[4px_4px_0px_#000000] dark:shadow-[4px_4px_0px_#ffffff] select-none touch-manipulation max-w-full overflow-hidden shrink-0"
-      style={{ backgroundColor: '#e11d48' }}
+      className="relative p-1 sm:p-2 rounded-xl border-3 sm:border-4 border-black dark:border-white shadow-[4px_4px_0px_#000000] dark:shadow-[4px_4px_0px_#ffffff] select-none touch-manipulation max-w-full overflow-hidden shrink-0 flex items-center justify-center"
+      style={{
+        backgroundColor: '#e11d48',
+        ...(maxDimension ? { width: `${maxDimension + 14}px`, height: `${maxDimension + 14}px`, maxWidth: '100%', maxHeight: '100%' } : {}),
+      }}
     >
       {/* 10x10 Cross-Shaped Board Grid: Rock-Solid Dimensions Anchored to Viewport */}
-      <div className="grid grid-cols-10 grid-rows-10 border-2 border-black/40 dark:border-white/20 bg-transparent w-[min(calc(100dvh-150px),calc(100vw-18px),540px)] h-[min(calc(100dvh-150px),calc(100vw-18px),540px)] lg:w-[min(calc(100dvh-140px),620px)] lg:h-[min(calc(100dvh-140px),620px)] aspect-square touch-manipulation select-none">
+      <div
+        className={`grid grid-cols-10 grid-rows-10 border-2 border-black/40 dark:border-white/20 bg-transparent aspect-square touch-manipulation select-none ${
+          maxDimension ? '' : 'w-[min(calc(100dvh-150px),calc(100vw-18px),540px)] h-[min(calc(100dvh-150px),calc(100vw-18px),540px)] lg:w-[min(calc(100dvh-140px),620px)] lg:h-[min(calc(100dvh-140px),620px)]'
+        }`}
+        style={maxDimension ? { width: `${maxDimension}px`, height: `${maxDimension}px` } : undefined}
+      >
         {rowIndices.map((y) =>
           colIndices.map((x) => {
             const isPlayable = isValidCullingPos(x, y);
@@ -156,6 +168,8 @@ export const CullingBoard: React.FC<CullingBoardProps> = ({
             }
 
             const squareLabel = posToCullingSquare({ x, y });
+            const isGuideFrom = pulseGuide?.from && pulseGuide.from.x === x && pulseGuide.from.y === y;
+            const isGuideTo = pulseGuide?.to && pulseGuide.to.x === x && pulseGuide.to.y === y;
 
             return (
               <div
@@ -169,6 +183,14 @@ export const CullingBoard: React.FC<CullingBoardProps> = ({
                 } ${
                   isCheckSquare
                     ? 'ring-3 ring-red-600 bg-red-600/40 animate-pulse z-20 shadow-[0_0_20px_#ef4444]'
+                    : ''
+                } ${
+                  isGuideFrom
+                    ? 'ring-3 ring-amber-400 bg-amber-400/40 animate-pulse z-30 shadow-[0_0_18px_#f59e0b]'
+                    : ''
+                } ${
+                  isGuideTo
+                    ? 'ring-3 ring-amber-400 border-2 border-dashed border-amber-300 bg-amber-400/25 animate-pulse z-30 shadow-[0_0_18px_#f59e0b]'
                     : ''
                 }`}
                 title={squareLabel}

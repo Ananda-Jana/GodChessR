@@ -7,6 +7,7 @@ import type { AchievementCard, GameModeKey, MatchSessionStats, PlayerActionObser
 import { calculateMoveRatingUpdate, evaluateMoveQuality, INITIAL_BASELINE_RATING, applyMatchResultAdjustment } from './ratingEngine';
 import { evaluateEarnedCards } from './cardDefs';
 import type { PieceColor } from '../types/game';
+import { useAuth } from '../context/AuthContext';
 
 interface PredictorContextValue {
   state: PredictorState;
@@ -25,8 +26,6 @@ interface PredictorContextValue {
   clearLatestMatchCards: () => void;
 }
 
-const STORAGE_KEY = 'mugenchessx_predictor_session_v1';
-
 const defaultState: PredictorState = {
   currentRating: INITIAL_BASELINE_RATING,
   sessionGamesPlayed: 0,
@@ -40,41 +39,78 @@ const defaultState: PredictorState = {
 const PredictorContext = createContext<PredictorContextValue | undefined>(undefined);
 
 export function PredictorProvider({ children }: { children: React.ReactNode }) {
-  const [state, setState] = useState<PredictorState>(() => {
-    try {
-      const saved = sessionStorage.getItem(STORAGE_KEY);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (parsed && typeof parsed.currentRating === 'number') {
-          return parsed;
-        }
-      }
-    } catch {
-      // Fall back to default
-    }
-    return defaultState;
-  });
+  const { user } = useAuth();
+  const currentUserId = user?.id || 'guest';
+  const prevUserIdRef = useRef<string | null>(null);
 
+  const [state, setState] = useState<PredictorState>(() => defaultState);
+  const stateRef = useRef<PredictorState>(defaultState);
+  stateRef.current = state;
   const [latestMatchCards, setLatestMatchCards] = useState<AchievementCard[]>([]);
 
   // Track processed action IDs to prevent double-counting
   const processedActionIds = useRef<Set<string>>(new Set());
 
-  // Sync state to sessionStorage
+  // Handle active user switches, new registrations, or logouts
   useEffect(() => {
+    // Always clear legacy un-scoped session keys
     try {
-      sessionStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      sessionStorage.removeItem('mugenchessx_predictor_session_v1');
+    } catch {
+      // Ignore
+    }
+
+    if (prevUserIdRef.current !== currentUserId) {
+      processedActionIds.current.clear();
+      setLatestMatchCards([]);
+
+      if (currentUserId && currentUserId !== 'guest') {
+        const userKey = `mugenchessx_predictor_user_${currentUserId}`;
+        try {
+          const saved = sessionStorage.getItem(userKey);
+          if (saved) {
+            const parsed = JSON.parse(saved);
+            if (parsed && typeof parsed.currentRating === 'number') {
+              setState(parsed);
+              prevUserIdRef.current = currentUserId;
+              return;
+            }
+          }
+        } catch {
+          // Ignore parse errors
+        }
+      }
+
+      // Default pristine state for guest / newly registered user
+      setState(defaultState);
+      prevUserIdRef.current = currentUserId;
+    }
+  }, [currentUserId]);
+
+  // Sync current state to user-scoped storage
+  useEffect(() => {
+    if (!currentUserId || currentUserId === 'guest') return;
+    const userKey = `mugenchessx_predictor_user_${currentUserId}`;
+    try {
+      sessionStorage.setItem(userKey, JSON.stringify(state));
     } catch {
       // Ignore storage errors
     }
-  }, [state]);
+  }, [state, currentUserId]);
 
   const clearPredictorSession = useCallback(() => {
-    sessionStorage.removeItem(STORAGE_KEY);
+    try {
+      sessionStorage.removeItem('mugenchessx_predictor_session_v1');
+      if (currentUserId && currentUserId !== 'guest') {
+        sessionStorage.removeItem(`mugenchessx_predictor_user_${currentUserId}`);
+      }
+    } catch {
+      // Ignore
+    }
     processedActionIds.current.clear();
     setState(defaultState);
     setLatestMatchCards([]);
-  }, []);
+  }, [currentUserId]);
 
   const clearLatestMatchCards = useCallback(() => {
     setLatestMatchCards([]);
@@ -143,70 +179,69 @@ export function PredictorProvider({ children }: { children: React.ReactNode }) {
       opponentName: string,
       opponentDifficulty?: 'grandmaster' | 'master' | 'pvp_human' | 'couples_partner'
     ): AchievementCard[] => {
-      let newlyEarned: AchievementCard[] = [];
+      const currentState = stateRef.current;
 
-      setState((prev) => {
-        // Apply final match result rating adjustment
-        const { finalRating, resultDelta } = applyMatchResultAdjustment(
-          prev.currentRating,
+      // Apply final match result rating adjustment synchronously
+      const { finalRating, resultDelta } = applyMatchResultAdjustment(
+        currentState.currentRating,
+        outcome,
+        metrics,
+        opponentDifficulty
+      );
+
+      // Evaluate earned cards synchronously
+      const cardDefs = evaluateEarnedCards(
+        mode,
+        metrics,
+        outcome,
+        finalRating,
+        resultDelta,
+        matchId
+      );
+
+      const newlyEarned: AchievementCard[] = cardDefs.map((def) => ({
+        id: `${def.id}_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+        title: def.title,
+        mode: def.mode,
+        modeLabel: def.modeLabel,
+        rarity: def.rarity,
+        description: def.description,
+        highlight: def.getHighlight(metrics, finalRating),
+        predictedRating: finalRating,
+        ratingDelta: resultDelta,
+        motifSymbol: def.motifSymbol,
+        accentColor: def.accentColor,
+        pieceType: def.pieceType || 'king',
+        pieceColor: def.pieceColor || 'white',
+        earnedAt: Date.now(),
+        matchId,
+        statsSummary: {
+          movesCount: metrics.turnsSurvived,
+          captures: metrics.capturesMade,
+          specialActions: metrics.specialActionsCount,
           outcome,
-          metrics,
-          opponentDifficulty
-        );
+        },
+      }));
 
-        // Evaluate earned cards
-        const cardDefs = evaluateEarnedCards(
-          mode,
-          metrics,
-          outcome,
-          finalRating,
-          resultDelta,
-          matchId
-        );
+      const wins = outcome === 'win' ? currentState.wins + 1 : currentState.wins;
+      const losses = outcome === 'loss' ? currentState.losses + 1 : currentState.losses;
+      const draws = outcome === 'draw' ? currentState.draws + 1 : currentState.draws;
 
-        newlyEarned = cardDefs.map((def) => ({
-          id: `${def.id}_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
-          title: def.title,
-          mode: def.mode,
-          modeLabel: def.modeLabel,
-          rarity: def.rarity,
-          description: def.description,
-          highlight: def.getHighlight(metrics, finalRating),
-          predictedRating: finalRating,
-          ratingDelta: resultDelta,
-          motifSymbol: def.motifSymbol,
-          accentColor: def.accentColor,
-          pieceType: def.pieceType || 'king',
-          pieceColor: def.pieceColor || 'white',
-          earnedAt: Date.now(),
-          matchId,
-          statsSummary: {
-            movesCount: metrics.turnsSurvived,
-            captures: metrics.capturesMade,
-            specialActions: metrics.specialActionsCount,
-            outcome,
-          },
-        }));
+      const updatedCards = [...newlyEarned, ...currentState.earnedCards];
 
-        const wins = outcome === 'win' ? prev.wins + 1 : prev.wins;
-        const losses = outcome === 'loss' ? prev.losses + 1 : prev.losses;
-        const draws = outcome === 'draw' ? prev.draws + 1 : prev.draws;
+      const nextState: PredictorState = {
+        ...currentState,
+        currentRating: finalRating,
+        sessionGamesPlayed: currentState.sessionGamesPlayed + 1,
+        wins,
+        losses,
+        draws,
+        earnedCards: updatedCards,
+        activeMatchStats: null,
+      };
 
-        // Deduplicate card titles in session collection
-        const updatedCards = [...newlyEarned, ...prev.earnedCards];
-
-        return {
-          ...prev,
-          currentRating: finalRating,
-          sessionGamesPlayed: prev.sessionGamesPlayed + 1,
-          wins,
-          losses,
-          draws,
-          earnedCards: updatedCards,
-          activeMatchStats: null,
-        };
-      });
-
+      stateRef.current = nextState;
+      setState(nextState);
       setLatestMatchCards(newlyEarned);
       return newlyEarned;
     },

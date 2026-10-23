@@ -109,6 +109,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         headers: { Authorization: `Bearer ${token}` },
       }).catch(() => {});
     }
+    try {
+      sessionStorage.clear();
+    } catch {
+      // Ignore
+    }
     localStorage.removeItem('dice_chess_token');
     setToken(null);
     setUser(null);

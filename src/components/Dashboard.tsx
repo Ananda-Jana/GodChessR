@@ -23,6 +23,7 @@ import {
   Sun,
   Moon,
   Palette,
+  Flame,
 } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 import { posToNotation } from '../game/engine';
@@ -35,6 +36,7 @@ interface DashboardProps {
   onOpenCraftedBotModal?: () => void;
   onOpenCraftTheory: () => void;
   onOpenRose?: () => void;
+  onOpenHashiraTraining?: () => void;
   lastCompletedMatch?: { match: MatchState; completedAt: number } | null;
   onClearLastGame?: () => void;
 }
@@ -45,6 +47,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
   onOpenCraftedBotModal,
   onOpenCraftTheory,
   onOpenRose,
+  onOpenHashiraTraining,
   lastCompletedMatch,
   onClearLastGame,
 }) => {
@@ -489,6 +492,36 @@ export const Dashboard: React.FC<DashboardProps> = ({
               <span>{sentNotice}</span>
             </div>
           )}
+
+          {/* FEATURE BANNER: CHESS HASHIRA TRAINING */}
+          <div className="bg-gradient-to-r from-yellow-950 via-neutral-900 to-black text-white border-4 border-amber-400 p-4 sm:p-5 shadow-[6px_6px_0px_#eab308] flex flex-col sm:flex-row sm:items-center justify-between gap-4 relative overflow-hidden">
+            <div className="flex items-center gap-3.5 relative z-10">
+              <div className="w-12 h-12 bg-amber-400 border-2 border-black flex items-center justify-center text-black shrink-0 shadow-[2px_2px_0px_#000]">
+                <Flame className="w-7 h-7 text-black fill-black" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h3 className="text-sm sm:text-base font-black uppercase text-amber-400 tracking-wide">
+                    Chess Hashira Training · 鬼殺チェス柱稽古
+                  </h3>
+                  <span className="text-[10px] px-1.5 py-0.5 bg-amber-400 text-black font-black uppercase">
+                    6 Martial Tiers
+                  </span>
+                </div>
+                <p className="text-xs font-bold text-neutral-300 mt-0.5">
+                  Train under Sensei Gensei across Opening, Tactical & Culling Dojos. Practice sparring, earn authentic badges, and ascend to the Hashira Pillar!
+                </p>
+              </div>
+            </div>
+
+            <button
+              onClick={onOpenHashiraTraining}
+              className="py-3 px-5 bg-amber-400 hover:bg-amber-300 text-black font-black text-xs sm:text-sm uppercase tracking-wider border-2 border-black shadow-[3px_3px_0px_#000000] flex items-center justify-center gap-2 shrink-0 cursor-pointer active:translate-x-0.5 active:translate-y-0.5"
+            >
+              <Swords className="w-4 h-4" />
+              Enter Hashira Dojo
+            </button>
+          </div>
 
           {/* Instant Grandmaster Bot Challenge Card */}
           <div className="bg-amber-400 text-black border-4 border-black p-4 sm:p-5 shadow-[6px_6px_0px_#000000] flex flex-col sm:flex-row sm:items-center justify-between gap-4">

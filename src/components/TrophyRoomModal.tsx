@@ -29,23 +29,44 @@ export const TrophyRoomModal: React.FC<TrophyRoomModalProps> = ({
   const [filterRarity, setFilterRarity] = useState<CardRarity | 'all'>('all');
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
+  // Synchronize selected card when modal opens or cards change
   useEffect(() => {
+    if (!isOpen) return;
+
     if (initialSelectedCard) {
       setSelectedCard(initialSelectedCard);
-    } else if (state.earnedCards.length > 0 && !selectedCard) {
-      setSelectedCard(state.earnedCards[0]);
-    }
-  }, [initialSelectedCard, state.earnedCards]);
-
-  // Render selected 1:1 square card to canvas
-  useEffect(() => {
-    if (selectedCard && canvasRef.current) {
-      const ctx = canvasRef.current.getContext('2d');
-      if (ctx) {
-        drawAchievementCard(ctx, selectedCard);
+    } else if (state.earnedCards.length > 0) {
+      if (!selectedCard || !state.earnedCards.some((c) => c.id === selectedCard.id)) {
+        setSelectedCard(state.earnedCards[0]);
       }
     }
-  }, [selectedCard]);
+  }, [isOpen, initialSelectedCard, state.earnedCards]);
+
+  // Render selected 1:1 square card to canvas with guaranteed mount visibility
+  useEffect(() => {
+    if (!isOpen || !selectedCard) return;
+
+    let animId: number;
+    let timeoutId: NodeJS.Timeout;
+
+    const render = () => {
+      if (canvasRef.current && selectedCard) {
+        const ctx = canvasRef.current.getContext('2d');
+        if (ctx) {
+          drawAchievementCard(ctx, selectedCard);
+        }
+      }
+    };
+
+    render();
+    animId = requestAnimationFrame(render);
+    timeoutId = setTimeout(render, 60);
+
+    return () => {
+      cancelAnimationFrame(animId);
+      clearTimeout(timeoutId);
+    };
+  }, [isOpen, selectedCard]);
 
   if (!isOpen) return null;
 

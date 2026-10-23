@@ -306,6 +306,66 @@ export const CARD_DEFINITIONS: CardDefinition[] = [
     condition: (stats) => stats.turnsSurvived >= 4,
     getHighlight: (stats, rating) => `Rating: ${rating} · Heartbound Strategist`,
   },
+
+  // ==========================================
+  // E. CONCESSION & SPORTSMANSHIP APPRECIATION CARDS
+  // ==========================================
+  {
+    id: 'standard_honorable_concession',
+    title: 'Honorable Concession',
+    mode: 'standard',
+    modeLabel: 'EARNED IN: STANDARD CHESS',
+    rarity: 'Common',
+    description: 'Conceded the match with sporting honor and respect. In chess, knowing when to yield and learn is the hallmark of a true grandmaster.',
+    motifSymbol: '♔',
+    accentColor: '#F59E0B',
+    pieceType: 'king',
+    pieceColor: 'white',
+    condition: (_stats, outcome) => outcome === 'loss',
+    getHighlight: (_stats, rating) => `Rating: ${rating} · Honorable Sportsmanship`,
+  },
+  {
+    id: 'crafted_tactical_concession',
+    title: 'Tactical Concession',
+    mode: 'crafted',
+    modeLabel: 'EARNED IN: CRAFTED CHESS',
+    rarity: 'Common',
+    description: 'Conceded the crafted battlefield with tactical composure. Returning to the workshop to forge new strategic combinations.',
+    motifSymbol: '♜',
+    accentColor: '#06B6D4',
+    pieceType: 'supremeRook',
+    pieceColor: 'white',
+    condition: (_stats, outcome) => outcome === 'loss',
+    getHighlight: (_stats, rating) => `Rating: ${rating} · Workshop Concession`,
+  },
+  {
+    id: 'culling_domain_retreat',
+    title: 'Tactical Domain Retreat',
+    mode: 'culling',
+    modeLabel: 'EARNED IN: CULLING GAME',
+    rarity: 'Common',
+    description: 'Strategically conceded the domain encounter to preserve cursed energy and refine domain control for the next clash.',
+    motifSymbol: '🛡️',
+    accentColor: '#EF4444',
+    pieceType: 'culling_yuji',
+    pieceColor: 'white',
+    condition: (_stats, outcome) => outcome === 'loss',
+    getHighlight: (_stats, rating) => `Rating: ${rating} · Tactical Domain Retreat`,
+  },
+  {
+    id: 'rose_loving_concession',
+    title: 'Loving Concession',
+    mode: 'rose',
+    modeLabel: 'EARNED IN: ROSE PARADISE',
+    rarity: 'Common',
+    description: 'Lovingly yielded the garden match to your partner with gentle affection. In love and chess, a gracious concession strengthens your bond.',
+    motifSymbol: '🌹',
+    accentColor: '#F43F5E',
+    pieceType: 'prince',
+    pieceColor: 'white',
+    condition: (_stats, outcome) => outcome === 'loss',
+    getHighlight: (_stats, rating) => `Rating: ${rating} · Sweetheart Concession`,
+  },
 ];
 
 /**
@@ -319,7 +379,31 @@ export function evaluateEarnedCards(
   ratingDelta: number,
   matchId: string
 ): CardDefinition[] {
-  // Filter card definitions matching mode and conditions
+  // If player lost or resigned:
+  if (outcome === 'loss') {
+    // Find mode-specific concession appreciation card
+    const concessionCard = CARD_DEFINITIONS.find(
+      (c) => c.mode === mode && c.id.includes('concession') || (mode === 'culling' && c.id === 'culling_domain_retreat')
+    ) || CARD_DEFINITIONS.find((c) => c.id === 'standard_honorable_concession');
+
+    // Find any other cards earned during the match before resignation/loss
+    const otherEligible = CARD_DEFINITIONS.filter((cardDef) => {
+      if (cardDef.id.includes('concession') || cardDef.id === 'culling_domain_retreat') return false;
+      if (cardDef.mode !== mode && !(mode === 'standard' && cardDef.mode === 'crafted')) {
+        if (cardDef.mode !== mode) return false;
+      }
+      return cardDef.condition(metrics, outcome, ratingDelta);
+    });
+
+    if (otherEligible.length > 0) {
+      return concessionCard ? [...otherEligible, concessionCard] : otherEligible;
+    }
+    if (concessionCard) {
+      return [concessionCard];
+    }
+  }
+
+  // General filter for wins, draws, or standard criteria
   const eligible = CARD_DEFINITIONS.filter((cardDef) => {
     if (cardDef.mode !== mode && !(mode === 'standard' && cardDef.mode === 'crafted')) {
       if (cardDef.mode !== mode) return false;
@@ -328,6 +412,10 @@ export function evaluateEarnedCards(
   });
 
   if (eligible.length === 0) {
+    if (outcome === 'loss') {
+      const concession = CARD_DEFINITIONS.find((c) => c.id.includes('concession') || c.id === 'culling_domain_retreat');
+      if (concession) return [concession];
+    }
     const fallback = CARD_DEFINITIONS.find((c) => c.mode === mode) || CARD_DEFINITIONS[CARD_DEFINITIONS.length - 1];
     return [fallback];
   }

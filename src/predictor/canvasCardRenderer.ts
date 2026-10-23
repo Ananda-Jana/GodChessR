@@ -89,15 +89,17 @@ export function drawAchievementCard(
   ctx.strokeRect(30, 30, CARD_SIZE - 60, CARD_SIZE - 60);
 
   // 3. Header: Origin Label & Rarity Badge
+  const modeLabel = (card.modeLabel || `EARNED IN: ${(card.mode || 'standard').toUpperCase()} CHESS`).toUpperCase();
   ctx.fillStyle = '#94A3B8';
   ctx.font = '800 13px "Plus Jakarta Sans", sans-serif';
   ctx.textAlign = 'left';
-  ctx.fillText(card.modeLabel.toUpperCase(), 45, 60);
+  ctx.fillText(modeLabel, 45, 60);
 
+  const rarity = card.rarity || 'Common';
   let rarityBg = '#374151';
-  if (card.rarity === 'Legendary') rarityBg = '#B45309';
-  if (card.rarity === 'Epic') rarityBg = '#6B21A8';
-  if (card.rarity === 'Rare') rarityBg = '#1E40AF';
+  if (rarity === 'Legendary') rarityBg = '#B45309';
+  if (rarity === 'Epic') rarityBg = '#6B21A8';
+  if (rarity === 'Rare') rarityBg = '#1E40AF';
 
   ctx.fillStyle = rarityBg;
   ctx.fillRect(CARD_SIZE - 165, 42, 120, 26);
@@ -108,7 +110,7 @@ export function drawAchievementCard(
   ctx.fillStyle = '#FFFFFF';
   ctx.font = '800 11px "Plus Jakarta Sans", sans-serif';
   ctx.textAlign = 'center';
-  ctx.fillText(card.rarity.toUpperCase(), CARD_SIZE - 105, 59);
+  ctx.fillText(rarity.toUpperCase(), CARD_SIZE - 105, 59);
 
   // 4. Central Piece Motif Square Box (180x180 at X=210, Y=90)
   const boxX = 210;
@@ -126,16 +128,18 @@ export function drawAchievementCard(
   ctx.strokeRect(boxX + 6, boxY + 6, boxDim - 12, boxDim - 12);
 
   // Draw piece symbol / icon in center box
+  const motif = card.motifSymbol || '♔';
   ctx.fillStyle = '#FFFFFF';
   ctx.font = '84px "Plus Jakarta Sans", sans-serif';
   ctx.textAlign = 'center';
-  ctx.fillText(card.motifSymbol, CARD_SIZE / 2, boxY + 120);
+  ctx.fillText(motif, CARD_SIZE / 2, boxY + 120);
 
   // 5. Card Title
+  const title = (card.title || 'ACHIEVEMENT BADGE').toUpperCase();
   ctx.fillStyle = '#FFFFFF';
   ctx.font = '800 28px "Plus Jakarta Sans", sans-serif';
   ctx.textAlign = 'center';
-  ctx.fillText(card.title.toUpperCase(), CARD_SIZE / 2, 312);
+  ctx.fillText(title, CARD_SIZE / 2, 312);
 
   // Divider Line
   ctx.strokeStyle = borderColor;
@@ -156,10 +160,12 @@ export function drawAchievementCard(
   ctx.font = '700 12px "Plus Jakarta Sans", sans-serif';
   ctx.fillText('PREDICTED PERFORMANCE RATING', CARD_SIZE / 2, 372);
 
+  const predictedRating = card.predictedRating ?? 500;
+  const delta = card.ratingDelta ?? 0;
+  const deltaSign = delta >= 0 ? `+${delta}` : `${delta}`;
   ctx.fillStyle = '#F8FAFC';
   ctx.font = '800 28px "Plus Jakarta Sans", sans-serif';
-  const deltaSign = card.ratingDelta >= 0 ? `+${card.ratingDelta}` : `${card.ratingDelta}`;
-  ctx.fillText(`${card.predictedRating}  (${deltaSign})`, CARD_SIZE / 2, 404);
+  ctx.fillText(`${predictedRating}  (${deltaSign})`, CARD_SIZE / 2, 404);
 
   // 7. Highlight & Description Area
   ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
@@ -168,13 +174,15 @@ export function drawAchievementCard(
   ctx.lineWidth = 1.5;
   ctx.strokeRect(45, 430, 510, 105);
 
+  const highlight = card.highlight || `Rating: ${predictedRating}`;
   ctx.fillStyle = borderColor;
   ctx.font = '800 14px "Plus Jakarta Sans", sans-serif';
-  ctx.fillText(card.highlight, CARD_SIZE / 2, 456);
+  ctx.fillText(highlight, CARD_SIZE / 2, 456);
 
+  const description = card.description || 'Verified tactical achievement badge.';
   ctx.fillStyle = '#CBD5E1';
   ctx.font = '500 13px "DM Sans", sans-serif';
-  drawWrappedText(ctx, card.description, CARD_SIZE / 2, 482, 480, 20);
+  drawWrappedText(ctx, description, CARD_SIZE / 2, 482, 480, 20);
 
   // 8. Footer Tagline
   ctx.fillStyle = '#64748B';
@@ -187,12 +195,13 @@ export function drawAchievementCard(
  */
 function drawWrappedText(
   ctx: CanvasRenderingContext2D,
-  text: string,
+  text: string | undefined | null,
   x: number,
   y: number,
   maxWidth: number,
   lineHeight: number
 ) {
+  if (!text) return;
   const words = text.split(' ');
   let line = '';
   let currentY = y;
@@ -217,25 +226,29 @@ function drawWrappedText(
  * Renders 1:1 square card to hidden HTML5 Canvas 2D and triggers PNG download.
  */
 export function downloadCardAsPng(card: AchievementCard): void {
-  const canvas = document.createElement('canvas');
-  canvas.width = CARD_SIZE;
-  canvas.height = CARD_SIZE;
+  try {
+    const canvas = document.createElement('canvas');
+    canvas.width = CARD_SIZE;
+    canvas.height = CARD_SIZE;
 
-  const ctx = canvas.getContext('2d');
-  if (!ctx) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
 
-  drawAchievementCard(ctx, card);
+    drawAchievementCard(ctx, card);
 
-  canvas.toBlob((blob) => {
-    if (!blob) return;
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    const safeTitle = card.title.toLowerCase().replace(/[^a-z0-9]/g, '_');
-    a.download = `MugenChessX_Badge_${safeTitle}_${card.id}.png`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
-  }, 'image/png');
+    canvas.toBlob((blob) => {
+      if (!blob) return;
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      const safeTitle = (card.title || 'badge').toLowerCase().replace(/[^a-z0-9]/g, '_');
+      a.download = `MugenChessX_Badge_${safeTitle}_${card.id || Date.now()}.png`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }, 'image/png');
+  } catch (err) {
+    console.error('Failed to export achievement card PNG:', err);
+  }
 }

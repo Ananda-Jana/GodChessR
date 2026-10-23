@@ -1,6 +1,6 @@
 {
-  "summary":  "Implementation plan for Home Profile Box live stats, mobile responsiveness, and 500 ELO performance-weighted rating engine overhaul.",
-  "updatedAt":  "2026-10-23T09:46:22.574668311Z",
+  "summary":  "Architectural blueprint for fixing and polishing the mobile UI of Chess Hashira Training as a brutalist mobile game console. Establishes a strict 100dvh non-scrollable viewport grid, a compact 44px top navigation strip with 3 dropdown overlays, a shallow 68px Sensei Gensei panel with no duplicate controls, a dynamic-fitting board stage that calculates available dimensions via ResizeObserver to eliminate clipping, and a single 48px bottom bar with truncated lesson metadata and action buttons, while keeping the desktop 3-column studio completely intact.",
+  "updatedAt":  "2026-10-23T11:31:44.519214849Z",
   "requestFeedback":  true,
   "userFacing":  true
 }
