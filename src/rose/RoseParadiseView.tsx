@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useRoseRoom, RoseChatMessage } from './useRoseRoom';
 import { useAuth } from '../context/AuthContext';
-import { ChessPiece } from '../components/ChessPiece';
+import { ChessPiece } from './ChessPiece';
 import { getLegalMovesForSquare } from '../game/engine';
 import {
   createInitialRoseMatch,
@@ -121,6 +121,9 @@ export const RoseParadiseView: React.FC<RoseParadiseViewProps> = ({ onBack }) =>
   const [copiedCode, setCopiedCode] = useState(false);
   const [chatInputText, setChatInputText] = useState('');
 
+  // Lovingly Concede Confirmation Modal (replaces browser confirm)
+  const [showConcedeConfirm, setShowConcedeConfirm] = useState(false);
+
   // Initial Romantic Rulebook Modal (pops up on game start, untimed)
   const [showRulebook, setShowRulebook] = useState(false);
   const [hasShownRulebookOnce, setHasShownRulebookOnce] = useState(false);
@@ -131,6 +134,35 @@ export const RoseParadiseView: React.FC<RoseParadiseViewProps> = ({ onBack }) =>
 
   // Active match selection (bot match takes precedence if active, else socket match)
   const activeMatch = isBotMatch ? botMatch : socketMatch;
+
+  const handleConcedeMatch = () => {
+    setShowConcedeConfirm(false);
+    if (isBotMatch && botMatch) {
+      const opponentRoleName = botPlayerRole === 'boyfriend' ? 'Boyfriend Bot' : 'Girlfriend Bot';
+      const finished: RoseMatchState = {
+        ...botMatch,
+        status: 'completed',
+        winner: botPlayerRole,
+        winReason: `You lovingly conceded to ${opponentRoleName}.`,
+      };
+      setBotMatch(finished);
+      sounds.playGameOver();
+      const concedeMsg = getRandomBotMessage('concede', botPlayerRole);
+      setBotLocalChat((prev) => [
+        ...prev.slice(-30),
+        {
+          id: `bot_concede_${Date.now()}`,
+          senderUserId: 'usr_bot',
+          senderDisplayName: opponentRoleName,
+          text: concedeMsg,
+          timestamp: Date.now(),
+        },
+      ]);
+    } else {
+      socketResignMatch();
+      sounds.playGameOver();
+    }
+  };
 
   // Automatically pop open Rulebook modal once when match becomes active
   useEffect(() => {
@@ -189,7 +221,7 @@ export const RoseParadiseView: React.FC<RoseParadiseViewProps> = ({ onBack }) =>
           if (summonRes.success && summonRes.state) {
             setBotMatch(summonRes.state);
             sounds.playAbility();
-            const summonMsg = getRandomBotMessage('summon');
+            const summonMsg = getRandomBotMessage('summon', botPlayerRole);
             setBotLocalChat((prev) => [
               ...prev.slice(-30),
               {
@@ -200,6 +232,12 @@ export const RoseParadiseView: React.FC<RoseParadiseViewProps> = ({ onBack }) =>
                 timestamp: Date.now(),
               },
             ]);
+            const rx = getRandomBotReaction(botPlayerRole, 'summon');
+            const rxId = `rx_${Date.now()}`;
+            setBotLocalReactions((prev) => [...prev.slice(-8), { id: rxId, text: rx }]);
+            setTimeout(() => {
+              setBotLocalReactions((prev) => prev.filter((r) => r.id !== rxId));
+            }, 3500);
             isBotThinkingRef.current = false;
             return; // CRITICAL: Summon consumes the bot's turn!
           }
@@ -212,9 +250,10 @@ export const RoseParadiseView: React.FC<RoseParadiseViewProps> = ({ onBack }) =>
         const res = applyRoseMove(state, bestMove.from, bestMove.to);
         if (res.success && res.state) {
           state = res.state;
+          const opponentColor: PieceColor = botColor === 'white' ? 'black' : 'white';
           if (state.status === 'completed') {
             sounds.playGameOver();
-            const overMsg = getRandomBotMessage('gameOver');
+            const overMsg = getRandomBotMessage('gameOverWin', botPlayerRole);
             setBotLocalChat((prev) => [
               ...prev.slice(-30),
               {
@@ -225,9 +264,22 @@ export const RoseParadiseView: React.FC<RoseParadiseViewProps> = ({ onBack }) =>
                 timestamp: Date.now(),
               },
             ]);
+          } else if (state.inCheck === opponentColor) {
+            sounds.playCheck();
+            const checkMsg = getRandomBotMessage('check', botPlayerRole);
+            setBotLocalChat((prev) => [
+              ...prev.slice(-30),
+              {
+                id: `bot_chat_${Date.now()}`,
+                senderUserId: botSeat?.userId || 'bot',
+                senderDisplayName: botSeat?.displayName || 'Bot Partner',
+                text: checkMsg,
+                timestamp: Date.now(),
+              },
+            ]);
           } else if (bestMove.captured) {
             sounds.playCapture();
-            const capMsg = getRandomBotMessage('capture');
+            const capMsg = getRandomBotMessage('capture', botPlayerRole);
             setBotLocalChat((prev) => [
               ...prev.slice(-30),
               {
@@ -240,9 +292,9 @@ export const RoseParadiseView: React.FC<RoseParadiseViewProps> = ({ onBack }) =>
             ]);
           } else {
             sounds.playMove();
-            // 35% chance of random sweet message
-            if (Math.random() < 0.35) {
-              const sweetMsg = getRandomBotMessage('randomTurn');
+            // 45% chance of sweet banter message
+            if (Math.random() < 0.45) {
+              const sweetMsg = getRandomBotMessage('randomTurn', botPlayerRole);
               setBotLocalChat((prev) => [
                 ...prev.slice(-30),
                 {
@@ -256,9 +308,9 @@ export const RoseParadiseView: React.FC<RoseParadiseViewProps> = ({ onBack }) =>
             }
           }
 
-          // Trigger bot random reaction emoji
-          if (Math.random() < 0.5) {
-            const rx = getRandomBotReaction();
+          // Trigger bot reaction emoji
+          if (Math.random() < 0.6) {
+            const rx = getRandomBotReaction(botPlayerRole);
             const rxId = `rx_${Date.now()}`;
             setBotLocalReactions((prev) => [...prev.slice(-8), { id: rxId, text: rx }]);
             setTimeout(() => {
@@ -271,7 +323,7 @@ export const RoseParadiseView: React.FC<RoseParadiseViewProps> = ({ onBack }) =>
       setBotMatch(state);
       isBotThinkingRef.current = false;
     }, 700);
-  }, []);
+  }, [botPlayerRole]);
 
   // Trigger bot turn if active match is on bot's turn
   useEffect(() => {
@@ -346,7 +398,7 @@ export const RoseParadiseView: React.FC<RoseParadiseViewProps> = ({ onBack }) =>
         id: `bot_welcome_${Date.now()}`,
         senderUserId: 'usr_bot',
         senderDisplayName: botSeat.displayName,
-        text: getRandomBotMessage('start'),
+        text: getRandomBotMessage('start', botRoleChoice),
         timestamp: Date.now(),
       },
     ]);
@@ -366,6 +418,24 @@ export const RoseParadiseView: React.FC<RoseParadiseViewProps> = ({ onBack }) =>
           if (res.success && res.state) {
             setBotMatch(res.state);
             sounds.playAbility();
+            const botName = opponentSeat?.displayName || (botPlayerRole === 'boyfriend' ? 'Boyfriend Bot 👑' : 'Girlfriend Bot 👸');
+            const summonReact = getRandomBotMessage('playerSummon', botPlayerRole);
+            setBotLocalChat((prev) => [
+              ...prev.slice(-30),
+              {
+                id: `bot_summon_react_${Date.now()}`,
+                senderUserId: 'usr_bot',
+                senderDisplayName: botName,
+                text: summonReact,
+                timestamp: Date.now(),
+              },
+            ]);
+            const rx = getRandomBotReaction(botPlayerRole, 'playerSummon');
+            const rxId = `rx_${Date.now()}`;
+            setBotLocalReactions((prev) => [...prev.slice(-8), { id: rxId, text: rx }]);
+            setTimeout(() => {
+              setBotLocalReactions((prev) => prev.filter((r) => r.id !== rxId));
+            }, 3500);
           }
         } else {
           socketSendSummon(summoningUnit, { x, y });
@@ -393,21 +463,63 @@ export const RoseParadiseView: React.FC<RoseParadiseViewProps> = ({ onBack }) =>
           const res = applyRoseMove(activeMatch, selectedSquare, { x, y });
           if (res.success && res.state) {
             setBotMatch(res.state);
+            const botSeat = opponentSeat;
+            const botName = botSeat?.displayName || (botPlayerRole === 'boyfriend' ? 'Boyfriend Bot 👑' : 'Girlfriend Bot 👸');
+            const botColor: PieceColor = effectiveMyColor === 'white' ? 'black' : 'white';
+
             if (res.state.status === 'completed') {
               sounds.playGameOver();
+              const loseMsg = getRandomBotMessage('gameOverLose', botPlayerRole);
+              setBotLocalChat((prev) => [
+                ...prev.slice(-30),
+                {
+                  id: `bot_lose_react_${Date.now()}`,
+                  senderUserId: 'usr_bot',
+                  senderDisplayName: botName,
+                  text: loseMsg,
+                  timestamp: Date.now(),
+                },
+              ]);
+            } else if (res.state.inCheck === botColor) {
+              sounds.playCheck();
+              const checkReactMsg = getRandomBotMessage('botInCheck', botPlayerRole);
+              setBotLocalChat((prev) => [
+                ...prev.slice(-30),
+                {
+                  id: `bot_check_react_${Date.now()}`,
+                  senderUserId: 'usr_bot',
+                  senderDisplayName: botName,
+                  text: checkReactMsg,
+                  timestamp: Date.now(),
+                },
+              ]);
+              const rx = getRandomBotReaction(botPlayerRole, 'botInCheck');
+              const rxId = `rx_${Date.now()}`;
+              setBotLocalReactions((prev) => [...prev.slice(-8), { id: rxId, text: rx }]);
+              setTimeout(() => {
+                setBotLocalReactions((prev) => prev.filter((r) => r.id !== rxId));
+              }, 3500);
             } else if (res.state.lastMove && activeMatch.board[y][x]) {
               sounds.playCapture();
-              const reactMsg = getRandomBotMessage('playerCaptured');
+              const reactMsg = getRandomBotMessage('playerCaptured', botPlayerRole);
               setBotLocalChat((prev) => [
                 ...prev.slice(-30),
                 {
                   id: `bot_cap_react_${Date.now()}`,
                   senderUserId: 'usr_bot',
-                  senderDisplayName: opponentSeat?.displayName || 'Bot Partner',
+                  senderDisplayName: botName,
                   text: reactMsg,
                   timestamp: Date.now(),
                 },
               ]);
+              if (Math.random() < 0.6) {
+                const rx = getRandomBotReaction(botPlayerRole, 'playerCaptured');
+                const rxId = `rx_${Date.now()}`;
+                setBotLocalReactions((prev) => [...prev.slice(-8), { id: rxId, text: rx }]);
+                setTimeout(() => {
+                  setBotLocalReactions((prev) => prev.filter((r) => r.id !== rxId));
+                }, 3500);
+              }
             } else {
               sounds.playMove();
             }
@@ -447,19 +559,27 @@ export const RoseParadiseView: React.FC<RoseParadiseViewProps> = ({ onBack }) =>
           timestamp: Date.now(),
         },
       ]);
-      // Bot sends playful reply back
+      // Bot sends playful customized reply back
       setTimeout(() => {
+        const replyText = getRandomBotMessage('replyToChat', botPlayerRole);
+        const botName = opponentSeat?.displayName || (botPlayerRole === 'boyfriend' ? 'Boyfriend Bot 👑' : 'Girlfriend Bot 👸');
         setBotLocalChat((prev) => [
           ...prev.slice(-30),
           {
             id: `bot_reply_${Date.now()}`,
             senderUserId: 'usr_bot',
-            senderDisplayName: opponentSeat?.displayName || 'Bot Partner',
-            text: "Reading your sweet message with a warm smile! ❤️",
+            senderDisplayName: botName,
+            text: replyText,
             timestamp: Date.now(),
           },
         ]);
-      }, 1000);
+        const rx = getRandomBotReaction(botPlayerRole, 'replyToChat');
+        const rxId = `rx_${Date.now()}`;
+        setBotLocalReactions((prev) => [...prev.slice(-8), { id: rxId, text: rx }]);
+        setTimeout(() => {
+          setBotLocalReactions((prev) => prev.filter((r) => r.id !== rxId));
+        }, 3500);
+      }, 750);
     } else {
       socketSendChat(chatInputText.trim());
     }
@@ -473,6 +593,31 @@ export const RoseParadiseView: React.FC<RoseParadiseViewProps> = ({ onBack }) =>
       setTimeout(() => {
         setBotLocalReactions((prev) => prev.filter((r) => r.id !== rxId));
       }, 3500);
+
+      // Bot playfully responds with a reaction and occasional sweet reply
+      setTimeout(() => {
+        const botRx = getRandomBotReaction(botPlayerRole, 'replyToReaction');
+        const botRxId = `bot_rx_${Date.now()}`;
+        setBotLocalReactions((prev) => [...prev.slice(-8), { id: botRxId, text: botRx }]);
+        setTimeout(() => {
+          setBotLocalReactions((prev) => prev.filter((r) => r.id !== botRxId));
+        }, 3500);
+
+        if (Math.random() < 0.65) {
+          const replyText = getRandomBotMessage('replyToReaction', botPlayerRole);
+          const botName = opponentSeat?.displayName || (botPlayerRole === 'boyfriend' ? 'Boyfriend Bot 👑' : 'Girlfriend Bot 👸');
+          setBotLocalChat((prev) => [
+            ...prev.slice(-30),
+            {
+              id: `bot_emo_reply_${Date.now()}`,
+              senderUserId: 'usr_bot',
+              senderDisplayName: botName,
+              text: replyText,
+              timestamp: Date.now(),
+            },
+          ]);
+        }
+      }, 700);
     } else {
       socketSendReaction(emo);
     }
@@ -554,24 +699,7 @@ export const RoseParadiseView: React.FC<RoseParadiseViewProps> = ({ onBack }) =>
 
           {activeMatch && activeMatch.status === 'active' && (
             <button
-              onClick={() => {
-                if (window.confirm('Do you lovingly concede the match?')) {
-                  if (isBotMatch && botMatch) {
-                    const opponentRoleName = botPlayerRole === 'boyfriend' ? 'Boyfriend Bot' : 'Girlfriend Bot';
-                    const finished: RoseMatchState = {
-                      ...botMatch,
-                      status: 'completed',
-                      winner: botPlayerRole,
-                      winReason: `You lovingly conceded to ${opponentRoleName}.`,
-                    };
-                    setBotMatch(finished);
-                    sounds.playGameOver();
-                  } else {
-                    socketResignMatch();
-                    sounds.playGameOver();
-                  }
-                }
-              }}
+              onClick={() => setShowConcedeConfirm(true)}
               className="brutal-button px-3 py-1.5 text-xs font-black uppercase flex items-center gap-1.5 cursor-pointer text-red-400 border-red-400 shadow-[3px_3px_0px_#f43f5e] hover:bg-red-400 hover:text-black"
             >
               <Flag className="w-3.5 h-3.5" /> Concede
@@ -870,16 +998,20 @@ export const RoseParadiseView: React.FC<RoseParadiseViewProps> = ({ onBack }) =>
             </div>
 
             {/* Quick Reactions Palette */}
-            <div className="brutal-card p-3 flex flex-col gap-2 border-3 border-white shadow-[4px_4px_0px_#fff]">
-              <span className="text-[11px] font-black uppercase text-neutral-300 flex items-center gap-1.5">
-                <Heart className="w-3.5 h-3.5 text-rose-500" /> Send Reaction
+            <div className="brutal-card p-3 flex flex-col gap-2 border-3 border-rose-400/80 shadow-[4px_4px_0px_#f43f5e] bg-[#12050c]">
+              <span className="text-[11px] font-black uppercase text-rose-300 flex items-center justify-between">
+                <span className="flex items-center gap-1.5">
+                  <Heart className="w-3.5 h-3.5 text-rose-500 fill-rose-500" /> Send Reaction
+                </span>
+                <span className="text-[9px] font-mono opacity-70">Tap an emoji</span>
               </span>
-              <div className="grid grid-cols-4 gap-1.5">
-                {['❤️', '🌹', '✨', '💍', '🥰', '😉', '😅', '⏳'].map((emo) => (
+              <div className="grid grid-cols-6 gap-1">
+                {['❤️', '🌹', '✨', '💍', '🥰', '😉', '💖', '👑', '🥺', '💅', '🧋', '⚔️'].map((emo) => (
                   <button
                     key={emo}
+                    type="button"
                     onClick={() => handleSendReaction(emo)}
-                    className="p-2 brutal-button text-lg cursor-pointer flex items-center justify-center"
+                    className="p-1.5 bg-neutral-950/80 hover:bg-rose-950 border border-rose-500/40 hover:border-rose-400 text-base cursor-pointer flex items-center justify-center transition-all hover:scale-110 active:scale-95 rounded"
                   >
                     {emo}
                   </button>
@@ -887,46 +1019,89 @@ export const RoseParadiseView: React.FC<RoseParadiseViewProps> = ({ onBack }) =>
               </div>
             </div>
 
-            {/* In-Game Romantic Chat Box */}
-            <div className="brutal-card p-3.5 flex flex-col gap-2.5 border-3 border-white shadow-[4px_4px_0px_#fff]">
-              <div className="flex items-center gap-1.5 text-[11px] font-black uppercase text-amber-400 border-b-2 border-neutral-800 pb-1.5">
-                <MessageSquare className="w-3.5 h-3.5" /> Love Messages
+            {/* In-Game Romantic Chat Box - Highlighted with Radiant Rose Glow */}
+            <div className="brutal-card p-3.5 flex flex-col gap-2.5 border-3 border-rose-500 shadow-[0_0_15px_rgba(244,63,94,0.35),4px_4px_0px_#f43f5e] bg-gradient-to-b from-[#180710] to-[#0a0307]">
+              <div className="flex items-center justify-between border-b-2 border-rose-500/40 pb-2">
+                <div className="flex items-center gap-1.5 text-xs font-black uppercase text-rose-300 tracking-wide">
+                  <MessageSquare className="w-3.5 h-3.5 text-rose-400" />
+                  <span>Love Messages & Banter</span>
+                </div>
+                <div className="flex items-center gap-1 bg-rose-500/20 border border-rose-500/40 px-2 py-0.5 rounded text-[10px] font-mono text-rose-300">
+                  <span className="w-1.5 h-1.5 rounded-full bg-rose-400 animate-pulse" />
+                  <span>LIVE</span>
+                </div>
               </div>
 
-              <div className="h-44 overflow-y-auto flex flex-col gap-2 p-2 bg-neutral-950 border-2 border-neutral-700 text-xs font-mono">
+              {/* Quick Message Suggestion Chips */}
+              <div className="flex flex-wrap gap-1">
+                {[
+                  '❤️ Love you',
+                  '🌹 Good move!',
+                  '😉 Cute!',
+                  '🙈 Oops!',
+                  '👑 Queen power!',
+                  '🧋 Boba date later?',
+                ].map((chip) => (
+                  <button
+                    key={chip}
+                    type="button"
+                    onClick={() => setChatInputText(chip)}
+                    className="px-2 py-0.5 text-[10px] font-bold bg-rose-950/80 hover:bg-rose-900 border border-rose-400/60 hover:border-rose-300 text-rose-200 rounded cursor-pointer transition-colors"
+                  >
+                    {chip}
+                  </button>
+                ))}
+              </div>
+
+              <div className="h-44 overflow-y-auto flex flex-col gap-2 p-2 bg-[#0c0308] border-2 border-rose-500/50 text-xs font-mono rounded">
                 {chatMessages.length === 0 ? (
-                  <div className="text-[11px] text-neutral-500 italic text-center my-auto">
-                    Say something sweet to your partner...
+                  <div className="text-[11px] text-rose-300/60 italic text-center my-auto flex flex-col items-center gap-1">
+                    <Heart className="w-4 h-4 text-rose-500/50" />
+                    <span>Say something sweet or playful to your partner...</span>
                   </div>
                 ) : (
-                  chatMessages.map((msg) => (
-                    <div
-                      key={msg.id}
-                      className={`flex flex-col p-2 border-2 ${
-                        msg.senderUserId === (user?.id || 'usr_human')
-                          ? 'bg-neutral-900 border-amber-400 ml-3'
-                          : 'bg-neutral-950 border-neutral-700 mr-3'
-                      }`}
-                    >
-                      <span className="text-[10px] font-black uppercase text-amber-300">{msg.senderDisplayName}</span>
-                      <span className="text-white text-xs break-words">{msg.text}</span>
-                    </div>
-                  ))
+                  chatMessages.map((msg) => {
+                    const isMe = msg.senderUserId === (user?.id || 'usr_human');
+                    return (
+                      <div
+                        key={msg.id}
+                        className={`flex flex-col p-2 border-2 rounded ${
+                          isMe
+                            ? 'bg-[#220916] border-rose-400 text-rose-100 ml-3 shadow-[1px_1px_0px_#f43f5e]'
+                            : 'bg-[#150720] border-fuchsia-400 text-fuchsia-100 mr-3 shadow-[1px_1px_0px_#d946ef]'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between gap-1 mb-0.5">
+                          <span
+                            className={`text-[10px] font-black uppercase ${
+                              isMe ? 'text-rose-300' : 'text-fuchsia-300'
+                            }`}
+                          >
+                            {msg.senderDisplayName}
+                          </span>
+                          <span className="text-[9px] text-neutral-400 font-mono">
+                            {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                        </div>
+                        <span className="text-white text-xs break-words">{msg.text}</span>
+                      </div>
+                    );
+                  })
                 )}
               </div>
 
               <form onSubmit={handleSendChat} className="flex gap-1.5">
                 <input
                   type="text"
-                  placeholder="Type a sweet message..."
+                  placeholder="Type a sweet or cheeky message..."
                   value={chatInputText}
                   onChange={(e) => setChatInputText(e.target.value)}
-                  className="flex-1 bg-neutral-950 border-2 border-white px-3 py-1.5 text-xs text-white focus:outline-none focus:border-amber-400"
+                  className="flex-1 bg-[#13040c] border-2 border-rose-400/80 focus:border-rose-300 px-3 py-1.5 text-xs text-white placeholder-rose-300/40 focus:outline-none focus:ring-1 focus:ring-rose-400 rounded-sm"
                 />
                 <button
                   type="submit"
                   disabled={!chatInputText.trim()}
-                  className="px-3 py-1.5 brutal-button-primary disabled:opacity-40 text-xs font-black uppercase cursor-pointer"
+                  className="px-3.5 py-1.5 bg-rose-500 hover:bg-rose-400 text-white disabled:opacity-40 text-xs font-black uppercase cursor-pointer border-2 border-white shadow-[2px_2px_0px_#000] flex items-center justify-center transition-colors"
                 >
                   <Send className="w-3.5 h-3.5" />
                 </button>
@@ -1299,6 +1474,42 @@ export const RoseParadiseView: React.FC<RoseParadiseViewProps> = ({ onBack }) =>
             >
               Cancel
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Lovingly Concede Confirmation Modal */}
+      {showConcedeConfirm && (
+        <div className="fixed inset-0 bg-black/85 z-50 flex items-center justify-center p-4 animate-in fade-in duration-150">
+          <div className="brutal-card max-w-sm w-full p-6 flex flex-col gap-4 border-4 border-rose-500 shadow-[8px_8px_0px_#f43f5e] bg-[#14060e] text-white">
+            <div className="flex items-center gap-2 text-rose-400 text-xs font-black uppercase tracking-wider border-b-2 border-rose-500/40 pb-2">
+              <Heart className="w-5 h-5 text-rose-500 fill-rose-500 animate-pulse" />
+              <span>Lovingly Concede Match?</span>
+            </div>
+
+            <div className="space-y-1.5">
+              <h3 className="text-sm sm:text-base font-black uppercase text-white">Surrender to your partner?</h3>
+              <p className="text-xs text-rose-200/80 font-mono leading-relaxed">
+                Are you sure you want to gracefully concede this match to {isBotMatch ? (botPlayerRole === 'boyfriend' ? 'Boyfriend Bot 👑' : 'Girlfriend Bot 👸') : (opponentSeat?.displayName || 'your partner')}?
+              </p>
+            </div>
+
+            <div className="flex gap-2.5 pt-2">
+              <button
+                type="button"
+                onClick={handleConcedeMatch}
+                className="flex-1 py-2.5 px-3 bg-rose-600 hover:bg-rose-500 text-white font-black text-xs uppercase tracking-wider border-2 border-white shadow-[3px_3px_0px_#000] cursor-pointer flex items-center justify-center gap-1.5 transition-colors"
+              >
+                <Flag className="w-4 h-4" /> Yes, Concede
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowConcedeConfirm(false)}
+                className="py-2.5 px-4 bg-neutral-900 hover:bg-black text-white font-black text-xs uppercase tracking-wider border-2 border-neutral-500 cursor-pointer transition-colors"
+              >
+                Keep Playing
+              </button>
+            </div>
           </div>
         </div>
       )}

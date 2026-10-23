@@ -323,5 +323,111 @@ const redGrids = getCheckmateGrids(checkmateTestBoard, 'black');
 assert(redGrids.some((p) => p.x === 4 && p.y === 7), 'Checkmate grids include mated King square');
 assert(redGrids.some((p) => p.x === 4 && p.y === 6), 'Checkmate grids include attacking Queen square');
 
-console.log('=== ALL 24 CUSTOM CHESS ENGINE TESTS + CRAFTED MODE TESTS PASSED! ===');
+// 14. Mid-Game Crafting Trigger Rules & Avoid Crafting Option Tests
+// Test A: Pawn capture does NOT increment lostExpensive or trigger crafting
+const pawnTestBoard = Array(8).fill(null).map(() => Array(8).fill(null));
+pawnTestBoard[0][4] = { id: 'k_white', type: 'king', color: 'white', hasMoved: true };
+pawnTestBoard[7][4] = { id: 'k_black', type: 'king', color: 'black', hasMoved: true };
+pawnTestBoard[0][0] = { id: 'r_white', type: 'rook', color: 'white', hasMoved: true };
+pawnTestBoard[0][1] = { id: 'p_black_1', type: 'pawn', color: 'black', hasMoved: true };
+pawnTestBoard[0][2] = { id: 'p_black_2', type: 'pawn', color: 'black', hasMoved: true };
+
+const pawnMatch: MatchState = {
+  ...initialMatch,
+  board: pawnTestBoard,
+  turn: 'white',
+  craftingAllowed: true,
+  diceActive: false, // Chess moves directly
+};
+
+// Capture 1st pawn
+const pawnCap1 = executeMove(pawnMatch, { x: 0, y: 0 }, { x: 1, y: 0 });
+assert(pawnCap1.success, 'White Rook captured 1st Black Pawn');
+assert(pawnCap1.state.lostExpensive?.black === 0, 'lostExpensive for Black is 0 after pawn loss');
+assert(!pawnCap1.state.craftingPending?.black, 'Crafting is not triggered for Black after 1st pawn loss');
+
+// Now simulate capturing 2nd pawn
+const pawnMatch2: MatchState = {
+  ...pawnCap1.state,
+  turn: 'white',
+};
+const pawnCap2 = executeMove(pawnMatch2, { x: 1, y: 0 }, { x: 2, y: 0 });
+assert(pawnCap2.success, 'White Rook captured 2nd Black Pawn');
+assert(pawnCap2.state.lostExpensive?.black === 0, 'lostExpensive for Black is still 0 after 2 pawns lost');
+assert(!pawnCap2.state.craftingPending?.black, 'Crafting is NEVER triggered by falling pawns');
+assert(!pawnCap2.state.pausedForAction, 'Game is not paused for crafting after pawns fall');
+
+// Test B: 2 expensive fallen pieces WITH craftingAllowed === true TRIGGERS crafting
+const expTestBoard = Array(8).fill(null).map(() => Array(8).fill(null));
+expTestBoard[4][4] = { id: 'k_white', type: 'king', color: 'white', hasMoved: true };
+expTestBoard[7][4] = { id: 'k_black', type: 'king', color: 'black', hasMoved: true };
+expTestBoard[0][0] = { id: 'r_white', type: 'rook', color: 'white', hasMoved: true };
+expTestBoard[1][0] = { id: 'r_black', type: 'rook', color: 'black', hasMoved: true }; // Expensive piece 1 at (0, 1)
+expTestBoard[2][0] = { id: 'q_black', type: 'queen', color: 'black', hasMoved: true }; // Expensive piece 2 at (0, 2)
+
+const expMatch: MatchState = {
+  ...initialMatch,
+  board: expTestBoard,
+  turn: 'white',
+  craftingAllowed: true,
+  diceActive: false,
+};
+
+// Capture 1st expensive piece (Rook at 0, 1)
+const expCap1 = executeMove(expMatch, { x: 0, y: 0 }, { x: 0, y: 1 });
+assert(expCap1.success, 'White captured 1st Black expensive piece (Rook)');
+assert(expCap1.state.lostExpensive?.black === 1, 'Black lostExpensive is 1 after 1 expensive piece fallen');
+assert(!expCap1.state.craftingPending?.black, 'Crafting is NOT triggered after only 1 expensive piece fallen');
+
+// Capture 2nd expensive piece (Queen at 0, 2)
+const expMatch2: MatchState = {
+  ...expCap1.state,
+  turn: 'white',
+};
+const expCap2 = executeMove(expMatch2, { x: 0, y: 1 }, { x: 0, y: 2 });
+assert(expCap2.success, 'White captured 2nd Black expensive piece (Queen)');
+assert(expCap2.state.lostExpensive?.black === 2, 'Black lostExpensive is 2 after 2 expensive pieces fallen');
+assert(expCap2.state.craftingPending?.black === true, 'Crafting triggers for Black when 2 expensive pieces fall');
+assert(expCap2.state.pausedForAction?.type === 'crafting', 'Match pauses for crafting action for Black');
+
+// Test C: Avoid Crafting (craftingAllowed === false) in Standard Mode
+const avoidStandardMatch: MatchState = {
+  ...initialMatch,
+  board: expTestBoard,
+  turn: 'white',
+  gameMode: 'standard',
+  craftingAllowed: false, // User chose "Avoid Crafting"
+  diceActive: false,
+};
+const avoidCap1 = executeMove(avoidStandardMatch, { x: 0, y: 0 }, { x: 0, y: 1 });
+const avoidMatch2: MatchState = {
+  ...avoidCap1.state,
+  turn: 'white',
+};
+const avoidCap2 = executeMove(avoidMatch2, { x: 0, y: 1 }, { x: 0, y: 2 });
+assert(avoidCap2.success, 'Captured 2 expensive pieces in Standard Mode with Avoid Crafting');
+assert(!avoidCap2.state.craftingPending?.black, 'Standard Mode: Crafting is completely avoided when craftingAllowed is false');
+assert(!avoidCap2.state.pausedForAction, 'Standard Mode: Game does not pause for crafting when avoided');
+
+// Test D: Avoid Crafting (craftingAllowed === false) in Crafted Pieces Mode
+const avoidCraftedMatch: MatchState = {
+  ...initialMatch,
+  board: expTestBoard,
+  turn: 'white',
+  gameMode: 'crafted',
+  craftingAllowed: false, // User chose "Avoid Crafting"
+  diceActive: false,
+};
+const avoidCraftedCap1 = executeMove(avoidCraftedMatch, { x: 0, y: 0 }, { x: 0, y: 1 });
+const avoidCraftedMatch2: MatchState = {
+  ...avoidCraftedCap1.state,
+  turn: 'white',
+};
+const avoidCraftedCap2 = executeMove(avoidCraftedMatch2, { x: 0, y: 1 }, { x: 0, y: 2 });
+assert(avoidCraftedCap2.success, 'Captured 2 expensive pieces in Crafted Pieces Mode with Avoid Crafting');
+assert(!avoidCraftedCap2.state.craftingPending?.black, 'Crafted Mode: Crafting is completely avoided when craftingAllowed is false');
+assert(!avoidCraftedCap2.state.pausedForAction, 'Crafted Mode: Game does not pause for crafting when avoided');
+
+console.log('=== ALL 28 CUSTOM CHESS ENGINE TESTS + CRAFTED MODE + CRAFTING AVOIDANCE TESTS PASSED! ===');
+
 

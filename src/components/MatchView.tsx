@@ -687,7 +687,7 @@ export const MatchView: React.FC<MatchViewProps> = ({
                 <div className="flex flex-wrap gap-1 min-h-[22px]">
                   {activeMatch.capturedByWhite.map((p, i) => (
                     <div key={i} className="w-5 h-5">
-                      <ChessPiece type={p.type} color="black" />
+                      <ChessPiece type={p.type} color="black" theme={activeMatch.pieceTheme || 'classic'} />
                     </div>
                   ))}
                   {activeMatch.capturedByWhite.length === 0 && (
@@ -700,7 +700,7 @@ export const MatchView: React.FC<MatchViewProps> = ({
                 <div className="flex flex-wrap gap-1 min-h-[22px]">
                   {activeMatch.capturedByBlack.map((p, i) => (
                     <div key={i} className="w-5 h-5">
-                      <ChessPiece type={p.type} color="white" />
+                      <ChessPiece type={p.type} color="white" theme={activeMatch.pieceTheme || 'classic'} />
                     </div>
                   ))}
                   {activeMatch.capturedByBlack.length === 0 && (
@@ -772,7 +772,7 @@ export const MatchView: React.FC<MatchViewProps> = ({
           </div>
 
           {/* PART B: Locked Crafting Warning Banner directly above board */}
-          {activeMatch.craftingLocked?.[myColor] && !isGameOver && (
+          {activeMatch.craftingAllowed !== false && activeMatch.craftingLocked?.[myColor] && !isGameOver && (
             <div className="w-full bg-amber-500/15 dark:bg-amber-400/10 border-2 border-amber-500/60 rounded-xl p-3 flex items-center justify-between gap-3 text-amber-900 dark:text-amber-200 animate-in fade-in duration-200 shadow-sm">
               <div className="flex items-center gap-2.5">
                 <span className="text-base select-none">⚡</span>
@@ -903,6 +903,7 @@ export const MatchView: React.FC<MatchViewProps> = ({
             }}
             checkmateGrids={checkmateGrids}
             defeatedKingPos={defeatedKingPos}
+            pieceTheme={activeMatch.pieceTheme || 'classic'}
           />
         </div>
 
@@ -947,13 +948,11 @@ export const MatchView: React.FC<MatchViewProps> = ({
               <span className="px-1.5 py-0.5 bg-neutral-200 dark:bg-neutral-800 border border-black dark:border-white">
                 💡 {activeMatch.moveSuggestions === 'excluded' ? 'No Hints' : 'Hints'}
               </span>
-              <span className={`px-1.5 py-0.5 border border-black dark:border-white ${
-                activeMatch.craftingAllowed !== false
-                  ? 'bg-amber-400 text-black font-black'
-                  : 'bg-neutral-200 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400'
-              }`}>
-                {activeMatch.craftingAllowed !== false ? '🔨 Crafting On' : '🚫 Crafting Avoided'}
-              </span>
+              {activeMatch.craftingAllowed !== false && (
+                <span className="px-1.5 py-0.5 bg-amber-400 text-black font-black border border-black dark:border-white">
+                  🔨 Crafting On
+                </span>
+              )}
             </div>
           </div>
 
@@ -1011,7 +1010,8 @@ export const MatchView: React.FC<MatchViewProps> = ({
         )}
 
       {/* Mechanic 2: Crafting Modal */}
-      {activeMatch.pausedForAction?.type === 'crafting' &&
+      {activeMatch.craftingAllowed !== false &&
+        activeMatch.pausedForAction?.type === 'crafting' &&
         activeMatch.pausedForAction.player === myColor &&
         !isPlacingCraftPiece && (
           <React.Suspense fallback={null}>

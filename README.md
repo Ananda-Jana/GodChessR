@@ -6,6 +6,13 @@
 ## Table of Contents
 1. [Executive Summary & Core Philosophy](#1-executive-summary--core-philosophy)
 2. [Complete Game Modes & Formats](#2-complete-game-modes--formats)
+   - [2.1 Standard Online PvP Mode](#21-standard-online-pvp-mode)
+   - [2.2 Crafted Online PvP Mode](#22-crafted-online-pvp-mode)
+   - [2.3 Grandmaster Bot Mode (Local Minimax AI)](#23-grandmaster-bot-mode-local-minimax-ai)
+   - [2.4 Master Bot Mode (Local Fast AI)](#24-master-bot-mode-local-fast-ai)
+   - [2.5 Ephemeral Review & Post-Match Analysis Mode](#25-ephemeral-review--post-match-analysis-mode)
+   - [2.6 Jujutsu Kaisen Culling Game Mode](#26-jujutsu-kaisen-culling-game-mode-88-square-cross-battlefield)
+   - [2.7 Rose Paradise: Couples Chess Mode](#27-rose-paradise-couples-chess-mode)
 3. [The Complete Piece Compendium & Movement Mechanics](#3-the-complete-piece-compendium--movement-mechanics)
    - [3.1 Standard Pieces with MugenChessX Conventions](#31-standard-pieces-with-mugenchessx-conventions)
    - [3.2 The Royal Hybrid: The Prince](#32-the-royal-hybrid-the-prince)
@@ -25,7 +32,7 @@
    - [5.2 Geometric Expansion Dimensions & Vectors](#52-geometric-expansion-dimensions--vectors)
    - [5.3 Clock Pausing & Auto-Pick Fail-Safe](#53-clock-pausing--auto-pick-fail-safe)
 6. [The Tactical Crafting System](#6-the-tactical-crafting-system)
-   - [6.1 Material Loss Thresholds](#61-material-loss-thresholds)
+   - [6.1 Material Loss Thresholds & Avoid Crafting Option](#61-material-loss-thresholds--avoid-crafting-option)
    - [6.2 Candidate Square Generation & Safe Placement](#62-candidate-square-generation--safe-placement)
    - [6.3 Crafting While In Check: Deferred Locks & Clock Integrity](#63-crafting-while-in-check-deferred-locks--clock-integrity)
 7. [Winning, Drawing & Match Termination Rules](#7-winning-drawing--match-termination-rules)
@@ -33,10 +40,11 @@
    - [7.2 The Two-Pawns End-Rank Draw Rule](#72-the-two-pawns-end-rank-draw-rule)
    - [7.3 Stalemate & Insufficient Material](#73-stalemate--insufficient-material)
    - [7.4 Resignation & Agreement](#74-resignation--agreement)
-   - [7.5 Clock Expiration & The Seven-Piece Advantage Rule](#75-clock-expiration--the-seven-piece-advantage-rule)
+   - [7.5 Clock Expiration & Mode-Specific Piece Advantage Rules](#75-clock-expiration--mode-specific-piece-advantage-rules)
 8. [In-Game & Between-Game Perks](#8-in-game--between-game-perks)
    - [8.1 Real-Time In-Game Perks](#81-real-time-in-game-perks)
    - [8.2 Metagame & Between-Game Perks](#82-metagame--between-game-perks)
+   - [8.3 Context-Aware Rulebook & Mode-Specific UI Text Alignment](#83-context-aware-rulebook--mode-specific-ui-text-alignment)
 9. [High-Performance Engineering: How Every Section Is Kept Fast](#9-high-performance-engineering-how-every-section-is-kept-fast)
    - [9.1 O(1) Capture & Condition Verification](#91-o1-capture--condition-verification)
    - [9.2 Minimax Search with Alpha-Beta Pruning & PSTs](#92-minimax-search-with-alpha-beta-pruning--psts)
@@ -49,6 +57,27 @@
     - [10.4 Production Database Migration Blueprint](#104-production-database-migration-blueprint)
 11. [Exhaustive Codebase & File-by-File Directory Mapping](#11-exhaustive-codebase--file-by-file-directory-mapping)
 12. [Developer Extension Guide: Adding New Pieces & Modes](#12-developer-extension-guide-adding-new-pieces--modes)
+13. [Jujutsu Kaisen Culling Game: Technical & Gameplay Architecture](#13-jujutsu-kaisen-culling-game-technical--gameplay-architecture)
+    - [13.1 Arena Geometry: The 88-Square Cross Battlefield & Coordinate Grid](#131-arena-geometry-the-88-square-cross-battlefield--coordinate-grid)
+    - [13.2 Rotational Symmetrical Armies: Protagonists vs. Antagonists](#132-rotational-symmetrical-armies-protagonists-vs-antagonists)
+    - [13.3 Exhaustive Role Compendium, Movement Vectors & Special Techniques](#133-exhaustive-role-compendium-movement-vectors--special-techniques)
+      - [13.3.1 Sovereign (Satoru Gojo ⚔ Ryomen Sukuna) - Domain Step](#1331-sovereign-satoru-gojo--ryomen-sukuna---domain-step)
+      - [13.3.2 Vanguard (Yuji Itadori ⚔ Kenjaku) - Black Flash Strike-in-Place](#1332-vanguard-yuji-itadori--kenjaku---black-flash-strike-in-place)
+      - [13.3.3 Artillery (Kokichi Muta / Mechamaru ⚔ Uraume) - Ranged Strike](#1333-artillery-kokichi-muta--mechamaru--uraume---ranged-strike)
+      - [13.3.4 Bulwark (Panda ⚔ Yorozu) - Shell Absorption](#1334-bulwark-panda--yorozu---shell-absorption)
+      - [13.3.5 Warden (Kento Nanami ⚔ Reggie Star) - Ratio Field Suppression](#1335-warden-kento-nanami--reggie-star---ratio-field-suppression)
+      - [13.3.6 Skirmisher (Maki Zenin ⚔ Naoya Zenin) - Heavenly Restriction & 2-Square Hops](#1336-skirmisher-maki-zenin--naoya-zenin---heavenly-restriction--2-square-hops)
+      - [13.3.7 Rusher (Kinji Hakari ⚔ Kurourushi) - Idle Death Gamble Jackpot](#1337-rusher-kinji-hakari--kurourushi---idle-death-gamble-jackpot)
+      - [13.3.8 Culling Pawn & Far-Edge File-Specific Warden Promotion](#1338-culling-pawn--far-edge-file-specific-warden-promotion)
+    - [13.4 Movement, Leaping & Check Laws](#134-movement-leaping--check-laws)
+    - [13.5 Victory, Defeat & Match Termination Hierarchy](#135-victory-defeat--match-termination-hierarchy)
+    - [13.6 Complete Tactical Edge Cases & Engine Scenarios](#136-complete-tactical-edge-cases--engine-scenarios)
+14. [Rose Paradise: Romantic Couples Chess & Botanical Mechanics](#14-rose-paradise-romantic-couples-chess--botanical-mechanics)
+    - [14.1 Philosophy, Roles & The Untimed Love Protocol](#141-philosophy-roles--the-untimed-love-protocol)
+    - [14.2 Petals of Passion & Love Link Harvesting Engine](#142-petals-of-passion--love-link-harvesting-engine)
+    - [14.3 Full-Board Reinforcement Summoning & The 8-Unit Catalog](#143-full-board-reinforcement-summoning--the-8-unit-catalog)
+    - [14.4 In-Game Love Chat, Floating Reactions & Romantic Bot AI](#144-in-game-love-chat-floating-reactions--romantic-bot-ai)
+    - [14.5 Match Termination, Lovingly Conceding & 20-Move Draw Rule](#145-match-termination-lovingly-conceding--20-move-draw-rule)
 
 ---
 
@@ -88,19 +117,47 @@ MugenChessX features distinct competitive and local game modes catering to both 
 
 ### 2.3 Grandmaster Bot Mode (Local Minimax AI)
 * **Format**: Single-player vs. Local Engine.
+* **Game Variations**:
+  - **Standard Dice Chess**: Classical army with Asymmetric Corner Queens and Princes.
+  - **Crafted Pieces Army**: Bishops replaced with Communists, Knights with Priests, and a Rook with Supreme Rook.
+* **Pre-Game Customization Suite**:
+  - **Mid-Game Crafting Perk Toggle**: Players can choose to **Enable (Default)** or **Avoid Crafting**. When avoided, mid-game crafting is completely bypassed (no summons, no HUD tags, no rule mentions).
+  - **Piece Visual Themes**: Selectable **Classic Standard** or **Retro Playing Cards** aesthetic.
+  - **Board Theme**: Instant toggle between Light Board and Dark Board styles.
+  - **Time Controls**: 2-Minute Blitz or 5-Minute Rapid clocks.
+  - **Move Suggestions**: Toggle between visual move hints (`included`) or clean unassisted calculation (`excluded`).
 * **Engine Architecture**: 3-ply Minimax search augmented with Alpha-Beta pruning, Piece-Square Tables (PST) adapted for fairy pieces, corner queens, and dynamic board dimensions.
 * **Bot Behavior**: Highly aggressive, tactical, and opportunistic. Evaluates piece mobility, king safety, center control, and material valuation (giving 600 centipawns to crafted units and 750 centipawns to the Prince).
+* **Board Expansion Exclusion**: Board expansion is disabled for Bot matches, preserving focused 8x8 calculation.
+* **Timeout Win Rule**: If the human player's timer expires, they win if they lead by $\ge 3$ pieces over the Bot.
 * **Zero Database Footprint**: Runs completely in-memory on the client thread with simulated thinking delays (600ms) for natural human-like cadence.
 
 ### 2.4 Master Bot Mode (Local Fast AI)
 * **Format**: Single-player vs. Fast Engine.
 * **Engine Architecture**: 2-ply Minimax search designed for instant decision-making (< 100ms calculation time).
 * **Bot Behavior**: Prioritizes raw material captures and immediate checks. Ideal for training dice reaction speed and testing opening ideas against unorthodox corner configurations.
+* **Settings & Rules**: Shares the same customizable setup (Crafting Allowed vs Avoided, Classic/Retro themes, $\ge 3$ piece lead timeout rule) as Grandmaster Bot.
 
 ### 2.5 Ephemeral Review & Post-Match Analysis Mode
 * **Format**: Post-game state inspection.
 * **Persistence Mechanism**: When any online or bot game completes, the final match state (board configuration, capture logs, algebraic notation history, and victory verdict) is saved into `localStorage` with a 10-minute auto-expiry window.
 * **Functionality**: Players can review moves, explore how dice rolls influenced critical pivot points, analyze checkmate nets, and inspect board expansions without cluttering the persistent server database.
+
+### 2.6 Jujutsu Kaisen Culling Game Mode (88-Square Cross Battlefield)
+* **Format**: Single-player vs. Tactical Engine or Real-Time PvP.
+* **Battlefield**: Custom 88-square cross-shaped arena inside a 10x10 coordinate space (64 center squares + 4 outer arms of 6 squares each; 12 void corner squares).
+* **Armies & Symmetry**: 180° rotational mirror symmetry featuring Satoru Gojo & Jujutsu High Protagonists (White) vs. Ryomen Sukuna & Antagonists (Black).
+* **Key Mechanics**: Strict check and checkmate from Move 1, character-accurate tactical abilities (Domain Step, Black Flash strike-in-place, Ranged Artillery strike, Bulwark shell absorption, Warden Ratio Field suppression, Skirmisher Heavenly Restriction leaper, Rusher Jackpot bonus step), file-specific far-edge Warden promotion, and Complete Tactical Suppression (no stalemate draw).
+* *Comprehensive Guide*: See [Section 13: Jujutsu Kaisen Culling Game](#13-jujutsu-kaisen-culling-game-technical--gameplay-architecture) for the exhaustive technical manual, piece compendium, movement vectors, and edge-case scenarios.
+
+### 2.7 Rose Paradise: Couples Chess Mode
+* **Format**: Couples Private Room PvP (via 6-character room codes) or Solo vs. Affectionate AI Bot (Boyfriend Bot 👑 / Girlfriend Bot 👸).
+* **Board & Royalty**: Standard 8x8 board featuring Boyfriend (Prince / White) and Girlfriend (Queen / Black).
+* **Untimed Love Protocol**: Zero ticking clocks and zero timer pressure; deliberate and play at an intimate pace.
+* **Petals of Passion & Love Link**: Harvest Petals (🌹) through captures, delivering checks, or uniting Queen and Prince in an adjacent Love Link (+1 Petal every 4 moves).
+* **Full-Board Reinforcement Summons**: Spend 3 Petals to summon any unit from an 8-piece catalog (Queen, Rook, Bishop, Knight, Cupid Priest, Thorn Guard, Rose Tower, or Pawn) onto **any empty square anywhere on the board**, provided it does not immediately deliver direct check.
+* **Couples Social Suite**: Live floating emoji reactions (`❤️`, `🌹`, `✨`, `💍`, `🥰`, `😉`), radiant in-game romantic chat with suggestion chips, and sweet closing concessions.
+* *Comprehensive Guide*: See [Section 14: Rose Paradise Manual](#14-rose-paradise-romantic-couples-chess--botanical-mechanics) for the complete botanical rules, summon catalog, and romantic bot dialogue systems.
 
 ---
 
@@ -262,6 +319,8 @@ When a player has fewer than 7 pieces remaining, probability weights shift to pr
 
 When matches turn into wars of attrition, the battlefield itself expands dynamically.
 
+> **Mode Scope Note**: Dynamic Board Expansion is exclusive to **Multiplayer Online PvP Mode**. To maintain precise calculation trees and classic board geometry, Board Expansion is disabled in **Play vs Grandmaster Bot** and **Play vs Master Bot** modes (and omitted from their rulebook).
+
 ### 5.1 Activation Trigger
 * Triggered the exact moment a player loses their **7th piece** (`lostPieces >= 7`), once per player per match.
 * The player selects one of four expansion directions:
@@ -286,9 +345,13 @@ When matches turn into wars of attrition, the battlefield itself expands dynamic
 
 The crafting system allows commanders who have suffered heavy losses to synthesize powerful reinforcements.
 
-### 6.1 Material Loss Thresholds
-* Triggered when a player loses their **2nd expensive piece** (`lostExpensive >= 2`: Rook, Queen, Prince, King, Communist, Supreme Rook, or Priest).
-* The player chooses one unit to synthesize: Communist, Supreme Rook, or Priest.
+### 6.1 Material Loss Thresholds & Avoid Crafting Option
+* **Activation Trigger**: Triggered authoritatively when a player loses their **2nd expensive piece** (`lostExpensive >= 2`: Rook, Queen, Prince, King, Communist, Supreme Rook, or Priest).
+* **Strict Pawn Exclusion**: Pawns are completely excluded from the expensive category. Falling pawns **never** increment `lostExpensive` and **never** trigger crafting.
+* **Pre-Game Avoid Crafting Option**:
+  - In both **Play vs Grandmaster Bot** (Standard), **Play vs Bot with Crafted Pieces**, and multiplayer challenges, players can choose to **Avoid Crafting**.
+  - When Avoid Crafting is selected (`craftingAllowed = false`), mid-game crafting is completely suppressed throughout the match. No crafting triggers occur, no locked crafting warnings surface, and all crafting mentions are suppressed from the in-game HUD and Rulebook.
+* **Summon Selection**: When enabled and triggered, the player chooses one unit to synthesize: Communist, Supreme Rook, or Priest.
 
 ### 6.2 Candidate Square Generation & Safe Placement
 1. **Home Zone Restriction**: Placement is strictly limited to the player's 2-row Home Zone (Ranks 1-2 for White, Back 2 Ranks for Black).
@@ -323,10 +386,15 @@ MugenChessX implements a strict, deterministic hierarchy of victory and draw con
 ### 7.4 Resignation & Agreement
 * Players can resign at any time or offer draw agreements over WebSockets.
 
-### 7.5 Clock Expiration & The Seven-Piece Advantage Rule
-* When a player's clock hits 0:00, the engine calculates the material difference on the board:
+### 7.5 Clock Expiration & Mode-Specific Piece Advantage Rules
+When a player's clock hits 0:00, the authoritative engine evaluates piece counts to ensure fair endgame resolutions:
+* **Multiplayer Online Matches (The 7-Piece Advantage Rule)**:
   - **Difference $\le 7$ Pieces**: Standard clock defeat for the flagged player (`timeout`).
-  - **Difference $> 7$ Pieces**: The player with the larger army wins by overwhelming piece advantage (`timeout_piece_advantage`), even if their own clock expired!
+  - **Difference $> 7$ Pieces**: The player holding the overwhelming army advantage ($> 7$ pieces) wins (`timeout_piece_advantage`), even if their own clock expired!
+* **Play vs Bot Matches (The 3-Piece Advantage Rule)**:
+  - **Human Lead $\ge 3$ Pieces**: If the human player's timer expires while leading the Bot by 3 or more pieces, victory is awarded to the human player (`timeout_piece_advantage`).
+  - **Human Lead $< 3$ Pieces**: Standard clock defeat for the human player (`timeout`).
+  - **Bot Timer Expiration**: Automatic victory awarded to the human player.
 
 ---
 
@@ -342,8 +410,17 @@ MugenChessX implements a strict, deterministic hierarchy of victory and draw con
 ### 8.2 Metagame & Between-Game Perks
 * **Persistent Profiles**: Cumulative tracking of wins, losses, draws, and win rates.
 * **Brutalist Avatars**: Custom player icon selector.
+* **Piece Visual Themes**: Selectable **Classic Standard** and **Retro Playing Cards** vector piece sets.
 * **Instant Rematch**: One-click rematch protocol over WebSockets.
 * **10-Minute Ephemeral Review**: Completed matches cached in browser storage for post-game tactical inspection.
+
+### 8.3 Context-Aware Rulebook & Mode-Specific UI Text Alignment
+* **In-Match Context Awareness**: When players click "Rules" during a match, the Rulebook dynamically renders rules tailored strictly to the active game:
+  - **Starting Pieces**: Reflects standard corner royalty (Standard Mode) or the custom setup with Communists, Priests, and Supreme Rook (Crafted Mode).
+  - **Crafting Suppression**: If the player chose "Avoid Crafting", all mentions of crafting, legendary units, and summoning rules are **completely omitted** from the Rulebook and in-game HUD badges.
+  - **Board Expansion Isolation**: Board expansion is omitted for Bot game modes and only displayed for Multiplayer matches.
+  - **Timeout Rule Accuracy**: Explicitly details the $\ge 3$ piece lead rule for Bot matches and the $> 7$ piece rule for Multiplayer matches.
+* **Multi-Tab Dashboard Rulebook**: When opened from the home Dashboard, players can toggle between dedicated tabs for **Bot Standard**, **Bot Crafted**, and **Multiplayer Online** to study each mode's distinct rules.
 
 ---
 
@@ -429,34 +506,55 @@ Data resides in `/data/*.json` (`users.json`, `sessions.json`, `challenges.json`
 │   │
 │   ├── components/                  <-- Modular React UI components
 │   │   ├── ChessBoard.tsx           <-- 2D board grid renderer, coordinate mapping, and move dot highlights
-│   │   ├── ChessPiece.tsx           <-- SVG vector artwork for all pieces (King, Queen, Prince, Communist, etc.)
+│   │   ├── ChessPiece.tsx           <-- Unified chess piece dispatcher with theme support (Classic vs Retro)
+│   │   ├── ChessPieceClassic.tsx    <-- Classic Standard chess piece vector silhouettes
+│   │   ├── ChessPieceRetro.tsx      <-- Retro Playing Cards stylized chess piece vector set
 │   │   ├── MatchView.tsx            <-- Live match interface with player clocks, capture trays, and logs
 │   │   ├── Dashboard.tsx            <-- Main home screen, online player list, challenge triggers, stats
 │   │   ├── DiceRoller.tsx           <-- Interactive 3D/2D dice rolling button, timer animations, grace alerts
 │   │   ├── CraftingModal.tsx        <-- Unit crafting selection UI with preview grids and square placement
 │   │   ├── CraftTheoryView.tsx      <-- Dedicated interactive catalog explaining fairy piece mechanics
 │   │   ├── ExpansionModal.tsx       <-- Board expansion selector (Top, Bottom, Left, Right)
-│   │   ├── RulesModal.tsx           <-- Comprehensive in-app game guide with animated piece diagrams
+│   │   ├── RulesModal.tsx           <-- Context-aware in-app rulebook adapting dynamically to active match or tabs
 │   │   ├── PrinceRulesCard.tsx      <-- Dedicated spotlight card detailing Prince capabilities
-│   │   ├── BotMatchModal.tsx        <-- Modal for launching local Grandmaster or Master bot games
+│   │   ├── BotMatchModal.tsx        <-- Modal for launching local Grandmaster or Master bot games with mode & crafting toggles
 │   │   ├── ChallengeModal.tsx       <-- Online challenge creator with time controls and move hints toggle
 │   │   ├── AuthModal.tsx            <-- Login and account registration modal dialog
 │   │   ├── Avatars.tsx              <-- Vector avatar icons and player profile badge component
-│   │   └── PopupAd.tsx              <-- Non-intrusive promotional asset banner
+│   │   ├── PopupAd.tsx              <-- Non-intrusive promotional asset banner
+│   │   ├── CullingBoard.tsx         <-- 88-square cross-shaped board renderer with void-cell masking
+│   │   ├── CullingPiece.tsx         <-- Vector sorcerer icons (Gojo, Sukuna, Yuji, Kenjaku, Panda, etc.)
+│   │   ├── CullingMatchView.tsx     <-- Full match interface with timers, move logs, check alerts, and actions
+│   │   ├── CullingModeEntry.tsx     <-- Lobby entry and match setup modal for Culling Game mode
+│   │   ├── CullingRulesModal.tsx    <-- Modal launcher for Culling Game theory and rules
+│   │   └── CullingTheoryView.tsx    <-- In-depth interactive guide with 9x9 engine move diagrams for all 8 roles
 │   │
 │   ├── game/                        <-- Pure chess logic and mathematical engines
 │   │   ├── engine.ts                <-- Authoritative game engine: board init, move validation, check, triggers
 │   │   ├── craftables.ts            <-- Mathematical definitions and path vectors for Communist, Supreme Rook, Priest
-│   │   └── bot.ts                   <-- Grandmaster/Master Minimax search with PST and Alpha-Beta pruning
+│   │   ├── bot.ts                   <-- Grandmaster/Master Minimax search with PST and Alpha-Beta pruning
+│   │   ├── cullingEngine.ts         <-- Authoritative Culling engine: 88 cross squares, 8 roles, Domain Step, Black Flash, Shell, Jackpot
+│   │   └── cullingBot.ts            <-- Minimax AI engine adapted for 88 cross squares and Jujutsu abilities
+│   │
+│   ├── rose/                        <-- Rose Paradise: Romantic Couples Chess System
+│   │   ├── types.ts                 <-- Boyfriend/Girlfriend roles, Petal meter, public room & match contracts
+│   │   ├── roseRules.ts             <-- Authoritative rules: Love Link, Petal harvesting, full-board summons
+│   │   ├── roseBot.ts               <-- AI Bot Boyfriend 👑 & Girlfriend 👸 with romantic chat and reactions
+│   │   ├── useRoseRoom.ts           <-- WebSocket matchmaking, private 6-char room codes, real-time presence
+│   │   ├── RoseParadiseView.tsx     <-- Main couples view with radiant chat, floating emojis & summon selector
+│   │   ├── RoseParadiseEntryButton.tsx <-- Dashboard entry card button for launching Rose Paradise
+│   │   ├── ChessPiece.tsx           <-- Custom romantic piece renderer with botanical accents
+│   │   └── rose.css                 <-- Passionate brutalist visual styles, rose particle animations & glows
 │   │
 │   ├── types/                       <-- TypeScript contracts and system definitions
-│   │   └── game.ts                  <-- Definitions for Piece, Move, MatchState, DiceState, Constants
+│   │   ├── game.ts                  <-- Definitions for Piece, Move, MatchState, DiceState, Constants
+│   │   └── cullingGame.ts           <-- Types for 88 cross squares, sorcerer pieces, match state & actions
 │   │
 │   └── utils/                       <-- Shared helper utilities
 │       └── audio.ts                 <-- Synthesized Web Audio API sound generator (moves, captures, dice, check)
 │
 └── test/                            <-- Automated test suite
-    ├── engine.test.ts               <-- 24 unit tests verifying rules, check defense, two-pawn draw, dice
+    ├── engine.test.ts               <-- 28 unit tests verifying rules, check defense, two-pawn draw, dice, crafting triggers, pawn exclusions, and avoidance
     ├── bot.test.ts                  <-- Unit tests verifying bot move calculations and tactical evaluations
     ├── integration.test.ts          <-- Full-stack two-player integration test simulating PvP match flows
     └── benchmark.ts                 <-- Move generation and Minimax search performance benchmarks
@@ -510,6 +608,319 @@ case 'ninja':
 ```
 
 Run `npm test` to verify your new piece against the automated engine tests!
+
+---
+
+## 13. Jujutsu Kaisen Culling Game: Technical & Gameplay Architecture
+
+The **Culling Game Mode** is an authoritative, 100% deterministic strategy battleground inspired by *Jujutsu Kaisen*. It expands classical chess onto a custom **88-square cross-shaped arena** featuring exact **180° rotational mirror symmetry**, strict royal check and checkmate rules from Move 1, unique sorcerer abilities, and decisive termination conditions.
+
+```
+                         TOP ARM (COLONY EXTENSION)
+                         [B9] [C9] [D9] [E9] [F9] [G9]
+     [A8:Sukuna] [B8:Kenjaku] [C8:Uraume] [D8:Yorozu] [E8:Reggie] [F8:Naoya] [G8:Kurourushi] [H8:Void]
+     [A7:Void]   [B7:Pawn]    [C7:Pawn]   [D7:Pawn]   [E7:Pawn]   [F7:Pawn]  [G7:Pawn]       [H7:Void]
+[L7] [A6]        [B6]         [C6]        [D6]        [E6]        [F6]       [G6]            [H6]     [R7]
+[L6] [A5]        [B5]         [C5]        [D5]        [E5]        [F5]       [G5]            [H5]     [R6]
+[L5] [A4]        [B4]         [C4]        [D4]        [E4]        [F4]       [G4]            [H4]     [R5]
+[L4] [A3]        [B3]         [C3]        [D3]        [E3]        [F3]       [G3]            [H3]     [R4]
+[L3] [A2:Void]   [B2:Pawn]    [C2:Pawn]   [D2:Pawn]   [E2:Pawn]   [F2:Pawn]  [G2:Pawn]       [H2:Void][R3]
+[L2] [A1:Void]   [B1:Hakari]  [C1:Maki]   [D1:Nanami] [E1:Panda]  [F1:Mecha] [G1:Yuji]       [H1:Gojo][R2]
+                         [B0] [C0] [D0] [E0] [F0] [G0]
+                        BOTTOM ARM (COLONY EXTENSION)
+```
+
+---
+
+### 13.1 Arena Geometry: The 88-Square Cross Battlefield & Coordinate Grid
+
+The arena is mapped within a 10×10 coordinate matrix $(x \in [0, 9], y \in [0, 9])$, containing precisely **88 valid playable squares**:
+
+* **Horizontal Files ($x = 0 \dots 9$)**:
+  - `x = 0`: Left Lateral Wing (`L`)
+  - `x = 1..8`: Standard Files `A`, `B`, `C`, `D`, `E`, `F`, `G`, `H`
+  - `x = 9`: Right Lateral Wing (`R`)
+* **Vertical Ranks ($y = 0 \dots 9$)**:
+  - `y = 0`: Bottom Arm (`B0..G0`)
+  - `y = 1..8`: Standard Ranks `1..8`
+  - `y = 9`: Top Arm (`B9..G9`)
+
+#### Sub-Region Square Distribution:
+1. **Central Board (64 Squares)**: $x \in [1, 8], y \in [1, 8]$ (Squares `A1` through `H8`).
+2. **Top Arm / North Colony (6 Squares)**: $y = 9, x \in [2, 7]$ (`B9, C9, D9, E9, F9, G9`).
+3. **Bottom Arm / South Colony (6 Squares)**: $y = 0, x \in [2, 7]$ (`B0, C0, D0, E0, F0, G0`).
+4. **Left Wing / West Corridor (6 Squares)**: $x = 0, y \in [2, 7]$ (`L2, L3, L4, L5, L6, L7`).
+5. **Right Wing / East Corridor (6 Squares)**: $x = 9, y \in [2, 7]$ (`R2, R3, R4, R5, R6, R7`).
+6. **12 Non-Playable Void Cells**:
+   The four $2 \times 2$ outer corners are impassable voids that cannot be entered and terminate sliding movement rays immediately:
+   - Bottom-Left Voids: `(0,0)`, `(1,0)`, `(0,1)` *(and (1,1) is playable `A1`)*
+   - Bottom-Right Voids: `(8,0)`, `(9,0)`, `(9,1)`
+   - Top-Left Voids: `(0,8)`, `(0,9)`, `(1,9)`
+   - Top-Right Voids: `(9,8)`, `(8,9)`, `(9,9)`
+
+#### 180° Rotational Symmetry
+The battlefield is strictly invariant under $180^\circ$ rotation:
+$$(x, y) \longleftrightarrow (9 - x, 9 - y)$$
+Every piece on the White team has an exact mechanical counterpart on the Black team mirrored diagonally across the board center $(4.5, 4.5)$.
+
+---
+
+### 13.2 Rotational Symmetrical Armies: Protagonists vs. Antagonists
+
+Both sides deploy 13 units: 7 unique tactical sorcerers and 6 frontline pawns.
+
+| Role | Material Value | White Unit (Protagonist) | Black Unit (Antagonist) | Starting Square (White) | Starting Square (Black) |
+| :--- | :---: | :--- | :--- | :---: | :---: |
+| **Sovereign** | $99.0$ | **Satoru Gojo** | **Ryomen Sukuna** | `H1` $(8, 1)$ | `A8` $(1, 8)$ |
+| **Vanguard** | $8.0$ | **Yuji Itadori** | **Kenjaku** | `G1` $(7, 1)$ | `B8` $(2, 8)$ |
+| **Artillery** | $4.0$ | **Kokichi Muta (Mechamaru)** | **Uraume** | `F1` $(6, 1)$ | `C8` $(3, 8)$ |
+| **Bulwark** | $3.5$ | **Panda** | **Yorozu** | `E1` $(5, 1)$ | `D8` $(4, 8)$ |
+| **Warden** | $4.5$ | **Kento Nanami** | **Reggie Star** | `D1` $(4, 1)$ | `E8` $(5, 8)$ |
+| **Skirmisher** | $3.5$ | **Maki Zenin** | **Naoya Zenin** | `C1` $(3, 1)$ | `F8` $(6, 8)$ |
+| **Rusher** | $3.5$ | **Kinji Hakari** | **Kurourushi** | `B1` $(2, 1)$ | `G8` $(7, 8)$ |
+| **Pawns** $(\times 6)$ | $1.0$ | **Jujutsu High Footmen** | **Curse Footmen** | `B2..G2` $(x=2..7, y=2)$ | `B7..G7` $(x=2..7, y=7)$ |
+
+---
+
+### 13.3 Exhaustive Role Compendium, Movement Vectors & Special Techniques
+
+#### 13.3.1 Sovereign (Satoru Gojo ⚔ Ryomen Sukuna) - Domain Step
+* **Material Value**: $99.0$ (Royal Commander).
+* **Base Movement**: Moves and captures exactly $1$ square in all 8 directions (orthogonal and diagonal).
+* **Active Technique — Domain Step (Limitless / Malevolent Shrine)**:
+  - **Cooldown & Limits**: Usable **once per match** (`specialUsed = true`).
+  - **Vector**: Targets an empty square situated at **exactly distance 2** along any of the 8 straight or diagonal lines ($\Delta x, \Delta y \in \{0, \pm 2\}$ where $|\Delta x| = |\Delta y|$ or $\Delta x = 0$ or $\Delta y = 0$).
+  - **Leaping Privilege**: Leaps cleanly over any intervening friendly or enemy piece.
+  - **Safety Requirements**:
+    1. Landing cell must be completely **empty** (Domain Step cannot capture).
+    2. Landing cell must **not be under attack** by any enemy piece (`isSquareAttackedBy === false`).
+    3. **Cannot be activated while in check** (`inCheck !== null`). If in check, the Sovereign must evade with a standard 1-square step or rely on an allied interposition/capture.
+
+#### 13.3.2 Vanguard (Yuji Itadori ⚔ Kenjaku) - Black Flash Strike-in-Place
+* **Material Value**: $8.0$ (Heavy Striker).
+* **Base Movement**: Slides up to $3$ squares in all 8 directions (orthogonal and diagonal). Cannot leap over pieces or voids. Ray stops immediately at the first piece or board boundary. (Capped at 1 square if restricted by an enemy Warden).
+* **Active Technique — Black Flash Strike-in-Place**:
+  - **Trigger**: When capturing an enemy piece situated at **precisely distance 2** along any straight or diagonal vector ($\Delta x, \Delta y \in \{0, \pm 2\}$) where the intermediate cell is unoccupied.
+  - **Execution**: The target enemy is obliterated and removed from the board, but the **Vanguard does NOT move**; it remains anchored on its origin square.
+  - **Distance 1 & 3 Captures**: Capturing an enemy at distance 1 or distance 3 executes normally (displacing the Vanguard onto the target square).
+
+#### 13.3.3 Artillery (Kokichi Muta / Mechamaru ⚔ Uraume) - Ranged Strike
+* **Material Value**: $4.0$ (Sniper & Choke-Point Sentry).
+* **Base Movement**: Moves and captures $1$ square in all 8 directions.
+* **Active Technique — Ranged Strike**:
+  - **Trigger**: Targets an enemy piece at **precisely distance 2** in any of the 8 radial directions ($\Delta x, \Delta y \in \{0, \pm 2\}$).
+  - **Prerequisite**: The intermediate cell $(\frac{x_{from} + x_{to}}{2}, \frac{y_{from} + y_{to}}{2})$ must be completely **empty**.
+  - **Execution**: Destroys the target in place; Artillery remains stationary on its origin square.
+  - **Restriction**: Ranged Strike is **completely disabled** if the Artillery is adjacent to an enemy Warden (Ratio Field suppression).
+
+#### 13.3.4 Bulwark (Panda ⚔ Yorozu) - Shell Absorption
+* **Material Value**: $3.5$ (Heavy Cavalry & Armor).
+* **Base Movement**: Moves and captures with classical Knight $2 \times 1$ L-jumps:
+  $$\Delta x, \Delta y \in \{(\pm 1, \pm 2), (\pm 2, \pm 1)\}$$
+  Leaps freely over intervening pieces and void boundaries.
+* **Passive Trait — Shell Hardening (Panda Core / Insect Armor)**:
+  - Starts the match with `pandaCore: 'panda'` (shell intact).
+  - **First Attack Absorption**: When an opponent attempts to capture a Bulwark whose shell is intact, **the capture fails completely**:
+    - The attacking piece remains stationary on its origin square.
+    - The Bulwark remains on its square.
+    - The Bulwark's shell breaks permanently (`pandaCore = 'gorilla'`).
+    - The opponent's turn ends with zero board displacement!
+  - **Subsequent Attacks**: Once the shell is broken, the Bulwark can be captured normally.
+
+#### 13.3.5 Warden (Kento Nanami ⚔ Reggie Star) - Ratio Field Suppression
+* **Material Value**: $4.5$ (Positional Anchor).
+* **Base Movement**: Slides up to $3$ squares orthogonally (horizontal/vertical) along ranks and files. Cannot slide diagonally; cannot leap over pieces.
+* **Passive Aura — Ratio Field (7:3 Suppression)**:
+  - Any enemy unit standing in any of the **8 adjacent surrounding squares** has its movement and capture range **restricted to a maximum of 1 square**.
+  - Enemy Artillery (Mechamaru / Uraume) adjacent to a Warden has its Ranged Strike completely disabled.
+  - *Immunity*: Skirmishers (Maki / Naoya) are immune to Ratio Field due to Heavenly Restriction.
+  - *Vulnerability*: Wardens have **no capture immunity**; they can be captured by pawns, sovereigns, or any standard piece.
+
+#### 13.3.6 Skirmisher (Maki Zenin ⚔ Naoya Zenin) - Heavenly Restriction & 2-Square Hops
+* **Material Value**: $3.5$ (Infiltration Leaper).
+* **Base Movement**:
+  1. Steps/captures $1$ square in all 8 directions.
+  2. **Orthogonal 2-Square Hop**: Leaps exactly $2$ squares horizontally or vertically:
+     $$\Delta x, \Delta y \in \{(0, 2), (0, -2), (2, 0), (-2, 0)\}$$
+     Leaps over all intervening friendly or enemy pieces.
+* **Passive Trait — Heavenly Restriction (Zero Cursed Energy)**:
+  - 100% immune to the Warden's Ratio Field.
+  - Retains full mobility (including 2-square orthogonal hops) even when adjacent to Nanami or Reggie.
+
+#### 13.3.7 Rusher (Kinji Hakari ⚔ Kurourushi) - Idle Death Gamble Jackpot
+* **Material Value**: $3.5$ (Tempo Striker).
+* **Base Movement**: Slides up to $2$ squares diagonally (no leaping; blocked by intervening pieces), OR steps $1$ square orthogonally. (Diagonal range capped at 1 if restricted by Warden).
+* **Passive Trait — Idle Death Gamble Jackpot**:
+  - **Trigger**: Triggered whenever the Rusher executes a capture (and the target was not absorbed by an intact Bulwark shell).
+  - **Bonus Action**: The player is awarded **one immediate consecutive move with the SAME Rusher piece**:
+    - The bonus move is a single 1-square step in any of 8 directions.
+    - **Non-Capturing Only**: Destination square must be empty.
+    - **Safety Filter**: Destination square must **not be under attack** by any enemy piece (`isSquareAttackedBy === false`).
+    - **King Safety**: The step cannot leave or place the friendly Sovereign in check.
+  - **Fail-Safe**: If no safe, unattacked step square exists, the Jackpot bonus is automatically forfeited, and the turn passes cleanly to the opponent. Non-recursive.
+
+#### 13.3.8 Culling Pawn & Far-Edge File-Specific Warden Promotion
+* **Material Value**: $1.0$ (Infantry).
+* **Base Movement**: Advances $1$ square forward ($dy = +1$ for White, $dy = -1$ for Black) into an empty square; captures $1$ square diagonally forward. (No 2-square initial double step; no en passant).
+* **Automatic Far-Edge Promotion**:
+  Because the cross-shaped board has uneven file depths, the far edge varies by file:
+  - **Lateral Wings (Files `L` $[x=0]$ and `R` $[x=9]$)**: Promotes at **Rank 7** for White, **Rank 2** for Black (only 5 steps from starting rank!).
+  - **Flank Columns (Files `A` $[x=1]$ and `H` $[x=8]$)**: Promotes at **Rank 8** for White, **Rank 1** for Black.
+  - **Central Columns (Files `B..G` $[x=2..7]$)**: Promotes at **Rank 9** (Top Arm) for White, **Rank 0** (Bottom Arm) for Black.
+  - **Promotion Unit**: Promotes automatically to **Warden** (White pawn becomes Kento Nanami; Black pawn becomes Reggie Star). Never promotes to Vanguard or Sovereign.
+
+---
+
+### 13.4 Movement, Leaping & Check Laws
+
+1. **Strict Leaping Exclusivity**:
+   - Only **Bulwark** (Knight L-jump) and **Skirmisher** (2-square orthogonal hop) can leap over pieces during standard turns.
+   - The **Sovereign** can leap over pieces using its once-per-game **Domain Step**, provided the destination is empty, unattacked, and the Sovereign is not currently in check.
+   - All other sliding pieces (**Vanguard, Artillery, Warden, Rusher, Pawn**) stop at the first obstacle (friendly unit, enemy unit, or void cell).
+2. **Authoritative Check from Move 1**:
+   - Check and checkmate apply from the first move of the match.
+   - A player may never make a move that leaves or places their own Sovereign in check.
+   - A player in check must resolve check on their turn.
+
+---
+
+### 13.5 Victory, Defeat & Match Termination Hierarchy
+
+| Priority | Verdict Condition | Result | Engine Representation |
+| :---: | :--- | :--- | :--- |
+| **#1** | **Checkmate** | Opponent Sovereign trapped in check with zero legal evasions. | `status: 'completed', winner: color, winReason: 'Checkmate!'` |
+| **#2** | **Complete Tactical Suppression** | Active player has **zero legal moves** while NOT in check. (Stalemate is removed; suppression is a decisive loss!). | `status: 'completed', winner: opponent, winReason: 'Complete Tactical Suppression'` |
+| **#3** | **Sovereign Elimination** | Opponent Sovereign captured/eliminated directly. | `status: 'completed', winner: color` |
+| **#4** | **Clock Timeout** | Player's timer depletes to 0:00 (120s Blitz or 300s Rapid). | `status: 'completed', winner: opponent, winReason: 'Time out'` |
+| **#5** | **Threefold Repetition** | Identical board state (pieces, turn, shell status, Domain Step flag, pending Jackpot) occurs 3 times. | `status: 'completed', winner: null, winReason: 'Draw by threefold repetition'` |
+| **#6** | **30-Move Draw Rule** | 30 full consecutive moves (60 plies) completed without a capture, pawn move, or shell break. | `status: 'completed', winner: null, winReason: 'Draw by 30-move rule'` |
+| **#7** | **Resignation** | Player surrenders via in-game menu. | `status: 'completed', winner: opponent` |
+
+---
+
+### 13.6 Complete Tactical Edge Cases & Engine Scenarios
+
+* **Scenario 1: Activating Domain Step While in Check**:
+  - *Situation*: White Gojo at `E2` is checked by Black Vanguard at `E5`. Gojo attempts to use Domain Step to vault to `E0`.
+  - *Engine Verdict*: **Illegal Move**. `getPseudoLegalMovesForSquare` explicitly checks `!isCullingKingInCheck`. Domain Step cannot be activated while in check. Gojo must step to an adjacent safe square (`D1`, `F1`, etc.) or have an ally block/capture the attacker.
+* **Scenario 2: Vanguard Black Flash vs. Intact Bulwark Shell**:
+  - *Situation*: White Yuji at `D3` uses Black Flash to strike Black Panda at `D5` (distance 2, middle square `D4` empty, Panda shell intact).
+  - *Engine Verdict*: `applyCullingMoveToBoard` detects `getPieceRole(target.type) === 'bulwark'` and `pandaCore !== 'gorilla'`. The strike breaks the shell (`pandaCore = 'gorilla'`); Yuji remains at `D3`, Panda remains at `D5`, and White's turn ends with the shell broken. Panda can now be eliminated on the next attack.
+* **Scenario 3: Warden Ratio Field vs. Skirmisher**:
+  - *Situation*: Black Warden Reggie Star moves to `C4`, directly adjacent to White Maki at `C3`.
+  - *Engine Verdict*: `isPieceRestrictedByWarden` inspects Maki's role: `getPieceRole('culling_maki') === 'skirmisher'`, which returns `false`. Due to **Heavenly Restriction**, Maki completely ignores Reggie's Ratio Field and can freely execute her 2-square orthogonal hop to `C5` or `E3`.
+* **Scenario 4: Rusher Jackpot in Hostile Territory**:
+  - *Situation*: White Hakari at `D4` captures Black Pawn at `E5`. All 8 squares surrounding `E5` are covered by Black pieces.
+  - *Engine Verdict*: The engine simulates Jackpot bonus moves for Hakari from `E5`. Finding zero unattacked empty squares, the engine automatically forfeits the bonus step (`bonusLegalSteps.length === 0`), advances the turn count, and passes the turn safely to Black.
+* **Scenario 5: Lateral Wing Rapid Promotion**:
+  - *Situation*: White Pawn advances along File `L` $(x=0)$ and reaches `L7` $(y=7)$.
+  - *Engine Verdict*: `isPawnPromotionSquare` evaluates `pos.x === 0 && pos.y >= 7` as `true`. The pawn immediately promotes to **Kento Nanami** (`culling_nanami`), skipping Ranks 8 and 9 entirely.
+* **Scenario 6: Complete Tactical Suppression (No Stalemate)**:
+  - *Situation*: Black Sovereign is trapped in a corner box with zero legal moves, but is NOT in check.
+  - *Engine Verdict*: In standard chess, this would be a draw by stalemate. In Culling Game, `executeCullingMove` evaluates `nextPlayerLegalMoves.length === 0` and awards a **decisive victory to White** by **Complete Tactical Suppression**.
+
+---
+
+## 14. Rose Paradise: Romantic Couples Chess & Botanical Mechanics
+
+**Rose Paradise** is a dedicated couples chess mode engineered for partners to share an affectionate, strategic experience. It blends classic chess royalty with fairy piece crafting, a dynamic petal-harvesting resource system, radiant in-game messaging, and a pressure-free **Untimed Love Protocol**.
+
+```
+                         ROSE PARADISE BATTLEFIELD (8x8)
+[a8:Prince]   [b8:Knight]  [c8:Bishop]  [d8:King]   [e8:Queen]   [f8:Bishop]  [g8:Knight]  [h8:Rook]
+[a7:Pawn]     [b7:Pawn]    [c7:Pawn]    [d7:Pawn]   [e7:Pawn]    [f7:Pawn]    [g7:Pawn]    [h7:Pawn]
+                               (Empty Midfield Ranks 3..6)
+[a2:Pawn]     [b2:Pawn]    [c2:Pawn]    [d2:Pawn]   [e2:Pawn]    [f2:Pawn]    [g2:Pawn]    [h2:Pawn]
+[a1:Queen]    [b1:Knight]  [c1:Bishop]  [d1:King]   [e1:Prince]  [f1:Bishop]  [g1:Knight]  [h1:Rook]
+```
+
+---
+
+### 14.1 Philosophy, Roles & The Untimed Love Protocol
+
+* **Core Premise**: Couples chess should inspire connection, strategic cooperation, and playful banter rather than frantic clock pressure.
+* **Romantic Role Pairing**:
+  - **Boyfriend 👑**: Commands the White army (moves first). Royal champion is the **Prince**.
+  - **Girlfriend 👸**: Commands the Black army. Royal champion is the **Queen**.
+  - *Role Flexibility*: Roles and colors can be inverted or customized during lobby setup.
+* **The Prince's Royal Privilege**:
+  In Rose Paradise, the Prince moves 1 square in all 8 directions with the royal ability to leap over 1 adjacent friendly piece to escape danger, alongside standard MugenChessX Prince hybrid vectors.
+* **Untimed Love Protocol**:
+  Match clocks are completely disabled (`timeControl = 0`). Partners can deliberate together, banter, and step away from the game without penalty.
+
+---
+
+### 14.2 Petals of Passion & Love Link Harvesting Engine
+
+Each player possesses a **Petal Meter** that accumulates up to **3 Petals (🌹)**. Petals represent romantic tactical favor and are harvested through three actions:
+
+1. **Capturing an Enemy Unit (+1 🌹)**: Any successful capture adds 1 Petal to the active player's meter.
+2. **Delivering Check (+1 🌹)**: Making a legal move that places the partner's King in check awards 1 Petal.
+3. **The Love Link (+1 🌹)**:
+   - When a player maneuvers their **Prince** and **Queen** into adjacent squares (sharing an edge or corner in the 8-neighborhood):
+     $$|x_{queen} - x_{prince}| \le 1 \quad \text{and} \quad |y_{queen} - y_{prince}| \le 1$$
+   - Awards **+1 Petal** instantly!
+   - **Cooldown**: To prevent repetitive adjacency abuse, Love Link can trigger at most **once every 4 moves** per player (`turnCount - lastLoveLinkTurn >= 4`).
+
+---
+
+### 14.3 Full-Board Reinforcement Summoning & The 8-Unit Catalog
+
+When a player holds **3 Petals**, they can activate **Tactical Reinforcements** to summon a powerful unit directly onto the battlefield.
+
+#### The 8-Piece Summon Catalog:
+1. **Queen 👑 (Royal Empress)**: Full straight and diagonal sliding coverage.
+2. **Rook 🏰 (Castle Tower)**: Unbounded orthogonal sliding ranks and files.
+3. **Bishop ⛪ (Royal Cleric)**: Long-range diagonal color-complex slicing.
+4. **Knight ♞ (Valiant Cavalier)**: Classical $2 \times 1$ L-shaped leaper.
+5. **Cupid Priest 🏹 (Angel of Hearts)**: Slides up to 3 squares diagonally and hops 2 squares orthogonally over obstacles.
+6. **Thorn Guard 🌹 (Communist)**: Traverses locked pawn formations via alternating diagonal zigzags.
+7. **Rose Tower 🛡️ (Supreme Rook)**: Heavy siege engine pairing orthogonal sliding with a 2-square diagonal hop.
+8. **Loyal Footman ♟️ (Pawn)**: Frontline infantry advancing 1 step with diagonal capture.
+
+#### Placement Rules & Restrictions:
+* **Any Empty Square**: The unit may be placed on **ANY vacant square across the entire 8×8 board** (not restricted to back ranks!).
+* **Check Defense First**: Summons **cannot be performed while the King is in check**. The player must escape check before summoning reinforcements.
+* **No Direct Check on Drop**: The summoned unit **cannot immediately deliver check to the opponent's King** on the turn it is dropped.
+* **King Safety**: The summon cannot expose or leave the friendly King in check.
+* **Game Limit**: Each player is permitted a maximum of **2 summons per match** (`summonsUsed < 2`).
+* **Turn Consumption**: Summoning a unit consumes the player's active turn.
+
+---
+
+### 14.4 In-Game Love Chat, Floating Reactions & Romantic Bot AI
+
+#### 1. Radiant Love Chat Box
+An in-game messenger styled with a radiant rose glow and floating message bubbles. Includes quick-tap suggestion chips:
+* `❤️ Love you`
+* `🌹 Good move!`
+* `😉 Cute!`
+* `🙈 Oops!`
+* `👑 Queen power!`
+* `🧋 Boba date later?`
+
+#### 2. Floating Emoji Reaction Palette
+Players can tap live reaction icons that float across both players' screens with spring animations:
+$$\text{Reactions: } \mathbf{❤️, \ 🌹, \ ✨, \ 💍, \ 🥰, \ 😉, \ 💖, \ 👑, \ 🥺, \ 💅, \ 🧋, \ ⚔️}$$
+
+#### 3. AI Romantic Bot Companion
+For solo practice, players can challenge **Boyfriend Bot 👑** or **Girlfriend Bot 👸**:
+* Built with 2-ply Minimax search weighted toward tactical mobility and Love Link formation.
+* Features contextual conversational dialogue responding to checks, player summons, material losses, and match conclusions.
+* Automated emoji reactions triggered when players make bold sacrifices or summon legendary pieces.
+
+#### 4. Private Room Codes & Discovery
+* Generates instant 6-character room codes (e.g., `ROSE-A1B2C3`) that can be shared with a partner on any device.
+* Real-time WebSocket matchmaking lobby allows partners to browse open rooms and connect with a single click.
+
+---
+
+### 14.5 Match Termination, Lovingly Conceding & 20-Move Draw Rule
+
+1. **Checkmate with Roses**: Delivering checkmate triggers celebratory rose petals cascading across the screen. The winner is awarded the victory with a bouquet of roses.
+2. **Lovingly Concede**: Replaces harsh resignation with an affectionate concession dialog: *"You lovingly conceded to your partner."*
+3. **20-Move Draw Rule**: To prevent endless circling in untimed matches, a match automatically draws if **20 consecutive moves** (40 half-moves) unfold without a capture or pawn advance.
+4. **Stalemate**: Ending a turn with zero legal moves while not in check produces a graceful draw.
 
 ---
 

@@ -909,8 +909,8 @@ export function executeMove(
     black: currentState.lostPieces?.black ?? currentState.capturedByWhite.length,
   };
   const lostExpensive = {
-    white: currentState.lostExpensive?.white ?? 0,
-    black: currentState.lostExpensive?.black ?? 0,
+    white: currentState.lostExpensive?.white ?? currentState.capturedByBlack.filter((p) => CRAFTING_ELIGIBLE_EXPENSIVE_TYPES.includes(p.type)).length,
+    black: currentState.lostExpensive?.black ?? currentState.capturedByWhite.filter((p) => CRAFTING_ELIGIBLE_EXPENSIVE_TYPES.includes(p.type)).length,
   };
   const expansionUsed = {
     white: Boolean(currentState.expansionUsed?.white),
@@ -1056,6 +1056,7 @@ export function executeMove(
 
   // PART B: Check Resolution: If moving player had a locked craft and is now safely out of check
   if (
+    currentState.craftingAllowed !== false &&
     craftingLocked[currentState.turn] &&
     nextStatus !== 'completed' &&
     !isKingInCheck(newBoard, currentState.turn)
@@ -1455,7 +1456,7 @@ export function applyBoardExpansion(
     white: Boolean(currentState.craftingLocked?.white),
     black: Boolean(currentState.craftingLocked?.black),
   };
-  if (currentState.craftingPending?.[player]) {
+  if (currentState.craftingAllowed !== false && currentState.craftingPending?.[player]) {
     if (currentState.inCheck === player) {
       craftingLocked[player] = true;
       nextPaused = null;

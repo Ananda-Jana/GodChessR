@@ -163,7 +163,10 @@ export interface MatchState {
   gameMode?: 'standard' | 'crafted';
   // Mid-game crafting rule: true = allowed (default), false = avoid crafting (normal chess flow without mid-game piece summons)
   craftingAllowed?: boolean;
+  pieceTheme?: PieceTheme;
 }
+
+export type PieceTheme = 'classic' | 'retro';
 
 export interface UserProfile {
   id: string;
@@ -199,6 +202,7 @@ export interface Challenge {
   timeControl: 120 | 300; // 2 minutes or 5 minutes
   moveSuggestions?: 'included' | 'excluded';
   craftingAllowed?: boolean;
+  pieceTheme?: PieceTheme;
   matchId?: string;
   createdAt: number;
   expiresAt: number;

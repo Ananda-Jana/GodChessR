@@ -17,6 +17,7 @@ import {
   Position,
   ExpansionSide,
   PieceType,
+  PieceTheme,
   DICE_GRACE_WINDOW_MS,
 } from './types/game';
 import {
@@ -209,14 +210,15 @@ function AppContent() {
     [botDifficulty]
   );
 
-  // Start instant match against Grandmaster Bot with chosen timer (2m or 5m), move suggestions, and game mode
+  // Start instant match against Grandmaster Bot with chosen timer (2m or 5m), move suggestions, game mode, and piece theme
   const handleStartBotMatch = (
     playerColor: PieceColor,
     difficulty: 'grandmaster' | 'master',
     timeControl: 120 | 300 = 300,
     moveSuggestions: 'included' | 'excluded' = 'included',
     gameMode: 'standard' | 'crafted' = 'standard',
-    craftingAllowed: boolean = true
+    craftingAllowed: boolean = true,
+    pieceTheme: PieceTheme = 'classic'
   ) => {
     if (!user) return;
     setIsBotModalOpen(false);
@@ -250,6 +252,7 @@ function AppContent() {
       board: createInitialBoard(gameMode),
       gameMode,
       craftingAllowed,
+      pieceTheme,
       turn: 'white',
       status: 'active',
       dice: null,
@@ -530,7 +533,12 @@ function AppContent() {
       />
 
       {/* Full Game Rulebook Modal */}
-      <RulesModal isOpen={isRulesOpen} onClose={() => setIsRulesOpen(false)} />
+      <RulesModal
+        isOpen={isRulesOpen}
+        onClose={() => setIsRulesOpen(false)}
+        activeMatch={activeGame || undefined}
+        isBotMatch={Boolean(botMatch)}
+      />
 
       {/* Instant Grandmaster Bot Match Modal */}
       <BotMatchModal

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useSocket } from '../context/SocketContext';
 import { AvatarDisplay, AVATAR_OPTIONS } from './Avatars';
-import { UserProfile, MatchState, Challenge } from '../types/game';
+import { UserProfile, MatchState, Challenge, PieceTheme } from '../types/game';
 import { CullingModeEntry } from './CullingModeEntry';
 import { RoseParadiseEntryButton } from '../rose/RoseParadiseEntryButton';
 import {
@@ -22,6 +22,7 @@ import {
   Sparkles,
   Sun,
   Moon,
+  Palette,
 } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 import { posToNotation } from '../game/engine';
@@ -121,12 +122,13 @@ export const Dashboard: React.FC<DashboardProps> = ({
   const [challengeTimeControl, setChallengeTimeControl] = useState<120 | 300>(300);
   const [challengeMoveSuggestions, setChallengeMoveSuggestions] = useState<'included' | 'excluded'>('included');
   const [challengeCrafting, setChallengeCrafting] = useState<'allowed' | 'off'>('allowed');
+  const [challengePieceTheme, setChallengePieceTheme] = useState<PieceTheme>('classic');
 
   const handleChallengePlayer = (targetUserId: string, targetName: string) => {
     const craftingAllowed = challengeCrafting === 'allowed';
-    sendChallenge(targetUserId, challengeTimeControl, challengeMoveSuggestions, craftingAllowed);
+    sendChallenge(targetUserId, challengeTimeControl, challengeMoveSuggestions, craftingAllowed, challengePieceTheme);
     setSentNotice(
-      `Challenge (${challengeTimeControl === 120 ? '2m' : '5m'}, hints ${challengeMoveSuggestions}, crafting ${craftingAllowed ? 'on' : 'off'}) sent to ${targetName}!`
+      `Challenge (${challengeTimeControl === 120 ? '2m' : '5m'}, hints ${challengeMoveSuggestions}, crafting ${craftingAllowed ? 'on' : 'off'}, ${challengePieceTheme === 'classic' ? 'Classic' : 'Retro Cards'} pieces) sent to ${targetName}!`
     );
     setTimeout(() => setSentNotice(null), 4000);
     setTimeout(refreshUserData, 500);
@@ -412,6 +414,9 @@ export const Dashboard: React.FC<DashboardProps> = ({
             </p>
             <p className="leading-relaxed">
               · <strong>TWO-PAWN DRAW:</strong> Either player landing 2 pawns on enemy back rank draws immediately.
+            </p>
+            <p className="leading-relaxed text-[11px] text-neutral-600 dark:text-neutral-400">
+              · <strong>TAILORED MODE RULES:</strong> Play vs Bot (Standard), Play vs Bot (Crafted), and Multiplayer feature separate rules and options.
             </p>
             <button
               onClick={onOpenRules}
@@ -721,6 +726,34 @@ export const Dashboard: React.FC<DashboardProps> = ({
                     }`}
                   >
                     Avoid
+                  </button>
+                </div>
+
+                <div className="flex items-center gap-1 bg-neutral-100 dark:bg-[#141416] border-2 border-black dark:border-white p-1 text-xs">
+                  <span className="text-[10px] font-black uppercase px-1">Theme:</span>
+                  <button
+                    type="button"
+                    onClick={() => setChallengePieceTheme('classic')}
+                    title="Classic Standard clean geometric chess pieces"
+                    className={`px-2 py-0.5 font-black text-[11px] uppercase cursor-pointer border ${
+                      challengePieceTheme === 'classic'
+                        ? 'bg-amber-400 text-black border-black shadow-[1px_1px_0px_#000]'
+                        : 'border-transparent text-neutral-600 dark:text-neutral-400'
+                    }`}
+                  >
+                    Classic
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setChallengePieceTheme('retro')}
+                    title="Retro Playing Cards character art pieces"
+                    className={`px-2 py-0.5 font-black text-[11px] uppercase cursor-pointer border ${
+                      challengePieceTheme === 'retro'
+                        ? 'bg-amber-400 text-black border-black shadow-[1px_1px_0px_#000]'
+                        : 'border-transparent text-neutral-600 dark:text-neutral-400'
+                    }`}
+                  >
+                    Retro Cards
                   </button>
                 </div>
               </div>

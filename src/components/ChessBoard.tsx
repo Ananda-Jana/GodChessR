@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Piece, Position, Move, PieceColor, DiceState, PieceType } from '../types/game';
+import { Piece, Position, Move, PieceColor, DiceState, PieceType, PieceTheme } from '../types/game';
 import { ChessPiece } from './ChessPiece';
 import { getLegalMovesForSquare, getDiceEligibleMoves, getAllLegalMoves } from '../game/engine';
 import { useTheme } from '../context/ThemeContext';
@@ -35,6 +35,7 @@ interface ChessBoardProps {
   onSelectCraftSquare?: (pos: Position) => void;
   checkmateGrids?: Position[];
   defeatedKingPos?: Position | null;
+  pieceTheme?: PieceTheme;
 }
 
 export const ChessBoard: React.FC<ChessBoardProps> = ({
@@ -55,6 +56,7 @@ export const ChessBoard: React.FC<ChessBoardProps> = ({
   onSelectCraftSquare,
   checkmateGrids = [],
   defeatedKingPos = null,
+  pieceTheme = 'classic',
 }) => {
   const { theme } = useTheme();
   const [selectedPos, setSelectedPos] = useState<Position | null>(null);
@@ -283,7 +285,7 @@ export const ChessBoard: React.FC<ChessBoardProps> = ({
                       }`}
                     >
                       <div className="w-full h-full z-10 flex items-center justify-center">
-                        <ChessPiece type={piece.type} color={piece.color} />
+                        <ChessPiece type={piece.type} color={piece.color} theme={pieceTheme} />
                       </div>
                     </div>
                   )}

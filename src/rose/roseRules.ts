@@ -234,18 +234,26 @@ export function applyRoseMove(
   let halfmove = (isCapture || isPawn) ? 0 : (match.halfmoveClock || 0) + 1;
   let status: RoseMatchStatus = engineRes.state.status === 'completed' ? 'completed' : match.status;
   let winner: RoseRole | 'draw' | null = null;
-  let winReason: string | undefined = engineRes.state.result?.reason ? String(engineRes.state.result.reason) : undefined;
+  let winReason: string | undefined = undefined;
 
-  if (engineRes.state.result?.winner === 'draw') {
+  // In Rose Paradise, two_pawns_end_rank_draw is not applicable (couples chess allows normal pawn promotions)
+  if (engineRes.state.result?.reason === 'two_pawns_end_rank_draw') {
+    status = 'active';
+    winner = null;
+    winReason = undefined;
+  } else if (engineRes.state.result?.winner === 'draw') {
     winner = 'draw';
+    winReason = engineRes.state.result.reason === 'stalemate' ? 'Draw by stalemate.' : 'Draw.';
   } else if (engineRes.state.result?.winner === 'white') {
     winner = whiteSeatCopy?.role || 'boyfriend';
+    winReason = `Checkmate! ${whiteSeatCopy?.displayName || 'White'} wins with a bouquet of roses.`;
   } else if (engineRes.state.result?.winner === 'black') {
     winner = blackSeatCopy?.role || 'girlfriend';
+    winReason = `Checkmate! ${blackSeatCopy?.displayName || 'Black'} wins with a bouquet of roses.`;
   }
 
-  // Check 20-move draw rule
-  if (halfmove >= 40) {
+  // Check 20-move draw rule without capture or pawn move
+  if (status !== 'completed' && halfmove >= 40) {
     status = 'completed';
     winner = 'draw';
     winReason = 'Draw by 20 moves without capture or pawn advance.';

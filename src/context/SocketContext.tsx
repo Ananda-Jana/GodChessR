@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useRef, useState, useCallback } from 'react';
 import { useAuth } from './AuthContext';
-import { MatchState, Challenge, Position, ExpansionSide, PieceType } from '../types/game';
+import { MatchState, Challenge, Position, ExpansionSide, PieceType, PieceTheme } from '../types/game';
 import { sounds } from '../utils/audio';
 
 interface SocketContextType {
@@ -13,7 +13,8 @@ interface SocketContextType {
     targetUserId: string,
     timeControl?: 120 | 300,
     moveSuggestions?: 'included' | 'excluded',
-    craftingAllowed?: boolean
+    craftingAllowed?: boolean,
+    pieceTheme?: PieceTheme
   ) => void;
   respondChallenge: (challengeId: string, action: 'accept' | 'decline') => void;
   cancelChallenge: (challengeId: string) => void;
@@ -177,10 +178,11 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     targetUserId: string,
     timeControl: 120 | 300 = 300,
     moveSuggestions: 'included' | 'excluded' = 'included',
-    craftingAllowed: boolean = true
+    craftingAllowed: boolean = true,
+    pieceTheme: PieceTheme = 'classic'
   ) => {
     setMatchError(null);
-    send({ type: 'challenge:send', targetUserId, timeControl, moveSuggestions, craftingAllowed });
+    send({ type: 'challenge:send', targetUserId, timeControl, moveSuggestions, craftingAllowed, pieceTheme });
   };
 
   const respondChallenge = (challengeId: string, action: 'accept' | 'decline') => {
