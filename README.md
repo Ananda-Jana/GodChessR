@@ -78,6 +78,14 @@
     - [14.3 Full-Board Reinforcement Summoning & The 8-Unit Catalog](#143-full-board-reinforcement-summoning--the-8-unit-catalog)
     - [14.4 In-Game Love Chat, Floating Reactions & Romantic Bot AI](#144-in-game-love-chat-floating-reactions--romantic-bot-ai)
     - [14.5 Match Termination, Lovingly Conceding & 20-Move Draw Rule](#145-match-termination-lovingly-conceding--20-move-draw-rule)
+15. [Possible Future Updates (( NOT Done YET ))](#possible-future-updates--not-done-yet-)
+16. [Comprehensive Firebase & Firestore Porting Plan (100% Free Forever)](#16-comprehensive-firebase--firestore-porting-plan-100-free-forever)
+    - [16.1 Feasibility & Heaviness Evaluation: Will Free Tier Last for Years?](#161-feasibility--heaviness-evaluation-will-free-tier-last-for-years)
+    - [16.2 Codebase Compatibility: Can the Whole App Upload As-Is?](#162-codebase-compatibility-can-the-whole-app-upload-as-is)
+    - [16.3 Step-by-Step Porting Guide from Scratch](#163-step-by-step-porting-guide-from-scratch)
+    - [16.4 Firestore Schema & Document Architecture](#164-firestore-schema--document-architecture)
+    - [16.5 User & Admin Account Deletion Architecture](#165-user--admin-account-deletion-architecture)
+    - [16.6 Critical Precautions & Anti-Quota Traps](#166-critical-precautions--anti-quota-traps)
 
 ---
 
@@ -921,6 +929,363 @@ For solo practice, players can challenge **Boyfriend Bot 👑** or **Girlfriend 
 2. **Lovingly Concede**: Replaces harsh resignation with an affectionate concession dialog: *"You lovingly conceded to your partner."*
 3. **20-Move Draw Rule**: To prevent endless circling in untimed matches, a match automatically draws if **20 consecutive moves** (40 half-moves) unfold without a capture or pawn advance.
 4. **Stalemate**: Ending a turn with zero legal moves while not in check produces a graceful draw.
+
+---
+
+### Possible Future Updates (( NOT Done YET ))
+
+A strategic roadmap of engineered features designed from the perspective of a **Senior Game Developer & Systems Architect**. These prospective updates focus on player retention, viral growth, tactile immersion, and community engagement while **strictly preserving the core rules, tactical balance, and Google Cloud Free-Tier sustainability** (zero external paid databases, $< 256\text{ MB}$ memory footprint, scale-to-zero compliance).
+
+---
+
+#### 1. Daily Engagement & Habit Loops (Zero Server Cost)
+
+* **1.1 Daily Mugen Tactical Puzzle ("Puzzle of the Day")**:
+  - *Product Concept*: Players solve one daily curated tactical scenario (e.g., finding checkmate using the Prince's 3×1 first leap, breaking through with a Communist zigzag, or forcing a Two-Pawns End-Rank Draw).
+  - *Retention Driver*: Encourages daily logins and builds habit streaks (tracked via an in-app calendar).
+  - *Engineering Architecture*: Puzzles stored in a static client JSON file (`puzzles.json`). Validation runs **100% on the client browser thread** using `src/game/engine.ts`. Zero server compute or database load!
+* **1.2 The Mugen Grimoire (Trophy & Achievement System)**:
+  - *Product Concept*: Aesthetic brutalist badges unlocked through remarkable tactical milestones:
+    - 👑 **"Royal Gambler"**: Won 5 matches during turns where dice forced an Expensive roll.
+    - 🕊️ **"The Diplomat"**: Successfully forced a draw via the Two-Pawns End-Rank Rule.
+    - ⚡ **"Flank Decapitation"**: Delivered checkmate on turn 4 using the Prince's opening leap.
+    - 🌹 **"True Romance"**: Triggered 3 Love Links in a single Rose Paradise match.
+    - ⛩️ **"Total Domination"**: Won a Culling Game by Complete Tactical Suppression (0 moves).
+  - *Engineering Architecture*: Tracked in existing user profiles or browser `localStorage`. Incremented in $O(1)$ time inside the match completion handler.
+
+---
+
+#### 2. Social & Virality Features (Zero Server Clutter)
+
+* **2.1 Compressed URL-Encoded Shareable Match Replays**:
+  - *Product Concept*: After any match, players can click **"Share Game Replay"** to copy a short link (e.g., `https://your-app.../?replay=e4_h4_e2e4...`).
+  - *Viral Driver*: Players share dramatic matches, brilliant Prince forks, and dice comebacks on Discord, WhatsApp, or X/Twitter.
+  - *Engineering Architecture*: The match move sequence is compressed via LZ-string into the URL query parameter. When a friend opens the link, the client engine decodes the moves and animates a step-by-step playback bar with forward/back navigation. **Zero database storage required.**
+* **2.2 Courtside Live Spectator Mode ("Watch Room")**:
+  - *Product Concept*: Friends and spectators can watch active PvP or Rose Paradise matches live in real time.
+  - *Community Driver*: Enables community tournaments, couples cheering on each other, and streamer spectating.
+  - *Engineering Architecture*: Connects read-only WebSocket clients to the existing match room (`matchRooms.get(matchId)`) with an `isSpectator: true` flag. The server broadcasts the existing delta frames without extra computation or memory overhead.
+
+---
+
+#### 3. Balanced, Non-Extreme Game Modes & Variations
+
+* **3.1 Mugen Puzzle Rush / Tactical Survival (Single-Player Arcade)**:
+  - *Product Concept*: Players get 3 minutes and 3 lives to solve consecutive tactical dice and fairy-piece positions of increasing difficulty.
+  - *Why It Fits*: Fast-paced, addictive, and casual-friendly. Preserves classical rules without adding confusing mechanics.
+* **3.2 "Fog of War" / Tactical Vision (Optional Match Toggle)**:
+  - *Product Concept*: An optional visual toggle where only squares your pieces can attack or step onto are illuminated; opponent pieces in deep shadows are hidden until scouted.
+  - *Why It Fits*: Transforms chess into an intense stealth skirmish where the Prince's leaping ability acts as a deep reconnaissance unit. All piece movement and capture rules remain 100% identical.
+* **3.3 "Hand & Brain" Co-op Bot Challenge**:
+  - *Product Concept*: Two human players team up against the Grandmaster Bot: Player 1 (the "Brain") designates which piece must move, and Player 2 (the "Hand") decides which square to move it to.
+
+---
+
+#### 4. Engine & AI Diversity (Zero Extra CPU Load)
+
+* **4.1 Distinct Minimax Bot Personalities**:
+  By adjusting evaluation weights in `src/game/bot.ts` without increasing search depth, players can choose from 4 unique bot playstyles:
+  1. **"The Cavalier" (Hyper-Aggressive)**: Overvalues Prince mobility and Knight outposts by 35%; launches early flank offensives.
+  2. **"The Iron Fortress" (Positional Defender)**: Prioritizes King shelter and rigid pawn structures; actively maneuvers to trigger late-game board expansion or two-pawn draws.
+  3. **"The Berserker" (Tactical Striker)**: Relentlessly hunts down enemy Queens and Princes, accepting wild tactical sacrifices.
+  4. **"The Architect" (Crafting Strategist)**: Focuses opening play on orchestrating mid-game Fairy piece summons (Communists and Supreme Rooks).
+
+---
+
+#### 5. Mobile Web App Feel & Tactical Polish
+
+* **5.1 Progressive Web App (PWA) Offline Play**:
+  - *Product Concept*: Add a Web App Manifest and Service Worker caching core assets (`index.html`, vector pieces, sounds).
+  - *User Benefit*: Players can tap **"Add to Home Screen"** on iOS or Android. Launches full-screen without browser bars and enables playing against the Bot or solving Daily Puzzles **completely offline on flights or subways**.
+* **5.2 Mobile Web Haptic Feedback (`navigator.vibrate`)**:
+  - Crisp, subtle tactile vibrations:
+    - *Piece Lift / Drop*: 15ms micro-vibration.
+    - *Delivering Check*: Double tap (30ms, 40ms pause, 30ms).
+    - *Checkmate / Board Expansion*: Heavy pulse.
+  - Adds a premium physical board feel on mobile devices with zero performance cost.
+* **5.3 Interactive "Mugen Theory Lab" (Opening Sandbox)**:
+  - An interactive analysis board in the Theory tab allowing players to explore opening lines when White starts with Queen at `a1` and Prince at `h1`.
+
+---
+
+#### 6. Google Cloud Free-Tier Compliance & Efficiency Matrix
+
+| Prospective Feature | Compute Location | Memory Footprint | Network Overhead | Free-Tier Feasibility |
+| :--- | :---: | :---: | :---: | :---: |
+| **Daily Puzzles & Streaks** | Client Browser | $0\text{ MB}$ Server RAM | Single static JSON fetch | **100% Free** |
+| **Shareable Replay URLs** | Client URL Parameters | $0\text{ MB}$ Server RAM | $0\text{ KB}$ Server Network | **100% Free** |
+| **Spectator Mode** | Existing WebSocket Room | $< 0.1\text{ KB}$ per viewer | Reuses existing delta broadcast | **100% Free** |
+| **Minimax Bot Personalities** | Client-Side Thread | $0\text{ MB}$ Server RAM | Zero network traffic | **100% Free** |
+| **Offline PWA + Haptics** | Browser Cache / Device | $0\text{ MB}$ Server RAM | Zero server requests | **100% Free** |
+| **Fog of War Masking** | CSS Canvas / DOM Layer | $0\text{ MB}$ Server RAM | Client visual mask only | **100% Free** |
+
+---
+
+## 16. Comprehensive Firebase & Firestore Porting Plan (100% Free Forever)
+
+This architectural blueprint outlines how to port MugenChessX to **Google Firebase** and leverage **Cloud Firestore** for permanent account storage, match history, and administrative management **at zero financial cost ($0/month forever)** without a credit card.
+
+---
+
+### 16.1 Feasibility & Heaviness Evaluation: Will Free Tier Last for Years?
+
+#### 1. Game Heaviness & Data Footprint
+* **Client Frontend Bundle**: Compiled React 19 production bundle is $\sim 380\text{ KB}$ gzipped. In modern web development, this is **exceptionally lightweight** (lighter than a single mobile camera photo).
+* **User Profile Footprint**: A full player record (`userId`, `username`, `passwordHash`, `salt`, `avatarId`, `wins`, `losses`, `draws`, `createdAt`) occupies only $\sim 0.2\text{ KB}$ of text data in Firestore.
+* **Match History Footprint**: A complete match record with 60 plies of moves, timestamps, and captured trays occupies $\sim 2 \dots 4\text{ KB}$.
+
+#### 2. Firebase Spark Plan (100% Free Tier Quota Limits)
+The Firebase **Spark Plan** is completely free forever and does **NOT require any credit card**:
+
+| Resource | Firebase Spark Free Daily Quota | Your Usage at 1–2 Players / Day | Percentage of Free Quota Used |
+| :--- | :---: | :---: | :---: |
+| **Total Stored Data** | **$1.0\text{ GB}$ (Free Forever)** | $\sim 0.00005\text{ GB}$ per month | $< 0.01\%$ |
+| **Document Reads** | **$50,000$ reads / day** | $\sim 20 \dots 50$ reads / day | **$\mathbf{0.08\%}$** |
+| **Document Writes** | **$20,000$ writes / day** | $\sim 4 \dots 10$ writes / day | **$\mathbf{0.03\%}$** |
+| **Document Deletes** | **$20,000$ deletes / day** | $\sim 1 \dots 5$ deletes / day | **$\mathbf{0.01\%}$** |
+| **Network Egress** | **$10\text{ GB}$ / month** | $\sim 0.05\text{ GB}$ / month | $< 0.5\%$ |
+
+#### 3. Mathematical Longevity Calculation:
+* $1.0\text{ GB}$ of free storage $= 1,000,000\text{ KB}$.
+* At $4\text{ KB}$ per recorded match, $1\text{ GB}$ holds **$250,000$ completed games** and over **$5,000,000$ registered accounts**.
+* At 2 games played per day ($365 \times 2 = 730$ games per year):
+  $$\text{Years to reach } 1\text{ GB} = \frac{250,000 \text{ games}}{730 \text{ games/year}} \approx \mathbf{342 \text{ Years!}}$$
+* **Verdict on Longevity**: For low-to-moderate traffic (1 to 50 active players per day), the Firebase Spark Plan will run **100% free with zero bills or credit card requirements indefinitely for decades**.
+
+---
+
+### 16.2 Codebase Compatibility: Can the Whole App Upload As-Is?
+
+To understand how MugenChessX ports to Firebase, we must distinguish between the **Frontend** and the **Backend**:
+
+```
+MUGENCHESSX ARCHITECTURAL LAYOUT:
+├── Client Frontend (React 19, Vite, Tailwind, Audio, Canvas)   --> 100% Static HTML/JS
+└── Backend Server (Node.js Express + WebSocket Server on /ws)    --> Stateful Long-Running Process
+```
+
+#### What Uploads As-Is:
+* **The Client Frontend**: The entire React application builds to pure static HTML, CSS, and JS (`dist/`). It can be deployed directly to **Firebase Hosting** with one command (`firebase deploy --only hosting`). It delivers instant global CDN delivery with automatic SSL certificates.
+
+#### What Needs Architectural Choice (The WebSocket Server):
+* Traditional **Firebase Hosting** is purely a static file server. It does *not* host long-running Node.js processes or custom WebSocket servers by itself.
+* Because MugenChessX features real-time dice rolls, turn timers, and challenges via a WebSocket server (`ws`), you have three porting paths:
+
+---
+
+#### 🌟 Path A: The Direct Firestore Plug-in (Recommended for Google AI Studio)
+* **How It Works**:
+  1. Keep the app running inside Google AI Studio / Google Cloud Run (which is already free and handles both Express and WebSockets natively).
+  2. Simply replace the local file database operations in `server/db.ts` (`users.json`, `matches.json`) with the `@google-cloud/firestore` SDK pointing to your free Firebase project.
+* **Why This Is Best**:
+  * **Zero Frontend Changes**: You don't rewrite a single line of React or WebSocket code.
+  * **Permanent Data**: When Cloud Run sleeps or restarts, accounts and matches stay permanently saved in Firestore!
+  * **Zero Extra Cost**: Cloud Run scale-to-zero is free; Firestore Spark tier is free.
+
+#### Path B: Serverless Firebase via Firestore Real-Time Listeners (`onSnapshot`)
+* **How It Works**:
+  1. Eliminate `server.ts` and `server/socket.ts` entirely.
+  2. Frontend connects directly to Firestore using the client SDK (`firebase/firestore`).
+  3. Real-time multiplayer moves are synced by listening to document changes:
+     ```typescript
+     import { onSnapshot, doc } from 'firebase/firestore';
+     const unsubscribe = onSnapshot(doc(db, 'matches', matchId), (snapshot) => {
+       setMatchState(snapshot.data());
+     });
+     ```
+* **Pros**: 100% serverless, zero servers to maintain, deployed completely on Firebase Hosting.
+* **Cons**: Requires refactoring the WebSocket event listeners in `SocketContext.tsx` into Firestore document listeners.
+
+---
+
+### 16.3 Step-by-Step Porting Guide from Scratch
+
+Suppose you have just created an empty Firebase project:
+
+#### Step 1: Create Project in Firebase Console
+1. Go to [https://console.firebase.google.com/](https://console.firebase.google.com/) and click **"Add project"**.
+2. Name your project (e.g., `mugenchessx`).
+3. Toggle Google Analytics off (optional, keeps setup minimal).
+4. Click **Create Project**. Verify in project settings that the plan is **Spark (Free $0)**.
+
+#### Step 2: Enable Cloud Firestore
+1. In the Firebase console sidebar, navigate to **Build** $\to$ **Firestore Database**.
+2. Click **Create database**.
+3. Choose your nearest cloud location (e.g., `asia-northeast1` or `us-central1`).
+4. Select **Start in production mode** (or test mode for immediate prototyping).
+5. Click **Enable**.
+
+#### Step 3: Obtain Configuration Credentials
+* **For Client-Side Web App**:
+  1. In Project Overview, click the Web icon (`</>`) to register a web app.
+  2. Copy the generated `firebaseConfig` object:
+     ```javascript
+     const firebaseConfig = {
+       apiKey: "AIzaSy...",
+       authDomain: "mugenchessx.firebaseapp.com",
+       projectId: "mugenchessx",
+       storageBucket: "mugenchessx.appspot.com",
+       messagingSenderId: "...",
+       appId: "..."
+     };
+     ```
+* **For Backend Server Integration (Path A)**:
+  1. Go to **Project Settings** $\to$ **Service accounts**.
+  2. Click **Generate new private key** (downloads a JSON credentials file).
+  3. Store this file securely or set environment variable `GOOGLE_APPLICATION_CREDENTIALS`.
+
+#### Step 4: Install Dependencies in Google AI Studio
+In your applet terminal / environment:
+```bash
+npm install firebase
+# If using server-side Path A:
+npm install @google-cloud/firestore
+```
+
+#### Step 5: Replace `server/db.ts` Logic with Firestore Calls
+Instead of reading and writing to `data/users.json`, `server/db.ts` interacts directly with Firestore:
+```typescript
+import { Firestore } from '@google-cloud/firestore';
+
+const firestore = new Firestore({
+  projectId: process.env.FIREBASE_PROJECT_ID || 'mugenchessx',
+});
+
+const usersCol = firestore.collection('users');
+const matchesCol = firestore.collection('matches');
+
+export async function findUserById(id: string) {
+  const doc = await usersCol.doc(id).get();
+  return doc.exists ? doc.data() : undefined;
+}
+
+export async function saveUser(user: any) {
+  await usersCol.doc(user.id).set(user, { merge: true });
+}
+
+export async function deleteUser(id: string) {
+  await usersCol.doc(id).delete();
+}
+```
+
+---
+
+### 16.4 Firestore Schema & Document Architecture
+
+```
+Firestore Root
+│
+├── /users/{userId}
+│   ├── id: string (e.g., "usr_9x7a2")
+│   ├── username: string ("grandmaster_alex")
+│   ├── displayName: string ("Alex")
+│   ├── passwordHash: string (PBKDF2 salted hash)
+│   ├── salt: string
+│   ├── avatarId: string ("avatar_prince")
+│   ├── role: string ("user" | "admin")
+│   ├── stats: { wins: 14, losses: 5, draws: 2, winRate: 0.70 }
+│   ├── achievements: ["prince_first_leap", "culling_suppression"]
+│   └── createdAt: number (timestamp)
+│
+├── /matches/{matchId}
+│   ├── id: string ("match_1740000000")
+│   ├── gameMode: string ("standard" | "crafted" | "culling" | "rose")
+│   ├── whitePlayer: { userId, displayName, avatarId }
+│   ├── blackPlayer: { userId, displayName, avatarId }
+│   ├── status: string ("active" | "completed")
+│   ├── winner: string ("white" | "black" | "draw")
+│   ├── winReason: string ("Checkmate!" | "Timeout")
+│   ├── moveHistory: Array<{ from, to, san, piece }>
+│   └── completedAt: number
+│
+└── /challenges/{challengeId}
+    ├── id: string
+    ├── challengerId: string
+    ├── targetId: string
+    ├── status: string ("pending" | "accepted" | "declined")
+    └── expiresAt: number (auto-cleaned)
+```
+
+---
+
+### 16.5 User & Admin Account Deletion Architecture
+
+#### 1. User Self-Service Deletion
+Add an authenticated route in `server/routes.ts`:
+```typescript
+// DELETE /api/account - Deletes current user and their active session
+app.delete('/api/account', authMiddleware, async (req, res) => {
+  const userId = req.user.id;
+  
+  // 1. Delete user document from Firestore
+  await firestore.collection('users').doc(userId).delete();
+  
+  // 2. Remove any active sessions
+  db.removeSession(req.token);
+  
+  // 3. Clear user from active WebSocket presence
+  res.json({ success: true, message: 'Account permanently deleted.' });
+});
+```
+
+#### 2. Admin Deletion
+* **No Code Needed (Firebase Console Dashboard)**:
+  As the admin, open [https://console.firebase.google.com/](https://console.firebase.google.com/) on your phone or laptop $\to$ **Firestore Database** $\to$ click the `users` collection $\to$ select the user $\to$ click the **Trash Can icon**. The user is deleted instantly!
+* **Programmatic In-Game Admin Deletion**:
+  ```typescript
+  app.delete('/api/admin/users/:targetUserId', authMiddleware, async (req, res) => {
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'Unauthorized: Admin access required.' });
+    }
+    await firestore.collection('users').doc(req.params.targetUserId).delete();
+    res.json({ success: true, message: 'User deleted by administrator.' });
+  });
+  ```
+
+---
+
+### 16.6 Critical Precautions & Anti-Quota Traps
+
+1. **The React "Unsubscribe" Trap (Never Cause Runaway Reads)**:
+   * If using client-side Firestore `onSnapshot` listeners in React components, **always return the unsubscribe function** inside `useEffect`:
+     ```typescript
+     useEffect(() => {
+       const unsubscribe = onSnapshot(doc(db, 'matches', matchId), (snap) => {
+         if (snap.exists()) setMatch(snap.data());
+       });
+       // CRITICAL: Cleanup on component unmount
+       return () => unsubscribe();
+     }, [matchId]);
+     ```
+   * *Why*: If you forget `return () => unsubscribe()`, every re-render spawns a new listener, which can consume hundreds of reads in seconds.
+2. **Never Query Without Limits**:
+   * When fetching user leaderboards or open rooms, always use `limit(20)`:
+     ```typescript
+     const q = query(collection(db, 'matches'), orderBy('completedAt', 'desc'), limit(20));
+     ```
+3. **Password Security Precaution**:
+   * If you use Firestore directly from the browser, do NOT handle passwords manually. Instead, enable **Firebase Authentication (Email/Password)**, which hashes passwords with Scrypt on Google's infrastructure for free.
+   * If keeping custom PBKDF2 hashing, keep password verification on the backend server (`server/auth.ts`) so password hashes and salts are never exposed to public Firestore clients.
+4. **Firestore Security Rules (`firestore.rules`)**:
+   Deploy strict security rules so players cannot overwrite other players' stats:
+   ```javascript
+   rules_version = '2';
+   service cloud.firestore {
+     match /databases/{database}/documents {
+       // Users can only read/edit their own profile
+       match /users/{userId} {
+         allow read: if true;
+         allow write, delete: if request.auth != null && request.auth.uid == userId;
+       }
+       // Match records are read-only once completed
+       match /matches/{matchId} {
+         allow read: if true;
+         allow create: if request.auth != null;
+         allow update: if request.auth != null;
+       }
+     }
+   }
+   ```
 
 ---
 
