@@ -40,21 +40,66 @@ export const TrophyRoomModal: React.FC<TrophyRoomModalProps> = ({
       if (!selectedCard || !state.earnedCards.some((c) => c.id === selectedCard.id)) {
         setSelectedCard(state.earnedCards[0]);
       }
+    } else if (selectedCard && !selectedCard.id.endsWith('_locked')) {
+      setSelectedCard(null);
     }
   }, [isOpen, initialSelectedCard, state.earnedCards]);
 
+  const matchesTrophyDef = (cardId: string, defId: string) =>
+    cardId === defId || cardId.startsWith(`${defId}_`);
+
+  // Merge definitions with earned state to show full collection
+  const allTrophyData = CARD_DEFINITIONS.map((def) => {
+    // Find all earned instances of this definition
+    const instances = state.earnedCards.filter(
+      (c) => !c.id.endsWith('_locked') && (matchesTrophyDef(c.id, def.id) || c.title === def.title)
+    );
+    const isUnlocked = instances.length > 0;
+    // Use the most recent earned instance for the preview if unlocked
+    const earnedInstance = isUnlocked ? instances[0] : null;
+
+    return {
+      ...def,
+      isUnlocked,
+      earnedInstance,
+      instances,
+      // If earned, use the latest rating
+      predictedRating: earnedInstance?.predictedRating ?? null,
+    };
+  });
+
+  const selectedTrophy = selectedCard
+    ? allTrophyData.find(
+        (t) => matchesTrophyDef(selectedCard.id, t.id) || t.title === selectedCard.title
+      )
+    : undefined;
+
+  const isSelectedCardUnlocked = Boolean(
+    selectedCard &&
+      (state.earnedCards.some((c) => c.id === selectedCard.id) ||
+        Boolean(selectedTrophy?.isUnlocked))
+  );
+
+  const effectiveSelectedCard =
+    selectedCard &&
+    selectedCard.id.endsWith('_locked') &&
+    selectedTrophy?.isUnlocked &&
+    selectedTrophy.earnedInstance
+      ? selectedTrophy.earnedInstance
+      : selectedCard;
+
   // Render selected 1:1 square card to canvas with guaranteed mount visibility
   useEffect(() => {
-    if (!isOpen || !selectedCard) return;
+    if (!isOpen || !effectiveSelectedCard) return;
 
     let animId: number;
     let timeoutId: NodeJS.Timeout;
 
     const render = () => {
-      if (canvasRef.current && selectedCard) {
+      if (canvasRef.current && effectiveSelectedCard) {
         const ctx = canvasRef.current.getContext('2d');
         if (ctx) {
-          drawAchievementCard(ctx, selectedCard);
+          drawAchievementCard(ctx, effectiveSelectedCard);
         }
       }
     };
@@ -67,27 +112,9 @@ export const TrophyRoomModal: React.FC<TrophyRoomModalProps> = ({
       cancelAnimationFrame(animId);
       clearTimeout(timeoutId);
     };
-  }, [isOpen, selectedCard]);
+  }, [isOpen, effectiveSelectedCard]);
 
   if (!isOpen) return null;
-
-  // Merge definitions with earned state to show full collection
-  const allTrophyData = CARD_DEFINITIONS.map(def => {
-    // Find all earned instances of this definition
-    const instances = state.earnedCards.filter(c => c.id.startsWith(def.id));
-    const isUnlocked = instances.length > 0;
-    // Use the most recent earned instance for the preview if unlocked
-    const earnedInstance = isUnlocked ? instances[0] : null;
-
-    return {
-      ...def,
-      isUnlocked,
-      earnedInstance,
-      instances,
-      // If earned, use the latest rating
-      predictedRating: earnedInstance?.predictedRating || null
-    };
-  });
 
   const filteredTrophies = allTrophyData.filter((t) => {
     if (filterMode !== 'all' && t.mode !== filterMode) return false;
@@ -212,7 +239,7 @@ export const TrophyRoomModal: React.FC<TrophyRoomModalProps> = ({
             
             {/* Left/Detail Column: Persistent Sticky on Desktop, Top of Scroll on Mobile */}
             <aside className="lg:w-[38%] xl:w-[32%] lg:sticky lg:top-14 h-fit bg-black/60 border-b-2 lg:border-b-0 lg:border-r-4 border-white/10 p-5 sm:p-8 flex flex-col items-center shrink-0 z-10">
-              {selectedCard ? (
+              {effectiveSelectedCard ? (
                 <div className="w-full max-w-[340px] animate-in slide-in-from-top-4 duration-300">
                   {/* Badge Preview Frame */}
                   <div className="relative border-4 border-white shadow-[10px_10px_0px_#fbbf24] bg-black aspect-square w-full mb-8 group overflow-hidden">
@@ -222,16 +249,18 @@ export const TrophyRoomModal: React.FC<TrophyRoomModalProps> = ({
                       height={600}
                       className="w-full h-full block object-contain"
                     />
-                    {!allTrophyData.find(t => t.id === selectedCard.id.split('_')[0])?.isUnlocked && (
-                       <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px] flex items-center justify-center">
-                          <div className="bg-black/80 border-2 border-slate-700 px-4 py-2 flex items-center gap-2 shadow-2xl">
-                             <Lock className="w-4 h-4 text-slate-500" />
-                             <span className="text-xs font-black text-slate-500 uppercase tracking-widest">Seal Locked</span>
-                          </div>
-                       </div>
+                    {!isSelectedCardUnlocked && (
+                      <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px] flex items-center justify-center">
+                        <div className="bg-black/80 border-2 border-slate-700 px-4 py-2 flex items-center gap-2 shadow-2xl">
+                          <Lock className="w-4 h-4 text-slate-500" />
+                          <span className="text-xs font-black text-slate-500 uppercase tracking-widest">Seal Locked</span>
+                        </div>
+                      </div>
                     )}
                     <div className="absolute bottom-2 left-2 px-2 py-1 bg-black/80 border border-white/20 text-xs font-black text-slate-400 uppercase">
-                      Serial: {selectedCard.id.slice(-8)}
+                      {isSelectedCardUnlocked
+                        ? `Serial: ${effectiveSelectedCard.id.slice(-8)}`
+                        : 'Status: Locked'}
                     </div>
                   </div>
 
@@ -241,28 +270,32 @@ export const TrophyRoomModal: React.FC<TrophyRoomModalProps> = ({
                         Badge Codex
                       </div>
                       <h3 className="text-2xl font-black uppercase text-white mb-1 leading-tight tracking-tighter">
-                        {selectedCard.title}
+                        {effectiveSelectedCard.title}
                       </h3>
                       <div className="flex items-center gap-2 mb-4">
                         <span className={`text-xs font-black px-2 py-0.5 border border-white/20 ${
-                          selectedCard.rarity === 'Legendary' ? 'text-amber-400' : 
-                          selectedCard.rarity === 'Epic' ? 'text-purple-400' : 'text-slate-400'
+                          effectiveSelectedCard.rarity === 'Legendary' ? 'text-amber-400' : 
+                          effectiveSelectedCard.rarity === 'Epic' ? 'text-purple-400' : 'text-slate-400'
                         }`}>
-                          {selectedCard.rarity.toUpperCase()}
+                          {effectiveSelectedCard.rarity.toUpperCase()}
                         </span>
                         <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">
-                          {selectedCard.mode} Realm
+                          {effectiveSelectedCard.mode} Realm
                         </span>
                       </div>
                       <p className="text-sm font-medium text-slate-200 leading-relaxed italic border-l-4 border-amber-400 pl-4 py-1">
-                        &ldquo;{selectedCard.description}&rdquo;
+                        &ldquo;{effectiveSelectedCard.description}&rdquo;
                       </p>
                     </div>
 
                     <button
-                      onClick={() => downloadCardAsPng(selectedCard)}
-                      disabled={!allTrophyData.find(t => t.id === selectedCard.id.split('_')[0])?.isUnlocked}
-                      className="w-full h-14 bg-amber-400 hover:bg-amber-300 disabled:bg-slate-800 disabled:text-slate-600 disabled:border-slate-700 disabled:shadow-none text-black font-black text-xs sm:text-sm uppercase tracking-tighter border-3 border-black shadow-[6px_6px_0px_#fff] flex items-center justify-center gap-3 cursor-pointer transition-all active:translate-x-1 active:translate-y-1"
+                      onClick={() => {
+                        if (isSelectedCardUnlocked && effectiveSelectedCard) {
+                          downloadCardAsPng(effectiveSelectedCard);
+                        }
+                      }}
+                      disabled={!isSelectedCardUnlocked}
+                      className="w-full h-14 bg-amber-400 hover:bg-amber-300 disabled:bg-slate-800 disabled:text-slate-600 disabled:border-slate-700 disabled:shadow-none text-black font-black text-xs sm:text-sm uppercase tracking-tighter border-3 border-black shadow-[6px_6px_0px_#fff] flex items-center justify-center gap-3 cursor-pointer disabled:cursor-not-allowed transition-all active:translate-x-1 active:translate-y-1"
                     >
                       <Download className="w-5 h-5 stroke-[3]" />
                       <span>Download Identity Badge</span>
@@ -311,7 +344,9 @@ export const TrophyRoomModal: React.FC<TrophyRoomModalProps> = ({
               ) : (
                 <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
                   {filteredTrophies.map((trophy) => {
-                    const isSelected = selectedCard?.id.startsWith(trophy.id);
+                    const isSelected = Boolean(
+                      selectedCard && matchesTrophyDef(selectedCard.id, trophy.id)
+                    );
                     const isLocked = !trophy.isUnlocked;
                     
                     return (

@@ -695,7 +695,7 @@ export const RoseParadiseView: React.FC<RoseParadiseViewProps> = ({ onBack }) =>
     : ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
 
   return (
-    <div className={`rose-theme ${activeMatch ? 'h-[100dvh] max-h-[100dvh] overflow-hidden' : 'min-h-screen'} flex flex-col p-1 sm:p-3 md:p-6 select-none bg-black text-white font-mono`}>
+    <div className={`rose-theme ${activeMatch ? 'h-[100dvh] max-h-[100dvh] overflow-hidden md:px-4 md:py-2' : 'min-h-screen md:p-6'} flex flex-col p-1 sm:p-3 select-none bg-black text-white font-mono`}>
       {/* Floating Live Reactions */}
       {reactions.map((r) => (
         <div
@@ -711,7 +711,7 @@ export const RoseParadiseView: React.FC<RoseParadiseViewProps> = ({ onBack }) =>
       ))}
 
       {/* ==================== BRUTALIST TOP NAVIGATION ==================== */}
-      <header className={`z-10 w-full flex items-center justify-between border-b-3 md:border-b-4 border-white ${activeMatch ? 'h-12 md:h-14 px-2 md:px-6 mb-1 md:mb-3 shrink-0' : 'max-w-6xl mx-auto pb-4 mb-4'}`}>
+      <header className={`z-10 w-full flex items-center justify-between border-b-3 md:border-b-4 border-white ${activeMatch ? 'h-12 md:h-12 px-2 md:px-4 mb-1 md:mb-2 shrink-0' : 'max-w-6xl mx-auto pb-4 mb-4'}`}>
         <div className="flex items-center gap-2 sm:gap-3">
           <button
             onClick={() => {
@@ -1055,9 +1055,9 @@ export const RoseParadiseView: React.FC<RoseParadiseViewProps> = ({ onBack }) =>
       {/* ==================== 2. ACTIVE MATCH VIEW (PROPER BRUTALISM) ==================== */}
       {activeMatch && (
         <>
-          <main className="flex-1 min-h-0 w-full mx-auto flex flex-col md:grid md:grid-cols-[1fr_320px] lg:grid-cols-[280px_1fr_320px] h-[calc(100dvh-48px)] md:h-[calc(100dvh-56px)] gap-4 md:gap-6 p-1 md:p-6 overflow-hidden max-w-[1600px]">
+          <main className="flex-1 min-h-0 w-full mx-auto flex flex-col md:grid md:grid-rows-[minmax(0,1fr)] md:grid-cols-[minmax(0,1fr)_300px] lg:grid-cols-[280px_minmax(0,1fr)_300px] h-[calc(100dvh-48px)] md:h-auto gap-4 md:gap-4 lg:gap-5 p-1 md:px-3 md:py-1 overflow-hidden max-w-[1600px]">
             {/* Left Sidebar (Desktop Only): Predictor, Partner Info & In-Game Love Chat Box */}
-            <div className="hidden lg:flex flex-col gap-4 overflow-y-auto pr-1">
+            <div className="hidden lg:flex lg:min-h-0 flex-col gap-4 overflow-y-auto pr-1">
               {/* Live Skill Predictor Panel */}
               <PredictorPanel
                 metrics={extractRoseMetrics(activeMatch, effectiveMyColor)}
@@ -1215,9 +1215,9 @@ export const RoseParadiseView: React.FC<RoseParadiseViewProps> = ({ onBack }) =>
             </div>
 
             {/* Center: Brutalist Chess Board (Tier 2 & Desktop Center) */}
-            <div className="flex-1 min-h-0 w-full flex flex-col items-center justify-center relative overflow-hidden px-1 py-1 md:p-0">
+            <div className="flex-1 min-h-0 w-full flex flex-col items-center justify-center relative overflow-hidden px-1 py-1 md:px-2 md:pt-1 md:pb-3">
               {/* Turn Banner - Desktop / Tablet */}
-              <div className={`hidden md:flex w-full max-w-[540px] lg:max-w-none px-4 py-2 border-3 border-white shadow-[4px_4px_0px_#fff] items-center justify-between text-xs font-black uppercase mb-2 ${isMyTurn ? 'bg-amber-400 text-black' : 'bg-black text-white'}`}>
+              <div className={`hidden md:flex shrink-0 w-full ${summoningUnit ? 'md:w-[min(calc(100dvh-260px),calc(100%-24px),760px)]' : 'md:w-[min(calc(100dvh-208px),calc(100%-24px),760px)]'} px-4 py-2 border-3 border-white shadow-[4px_4px_0px_#fff] items-center justify-between text-xs font-black uppercase mb-2 ${isMyTurn ? 'bg-amber-400 text-black' : 'bg-black text-white'}`}>
                 <div className="flex items-center gap-2">
                   <span className={`w-2.5 h-2.5 ${isMyTurn ? 'bg-black animate-ping' : 'bg-neutral-500'}`} />
                   <span>
@@ -1233,7 +1233,7 @@ export const RoseParadiseView: React.FC<RoseParadiseViewProps> = ({ onBack }) =>
 
               {/* Desktop Universal Summon Placement Mode Banner */}
               {summoningUnit && (
-                <div className="hidden md:flex w-full max-w-[540px] lg:max-w-none p-2.5 bg-amber-400 text-black border-3 border-white shadow-[4px_4px_0px_#fff] font-black uppercase text-xs items-center justify-between mb-2">
+                <div className="hidden md:flex shrink-0 w-full md:w-[min(calc(100dvh-260px),calc(100%-24px),760px)] p-2.5 bg-amber-400 text-black border-3 border-white shadow-[4px_4px_0px_#fff] font-black uppercase text-xs items-center justify-between mb-2">
                   <span>⚡ SUMMON {summoningUnit.toUpperCase()}: Click any highlighted square on the board!</span>
                   <button
                     onClick={() => setSummoningUnit(null)}
@@ -1246,7 +1246,7 @@ export const RoseParadiseView: React.FC<RoseParadiseViewProps> = ({ onBack }) =>
 
               {/* Brutalist Board Tray - Sacred Square Container */}
               <div
-                className="w-[min(calc(100vw-16px),calc(100dvh-224px-env(safe-area-inset-bottom,0px)),520px)] lg:w-[min(calc(100dvh-140px),calc(100%-48px),800px)] aspect-square brutal-board-tray p-2 sm:p-3 border-4 border-white shadow-[8px_8px_0px_#fff] flex flex-col items-center justify-center shrink-0"
+                className={`w-[min(calc(100vw-16px),calc(100dvh-224px-env(safe-area-inset-bottom,0px)),520px)] ${summoningUnit ? 'md:w-[min(calc(100dvh-260px),calc(100%-24px),760px)]' : 'md:w-[min(calc(100dvh-208px),calc(100%-24px),760px)]'} aspect-square md:aspect-auto brutal-board-tray p-2 sm:p-3 border-4 border-white shadow-[8px_8px_0px_#fff] flex flex-col items-center justify-center shrink-0`}
                 style={{ backgroundColor: '#e11d48' }}
               >
                 {/* Board Files Top (A - H) */}
@@ -1334,7 +1334,61 @@ export const RoseParadiseView: React.FC<RoseParadiseViewProps> = ({ onBack }) =>
 
               {/* Tier 3: Mobile Fixed 100px Rose Stage Directly Under Board */}
               <div className="md:hidden h-[100px] min-h-[100px] max-h-[100px] w-full px-1.5 pb-1 shrink-0 flex items-stretch mt-1">
-                {summoningUnit ? (
+                {activeMatch.status === 'completed' ? (
+                  <div className="w-full h-full bg-[#1e0712] border-3 border-amber-400 shadow-[3px_3px_0px_#fbbf24] p-1.5 flex flex-col justify-between gap-1 overflow-hidden">
+                    <div className="flex items-center justify-between gap-2 shrink-0">
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <Trophy className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                        <span className="text-[11px] font-black uppercase text-amber-300 truncate">
+                          {activeMatch.winner === 'draw' ? 'Match Drawn!' : `${activeMatch.winner} Wins!`}
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (displayRoseCards.length > 0) {
+                            setSelectedRoseCard(displayRoseCards[0]);
+                          }
+                          setIsRoseTrophyRoomOpen(true);
+                        }}
+                        className="px-2.5 py-1 bg-amber-400 hover:bg-amber-300 text-black font-black text-[10px] uppercase border-2 border-black shadow-[2px_2px_0px_#000] cursor-pointer flex items-center gap-1 shrink-0"
+                      >
+                        <Trophy className="w-3 h-3 text-black shrink-0" />
+                        <span>Trophy Room</span>
+                      </button>
+                    </div>
+
+                    {displayRoseCards.length > 0 ? (
+                      <div className="flex items-center gap-1.5 overflow-x-auto flex-1 min-h-0">
+                        {displayRoseCards.map((card) => (
+                          <button
+                            key={card.id}
+                            type="button"
+                            onClick={() => {
+                              setSelectedRoseCard(card);
+                              setIsRoseTrophyRoomOpen(true);
+                            }}
+                            className="h-full px-2 py-0.5 bg-black/85 border border-rose-400 flex items-center gap-1.5 shrink-0 cursor-pointer active:scale-95 transition-transform text-left"
+                          >
+                            <span className="text-sm leading-none shrink-0">{card.motifSymbol}</span>
+                            <div className="leading-tight">
+                              <div className="text-[10px] font-black text-white uppercase whitespace-nowrap">
+                                {card.title}
+                              </div>
+                              <div className="text-[9px] text-rose-300 font-mono whitespace-nowrap">
+                                R:{card.predictedRating}
+                              </div>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-[10px] text-rose-200 font-mono truncate my-auto">
+                        {activeMatch.winReason || 'Match completed — view badges in Trophy Room'}
+                      </div>
+                    )}
+                  </div>
+                ) : summoningUnit ? (
                   <div className="w-full h-full bg-amber-400 text-black border-3 border-white shadow-[3px_3px_0px_#fff] p-2 flex items-center justify-between gap-2 overflow-hidden">
                     <div className="flex-1 min-w-0">
                       <span className="text-xs font-black uppercase block truncate">
@@ -1385,7 +1439,7 @@ export const RoseParadiseView: React.FC<RoseParadiseViewProps> = ({ onBack }) =>
             </div>
 
             {/* Right Sidebar: My Status, Petals & Summoning (Desktop) */}
-            <div className="hidden md:flex flex-col gap-4 overflow-y-auto pr-1">
+            <div className="hidden md:flex md:min-h-0 flex-col gap-4 overflow-y-auto pr-1">
               <div className="brutal-card p-4 flex flex-col gap-3 border-3 border-white shadow-[4px_4px_0px_#fff]">
                 <div className="flex items-center justify-between border-b-2 border-neutral-800 pb-2">
                   <span className="text-xs font-black uppercase text-neutral-400">
