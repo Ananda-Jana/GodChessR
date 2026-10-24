@@ -90,12 +90,16 @@ export function useRoseRoom() {
 
           case 'rose:state':
             setMatch(data.match);
+            if (data.yourColor) setMyColor(data.yourColor);
+            if (data.yourRole) setMyRole(data.yourRole);
             setPendingMove(false);
             setError(null);
             break;
 
           case 'rose:moved':
             setMatch(data.match);
+            if (data.yourColor) setMyColor(data.yourColor);
+            if (data.yourRole) setMyRole(data.yourRole);
             setPendingMove(false);
             setError(null);
             if (data.match.status === 'completed') {
@@ -177,6 +181,10 @@ export function useRoseRoom() {
   const createRoom = useCallback((role: RoseRole) => {
     setError(null);
     setStatusMessage('Creating challenge room...');
+    if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
+      setError('Connecting to game server...');
+      return;
+    }
     setIsCreatingChallenge(true);
     send({
       type: 'rose:create_challenge',
@@ -195,6 +203,10 @@ export function useRoseRoom() {
       return;
     }
     setError(null);
+    if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
+      setError('Connecting to game server...');
+      return;
+    }
     setIsJoiningChallenge(true);
     setStatusMessage('Connecting to room...');
     send({
@@ -208,13 +220,21 @@ export function useRoseRoom() {
   }, [send, user, token]);
 
   const cancelRoom = useCallback(() => {
-    send({ type: 'rose:cancel_challenge' });
+    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN && hostedCode) {
+      send({
+        type: 'rose:cancel_challenge',
+        code: hostedCode,
+        userId: user?.id,
+      });
+    } else {
+      send({ type: 'rose:cancel_challenge' });
+    }
     setIsCreatingChallenge(false);
     setIsJoiningChallenge(false);
     setIsWaitingForPartner(false);
     setStatusMessage(null);
     setHostedCode(null);
-  }, [send]);
+  }, [send, hostedCode, user?.id]);
 
   const sendMove = useCallback((from: Position, to: Position) => {
     setError(null);

@@ -473,9 +473,19 @@ export function registerRoseSocket(wss: WebSocketServer) {
         case 'rose:resync':
         case 'rose:resyncRequest': {
           const rId = ws.roseRoomId || roomId;
-          const room = getRoomById(rId);
+          let room = rId ? getRoomById(rId) : undefined;
+          if (!room && user.userId) {
+            const activeId = getUserActiveRoomId(user.userId);
+            if (activeId) room = getRoomById(activeId);
+          }
           if (room) {
-            ws.send(JSON.stringify({ type: 'rose:state', match: room.match }));
+            const seat = getSeatByUserId(room.match, user.userId);
+            ws.send(JSON.stringify({
+              type: 'rose:state',
+              match: room.match,
+              yourColor: seat?.color,
+              yourRole: seat?.role,
+            }));
           }
           break;
         }

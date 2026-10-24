@@ -1194,8 +1194,7 @@ export const HashiraTrainingView: React.FC<HashiraTrainingViewProps> = ({ onBack
       <RulesModal
         isOpen={isRulebookOpen}
         onClose={() => setIsRulebookOpen(false)}
-        isBotMatch={true}
-        activeMatch={{ gameMode: activeLesson?.mode || 'standard' } as any}
+        initialMode="training"
       />
       <CullingRulesModal
         isOpen={isCullingRulesOpen}

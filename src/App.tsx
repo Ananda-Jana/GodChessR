@@ -14,6 +14,8 @@ import { CraftTheoryView } from './components/CraftTheoryView';
 import { RoseParadiseView } from './rose/RoseParadiseView';
 import { HashiraTrainingView } from './training/HashiraTrainingView';
 import type { TrainerId } from './training/types';
+import { SecretMatchView } from './secret/SecretMatchView';
+import type { SecretPlayerConfig } from './secret/types';
 import {
   MatchState,
   PieceColor,
@@ -62,6 +64,7 @@ function AppContent() {
   const [isHashiraTrainingOpen, setIsHashiraTrainingOpen] = useState(false);
   const [selectedTrainerForTraining, setSelectedTrainerForTraining] = useState<TrainerId>('thukuna');
   const [botInitialGameMode, setBotInitialGameMode] = useState<'standard' | 'crafted'>('standard');
+  const [activeSecretBot, setActiveSecretBot] = useState<SecretPlayerConfig | null>(null);
 
   // Last completed game review state (retained for 10 minutes then auto-flushed)
   const [lastCompletedMatch, setLastCompletedMatch] = useState<{ match: MatchState; completedAt: number } | null>(() => {
@@ -500,6 +503,22 @@ function AppContent() {
     );
   }
 
+  if (activeSecretBot) {
+    return (
+      <>
+        <SecretMatchView
+          botConfig={activeSecretBot}
+          onExit={() => setActiveSecretBot(null)}
+          onOpenRules={() => setIsRulesOpen(true)}
+        />
+        <RulesModal
+          isOpen={isRulesOpen}
+          onClose={() => setIsRulesOpen(false)}
+        />
+      </>
+    );
+  }
+
   const activeGame = botMatch || socketMatch;
 
   return (
@@ -536,6 +555,7 @@ function AppContent() {
             if (trainerId) setSelectedTrainerForTraining(trainerId);
             setIsHashiraTrainingOpen(true);
           }}
+          onStartSecretMatch={(botConfig) => setActiveSecretBot(botConfig)}
           lastCompletedMatch={lastCompletedMatch}
           onClearLastGame={() => {
             setLastCompletedMatch(null);

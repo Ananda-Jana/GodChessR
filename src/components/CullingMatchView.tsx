@@ -18,8 +18,7 @@ import {
 } from '../game/cullingEngine';
 import { getBestCullingBotMove } from '../game/cullingBot';
 import { sounds } from '../utils/audio';
-
-const CullingTheoryView = React.lazy(() => import('./CullingTheoryView'));
+import { RulebookWindow } from './rulebook/RulebookWindow';
 
 import {
   BookOpen,
@@ -1390,20 +1389,12 @@ export const CullingMatchView: React.FC<CullingMatchViewProps> = ({
         </button>
       </nav>
 
-      {/* Full-screen Theory Book Modal */}
-      {isRulesOpen && (
-        <div className="fixed inset-0 z-50 bg-black/95 flex flex-col overflow-y-auto overscroll-contain touch-pan-y">
-          <React.Suspense
-            fallback={
-              <div className="flex-1 flex items-center justify-center text-white font-mono text-xs font-bold">
-                Loading Theory Book...
-              </div>
-            }
-          >
-            <CullingTheoryView onBack={() => setIsRulesOpen(false)} />
-          </React.Suspense>
-        </div>
-      )}
+      {/* Full-screen Theory & Rulebook Window */}
+      <RulebookWindow
+        isOpen={isRulesOpen}
+        onClose={() => setIsRulesOpen(false)}
+        initialMode="culling"
+      />
 
       <TrophyRoomModal
         isOpen={isCullingTrophyRoomOpen}

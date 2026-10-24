@@ -48,6 +48,7 @@ import { PredictorPanel } from '../components/PredictorPanel';
 import { extractRoseMetrics, observeRoseMove } from '../predictor/adapters/roseAdapter';
 import { downloadCardAsPng } from '../predictor/canvasCardRenderer';
 import { TrophyRoomModal } from '../components/TrophyRoomModal';
+import { RulebookWindow } from '../components/rulebook/RulebookWindow';
 import type { AchievementCard } from '../predictor/types';
 
 interface RoseParadiseViewProps {
@@ -142,6 +143,8 @@ export const RoseParadiseView: React.FC<RoseParadiseViewProps> = ({ onBack }) =>
 
   // Initial Romantic Rulebook Modal (pops up on game start, untimed)
   const [showRulebook, setShowRulebook] = useState(false);
+  const [isAutoTriggeredRulebook, setIsAutoTriggeredRulebook] = useState(false);
+  const [rulebookSubTab, setRulebookSubTab] = useState<'movement_book' | 'overview'>('movement_book');
   const [hasShownRulebookOnce, setHasShownRulebookOnce] = useState(false);
 
   // Summon selection & placement mode
@@ -183,6 +186,7 @@ export const RoseParadiseView: React.FC<RoseParadiseViewProps> = ({ onBack }) =>
   // Automatically pop open Rulebook modal once when match becomes active
   useEffect(() => {
     if (activeMatch && activeMatch.status === 'active' && !hasShownRulebookOnce) {
+      setIsAutoTriggeredRulebook(true);
       setShowRulebook(true);
       setHasShownRulebookOnce(true);
     }
@@ -746,10 +750,14 @@ export const RoseParadiseView: React.FC<RoseParadiseViewProps> = ({ onBack }) =>
 
         <div className="flex items-center gap-1.5 sm:gap-2">
           <button
-            onClick={() => setShowRulebook(true)}
+            onClick={() => {
+              setIsAutoTriggeredRulebook(false);
+              setRulebookSubTab('overview');
+              setShowRulebook(true);
+            }}
             className="brutal-button px-2.5 sm:px-3 py-1.5 text-xs font-black uppercase flex items-center gap-1.5 cursor-pointer text-amber-300 border-amber-300 shadow-[2px_2px_0px_#fbbf24] hover:bg-amber-300 hover:text-black"
           >
-            <BookOpen className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Rules</span>
+            <BookOpen className="w-3.5 h-3.5" /> <span className="hidden sm:inline font-black">Rules</span>
           </button>
 
           {activeMatch && activeMatch.status === 'active' && (
@@ -782,272 +790,318 @@ export const RoseParadiseView: React.FC<RoseParadiseViewProps> = ({ onBack }) =>
         </div>
       )}
 
-      {/* ==================== 1. LOBBY VIEW (PROPER BRUTALISM) ==================== */}
+      {/* ==================== 1. LOBBY VIEW (CULLING MULTIPLAYER LOGIC & ROOM GENERATION) ==================== */}
       {!activeMatch && (
-        <div className="z-10 max-w-5xl mx-auto w-full flex flex-col gap-8 my-auto py-4">
+        <div className="z-10 max-w-5xl mx-auto w-full flex flex-col gap-6 my-auto py-4">
           <div className="text-center">
+            <div className="inline-flex items-center gap-2 px-3 py-1 bg-amber-400 text-black border-2 border-black shadow-[2px_2px_0px_#000] text-xs font-black uppercase mb-2">
+              <Sparkles className="w-3.5 h-3.5" />
+              Untimed Couples Chess • Direct Room Code Multiplayer
+            </div>
             <h1 className="text-2xl sm:text-3xl font-black tracking-tight uppercase flex items-center justify-center gap-2">
-              <Sparkles className="w-6 h-6 text-amber-400" /> Untimed Couples Chess
+              🌹 Rose Paradise Battlegrounds
             </h1>
-            <p className="text-xs sm:text-sm text-neutral-400 mt-2 max-w-lg mx-auto font-mono">
-              NO TIMERS · NO PRESSURE. Create a custom room code for your partner, or play solo against an affectionate AI bot.
+            <p className="text-xs sm:text-sm text-neutral-400 mt-2 max-w-xl mx-auto font-mono">
+              NO TIMERS · NO PRESSURE. Create a custom room code for your partner, join waiting challenges, or play solo against an affectionate AI bot.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch">
-            {/* BOX 1: Create Custom Multiplayer Room (Shows Code in Same Box!) */}
-            <div className="brutal-card p-6 flex flex-col justify-between gap-5 border-3 border-white shadow-[6px_6px_0px_#fff]">
+          {/* Prominent Red/Rose Pre-Game Rules Book Gate */}
+          <div className="p-3.5 bg-rose-950/60 border-2 border-rose-500 flex flex-col sm:flex-row items-center justify-between gap-3 text-left shadow-[3px_3px_0px_#f43f5e]">
+            <div className="flex items-center gap-2.5">
+              <BookOpen className="w-5 h-5 text-rose-400 shrink-0" />
               <div>
-                <h2 className="text-base font-black uppercase mb-1 flex items-center gap-2 text-amber-400">
-                  <Crown className="w-4 h-4" /> 1. Create Room Code
-                </h2>
-                <p className="text-xs text-neutral-400 mb-4 font-mono">
-                  Generate a custom room code for your human partner.
-                </p>
+                <span className="text-xs font-black uppercase text-rose-400 block">
+                  New to Rose Paradise / Rose Paradigm Mode?
+                </span>
+                <span className="text-[11px] font-bold text-neutral-300 font-mono">
+                  Read complete couples rules, petal gain mechanics, and Cupid Priest/Thorn Guard summon abilities.
+                </span>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setIsAutoTriggeredRulebook(false);
+                setRulebookSubTab('movement_book');
+                setShowRulebook(true);
+              }}
+              className="px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white font-black text-xs uppercase border-2 border-white shadow-[3px_3px_0px_#fff] cursor-pointer whitespace-nowrap active:translate-x-0.5 active:translate-y-0.5 flex items-center gap-1.5"
+            >
+              <BookOpen className="w-4 h-4" />
+              <span>📖 Read Movement & Ability Book</span>
+            </button>
+          </div>
 
-                {!hostedCode ? (
-                  <div>
-                    <label className="block text-[11px] font-black uppercase tracking-wider text-neutral-300 mb-2">
-                      Choose Your Role
-                    </label>
-                    <div className="grid grid-cols-2 gap-2 mb-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 text-left items-stretch">
+            {/* DIRECT CHALLENGE MULTIPLAYER */}
+            <div className="brutal-card p-5 border-3 border-white shadow-[6px_6px_0px_#fff] flex flex-col justify-between">
+              <div>
+                <div className="flex items-center justify-between mb-3 border-b-2 border-neutral-800 pb-2">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-amber-400 border-2 border-white flex items-center justify-center text-black shadow-[2px_2px_0px_#fff]">
+                      <Users className="w-6 h-6" />
+                    </div>
+                    <div>
+                      <h3 className="text-base font-black uppercase text-white">Direct Challenge</h3>
+                      <p className="text-xs text-neutral-400 font-mono">
+                        1v1 Room Code Battles & Open Lobby
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => refreshRooms()}
+                    className="p-1.5 hover:bg-neutral-800 border border-neutral-600 text-neutral-300 hover:text-white cursor-pointer"
+                    title="Refresh Open Challenges"
+                  >
+                    <RefreshCw className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+
+                {/* If user is currently hosting a challenge room */}
+                {hostedCode ? (
+                  <div className="bg-amber-400 text-black p-4 border-2 border-black shadow-[3px_3px_0px_#000] mb-4 text-center animate-in fade-in">
+                    <span className="text-[10px] font-mono font-black uppercase tracking-wider block mb-1">
+                      Waiting for Partner to Join…
+                    </span>
+                    <div className="flex items-center justify-center gap-2 my-2">
+                      <span className="text-xl sm:text-2xl font-mono font-black tracking-widest bg-black text-amber-400 px-3 py-1 border-2 border-black">
+                        {hostedCode}
+                      </span>
                       <button
-                        type="button"
-                        onClick={() => setSelectedRole('boyfriend')}
-                        className={`p-3 border-2 font-black text-xs uppercase transition-all cursor-pointer ${
-                          selectedRole === 'boyfriend'
-                            ? 'bg-amber-400 text-black border-white shadow-[3px_3px_0px_#fff]'
-                            : 'bg-neutral-900 border-neutral-700 text-neutral-400 hover:text-white'
-                        }`}
+                        onClick={() => handleCopyCode(hostedCode)}
+                        className="px-2.5 py-1.5 bg-white hover:bg-neutral-100 text-black font-black text-xs uppercase border-2 border-black shadow-[2px_2px_0px_#000] flex items-center gap-1 cursor-pointer"
+                        title="Copy Room Code"
                       >
-                        👑 Boyfriend (White)
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setSelectedRole('girlfriend')}
-                        className={`p-3 border-2 font-black text-xs uppercase transition-all cursor-pointer ${
-                          selectedRole === 'girlfriend'
-                            ? 'bg-rose-500 text-white border-white shadow-[3px_3px_0px_#fff]'
-                            : 'bg-neutral-900 border-neutral-700 text-neutral-400 hover:text-white'
-                        }`}
-                      >
-                        👸 Girlfriend (Black)
+                        {copiedCode ? <Check className="w-3.5 h-3.5 text-green-600" /> : <Copy className="w-3.5 h-3.5" />}
+                        <span>{copiedCode ? 'Copied!' : 'Copy'}</span>
                       </button>
                     </div>
-
-                    <button
-                      type="button"
-                      disabled={isCreatingChallenge}
-                      onClick={() => createRoom(selectedRole)}
-                      className="w-full brutal-button-primary py-3 text-xs sm:text-sm font-black uppercase tracking-wider cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50"
-                    >
-                      {isCreatingChallenge ? (
-                        <>
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                          <span>Generating Code...</span>
-                        </>
-                      ) : (
-                        <>
-                          <Plus className="w-4 h-4" />
-                          <span>Generate Room Code</span>
-                        </>
-                      )}
-                    </button>
+                    <p className="text-[11px] font-bold mt-1">
+                      Send this Room Code to your partner. The duel begins the second they join!
+                    </p>
+                    <div className="flex items-center justify-center gap-2 mt-3">
+                      <button
+                        type="button"
+                        onClick={() => cancelRoom()}
+                        className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white font-black text-[11px] uppercase border border-black cursor-pointer"
+                      >
+                        Cancel Challenge
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsAutoTriggeredRulebook(false);
+                          setRulebookSubTab('movement_book');
+                          setShowRulebook(true);
+                        }}
+                        className="px-3 py-1 bg-black text-white hover:bg-neutral-800 font-black text-[11px] uppercase border border-black cursor-pointer"
+                      >
+                        📖 Read Codex While Waiting
+                      </button>
+                    </div>
                   </div>
                 ) : (
-                  /* CODE SHOWN RIGHT IN THE SAME BOX! */
-                  <div className="flex flex-col gap-4 animate-in fade-in duration-200">
-                    <div className="p-3.5 bg-neutral-950 border-2 border-amber-400 shadow-[3px_3px_0px_#fbbf24]">
-                      <div className="text-[10px] font-black uppercase tracking-wider text-amber-300 mb-1">
-                        Your Custom Room Code
-                      </div>
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="text-xl sm:text-2xl font-black font-mono tracking-widest text-white">
-                          {hostedCode}
-                        </span>
+                  <>
+                    {/* Role Picker */}
+                    <div className="mb-4">
+                      <label className="block text-[10px] font-mono font-black uppercase tracking-wider text-neutral-400 mb-1.5">
+                        Choose Your Role
+                      </label>
+                      <div className="grid grid-cols-2 gap-2">
                         <button
-                          onClick={() => handleCopyCode(hostedCode)}
-                          className="brutal-button py-1.5 px-3 text-xs flex items-center gap-1 cursor-pointer border-amber-400 text-amber-300"
+                          type="button"
+                          onClick={() => setSelectedRole('boyfriend')}
+                          className={`p-2.5 border-2 font-black text-xs uppercase transition-all cursor-pointer ${
+                            selectedRole === 'boyfriend'
+                              ? 'bg-amber-400 text-black border-white shadow-[2px_2px_0px_#fff]'
+                              : 'bg-neutral-900 border-neutral-700 text-neutral-400 hover:text-white'
+                          }`}
                         >
-                          {copiedCode ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-                          {copiedCode ? 'COPIED' : 'COPY'}
+                          👑 Boyfriend (White)
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setSelectedRole('girlfriend')}
+                          className={`p-2.5 border-2 font-black text-xs uppercase transition-all cursor-pointer ${
+                            selectedRole === 'girlfriend'
+                              ? 'bg-rose-500 text-white border-white shadow-[2px_2px_0px_#fff]'
+                              : 'bg-neutral-900 border-neutral-700 text-neutral-400 hover:text-white'
+                          }`}
+                        >
+                          👸 Girlfriend (Black)
                         </button>
                       </div>
                     </div>
 
-                    <div className="p-3 border-2 border-dashed border-neutral-700 text-xs text-neutral-400 flex items-center gap-2">
-                      <div className="w-2.5 h-2.5 bg-amber-400 animate-ping shrink-0" />
-                      <span>Waiting for partner to enter this code on their device...</span>
+                    {/* Create Room Button Row */}
+                    <div className="mb-4 flex flex-col sm:flex-row gap-2">
+                      <button
+                        type="button"
+                        onClick={() => createRoom(selectedRole)}
+                        disabled={isCreatingChallenge}
+                        className="flex-1 py-2.5 bg-amber-400 hover:bg-amber-300 text-black font-black text-xs uppercase border-2 border-white shadow-[3px_3px_0px_#fff] flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50 active:translate-x-0.5 active:translate-y-0.5"
+                      >
+                        {isCreatingChallenge ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Plus className="w-4 h-4" />
+                        )}
+                        <span>Create Direct Room</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsAutoTriggeredRulebook(false);
+                          setRulebookSubTab('movement_book');
+                          setShowRulebook(true);
+                        }}
+                        className="py-2.5 px-3 bg-red-600 hover:bg-red-500 text-white font-black text-xs uppercase border-2 border-white shadow-[3px_3px_0px_#fff] flex items-center justify-center gap-1 cursor-pointer active:translate-x-0.5 active:translate-y-0.5 whitespace-nowrap"
+                        title="Read theory before creating"
+                      >
+                        <span>📖 Codex</span>
+                      </button>
                     </div>
 
-                    <div className="flex items-center justify-center gap-3">
-                      <button
-                        type="button"
-                        onClick={() => cancelRoom()}
-                        className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white font-black text-xs uppercase border border-white cursor-pointer"
-                      >
-                        Cancel Room
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setShowRulebook(true)}
-                        className="px-3 py-1.5 bg-neutral-900 hover:bg-neutral-800 text-amber-300 font-black text-xs uppercase border border-amber-300 cursor-pointer flex items-center gap-1"
-                      >
-                        <BookOpen className="w-3.5 h-3.5" />
-                        <span>Read Rules</span>
-                      </button>
+                    {/* Join with Room Code Input */}
+                    <div className="bg-neutral-950 p-3 border-2 border-white mb-4 shadow-[2px_2px_0px_#fff]">
+                      <label className="text-[10px] font-mono font-black uppercase text-neutral-400 block mb-1">
+                        Have a Partner's Invite Code?
+                      </label>
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          placeholder="e.g. ROSE-XXXXXX or XXXXXX"
+                          value={joinCodeInput}
+                          maxLength={12}
+                          onChange={(e) => setJoinCodeInput(e.target.value.toUpperCase())}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' && joinCodeInput.trim()) {
+                              joinRoom(joinCodeInput.trim());
+                            }
+                          }}
+                          className="flex-1 px-2.5 py-1.5 bg-neutral-900 border-2 border-neutral-600 font-mono text-xs font-bold uppercase tracking-wider text-white focus:outline-none focus:border-amber-400"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (joinCodeInput.trim()) joinRoom(joinCodeInput.trim());
+                          }}
+                          disabled={isJoiningChallenge || !joinCodeInput.trim()}
+                          className="px-3 py-1.5 bg-white hover:bg-neutral-200 disabled:opacity-50 text-black font-black text-xs uppercase border-2 border-white shadow-[2px_2px_0px_#fff] flex items-center gap-1 cursor-pointer"
+                        >
+                          {isJoiningChallenge ? (
+                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          ) : (
+                            <KeyRound className="w-3.5 h-3.5" />
+                          )}
+                          <span>Join</span>
+                        </button>
+                      </div>
                     </div>
-                  </div>
+
+                    {/* Open Direct Challenges List */}
+                    <div>
+                      <div className="flex items-center justify-between mb-1.5">
+                        <span className="text-[10px] font-mono font-black uppercase text-neutral-400">
+                          Waiting Partners ({publicRooms.length})
+                        </span>
+                      </div>
+
+                      <div className="max-h-36 overflow-y-auto space-y-1.5">
+                        {publicRooms.length === 0 ? (
+                          <div className="text-[11px] text-neutral-500 py-3 text-center font-mono border border-dashed border-neutral-800">
+                            No open rooms right now. Create one above!
+                          </div>
+                        ) : (
+                          publicRooms.map((room) => (
+                            <div
+                              key={room.code}
+                              className="p-2.5 bg-neutral-950 border border-neutral-700 flex items-center justify-between text-xs"
+                            >
+                              <div>
+                                <div className="font-black text-white truncate max-w-[150px]">
+                                  {room.hostDisplayName}
+                                </div>
+                                <div className="text-[10px] text-neutral-400 font-mono">
+                                  Role: {room.hostRole === 'boyfriend' ? '👑 Boyfriend' : '👸 Girlfriend'} • Code: {room.code}
+                                </div>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => joinRoom(room.code)}
+                                disabled={isJoiningChallenge}
+                                className="px-3 py-1 bg-amber-400 hover:bg-amber-300 text-black font-black text-[10px] uppercase border border-white cursor-pointer shadow-[1px_1px_0px_#fff]"
+                              >
+                                Join
+                              </button>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </div>
+                  </>
                 )}
               </div>
-
-              <div className="text-[11px] text-neutral-500 font-mono">
-                • Private & untimed couples game<br />
-                • Room starts instantly once joined
-              </div>
             </div>
 
-            {/* BOX 2: Join with Partner's Code */}
-            <div className="brutal-card p-6 flex flex-col justify-between gap-5 border-3 border-white shadow-[6px_6px_0px_#fff]">
+            {/* PLAY VS AI BOT */}
+            <div className="brutal-card p-5 border-3 border-amber-400 shadow-[6px_6px_0px_#fbbf24] flex flex-col justify-between">
               <div>
-                <h2 className="text-base font-black uppercase mb-1 flex items-center gap-2 text-white">
-                  <Heart className="w-4 h-4 text-rose-500" /> 2. Join Partner
-                </h2>
-                <p className="text-xs text-neutral-400 mb-4 font-mono">
-                  Enter your partner's room code to join instantly.
-                </p>
-
-                <form
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    if (joinCodeInput.trim()) joinRoom(joinCodeInput.trim());
-                  }}
-                  className="flex flex-col gap-3"
-                >
-                  <div>
-                    <label className="block text-[11px] font-black uppercase tracking-wider text-neutral-300 mb-2">
-                      Room Code
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="e.g. ROSE7K or ROSE-7K"
-                      value={joinCodeInput}
-                      maxLength={10}
-                      onChange={(e) => setJoinCodeInput(e.target.value.toUpperCase())}
-                      className="w-full bg-neutral-950 border-2 border-white px-3.5 py-2.5 font-mono text-sm tracking-wider uppercase text-white focus:outline-none focus:border-amber-400 shadow-[2px_2px_0px_#fff]"
-                    />
+                <div className="flex items-center gap-3 mb-3 border-b-2 border-neutral-800 pb-2">
+                  <div className="w-10 h-10 bg-amber-400 border-2 border-black flex items-center justify-center text-black shadow-[2px_2px_0px_#fff]">
+                    <Bot className="w-6 h-6" />
                   </div>
+                  <div>
+                    <h3 className="text-base font-black uppercase text-amber-300">Play vs AI Bot</h3>
+                    <p className="text-xs text-neutral-400 font-mono">
+                      Affectionate Couples Chess Engine
+                    </p>
+                  </div>
+                </div>
 
-                  <button
-                    type="submit"
-                    disabled={isJoiningChallenge || !joinCodeInput.trim()}
-                    className="w-full brutal-button-primary py-3 text-xs sm:text-sm font-black uppercase tracking-wider cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                  >
-                    {isJoiningChallenge ? (
-                      <>
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        <span>Connecting to Room...</span>
-                      </>
-                    ) : (
-                      <>
-                        <KeyRound className="w-4 h-4" />
-                        <span>Join Room Now</span>
-                      </>
-                    )}
-                  </button>
-                </form>
-              </div>
+                <div className="bg-neutral-950 p-3 border-2 border-amber-400/50 my-3 text-xs font-bold space-y-1.5 shadow-[2px_2px_0px_#fbbf24]">
+                  <div className="flex items-center gap-1.5 text-amber-400">
+                    <Sparkles className="w-4 h-4" />
+                    <span>Instant Solo Play</span>
+                  </div>
+                  <p className="text-[11px] text-neutral-400 font-mono">
+                    Play solo against an affectionate AI bot with sweet chats & emoji reactions! No wait time, instant turn responses.
+                  </p>
+                </div>
 
-              <div className="text-[11px] text-neutral-500 font-mono">
-                Your role will complement your partner's choice automatically.
-              </div>
-            </div>
-
-            {/* BOX 3: Play vs AI Bot (Boyfriend or Girlfriend Bot) */}
-            <div className="brutal-card p-6 flex flex-col justify-between gap-5 border-3 border-amber-400 shadow-[6px_6px_0px_#fbbf24]">
-              <div>
-                <h2 className="text-base font-black uppercase mb-1 flex items-center gap-2 text-amber-300">
-                  <Bot className="w-4 h-4" /> 3. Play vs AI Bot
-                </h2>
-                <p className="text-xs text-neutral-400 mb-4 font-mono">
-                  Play solo against an affectionate AI bot with sweet chats & emoji reactions!
-                </p>
-
-                <div className="flex flex-col gap-3 mt-2">
-                  <button
-                    type="button"
-                    onClick={() => handleStartBotMatch('boyfriend')}
-                    className="w-full brutal-button py-3 px-4 text-xs font-black uppercase flex items-center justify-between cursor-pointer border-white hover:bg-white hover:text-black"
-                  >
-                    <span>Play vs Boyfriend Bot (White)</span>
-                    <span>👑</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => handleStartBotMatch('girlfriend')}
-                    className="w-full brutal-button py-3 px-4 text-xs font-black uppercase flex items-center justify-between cursor-pointer border-rose-500 text-rose-300 shadow-[3px_3px_0px_#f43f5e] hover:bg-rose-500 hover:text-white"
-                  >
-                    <span>Play vs Girlfriend Bot (Black)</span>
-                    <span>👸</span>
-                  </button>
+                <div className="text-[11px] font-mono text-neutral-400 my-2">
+                  Untimed Couples Chess • Choose your bot partner below
                 </div>
               </div>
 
-              <div className="text-[11px] text-amber-400 font-mono flex items-center gap-1.5">
-                <Sparkles className="w-3.5 h-3.5" />
-                <span>Full tactical summons, sweet chats & emojis!</span>
+              <div className="flex flex-col gap-2 mt-4">
+                <button
+                  type="button"
+                  onClick={() => handleStartBotMatch('boyfriend')}
+                  className="w-full py-2.5 px-4 bg-white hover:bg-neutral-200 text-black font-black text-xs uppercase tracking-wider border-2 border-white shadow-[3px_3px_0px_#fff] flex items-center justify-between cursor-pointer active:translate-x-0.5 active:translate-y-0.5"
+                >
+                  <span className="flex items-center gap-1.5">
+                    <span>👑</span>
+                    <span>Play vs Boyfriend Bot (White)</span>
+                  </span>
+                  <span>⚔️</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleStartBotMatch('girlfriend')}
+                  className="w-full py-2.5 px-4 bg-rose-600 hover:bg-rose-500 text-white font-black text-xs uppercase tracking-wider border-2 border-white shadow-[3px_3px_0px_#f43f5e] flex items-center justify-between cursor-pointer active:translate-x-0.5 active:translate-y-0.5"
+                >
+                  <span className="flex items-center gap-1.5">
+                    <span>👸</span>
+                    <span>Play vs Girlfriend Bot (Black)</span>
+                  </span>
+                  <span>🌹</span>
+                </button>
               </div>
             </div>
-          </div>
-
-          {/* Open Rose Rooms Lobby Table */}
-          <div className="brutal-card p-6 border-3 border-white shadow-[6px_6px_0px_#fff]">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <Users className="w-5 h-5 text-amber-400" />
-                <h3 className="text-sm sm:text-base font-black uppercase tracking-tight">
-                  Open Waiting Rooms ({publicRooms.length})
-                </h3>
-              </div>
-              <button
-                onClick={() => refreshRooms()}
-                className="text-xs text-neutral-400 hover:text-amber-300 flex items-center gap-1.5 cursor-pointer font-black uppercase"
-              >
-                <RefreshCw className="w-3.5 h-3.5" /> Refresh List
-              </button>
-            </div>
-
-            {publicRooms.length === 0 ? (
-              <div className="p-8 text-center border-2 border-dashed border-neutral-700 text-neutral-400 text-xs font-mono">
-                No open rooms right now. Click "Generate Room Code" above to invite your partner!
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                {publicRooms.map((room) => (
-                  <div
-                    key={room.code}
-                    className="p-3.5 bg-neutral-950 border-2 border-neutral-700 hover:border-amber-400 transition-colors flex items-center justify-between gap-3 shadow-[3px_3px_0px_#fff]"
-                  >
-                    <div>
-                      <div className="font-black text-sm text-white">{room.hostDisplayName}</div>
-                      <div className="text-[11px] text-neutral-400 flex items-center gap-1.5 mt-0.5 font-mono">
-                        <span>Role: {room.hostRole === 'boyfriend' ? '👑 Boyfriend' : '👸 Girlfriend'}</span>
-                        <span>·</span>
-                        <span className="font-mono text-amber-300">{room.code}</span>
-                      </div>
-                    </div>
-                    <button
-                      onClick={() => joinRoom(room.code)}
-                      disabled={isJoiningChallenge}
-                      className="brutal-button-primary py-1.5 px-3 text-xs font-black uppercase cursor-pointer shrink-0 disabled:opacity-50"
-                    >
-                      {isJoiningChallenge ? 'Joining...' : 'Join'}
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
           </div>
         </div>
       )}
@@ -1795,72 +1849,14 @@ export const RoseParadiseView: React.FC<RoseParadiseViewProps> = ({ onBack }) =>
         </>
       )}
 
-      {/* ==================== 3. ROMANTIC RULEBOOK MODAL (PROPER BRUTALISM) ==================== */}
-      {showRulebook && (
-        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
-          <div className="brutal-card max-w-lg w-full p-6 sm:p-7 flex flex-col gap-5 border-4 border-white shadow-[8px_8px_0px_#fff] max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between border-b-2 border-white pb-3">
-              <div className="flex items-center gap-2">
-                <Crown className="w-5 h-5 text-amber-400" />
-                <h3 className="text-base sm:text-lg font-black uppercase tracking-tight">
-                  Rose Paradise · Couples Rules
-                </h3>
-              </div>
-              <button
-                onClick={() => setShowRulebook(false)}
-                className="p-1 text-neutral-400 hover:text-white cursor-pointer"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div className="flex flex-col gap-4 text-xs sm:text-sm text-neutral-200">
-              <div className="p-3.5 bg-neutral-950 border-2 border-white">
-                <div className="font-black text-amber-300 uppercase mb-1 flex items-center gap-1.5">
-                  <span>👑</span> 1. Boyfriend (Prince) & Girlfriend (Queen)
-                </div>
-                <p className="text-xs text-neutral-300 leading-relaxed font-mono">
-                  The Prince moves 1 square in any direction like a King, with the royal privilege to leap over 1 adjacent friendly piece to safety! The Queen retains full diagonal and straight mobility. White always moves first.
-                </p>
-              </div>
-
-              <div className="p-3.5 bg-neutral-950 border-2 border-rose-500 shadow-[3px_3px_0px_#f43f5e]">
-                <div className="font-black text-rose-300 uppercase mb-1 flex items-center gap-1.5">
-                  <span>🌹</span> 2. Petals of Passion & Love Link
-                </div>
-                <p className="text-xs text-neutral-300 leading-relaxed font-mono">
-                  Earn Petals by capturing pieces, delivering checks, or bringing your Prince and Queen adjacent on the board to trigger a <strong>Love Link</strong> (+1 Petal, max once per 4 moves).
-                </p>
-              </div>
-
-              <div className="p-3.5 bg-neutral-950 border-2 border-white">
-                <div className="font-black text-amber-300 uppercase mb-1 flex items-center gap-1.5">
-                  <span>⚡</span> 3. Summoning Reinforcements (3 🌹)
-                </div>
-                <p className="text-xs text-neutral-300 leading-relaxed font-mono">
-                  Spend 3 Petals to summon ANY piece (Queen, Rook, Bishop, Knight, Cupid Priest, Thorn Guard, Rose Tower, or Pawn) on <strong>ANY empty square anywhere on the board</strong>! The only restriction is that the initial placement cannot deliver direct check to the opponent's king.
-                </p>
-              </div>
-
-              <div className="p-3.5 bg-neutral-950 border-2 border-emerald-400 shadow-[3px_3px_0px_#34d399]">
-                <div className="font-black text-emerald-300 uppercase mb-1 flex items-center gap-1.5">
-                  <span>🕊️</span> 4. Untimed Love
-                </div>
-                <p className="text-xs text-neutral-300 leading-relaxed font-mono">
-                  There is no timer and no ticking clock. Deliberate together and play as long as you want because it is your love!
-                </p>
-              </div>
-            </div>
-
-            <button
-              onClick={() => setShowRulebook(false)}
-              className="brutal-button-primary py-3 px-4 text-xs sm:text-sm font-black uppercase tracking-wider cursor-pointer text-center"
-            >
-              Let's Play 🌹
-            </button>
-          </div>
-        </div>
-      )}
+      {/* ==================== 3. COMPREHENSIVE RULEBOOK & TACTICAL CODEX ==================== */}
+      <RulebookWindow
+        isOpen={showRulebook}
+        onClose={() => setShowRulebook(false)}
+        initialMode="rose"
+        initialSubTab={rulebookSubTab}
+        isModal={isAutoTriggeredRulebook}
+      />
 
       {/* ==================== 4. MULTIPLE SUMMON PIECE SELECTOR (PROPER BRUTALISM) ==================== */}
       {isSummonModalOpen && (

@@ -118,7 +118,11 @@ export function createRoseRoom(
   };
 
   rooms.set(roomId, room);
-  roomsByCode.set(normalizeRoseCode(code), roomId);
+  const norm = normalizeRoseCode(code);
+  roomsByCode.set(norm, roomId);
+  if (norm.startsWith('ROSE')) {
+    roomsByCode.set(norm.slice(4), roomId);
+  }
   userActiveRoom.set(hostUserId, roomId);
   return room;
 }
@@ -159,6 +163,24 @@ export function joinRoseRoom(
     return { success: false, error: 'You cannot join your own room code.' };
   }
 
+  // Expiration check (15 minutes)
+  if (Date.now() - room.createdAt > 15 * 60 * 1000) {
+    destroyRoom(room.match.id);
+    return { success: false, error: 'This room code has expired.' };
+  }
+
+  // Live host connection check (matching Culling Game socket logic)
+  if (room.hostWs && room.hostWs.readyState !== WebSocket.OPEN) {
+    destroyRoom(room.match.id);
+    return { success: false, error: 'Room host has disconnected.' };
+  }
+
+  // Remove code from pending lookups so no 3rd player can join
+  roomsByCode.delete(norm);
+  if (norm.startsWith('ROSE')) {
+    roomsByCode.delete(norm.slice(4));
+  }
+
   // Complementary role & opposite color for boyfriend vs girlfriend
   const guestRole: RoseRole = hostSeat.role === 'boyfriend' ? 'girlfriend' : 'boyfriend';
   const guestColor = hostSeat.color === 'white' ? 'black' : 'white';
@@ -168,7 +190,7 @@ export function joinRoseRoom(
     userId: guestUserId,
     username: guestUsername,
     displayName: guestDisplayName,
-    avatarId: guestAvatarId || 'avatar_princess',
+    avatarId: guestAvatarId || (guestRole === 'boyfriend' ? 'avatar_prince' : 'avatar_queen'),
     role: guestRole,
     color: guestColor,
     petals: 0,
@@ -225,7 +247,11 @@ export function getUserActiveRoomId(userId: string): string | undefined {
 export function destroyRoom(roomId: string) {
   const room = rooms.get(roomId);
   if (room) {
-    roomsByCode.delete(normalizeRoseCode(room.match.code));
+    const norm = normalizeRoseCode(room.match.code);
+    roomsByCode.delete(norm);
+    if (norm.startsWith('ROSE')) {
+      roomsByCode.delete(norm.slice(4));
+    }
     if (room.match.whiteSeat) userActiveRoom.delete(room.match.whiteSeat.userId);
     if (room.match.blackSeat) userActiveRoom.delete(room.match.blackSeat.userId);
     userActiveRoom.delete(room.hostUserId);

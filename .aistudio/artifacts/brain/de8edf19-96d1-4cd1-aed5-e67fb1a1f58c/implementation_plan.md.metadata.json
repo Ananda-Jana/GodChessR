@@ -1,0 +1,6 @@
+{
+  "summary":  "Implementation plan to synchronize Culling Game rulebook scenarios with cullingEngine.ts and CullingTheoryView.tsx, replace story-based lore with pure technical specs (leap radii, file-rank offsets, capture conditions), optimize curved arrow vectors with minimal non-occluding paths, and fix the in-game RulebookWindow modal scrolling bug with sticky header and independent vertical scroll.",
+  "updatedAt":  "2026-10-24T12:37:37.050771275Z",
+  "requestFeedback":  true,
+  "userFacing":  true
+}
