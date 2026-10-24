@@ -10,326 +10,283 @@ export interface ChessPieceProps {
 
 /**
  * ============================================================================
- * CHESS PIECE CLASSIC DESIGN (Modern High-Contrast Geometric)
+ * CHESS PIECE CLASSIC DESIGN - same artwork language as the Culling pieces
  * ============================================================================
+ * Classic chess silhouettes drawn with the Culling Game finish:
+ * - White pieces: crisp `#ffffff` fill, deep navy `#1a2236` line art and details
+ * - Black pieces: obsidian `#090d16` fill, thin pale outline, pale details
+ * - 0.4 outlines, hairline 0.3 detail strokes, two-tier plinth, soft drop shadow
+ * - One accent only: red for the Communist (cap, star and sash)
+ * viewBox (24x24), piece footprint, type ids and exports are unchanged.
  */
+const WHITE = {
+  fill: '#ffffff',
+  line: '#1a2236',
+  detail: '#1a2236',
+  ink: '#1a2236',
+};
+const BLACK = {
+  fill: '#090d16',
+  line: 'rgba(241, 245, 249, 0.75)',
+  detail: 'rgba(241, 245, 249, 0.85)',
+  ink: 'rgba(241, 245, 249, 0.85)',
+};
+const RED = '#d7263d';
+
 export const ChessPieceClassic: React.FC<ChessPieceProps> = ({ type, color, className = 'w-full h-full' }) => {
   const isWhite = color === 'white';
-  const fillColor = isWhite ? '#f8fafc' : '#1e293b';
-  // White pieces get a stroke slightly on the black side (#64748b), black pieces get a stroke on the lighter side (#94a3b8) with soft blur
-  const strokeColor = isWhite ? '#64748b' : '#94a3b8';
-  const accentColor = isWhite ? '#f59e0b' : '#38bdf8';
-
-  // Cute-piece helpers
-  const gold = '#fbbf24';
-  const markColor = isWhite ? '#1e3a8a' : '#38bdf8';   // head stripe / eyes (blue on white, sky on black)
-  const princeStarColor = isWhite ? '#1e3a8a' : '#fbbf24'; // blue star on white side, yellow star on black side
+  const p = isWhite ? WHITE : BLACK;
 
   const renderSvgContent = () => {
     switch (type) {
       /**
-       * 1. PAWN DESIGN
-       * Head circle at (12, 7), body pyramid from y=11.5 to 18, base at y=20.
+       * 1. PAWN
+       * Round head, collar ring, tapered body.
        */
       case 'pawn':
         return (
           <>
-            <circle cx="12" cy="7" r="3" fill={fillColor} stroke={strokeColor} strokeWidth="0.75" />
-            <path
-              d="M8.5 18C8.5 13.5 10 11.5 12 11.5C14 11.5 15.5 13.5 15.5 18H8.5Z"
-              fill={fillColor}
-              stroke={strokeColor}
-              strokeWidth="0.75"
-            />
-            <path d="M7 20H17V21.5H7V20Z" fill={fillColor} stroke={strokeColor} strokeWidth="0.6" />
+            {/* Two-tier plinth */}
+            <rect x="6" y="20.6" width="12" height="1.4" rx="0.2" fill={p.fill} stroke={p.line} strokeWidth="0.4" />
+            <rect x="7.3" y="19.5" width="9.4" height="1.1" rx="0.2" fill={p.fill} stroke={p.line} strokeWidth="0.4" />
+            {/* Figure scaled to 86%, anchored on the plinth (x = 12, y = 19.5) */}
+            <g transform="translate(1.68 2.73) scale(0.86)">
+              {/* Body */}
+              <path d="M9.7 11.4 H14.3 C14.5 14.4 15.8 17.2 16.6 19.5 H7.4 C8.2 17.2 9.5 14.4 9.7 11.4 Z" fill={p.fill} stroke={p.line} strokeWidth="0.4" />
+              <path d="M9.2 16.8 C11 17.4 13 17.4 14.8 16.8" fill="none" stroke={p.detail} strokeWidth="0.3" strokeLinecap="round" />
+              {/* Collar */}
+              <rect x="8.7" y="10.3" width="6.6" height="1.2" rx="0.5" fill={p.fill} stroke={p.line} strokeWidth="0.4" />
+              {/* Head */}
+              <circle cx="12" cy="6.7" r="3.3" fill={p.fill} stroke={p.line} strokeWidth="0.4" />
+              <path d="M10.2 5.6 C10.7 4.9 11.4 4.6 12.2 4.6" fill="none" stroke={p.detail} strokeWidth="0.3" strokeLinecap="round" />
+            </g>
           </>
         );
 
       /**
-       * 2. KNIGHT DESIGN
-       * Mane and head curve, eye accent at (11, 8.5), pedestal at y=20.5.
+       * 2. KNIGHT
+       * Horse head in profile with mane, ear, eye and nostril.
        */
       case 'knight':
         return (
           <>
-            {/* Head, neck and body silhouette (faces left) */}
-            <path
-              d="M7 19.5
-                 C7 16 9 14.5 10.2 12.8
-                 L7.6 13.4
-                 C6.4 13.7 5.4 13.2 4.9 12.2
-                 L4.6 10.6
-                 C4.7 9.8 5.4 9.2 6.2 8.6
-                 L7.4 6.2
-                 L7.6 3.8
-                 L9.6 5.2
-                 C12.8 4.6 16.4 6.8 17.6 11
-                 C18.4 14.2 18 17.2 17.5 19.5
-                 Z"
-              fill={fillColor}
-              stroke={strokeColor}
-              strokeWidth="0.75"
-              strokeLinejoin="round"
-              strokeLinecap="round"
-            />
-
-            {/* Mane flow lines */}
-            <path
-              d="M15.8 7.2C16.8 9 17 11 16.6 13
-                 M13.6 6C15 7.6 15.4 9.6 15 11.4
-                 M11.4 5.4C12.6 6.6 13 8.2 12.6 9.6"
-              fill="none"
-              stroke={strokeColor}
-              strokeWidth="0.5"
-              strokeLinecap="round"
-              opacity="0.65"
-            />
-
-            {/* Forelock */}
-            <path
-              d="M7.6 6.2C8.6 6.4 9.2 7.2 9.4 8.2"
-              fill="none"
-              stroke={strokeColor}
-              strokeWidth="0.5"
-              strokeLinecap="round"
-              opacity="0.65"
-            />
-
-            {/* Bridle: cheek strap and noseband */}
-            <path
-              d="M7.6 8.4L9.2 11.6
-                 M4.7 10.8Q6.4 10.6 8.2 12.4"
-              fill="none"
-              stroke={accentColor}
-              strokeWidth="0.5"
-              strokeLinecap="round"
-            />
-
-            {/* Eye with small highlight */}
-            <circle cx="8.2" cy="8.6" r="0.9" fill={accentColor} />
-            <circle cx="8.5" cy="8.3" r="0.28" fill={fillColor} />
-
-            {/* Nostril */}
-            <ellipse cx="5.4" cy="11.3" rx="0.3" ry="0.5" fill={strokeColor} opacity="0.8" />
-
-            {/* Jewelled collar */}
-            <path
-              d="M6.2 19.2H17.8V20.5H6.2Z"
-              fill={fillColor}
-              stroke={strokeColor}
-              strokeWidth="0.6"
-              strokeLinejoin="round"
-            />
-            <circle cx="12" cy="19.85" r="0.45" fill={accentColor} />
-
-            {/* Base */}
-            <path
-              d="M5.5 20.5H18.5V22H5.5V20.5Z"
-              fill={fillColor}
-              stroke={strokeColor}
-              strokeWidth="0.6"
-              strokeLinejoin="round"
-            />
+            {/* Two-tier plinth */}
+            <rect x="5" y="20.6" width="14" height="1.4" rx="0.2" fill={p.fill} stroke={p.line} strokeWidth="0.4" />
+            <rect x="6.3" y="19.5" width="11.4" height="1.1" rx="0.2" fill={p.fill} stroke={p.line} strokeWidth="0.4" />
+            {/* Horse head, neck and chest */}
+            <path d="M7.2 19.5 C7.4 16.2 8.6 14.6 10.2 12.6 C9 13 7.8 13.4 6.9 13.2 C5.9 13 5.1 12 4.9 11 L5.1 9.8 L7.4 6.4 L7.6 3.4 L9.4 4.8 C9.8 4 10.4 3.2 11 2.8 L11.6 4.4 C15.2 4.6 18 7.6 18 12.2 C18 15 17.8 17.4 17.4 19.5 Z" fill={p.fill} stroke={p.line} strokeWidth="0.4" strokeLinejoin="round" />
+            {/* Mane */}
+            <path d="M15.6 6.4 C16.6 8.4 16.8 10.8 16.2 13 M13.4 5.6 C14.6 7.4 15 9.6 14.4 11.8 M11.6 5.2 C12.4 6.4 12.8 8 12.4 9.6" fill="none" stroke={p.detail} strokeWidth="0.3" strokeLinecap="round" />
+            {/* Bridle, eye, nostril, mouth */}
+            <path d="M7.6 8 L9.4 11.2 M5.2 10.6 C6.4 10.5 7.6 11.2 8.4 12" fill="none" stroke={p.detail} strokeWidth="0.3" strokeLinecap="round" />
+            <circle cx="8.3" cy="7.6" r="0.6" fill={p.ink} />
+            <ellipse cx="5.5" cy="10.5" rx="0.28" ry="0.45" fill={p.ink} />
+            <path d="M5.4 12.2 C6.2 12.6 7 12.7 7.8 12.5" fill="none" stroke={p.detail} strokeWidth="0.3" strokeLinecap="round" />
           </>
         );
 
       /**
-       * 3. BISHOP DESIGN
-       * Mitre silhouette, top cross / jewel at (12, 3.5), slot at (12, 8-12).
+       * 3. BISHOP
+       * Pointed mitre with diagonal slit, ball finial, flared collar.
        */
       case 'bishop':
         return (
           <>
-            <path
-              d="M12 4L15.5 7.5C17 10 17 13.5 15.5 16.5H8.5C7 13.5 7 10 8.5 7.5L12 4Z"
-              fill={fillColor}
-              stroke={strokeColor}
-              strokeWidth="0.75"
-            />
-            <circle cx="12" cy="3.5" r="1.5" fill={accentColor} />
-            <path d="M12 8V12M10 10H14" stroke={strokeColor} strokeWidth="0.6" strokeLinecap="round" />
-            <path d="M6.5 18.5H17.5V21H6.5V18.5Z" fill={fillColor} stroke={strokeColor} strokeWidth="0.6" />
+            {/* Two-tier plinth */}
+            <rect x="5.5" y="20.6" width="13" height="1.4" rx="0.2" fill={p.fill} stroke={p.line} strokeWidth="0.4" />
+            <rect x="6.8" y="19.5" width="10.4" height="1.1" rx="0.2" fill={p.fill} stroke={p.line} strokeWidth="0.4" />
+            {/* Body */}
+            <path d="M9.5 11.4 H14.5 C14.7 14 15.8 16.8 16.4 19.5 H7.6 C8.2 16.8 9.3 14 9.5 11.4 Z" fill={p.fill} stroke={p.line} strokeWidth="0.4" />
+            <path d="M9.4 16.6 C11 17.2 13 17.2 14.6 16.6" fill="none" stroke={p.detail} strokeWidth="0.3" strokeLinecap="round" />
+            {/* Collar */}
+            <rect x="8.4" y="10.4" width="7.2" height="1.2" rx="0.5" fill={p.fill} stroke={p.line} strokeWidth="0.4" />
+            {/* Mitre */}
+            <path d="M12 3.6 C14.8 4.8 16 7.2 16 8.6 C16 10 14.4 10.4 12 10.4 C9.6 10.4 8 10 8 8.6 C8 7.2 9.2 4.8 12 3.6 Z" fill={p.fill} stroke={p.line} strokeWidth="0.4" />
+            <path d="M13.4 5.4 L10.6 8.6" fill="none" stroke={p.detail} strokeWidth="0.4" strokeLinecap="round" />
+            {/* Finial */}
+            <circle cx="12" cy="2.6" r="1.1" fill={p.fill} stroke={p.line} strokeWidth="0.4" />
           </>
         );
 
       /**
-       * 4. ROOK DESIGN
-       * Crenellated battlements from x=6 to x=18, tower waist, and plinth.
+       * 4. ROOK
+       * Crenellated tower with brick courses and ledge.
        */
       case 'rook':
         return (
           <>
-            <path
-              d="M6 7H9V9H11V7H13V9H15V7H18V10H16.5V17H18V19H6V17H7.5V10H6V7Z"
-              fill={fillColor}
-              stroke={strokeColor}
-              strokeWidth="0.75"
-              strokeLinejoin="round"
-            />
-            <path d="M5 20H19V22H5V20Z" fill={fillColor} stroke={strokeColor} strokeWidth="0.6" />
+            {/* Two-tier plinth */}
+            <rect x="5" y="20.6" width="14" height="1.4" rx="0.2" fill={p.fill} stroke={p.line} strokeWidth="0.4" />
+            <rect x="6.3" y="19.5" width="11.4" height="1.1" rx="0.2" fill={p.fill} stroke={p.line} strokeWidth="0.4" />
+            {/* Tower body */}
+            <path d="M8.6 11.4 H15.4 L16.4 19.5 H7.6 Z" fill={p.fill} stroke={p.line} strokeWidth="0.4" />
+            <path d="M9 14.2 H15 M8.7 16.8 H15.3 M12 11.6 V14.2 M10.4 14.4 V16.6 M13.6 14.4 V16.6" fill="none" stroke={p.detail} strokeWidth="0.3" strokeLinecap="round" />
+            {/* Ledge */}
+            <rect x="7" y="10.2" width="10" height="1.3" rx="0.3" fill={p.fill} stroke={p.line} strokeWidth="0.4" />
+            {/* Battlements */}
+            <polygon points="7.4,10.2 7.4,4.6 9.5,4.6 9.5,6.4 10.9,6.4 10.9,4.6 13.1,4.6 13.1,6.4 14.5,6.4 14.5,4.6 16.6,4.6 16.6,10.2" fill={p.fill} stroke={p.line} strokeWidth="0.4" strokeLinejoin="round" />
+            <path d="M7.4 8 H16.6" fill="none" stroke={p.detail} strokeWidth="0.3" strokeLinecap="round" />
           </>
         );
 
       /**
-       * 5. QUEEN DESIGN
-       * 5-pointed diadem crown with accent pearls and pedestal base.
+       * 5. QUEEN
+       * Five-point coronet with pearls, gown, bead necklace.
        */
       case 'queen':
         return (
           <>
-            <path
-              d="M4 17L2.5 8L7 12L12 4.5L17 12L21.5 8L20 17H4Z"
-              fill={fillColor}
-              stroke={strokeColor}
-              strokeWidth="0.8"
-              strokeLinejoin="round"
-            />
-            <circle cx="2.5" cy="7" r="1.4" fill={accentColor} />
-            <circle cx="7" cy="11" r="1.3" fill={accentColor} />
-            <circle cx="12" cy="3.5" r="1.6" fill={accentColor} />
-            <circle cx="17" cy="11" r="1.3" fill={accentColor} />
-            <circle cx="21.5" cy="7" r="1.4" fill={accentColor} />
-            <path d="M4 18.5H20V21.5H4V18.5Z" fill={fillColor} stroke={strokeColor} strokeWidth="0.65" />
+            {/* Two-tier plinth */}
+            <rect x="5" y="20.6" width="14" height="1.4" rx="0.2" fill={p.fill} stroke={p.line} strokeWidth="0.4" />
+            <rect x="6.3" y="19.5" width="11.4" height="1.1" rx="0.2" fill={p.fill} stroke={p.line} strokeWidth="0.4" />
+            {/* Gown */}
+            <path d="M9 11 H15 C15.4 13.6 16.8 16.6 17.4 19.5 H6.6 C7.2 16.6 8.6 13.6 9 11 Z" fill={p.fill} stroke={p.line} strokeWidth="0.4" />
+            <path d="M9.6 12.4 C11 14 13 14 14.4 12.4" fill="none" stroke={p.detail} strokeWidth="0.4" strokeLinecap="round" />
+            <circle cx="12" cy="13.7" r="0.4" fill={p.ink} />
+            <path d="M8.6 17 C10.4 17.8 13.6 17.8 15.4 17 M12 14.6 V19.2" fill="none" stroke={p.detail} strokeWidth="0.3" strokeLinecap="round" />
+            {/* Coronet */}
+            <polygon points="7.2,10.2 6,4.8 9,7.4 12,3.8 15,7.4 18,4.8 16.8,10.2" fill={p.fill} stroke={p.line} strokeWidth="0.4" strokeLinejoin="round" />
+            <path d="M7.2 8.8 H16.8" fill="none" stroke={p.detail} strokeWidth="0.3" strokeLinecap="round" />
+            <circle cx="6" cy="4.2" r="0.75" fill={p.fill} stroke={p.line} strokeWidth="0.4" />
+            <circle cx="12" cy="3.1" r="0.85" fill={p.fill} stroke={p.line} strokeWidth="0.4" />
+            <circle cx="18" cy="4.2" r="0.75" fill={p.fill} stroke={p.line} strokeWidth="0.4" />
+            <circle cx="9" cy="6.7" r="0.45" fill={p.ink} />
+            <circle cx="15" cy="6.7" r="0.45" fill={p.ink} />
           </>
         );
 
-      /**
-       * 6. KING DESIGN
-       * Crown body with vertical & horizontal cross at top (12, 2.5-6).
+       /**
+       * 6. KING
+       * Domed crown with banded rim, cross finial, long robe.
        */
       case 'king':
         return (
           <>
-            <path
-              d="M6 16.5L4.5 8.5L8.5 12L12 7L15.5 12L19.5 8.5L18 16.5H6Z"
-              fill={fillColor}
-              stroke={strokeColor}
-              strokeWidth="0.75"
-              strokeLinejoin="round"
-            />
-            <path d="M12 2.5V6M10.5 4H13.5" stroke={accentColor} strokeWidth="0.9" strokeLinecap="round" />
-            <path d="M5.5 18.5H18.5V21.5H5.5V18.5Z" fill={fillColor} stroke={strokeColor} strokeWidth="0.6" />
+            {/* Two-tier plinth */}
+            <rect x="4.5" y="20.6" width="15" height="1.4" rx="0.2" fill={p.fill} stroke={p.line} strokeWidth="0.4" />
+            <rect x="5.8" y="19.5" width="12.4" height="1.1" rx="0.2" fill={p.fill} stroke={p.line} strokeWidth="0.4" />
+            {/* Robe */}
+            <path d="M9.4 10.6 H14.6 C14.9 13.2 16.6 16.2 17.2 19.5 H6.8 C7.4 16.2 9.1 13.2 9.4 10.6 Z" fill={p.fill} stroke={p.line} strokeWidth="0.4" />
+            <path d="M10.2 10.8 L12 13.4 L13.8 10.8 M12 13.4 V19.2" fill="none" stroke={p.detail} strokeWidth="0.4" strokeLinecap="round" />
+            <circle cx="12" cy="15.4" r="0.45" fill={p.ink} />
+            {/* Crown */}
+            <path d="M8 10.6 L7.4 7 C7.4 5.8 9 5.2 12 5.2 C15 5.2 16.6 5.8 16.6 7 L16 10.6 Z" fill={p.fill} stroke={p.line} strokeWidth="0.4" strokeLinejoin="round" />
+            <path d="M7.6 8.6 H16.4 M12 5.4 V8.6 M9.8 5.7 C9.5 6.6 9.6 7.8 9.8 8.6 M14.2 5.7 C14.5 6.6 14.4 7.8 14.2 8.6" fill="none" stroke={p.detail} strokeWidth="0.3" strokeLinecap="round" />
+            <circle cx="9" cy="9.6" r="0.35" fill={p.ink} />
+            <circle cx="12" cy="9.6" r="0.35" fill={p.ink} />
+            <circle cx="15" cy="9.6" r="0.35" fill={p.ink} />
+            {/* Cross finial: larger, dark on both kings (pale outline underlay on the black king only) */}
+            <path d="M12 0.9 V5 M9.9 2.5 H14.1" fill="none" stroke={p.line} strokeWidth={isWhite ? 0 : 1.5} strokeLinecap="square" />
+            <path d="M12 0.9 V5 M9.9 2.5 H14.1" fill="none" stroke="#0b1020" strokeWidth="0.9" strokeLinecap="square" />
           </>
         );
 
       /**
-       * 7. PRINCE DESIGN (cute)
-       * Same black/white body as the other pieces, floating gold diamond on top,
-       * four-pointed star (blue on white side, yellow on black side), cheeks.
+       * 7. PRINCE (extra)
+       * Young royal: small three-point crown on a round head, four-point star on the tunic.
        */
       case 'prince':
         return (
           <>
-            {/* Base */}
-            <rect x="5.5" y="19.4" width="13" height="2.6" rx="1.2" fill={fillColor} stroke={strokeColor} strokeWidth="0.6" />
-            <rect x="5.9" y="20.1" width="12.2" height="0.9" fill={gold} />
-            {/* Stem */}
-            <path d="M10 16.8L8.6 19.6H15.4L14 16.8Z" fill={fillColor} stroke={strokeColor} strokeWidth="0.6" strokeLinejoin="round" />
-            {/* Crown body with raised arms */}
-            <path
-              d="M5.8 6H8.6V8.4L12 6.6L15.4 8.4V6H18.2V9.4L15.8 11.4L14.8 17H9.2L8.2 11.4L5.8 9.4Z"
-              fill={fillColor}
-              stroke={strokeColor}
-              strokeWidth="0.75"
-              strokeLinejoin="round"
-            />
-            {/* Floating diamond finial */}
-            <path d="M12 1.2L13.5 3.4L12 5.6L10.5 3.4Z" fill={gold} />
-            {/* Four-pointed star (blue on white side, yellow on black side) */}
-            <path
-              d="M12 8.4L13.1 10.5L15.2 11.6L13.1 12.7L12 14.8L10.9 12.7L8.8 11.6L10.9 10.5Z"
-              fill={princeStarColor}
-            />
-            <circle cx="12" cy="11.6" r="0.6" fill={fillColor} />
-            <circle cx="12" cy="11.6" r="0.25" fill={strokeColor} />
-            {/* Cute cheeks */}
-            <ellipse cx="9.9" cy="14.8" rx="0.45" ry="0.65" fill={strokeColor} opacity="0.85" />
-            <ellipse cx="14.1" cy="14.8" rx="0.45" ry="0.65" fill={strokeColor} opacity="0.85" />
+            {/* Two-tier plinth */}
+            <rect x="5.5" y="20.6" width="13" height="1.4" rx="0.2" fill={p.fill} stroke={p.line} strokeWidth="0.4" />
+            <rect x="6.8" y="19.5" width="10.4" height="1.1" rx="0.2" fill={p.fill} stroke={p.line} strokeWidth="0.4" />
+            {/* Tunic */}
+            <path d="M9.4 11 H14.6 C14.8 13.8 15.9 16.8 16.5 19.5 H7.5 C8.1 16.8 9.2 13.8 9.4 11 Z" fill={p.fill} stroke={p.line} strokeWidth="0.4" />
+            <polygon points="12,12.8 12.7,14.3 14.2,15 12.7,15.7 12,17.2 11.3,15.7 9.8,15 11.3,14.3" fill={p.ink} />
+            {/* Collar */}
+            <rect x="8.6" y="10.2" width="6.8" height="1.2" rx="0.5" fill={p.fill} stroke={p.line} strokeWidth="0.4" />
+            {/* Head */}
+            <circle cx="12" cy="7.2" r="3" fill={p.fill} stroke={p.line} strokeWidth="0.4" />
+            {/* Little crown */}
+            <polygon points="9.3,4.8 9,2.4 10.7,3.6 12,1.6 13.3,3.6 15,2.4 14.7,4.8" fill={p.fill} stroke={p.line} strokeWidth="0.4" strokeLinejoin="round" />
+            <circle cx="12" cy="1.3" r="0.4" fill={p.ink} />
           </>
         );
 
       /**
-       * 8. COMMUNIST (cute): all red on both sides, NO border.
-       * Big star on top, happy closed eyes, crossed "mustache" arms below.
+       * 8. COMMUNIST (extra)
+       * Capped figure with red star, red sash across the chest.
        */
       case 'communist':
         return (
           <>
-            {/* Base */}
-            <rect x="5.5" y="19.6" width="13" height="2.4" rx="1.2" fill="#b91c1c" stroke="none" />
-            <rect x="5.9" y="20.3" width="12.2" height="0.7" fill="#ef4444" stroke="none" />
+            {/* Two-tier plinth */}
+            <rect x="5.5" y="20.6" width="13" height="1.4" rx="0.2" fill={p.fill} stroke={p.line} strokeWidth="0.4" />
+            <rect x="6.8" y="19.5" width="10.4" height="1.1" rx="0.2" fill={p.fill} stroke={p.line} strokeWidth="0.4" />
             {/* Body */}
-            <path d="M7.6 20L9 13.5H15L16.4 20Z" fill="#b91c1c" stroke="none" />
+            <path d="M9.2 11 H14.8 C15 13.8 16 16.8 16.6 19.5 H7.4 C8 16.8 9 13.8 9.2 11 Z" fill={p.fill} stroke={p.line} strokeWidth="0.4" />
+            {/* Red sash */}
+            <path d="M9.2 11.8 L10.6 11 L16.2 18.4 L16.6 19.5 L14.6 19.5 Z" fill={RED} stroke={p.line} strokeWidth="0.4" strokeLinejoin="round" />
+            <path d="M9.5 16 L11.2 19.3" fill="none" stroke={p.detail} strokeWidth="0.3" strokeLinecap="round" />
+            {/* Collar */}
+            <rect x="8.6" y="10.2" width="6.8" height="1.2" rx="0.5" fill={p.fill} stroke={p.line} strokeWidth="0.4" />
             {/* Head */}
-            <path d="M8.6 14.2L12 8.4L15.4 14.2Z" fill="#b91c1c" stroke="none" />
-            {/* Big cute star on top */}
-            <polygon
-              points="12,1.2 13.18,4.38 16.56,4.52 13.9,6.62 14.82,9.88 12,8 9.18,9.88 10.1,6.62 7.44,4.52 10.82,4.38"
-              fill="#dc2626"
-              stroke="none"
-            />
-            {/* Happy closed eyes */}
-            <path d="M9.6 12.3Q10.4 11.2 11.2 12.3M12.8 12.3Q13.6 11.2 14.4 12.3" fill="none" stroke="#fecaca" strokeWidth="0.6" strokeLinecap="round" />
-            {/* Crossed "mustache" arms */}
-            <path d="M9.4 13.6L14.6 16.8M14.6 13.6L9.4 16.8" stroke="#7f1d1d" strokeWidth="2.5" strokeLinecap="round" />
-            <path d="M9.4 13.6L14.6 16.8M14.6 13.6L9.4 16.8" stroke="#ef4444" strokeWidth="1.7" strokeLinecap="round" />
+            <circle cx="12" cy="7.4" r="3" fill={p.fill} stroke={p.line} strokeWidth="0.4" />
+            <path d="M10.4 8 H11.2 M12.8 8 H13.6" fill="none" stroke={p.detail} strokeWidth="0.4" strokeLinecap="round" />
+            {/* Cap with red star */}
+            <path d="M8.8 6.4 C8.8 3.4 10.2 2.6 12 2.6 C13.8 2.6 15.2 3.4 15.2 6.4 Z" fill={RED} stroke={p.line} strokeWidth="0.4" strokeLinejoin="round" />
+            <rect x="8.2" y="6" width="7.6" height="1" rx="0.4" fill={p.fill} stroke={p.line} strokeWidth="0.4" />
+            <polygon points="12,3.4 12.35,4.3 13.3,4.35 12.55,4.9 12.8,5.8 12,5.3 11.2,5.8 11.45,4.9 10.7,4.35 11.65,4.3" fill={p.fill} />
           </>
         );
 
       /**
-       * 9. SUPREME ROOK DESIGN (cute)
-       * Castle body with battlements, round dome head with stripe, little eyes
-       * and a gold cross. White/black via fillColor and strokeColor.
+       * 9. SUPREME ROOK (extra)
+       * Rook with a taller central turret topped by a red flag, arched gate.
        */
       case 'supremeRook':
         return (
           <>
-            {/* Base */}
-            <rect x="4.8" y="17.6" width="14.4" height="4.4" rx="1.3" fill={fillColor} stroke={strokeColor} strokeWidth="0.65" />
-            <rect x="5.2" y="18.4" width="13.6" height="1.1" fill={gold} />
-            {/* Dome head with stripe */}
-            <circle cx="12" cy="5.6" r="2.9" fill={fillColor} stroke={strokeColor} strokeWidth="0.7" />
-            <path d="M12 2.8V5.1" stroke={markColor} strokeWidth="1.2" strokeLinecap="butt" />
-            {/* Castle body with battlements */}
-            <path
-              d="M5.2 6.4H8.4V8.6H15.6V6.4H18.8V10.4H17.4V18H6.6V10.4H5.2Z"
-              fill={fillColor}
-              stroke={strokeColor}
-              strokeWidth="0.75"
-              strokeLinejoin="round"
-            />
-            {/* Cute eyes */}
-            <ellipse cx="8.8" cy="13" rx="0.5" ry="0.85" fill={markColor} />
-            <ellipse cx="15.2" cy="13" rx="0.5" ry="0.85" fill={markColor} />
-            {/* Gold cross */}
-            <path d="M12 10.6V15.4M10.3 12.6H13.7" stroke={gold} strokeWidth="1.5" strokeLinecap="round" />
+            {/* Two-tier plinth */}
+            <rect x="4.5" y="20.6" width="15" height="1.4" rx="0.2" fill={p.fill} stroke={p.line} strokeWidth="0.4" />
+            <rect x="5.8" y="19.5" width="12.4" height="1.1" rx="0.2" fill={p.fill} stroke={p.line} strokeWidth="0.4" />
+            {/* Tower body */}
+            <path d="M8.2 11.6 H15.8 L16.8 19.5 H7.2 Z" fill={p.fill} stroke={p.line} strokeWidth="0.4" />
+            <path d="M10.4 19.4 V16 C10.4 14.4 13.6 14.4 13.6 16 V19.4" fill="none" stroke={p.detail} strokeWidth="0.4" strokeLinecap="round" />
+            <path d="M8.6 13.6 H10.2 M13.8 13.6 H15.4 M8.4 16.4 H9.8 M14.2 16.4 H15.6" fill="none" stroke={p.detail} strokeWidth="0.3" strokeLinecap="round" />
+            {/* Ledge */}
+            <rect x="6.6" y="10.4" width="10.8" height="1.4" rx="0.3" fill={p.fill} stroke={p.line} strokeWidth="0.4" />
+            {/* Battlements with central turret */}
+            <polygon points="6.8,10.4 6.8,5.4 8.6,5.4 8.6,7 9.9,7 9.9,4.2 14.1,4.2 14.1,7 15.4,7 15.4,5.4 17.2,5.4 17.2,10.4" fill={p.fill} stroke={p.line} strokeWidth="0.4" strokeLinejoin="round" />
+            <rect x="11.6" y="5.2" width="0.8" height="1.8" fill={p.ink} />
+            <path d="M6.8 8.4 H17.2" fill="none" stroke={p.detail} strokeWidth="0.3" strokeLinecap="round" />
+            {/* Red flag */}
+            <path d="M12 0.6 V4.2" fill="none" stroke={p.line} strokeWidth="0.5" strokeLinecap="round" />
+            <path d="M12.25 0.9 C13.4 0.4 14.4 1.6 15.6 1.2 V2.9 C14.4 3.3 13.4 2.1 12.25 2.6 Z" fill={RED} stroke={p.line} strokeWidth="0.4" strokeLinejoin="round" />
           </>
         );
 
+
+
+
+
+
+
+
+
       /**
-       * 10. PRIEST DESIGN (cute)
-       * Round head with stripe, cloak body with gold cross, gold-banded base.
-       * White/black via fillColor and strokeColor.
+       * 10. PRIEST (extra)
+       * Robed figure with stole and cross, skullcap and halo ring.
        */
       case 'priest':
         return (
           <>
-            {/* Base */}
-            <rect x="5.5" y="17.8" width="13" height="4.2" rx="1.3" fill={fillColor} stroke={strokeColor} strokeWidth="0.6" />
-            <rect x="5.9" y="18.6" width="12.2" height="1" fill={gold} />
-            {/* Cloak body */}
-            <path
-              d="M8.8 9.4Q12 8.2 15.2 9.4L17.4 16.6Q17.6 17.8 16.4 17.8H7.6Q6.4 17.8 6.6 16.6Z"
-              fill={fillColor}
-              stroke={strokeColor}
-              strokeWidth="0.7"
-              strokeLinejoin="round"
-            />
-            {/* Gold cross */}
-            <path d="M12 11V15.6M10.2 12.8H13.8" stroke={gold} strokeWidth="1.5" strokeLinecap="round" />
-            {/* Round head with stripe */}
-            <circle cx="12" cy="5.9" r="3.2" fill={fillColor} stroke={strokeColor} strokeWidth="0.7" />
-            <path d="M12 2.8V5.4" stroke={markColor} strokeWidth="1.3" strokeLinecap="butt" />
+            {/* Two-tier plinth */}
+            <rect x="5" y="20.6" width="14" height="1.4" rx="0.2" fill={p.fill} stroke={p.line} strokeWidth="0.4" />
+            <rect x="6.3" y="19.5" width="11.4" height="1.1" rx="0.2" fill={p.fill} stroke={p.line} strokeWidth="0.4" />
+            {/* Robe */}
+            <path d="M9 10.8 H15 C15.4 13.6 16.8 16.6 17.4 19.5 H6.6 C7.2 16.6 8.6 13.6 9 10.8 Z" fill={p.fill} stroke={p.line} strokeWidth="0.4" />
+            <path d="M11 11.4 L10.6 19.2 M13 11.4 L13.4 19.2" fill="none" stroke={p.detail} strokeWidth="0.4" strokeLinecap="round" />
+            <path d="M12 13 V17.2 M10.6 14.4 H13.4" fill="none" stroke={p.ink} strokeWidth="0.6" strokeLinecap="round" />
+            {/* Roman collar */}
+            <rect x="10.2" y="9.6" width="3.6" height="1.3" rx="0.4" fill={p.ink} />
+            {/* Head */}
+            <circle cx="12" cy="6.4" r="3" fill={p.fill} stroke={p.line} strokeWidth="0.4" />
+            <path d="M9.2 5.4 C10 3.8 14 3.8 14.8 5.4" fill="none" stroke={p.detail} strokeWidth="0.4" strokeLinecap="round" />
+            <path d="M10.4 7.4 H11.2 M12.8 7.4 H13.6" fill="none" stroke={p.detail} strokeWidth="0.4" strokeLinecap="round" />
+            {/* Halo */}
+            <ellipse cx="12" cy="1.9" rx="2.6" ry="0.7" fill="none" stroke={p.line} strokeWidth="0.45" />
           </>
         );
 
@@ -355,13 +312,17 @@ export const ChessPieceClassic: React.FC<ChessPieceProps> = ({ type, color, clas
         return null;
     }
   };
-
+ 
   return (
     <svg
       viewBox="0 0 24 24"
       strokeLinejoin="round"
       strokeLinecap="round"
-      style={!isWhite ? { filter: 'drop-shadow(0px 0px 0.7px rgba(255, 255, 255, 0.45))' } : undefined}
+      style={
+        !isWhite
+          ? { filter: 'drop-shadow(0px 1.5px 3px rgba(0, 0, 0, 0.6))' }
+          : { filter: 'drop-shadow(0px 1.5px 3px rgba(0, 0, 0, 0.35))' }
+      }
       className={`${className} select-none pointer-events-none transition-transform duration-150`}
     >
       {renderSvgContent()}

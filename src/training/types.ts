@@ -135,7 +135,7 @@ export type CullingCurriculumType = 'opening' | 'midgame';
 export interface CullingVectorArrow {
   from: CullingPos;
   to: CullingPos;
-  color: 'crimson' | 'gold'; // crimson = main line, gold = alternative response
+  color: 'emerald' | 'navy' | 'crimson' | 'gold'; // emerald = primary move, navy = tactical accent/threat
   label?: string; // e.g. "1", "2", "Alt"
   style?: 'solid' | 'dashed';
 }
@@ -150,11 +150,12 @@ export interface CullingOpeningStep {
   tacticalBreakdown: string;
   hint: string;
   vectorArrows: CullingVectorArrow[];
-  patternHighlights?: CullingPos[]; // Strategic red square highlights
+  patternHighlights?: CullingPos[]; // Strategic navy/emerald square highlights
   acceptedMoves?: Array<{ from: CullingPos; to: CullingPos }>;
   opponentResponse?: {
     from: CullingPos;
     to: CullingPos;
+    actionType?: CullingSpecialAction;
     commentary?: string;
   };
 }

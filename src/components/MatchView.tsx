@@ -1250,6 +1250,7 @@ const MatchViewContent: React.FC<MatchViewContentProps> = ({
               checkmateGrids={checkmateGrids}
               defeatedKingPos={defeatedKingPos}
               pieceTheme={activeMatch.pieceTheme || 'classic'}
+              boardPalette={isBotMatch ? 'crimson' : 'default'}
             />
           </div>
 

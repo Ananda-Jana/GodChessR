@@ -4,17 +4,284 @@
  * Official Opening & Mid-Game Strategy Curriculum for the Culling Game Dojo — Tukuna's Classroom.
  *
  * Instructor: Sensei Tukuna
- * Rule Engine: cullingEngine.ts (100% legal 88-square cross-shaped board moves verified)
+ * Rule Engine: cullingEngine.ts (100% legal 88-square cross-shaped board moves & piece-safety verified)
+ *
+ * Pedagogical Mandate:
+ * 1. Pawns clear lanes and shield expensive units; high-value sorcerers NEVER step undefended into enemy pawn/piece fire.
+ * 2. Scripted opponents play realistic, active developing moves and tactical threats that punish carelessness.
+ * 3. Every vector uses high-contrast 'emerald' (primary move) and 'navy' (secondary tactical threat/support) on the crimson grid.
  */
 
 import type { CullingOpeningLesson } from './types';
+import type { CullingBoard, CullingPiece, CullingPieceColor, CullingPieceType } from '../types/cullingGame';
 import { createInitialCullingBoard } from '../game/cullingEngine';
 
-export const createLesson7Board = () => {
+function createEmptyCullingGrid(): CullingBoard {
+  return Array.from({ length: 10 }, () => Array<CullingPiece | null>(10).fill(null));
+}
+
+function putPiece(
+  board: CullingBoard,
+  x: number,
+  y: number,
+  type: CullingPieceType,
+  color: CullingPieceColor,
+  idSuffix: string,
+  extra?: Partial<CullingPiece>
+): void {
+  board[y][x] = {
+    id: `${color[0]}_${type}_${idSuffix}`,
+    type,
+    color,
+    hasMoved: extra?.hasMoved ?? true,
+    ...extra,
+  };
+}
+
+/**
+ * Lesson 7 Custom Opening Position:
+ * Black's Skirmisher Naoya has overextended onto F4 hoping to raid White's center,
+ * while White's Mechamaru stands ready on F2 behind an open F3 firing corridor.
+ */
+export const createLesson7Board = (): CullingBoard => {
   const b = createInitialCullingBoard();
-  // Clear F2 pawn and place enemy black pawn on F3 for Mechamaru Ranged Snipe
-  b[2][6] = null; // F2 empty
-  b[3][6] = { id: 'b_target_pawn', type: 'culling_pawn', color: 'black', hasMoved: true }; // F3 enemy target
+  b[2][6] = null; // F2 pawn traded earlier
+  b[1][6] = null; // Mechamaru moved from F1
+  b[2][5] = null; // E2 pawn advanced to E4
+  putPiece(b, 5, 4, 'culling_pawn', 'white', 'e4');
+  putPiece(b, 6, 2, 'culling_mechamaru', 'white', 'f2');
+  b[8][6] = null; // Naoya moved from F8
+  b[7][5] = null; // Black E7 pawn traded earlier
+  putPiece(b, 6, 4, 'culling_naoya', 'black', 'f4');
+  b[7][4] = null;
+  putPiece(b, 4, 6, 'culling_pawn', 'black', 'd6');
+  return b;
+};
+
+/**
+ * Mid-Game Lesson 9 (culling_mid_1): Vanguard Black Flash Strike-in-Place
+ * Black's Naoya sits on F5 protected by Black's G6 pawn. Moving onto F5 normally would lose Yuji (8pt) to G6xF5!
+ * Instead, Yuji on F3 executes Black Flash (exact 2-square strike-in-place), destroying Naoya while remaining safely on F3.
+ */
+const createMidLesson1Board = (): CullingBoard => {
+  const b = createInitialCullingBoard();
+  b[2][2] = null; putPiece(b, 2, 3, 'culling_pawn', 'white', 'b3');
+  b[2][3] = null; putPiece(b, 3, 3, 'culling_pawn', 'white', 'c3');
+  b[2][4] = null; putPiece(b, 4, 3, 'culling_pawn', 'white', 'd3');
+  b[2][5] = null; putPiece(b, 5, 3, 'culling_pawn', 'white', 'e3');
+  b[2][6] = null;
+  b[2][7] = null; putPiece(b, 7, 3, 'culling_pawn', 'white', 'g3');
+  b[1][7] = null; putPiece(b, 6, 3, 'culling_yuji', 'white', 'f3');
+  b[1][6] = null; putPiece(b, 6, 2, 'culling_mechamaru', 'white', 'f2');
+
+  b[7][2] = null; putPiece(b, 2, 6, 'culling_pawn', 'black', 'b6');
+  b[7][3] = null; putPiece(b, 3, 6, 'culling_pawn', 'black', 'c6');
+  b[7][4] = null; putPiece(b, 4, 6, 'culling_pawn', 'black', 'd6');
+  b[7][5] = null; putPiece(b, 5, 6, 'culling_pawn', 'black', 'e6');
+  b[7][6] = null;
+  b[7][7] = null; putPiece(b, 7, 6, 'culling_pawn', 'black', 'g6');
+  b[8][6] = null; putPiece(b, 6, 5, 'culling_naoya', 'black', 'f5');
+  b[8][2] = null; putPiece(b, 2, 7, 'culling_kenjaku', 'black', 'b7');
+  b[8][5] = null; putPiece(b, 5, 7, 'culling_reggie', 'black', 'e7');
+  return b;
+};
+
+/**
+ * Mid-Game Lesson 10 (culling_mid_2): Artillery Battery & Diagonal Snipe
+ * Mechamaru on E2 uses orthogonal Ranged Strike against Black's E4 vanguard pawn, then clears the D4-C5 diagonal
+ * via pawn exchange to snipe Black's defended C5 unit from safety.
+ */
+const createMidLesson2Board = (): CullingBoard => {
+  const b = createInitialCullingBoard();
+  b[2][2] = null; putPiece(b, 2, 3, 'culling_pawn', 'white', 'b3');
+  b[2][3] = null; putPiece(b, 3, 3, 'culling_pawn', 'white', 'c3');
+  b[2][4] = null; putPiece(b, 4, 4, 'culling_pawn', 'white', 'd4');
+  b[2][5] = null; putPiece(b, 5, 2, 'culling_mechamaru', 'white', 'e2');
+  b[1][6] = null;
+  b[2][6] = null; putPiece(b, 6, 3, 'culling_pawn', 'white', 'f3');
+  b[2][7] = null; putPiece(b, 7, 3, 'culling_pawn', 'white', 'g3');
+  b[1][4] = null; putPiece(b, 4, 2, 'culling_nanami', 'white', 'd2');
+  b[1][7] = null; putPiece(b, 7, 2, 'culling_yuji', 'white', 'g2');
+
+  b[7][2] = null; putPiece(b, 2, 6, 'culling_pawn', 'black', 'b6');
+  b[7][3] = null; putPiece(b, 3, 5, 'culling_pawn', 'black', 'c5');
+  b[7][4] = null;
+  b[7][5] = null; putPiece(b, 5, 4, 'culling_pawn', 'black', 'e4');
+  b[7][6] = null; putPiece(b, 6, 6, 'culling_pawn', 'black', 'f6');
+  b[7][7] = null; putPiece(b, 7, 6, 'culling_pawn', 'black', 'g6');
+  b[8][3] = null; putPiece(b, 3, 7, 'culling_uraume', 'black', 'c7');
+  b[8][5] = null; putPiece(b, 5, 7, 'culling_reggie', 'black', 'e7');
+  return b;
+};
+
+/**
+ * Mid-Game Lesson 11 (culling_mid_3): Ratio Field Suffocation Trap
+ * Black's 8-point Vanguard Kenjaku has raided into E5. White steps Warden Nanami (4.5pt) onto double-pawn-defended D4,
+ * projecting Ratio Field onto E5 (clamping Kenjaku to 1-step max) and corralling Kenjaku with defended pawns.
+ */
+const createMidLesson3Board = (): CullingBoard => {
+  const b = createInitialCullingBoard();
+  b[2][2] = null; putPiece(b, 2, 3, 'culling_pawn', 'white', 'b3');
+  b[2][3] = null; putPiece(b, 3, 3, 'culling_pawn', 'white', 'c3');
+  b[2][4] = null; putPiece(b, 4, 2, 'culling_nanami', 'white', 'd2');
+  b[1][4] = null;
+  b[2][5] = null; putPiece(b, 5, 3, 'culling_pawn', 'white', 'e3');
+  b[2][6] = null; putPiece(b, 6, 3, 'culling_pawn', 'white', 'f3');
+  b[2][7] = null; putPiece(b, 7, 4, 'culling_pawn', 'white', 'g4');
+  b[1][7] = null; putPiece(b, 7, 2, 'culling_yuji', 'white', 'g2');
+  b[1][6] = null; putPiece(b, 6, 2, 'culling_mechamaru', 'white', 'f2');
+
+  b[8][2] = null; putPiece(b, 5, 5, 'culling_kenjaku', 'black', 'e5');
+  b[7][2] = null; putPiece(b, 2, 6, 'culling_pawn', 'black', 'b6');
+  b[7][3] = null; putPiece(b, 3, 6, 'culling_pawn', 'black', 'c6');
+  b[7][5] = null;
+  return b;
+};
+
+/**
+ * Mid-Game Lesson 12 (culling_mid_4): Defended Bulwark Shell Bait & Punish
+ * Black's Naoya has jumped to F4. White hops intact-Shell Panda to F3, then pushes E2->E3 attacking Naoya.
+ * When Naoya tries to strike Panda on F3, Panda's intact Shell absorbs the hit, leaving Naoya stranded on F4 for E3xF4!
+ */
+const createMidLesson4Board = (): CullingBoard => {
+  const b = createInitialCullingBoard();
+  b[2][2] = null; putPiece(b, 2, 3, 'culling_pawn', 'white', 'b3');
+  b[2][3] = null; putPiece(b, 3, 3, 'culling_pawn', 'white', 'c3');
+  b[2][4] = null; putPiece(b, 4, 3, 'culling_pawn', 'white', 'd3');
+  // E2 pawn remains on (5,2)
+  b[2][6] = null;
+  b[2][7] = null; putPiece(b, 7, 3, 'culling_pawn', 'white', 'g3');
+  b[1][7] = null; putPiece(b, 7, 2, 'culling_yuji', 'white', 'g2');
+
+  b[7][2] = null; putPiece(b, 2, 6, 'culling_pawn', 'black', 'b6');
+  b[7][3] = null; putPiece(b, 3, 6, 'culling_pawn', 'black', 'c6');
+  b[7][4] = null; putPiece(b, 4, 6, 'culling_pawn', 'black', 'd6');
+  b[7][5] = null; putPiece(b, 5, 6, 'culling_pawn', 'black', 'e6');
+  b[7][6] = null;
+  b[7][7] = null; putPiece(b, 7, 6, 'culling_pawn', 'black', 'g6');
+  b[8][6] = null; putPiece(b, 6, 4, 'culling_naoya', 'black', 'f4');
+  return b;
+};
+
+/**
+ * Mid-Game Lesson 13 (culling_mid_5): Rusher Jackpot Hit-and-Run vs. Warden
+ * Black's Warden Reggie (4.5pt) stands on D5 double-defended by C6 & E6 pawns.
+ * Hakari slides 2 diagonally B3 x D5 (through empty C4), triggers Jackpot, and immediately steps D5 -> D4 to safety!
+ */
+const createMidLesson5Board = (): CullingBoard => {
+  const b = createInitialCullingBoard();
+  b[2][2] = null; putPiece(b, 1, 3, 'culling_pawn', 'white', 'a3');
+  b[2][3] = null; putPiece(b, 3, 3, 'culling_pawn', 'white', 'c3');
+  b[2][4] = null;
+  b[2][5] = null; putPiece(b, 5, 3, 'culling_pawn', 'white', 'e3');
+  b[2][6] = null; putPiece(b, 6, 3, 'culling_pawn', 'white', 'f3');
+  b[2][7] = null; putPiece(b, 7, 3, 'culling_pawn', 'white', 'g3');
+  b[1][2] = null; putPiece(b, 2, 2, 'culling_hakari', 'white', 'b2');
+  b[1][4] = null; putPiece(b, 4, 2, 'culling_nanami', 'white', 'd2');
+  b[1][7] = null; putPiece(b, 7, 2, 'culling_yuji', 'white', 'g2');
+
+  b[8][5] = null; putPiece(b, 4, 5, 'culling_reggie', 'black', 'd5');
+  b[7][2] = null; putPiece(b, 2, 6, 'culling_pawn', 'black', 'b6');
+  b[7][3] = null; putPiece(b, 3, 6, 'culling_pawn', 'black', 'c6');
+  b[7][4] = null;
+  b[7][5] = null; putPiece(b, 5, 6, 'culling_pawn', 'black', 'e6');
+  b[7][6] = null; putPiece(b, 6, 6, 'culling_pawn', 'black', 'f6');
+  b[7][7] = null; putPiece(b, 7, 6, 'culling_pawn', 'black', 'g6');
+  b[8][2] = null; putPiece(b, 2, 7, 'culling_kenjaku', 'black', 'b7');
+  return b;
+};
+
+/**
+ * Mid-Game Lesson 14 (culling_mid_6): Heavenly Restriction Bypassing Ratio Field
+ * Black's Warden Reggie on B5 projects a Ratio Field onto C4, assuming Uraume on C6 is untouchable behind C5 pawn.
+ * Maki steps onto double-pawn-defended C4, ignores Ratio Field via Heavenly Restriction, and vaults C4 x C6!
+ */
+const createMidLesson6Board = (): CullingBoard => {
+  const b = createInitialCullingBoard();
+  b[2][2] = null; putPiece(b, 2, 3, 'culling_pawn', 'white', 'b3');
+  b[2][3] = null; putPiece(b, 1, 3, 'culling_pawn', 'white', 'a3');
+  b[2][4] = null; putPiece(b, 4, 3, 'culling_pawn', 'white', 'd3');
+  b[2][5] = null; putPiece(b, 5, 3, 'culling_pawn', 'white', 'e3');
+  b[2][6] = null; putPiece(b, 6, 3, 'culling_pawn', 'white', 'f3');
+  b[2][7] = null; putPiece(b, 7, 3, 'culling_pawn', 'white', 'g3');
+  b[1][3] = null; putPiece(b, 3, 3, 'culling_maki', 'white', 'c3');
+  b[1][2] = null; putPiece(b, 2, 2, 'culling_hakari', 'white', 'b2');
+  b[1][4] = null; putPiece(b, 4, 2, 'culling_nanami', 'white', 'd2');
+  b[1][7] = null; putPiece(b, 7, 2, 'culling_yuji', 'white', 'g2');
+
+  b[7][2] = null; putPiece(b, 1, 6, 'culling_pawn', 'black', 'a6');
+  b[7][3] = null; putPiece(b, 3, 5, 'culling_pawn', 'black', 'c5');
+  b[7][4] = null;
+  b[7][5] = null; putPiece(b, 5, 6, 'culling_pawn', 'black', 'e6');
+  b[7][6] = null; putPiece(b, 6, 6, 'culling_pawn', 'black', 'f6');
+  b[7][7] = null; putPiece(b, 7, 6, 'culling_pawn', 'black', 'g6');
+  b[8][5] = null; putPiece(b, 2, 5, 'culling_reggie', 'black', 'b5');
+  b[8][3] = null; putPiece(b, 3, 6, 'culling_uraume', 'black', 'c6');
+  b[8][4] = null; putPiece(b, 5, 8, 'culling_yorozu', 'black', 'e8', { pandaCore: 'panda' });
+  b[8][6] = null;
+  b[8][7] = null;
+  putPiece(b, 7, 8, 'culling_naoya', 'black', 'g8');
+  putPiece(b, 8, 7, 'culling_kurourushi', 'black', 'h7');
+  return b;
+};
+
+/**
+ * Mid-Game Lesson 15 (culling_mid_7): Triple-Role Pin, Snipe & Black Flash Synergy
+ * Coordinate Yuji (Black Flash), Nanami (Ratio clamp & pawn capture), and Mechamaru (diagonal Ranged Strike)
+ * without ever hanging a piece to Black's counterplay.
+ */
+const createMidLesson7Board = (): CullingBoard => {
+  const b = createEmptyCullingGrid();
+  putPiece(b, 8, 2, 'culling_gojo', 'white', 'h2', { specialUsed: false });
+  putPiece(b, 6, 3, 'culling_yuji', 'white', 'f3');
+  putPiece(b, 5, 2, 'culling_mechamaru', 'white', 'e2');
+  putPiece(b, 4, 4, 'culling_nanami', 'white', 'd4');
+  putPiece(b, 3, 2, 'culling_maki', 'white', 'c2');
+  putPiece(b, 2, 2, 'culling_hakari', 'white', 'b2');
+  putPiece(b, 2, 3, 'culling_pawn', 'white', 'b3');
+  putPiece(b, 3, 3, 'culling_pawn', 'white', 'c3');
+  putPiece(b, 5, 3, 'culling_pawn', 'white', 'e3');
+  putPiece(b, 7, 4, 'culling_pawn', 'white', 'g4');
+  putPiece(b, 8, 3, 'culling_pawn', 'white', 'h3');
+
+  putPiece(b, 1, 8, 'culling_sukuna', 'black', 'a8', { specialUsed: true });
+  putPiece(b, 2, 8, 'culling_kenjaku', 'black', 'b8');
+  putPiece(b, 6, 5, 'culling_naoya', 'black', 'f5');
+  putPiece(b, 5, 6, 'culling_pawn', 'black', 'e6');
+  putPiece(b, 4, 6, 'culling_reggie', 'black', 'd6');
+  putPiece(b, 7, 7, 'culling_kurourushi', 'black', 'g7');
+  putPiece(b, 2, 6, 'culling_pawn', 'black', 'b6');
+  putPiece(b, 3, 6, 'culling_pawn', 'black', 'c6');
+  putPiece(b, 7, 6, 'culling_pawn', 'black', 'g6');
+  return b;
+};
+
+/**
+ * Mid-Game Lesson 16 (culling_mid_8): Coordinated Sovereign Checkmate Net
+ * Late-midgame attacking position against Sukuna on B8 (Domain Step already spent).
+ * White strips away Sukuna's queenside pawn cover with Maki, anchors B7 with C6 pawn & Nanami on B5,
+ * and delivers engine-verified CHECKMATE (#) on A8 with Yuji on B7!
+ */
+const createMidLesson8Board = (): CullingBoard => {
+  const b = createEmptyCullingGrid();
+  putPiece(b, 8, 2, 'culling_gojo', 'white', 'h2', { specialUsed: true });
+  putPiece(b, 4, 5, 'culling_yuji', 'white', 'd5');
+  putPiece(b, 2, 3, 'culling_nanami', 'white', 'b3');
+  putPiece(b, 3, 4, 'culling_maki', 'white', 'c4');
+  putPiece(b, 6, 2, 'culling_mechamaru', 'white', 'f2');
+  putPiece(b, 1, 4, 'culling_pawn', 'white', 'a4');
+  putPiece(b, 3, 5, 'culling_pawn', 'white', 'c5');
+  putPiece(b, 5, 4, 'culling_pawn', 'white', 'e4');
+  putPiece(b, 7, 3, 'culling_pawn', 'white', 'g3');
+  putPiece(b, 8, 3, 'culling_pawn', 'white', 'h3');
+
+  putPiece(b, 2, 8, 'culling_sukuna', 'black', 'b8', { specialUsed: true });
+  putPiece(b, 2, 7, 'culling_pawn', 'black', 'b7');
+  putPiece(b, 7, 8, 'culling_reggie', 'black', 'g8');
+  putPiece(b, 8, 8, 'culling_kurourushi', 'black', 'h8');
+  putPiece(b, 5, 7, 'culling_pawn', 'black', 'e7');
+  putPiece(b, 6, 7, 'culling_pawn', 'black', 'f7');
+  putPiece(b, 7, 7, 'culling_pawn', 'black', 'g7');
   return b;
 };
 
@@ -25,174 +292,177 @@ export const CULLING_OPENING_LESSONS: CullingOpeningLesson[] = [
 
   {
     id: 'culling_open_1',
-    title: 'Lesson 1: Vanguard Central Rush',
-    subtitle: 'Advance central pawns to establish cross-arm control and liberate Yuji',
-    namedStrategy: 'Sovereign Vanguard Gambit',
+    title: 'Lesson 1: Safe Vanguard Development & Pawn Shield',
+    subtitle: 'Build an unbreakable central pawn shield before deploying high-value sorcerers',
+    namedStrategy: 'Shielded Vanguard Formation',
     curriculumType: 'opening',
     tier: 'beginner',
     playerColor: 'white',
     initialBoard: createInitialCullingBoard(),
     tukunaGreeting:
-      'Welcome to my classroom, pupil. I am Sensei Tukuna. Central file control dictates the boundaries of victory. Let us advance the central Vanguard pawns to establish our line of attack.',
+      'Welcome to the revised Culling Game Dojo. Rule One of survival: NEVER thrust your 8-point Vanguard or expensive sorcerers in front of pawns where a 1-point pawn can strike them. First build the pawn shield, then develop safely behind it.',
     completionMessage:
-      'Masterful central development! Opening the G and F files empowers your Vanguard to command the board.',
+      'Textbook opening discipline! Every high-value sorcerer stands shielded behind fortified pawns while commanding central lanes and denying Black’s knight and skirmisher outposts.',
     patternHighlights: [
-      { x: 7, y: 2 }, { x: 7, y: 3 }, { x: 7, y: 5 }, { x: 6, y: 5 },
+      { x: 7, y: 2 }, { x: 6, y: 3 }, { x: 5, y: 3 }, { x: 4, y: 3 },
     ],
     steps: [
       {
         stepNumber: 1,
-        from: { x: 7, y: 2 }, // G2 Pawn
-        to: { x: 7, y: 3 },   // G3
+        from: { x: 7, y: 2 },
+        to: { x: 7, y: 3 },
         actionType: 'move',
-        notation: 'G2 → G3 (Pawn Advance)',
+        notation: 'G2 → G3 (Pawn Shield Advance)',
         tukunaInstruction:
-          'Push your White Pawn on G2 forward to G3. This opens up the G2 square for Yuji Itadori.',
+          'Advance your G2 pawn to G3. This vacates G2 as a protected pocket for Vanguard Yuji while guarding Gojo’s flank.',
         tacticalBreakdown:
-          'Advancing the G2 pawn clears the column for Vanguard Yuji Itadori on G1 to step into battle.',
-        hint: 'Select the pawn on G2 and advance it 1 step to G3.',
+          'Pawns cost 1 point; Yuji costs 8. Clearing G2 lets Yuji develop behind a pawn shield rather than exposing himself on open ranks.',
+        hint: 'Move the White Pawn on G2 forward to G3.',
         vectorArrows: [
-          { from: { x: 7, y: 2 }, to: { x: 7, y: 3 }, color: 'crimson', label: '1', style: 'solid' },
+          { from: { x: 7, y: 2 }, to: { x: 7, y: 3 }, color: 'emerald', label: '1', style: 'solid' },
         ],
         opponentResponse: {
-          from: { x: 2, y: 7 }, // Black Pawn B7
-          to: { x: 2, y: 6 },   // B6
-          commentary: 'Kenjaku opens the B-file for Black’s Vanguard!',
+          from: { x: 2, y: 7 },
+          to: { x: 2, y: 6 },
+          commentary: 'Black mirrors good structure, pushing B7 → B6 to prepare Vanguard Kenjaku.',
         },
       },
       {
         stepNumber: 2,
-        from: { x: 7, y: 1 }, // Yuji at G1
-        to: { x: 7, y: 2 },   // G2
+        from: { x: 7, y: 1 },
+        to: { x: 7, y: 2 },
         actionType: 'move',
-        notation: 'Yuji G1 → G2 (Vanguard Step)',
+        notation: 'Yuji G1 → G2 (Protected Vanguard Pocket)',
         tukunaInstruction:
-          'Step Vanguard Yuji Itadori from G1 to G2 onto the cleared square.',
+          'Step Vanguard Yuji from G1 onto G2 directly behind your G3 pawn.',
         tacticalBreakdown:
-          'Vanguards slide up to 3 squares. Placing Yuji on G2 establishes a formidable forward watch post guarding Gojo.',
-        hint: 'Move Yuji from G1 to G2.',
+          'From G2, Yuji guards Gojo on H1, reinforces F3 and H3, and stays completely immune to enemy pawns and Ranged Strikes.',
+        hint: 'Step Yuji from G1 to G2.',
         vectorArrows: [
-          { from: { x: 7, y: 1 }, to: { x: 7, y: 2 }, color: 'crimson', label: '2', style: 'solid' },
+          { from: { x: 7, y: 1 }, to: { x: 7, y: 2 }, color: 'emerald', label: '2', style: 'solid' },
         ],
         opponentResponse: {
-          from: { x: 2, y: 8 }, // Kenjaku at B8
-          to: { x: 2, y: 7 },   // B7
-          commentary: 'Black deploys Vanguard Kenjaku to B7!',
+          from: { x: 2, y: 8 },
+          to: { x: 2, y: 7 },
+          commentary: 'Black tucks Vanguard Kenjaku onto B7 behind the B6 pawn.',
         },
       },
       {
         stepNumber: 3,
-        from: { x: 7, y: 3 }, // G3 Pawn
-        to: { x: 7, y: 4 },   // G4
+        from: { x: 6, y: 2 },
+        to: { x: 6, y: 3 },
         actionType: 'move',
-        notation: 'G3 → G4 (Central Wedge Push)',
+        notation: 'F2 → F3 (Interlocking Pawn Chain)',
         tukunaInstruction:
-          'Push your G3 pawn to G4 to claim central territory.',
+          'Push your F2 pawn to F3 to form a connected kingside shield alongside G3.',
         tacticalBreakdown:
-          'Pushing the G3 pawn to G4 opens up diagonal attack lanes for Yuji from G2.',
-        hint: 'Push the G3 pawn to G4.',
+          'F3 and G3 control E4, F4, G4, and H4 together—preventing enemy Rushers or Skirmishers from leaping into your territory.',
+        hint: 'Advance the F2 pawn to F3.',
         vectorArrows: [
-          { from: { x: 7, y: 3 }, to: { x: 7, y: 4 }, color: 'crimson', label: '3', style: 'solid' },
+          { from: { x: 6, y: 2 }, to: { x: 6, y: 3 }, color: 'emerald', label: '3', style: 'solid' },
         ],
         opponentResponse: {
-          from: { x: 3, y: 7 }, // Black Pawn C7
-          to: { x: 3, y: 6 },   // C6
-          commentary: 'Opponent advances C7 pawn to solidify their center.',
+          from: { x: 5, y: 7 },
+          to: { x: 5, y: 6 },
+          commentary: 'Black advances E7 → E6, opening the central column for Warden Reggie.',
         },
       },
       {
         stepNumber: 4,
-        from: { x: 7, y: 2 }, // Yuji G2
-        to: { x: 6, y: 3 },   // F3 (Diagonal step)
+        from: { x: 5, y: 2 },
+        to: { x: 5, y: 3 },
         actionType: 'move',
-        notation: 'Yuji G2 → F3 (Vanguard Diagonal Shift)',
+        notation: 'E2 → E3 (Central Phalanx)',
         tukunaInstruction:
-          'Step Yuji diagonally to F3 onto the open F-column.',
+          'Advance your E2 pawn to E3 to extend the central pawn phalanx across E3–F3–G3.',
         tacticalBreakdown:
-          'Shifting Yuji to F3 prepares a long-range Vanguard slide up the open F-column.',
-        hint: 'Move Yuji diagonally to F3.',
+          'E3 controls D4 and F4 while freeing E2 for flexible piece rotation behind the wall.',
+        hint: 'Push the E2 pawn one square to E3.',
         vectorArrows: [
-          { from: { x: 7, y: 2 }, to: { x: 6, y: 3 }, color: 'crimson', label: '4', style: 'solid' },
+          { from: { x: 5, y: 2 }, to: { x: 5, y: 3 }, color: 'emerald', label: '4', style: 'solid' },
         ],
         opponentResponse: {
-          from: { x: 4, y: 7 }, // Black Pawn D7
-          to: { x: 4, y: 6 },   // D6
-          commentary: 'Opponent pushes D7 pawn to D6.',
+          from: { x: 5, y: 8 },
+          to: { x: 5, y: 7 },
+          commentary: 'Black develops Warden Reggie to E7 behind the E6 pawn.',
         },
       },
       {
         stepNumber: 5,
-        from: { x: 6, y: 3 }, // Yuji F3
-        to: { x: 6, y: 5 },   // F5 (Slide 2 squares up open F-column!)
+        from: { x: 5, y: 1 },
+        to: { x: 4, y: 3 },
         actionType: 'move',
-        notation: 'Yuji F3 → F5 (Open Column Thrust)',
+        notation: 'Panda E1 → D3 (Central Bulwark Posting)',
         tukunaInstruction:
-          'Slide Yuji 2 squares forward along the open F-column to F5.',
+          'Leap Bulwark Panda from E1 to D3 to reinforce the center and connect your back rank.',
         tacticalBreakdown:
-          'Yuji’s slide pierces deep into Black’s center, threatening D6 and E6 pawns.',
-        hint: 'Slide Yuji from F3 straight up to F5.',
+          'Panda’s Knight jump to D3 eyes C5 and E5 while keeping its armored Shell completely intact and out of enemy pawn reach.',
+        hint: 'Jump Panda in an L-shape from E1 to D3.',
         vectorArrows: [
-          { from: { x: 6, y: 3 }, to: { x: 6, y: 5 }, color: 'crimson', label: '5', style: 'solid' },
+          { from: { x: 5, y: 1 }, to: { x: 4, y: 3 }, color: 'emerald', label: '5', style: 'solid' },
         ],
         opponentResponse: {
-          from: { x: 5, y: 7 }, // Black Pawn E7
-          to: { x: 5, y: 6 },   // E6
-          commentary: 'Black fortifies E6 to block central diagonal threats.',
+          from: { x: 4, y: 8 },
+          to: { x: 3, y: 6 },
+          commentary: 'Black leaps Bulwark Yorozu to C6, eyeing central squares B4 and D4!',
         },
       },
       {
         stepNumber: 6,
-        from: { x: 4, y: 2 }, // D2 Pawn
-        to: { x: 4, y: 3 },   // D3
+        from: { x: 3, y: 2 },
+        to: { x: 3, y: 3 },
         actionType: 'move',
-        notation: 'D2 → D3 (Warden Runway Push)',
+        notation: 'C2 → C3 (Anti-Bulwark Denial)',
         tukunaInstruction:
-          'Push your D2 pawn forward to D3 to clear the D-file for Warden Nanami.',
+          'Respond directly to Yorozu’s C6 jump! Push C2 → C3 to strip away both B4 and D4 landing squares.',
         tacticalBreakdown:
-          'Clearing D2 allows Nanami to step into the second rank and project his Ratio Field.',
-        hint: 'Push the D2 pawn to D3.',
+          'A single 1-point pawn on C3 shuts down an entire 3.5-point enemy Bulwark on C6—Yorozu would lose to C3×B4 or C3×D4 if she jumped forward.',
+        hint: 'Advance the C2 pawn to C3 to cover B4 and D4.',
         vectorArrows: [
-          { from: { x: 4, y: 2 }, to: { x: 4, y: 3 }, color: 'crimson', label: '6', style: 'solid' },
+          { from: { x: 3, y: 2 }, to: { x: 3, y: 3 }, color: 'emerald', label: '6', style: 'solid' },
+          { from: { x: 3, y: 3 }, to: { x: 2, y: 4 }, color: 'navy', style: 'dashed' },
+          { from: { x: 3, y: 3 }, to: { x: 4, y: 4 }, color: 'navy', style: 'dashed' },
         ],
         opponentResponse: {
-          from: { x: 3, y: 8 }, // Uraume C8
-          to: { x: 3, y: 7 },   // C7
-          commentary: 'Uraume shifts to C7 to set up a counter-battery.',
+          from: { x: 6, y: 8 },
+          to: { x: 6, y: 6 },
+          commentary: 'Black hops Skirmisher Naoya over F7 onto F6, probing your kingside!',
         },
       },
       {
         stepNumber: 7,
-        from: { x: 4, y: 1 }, // Nanami D1
-        to: { x: 4, y: 2 },   // D2 (Orthogonal Warden Step)
+        from: { x: 7, y: 3 },
+        to: { x: 7, y: 4 },
         actionType: 'move',
-        notation: 'Nanami D1 → D2 (Warden Orthogonal Step)',
+        notation: 'G3 → G4 (Supported Space Gain)',
         tukunaInstruction:
-          'Slide Warden Nanami 1 square orthogonally forward to D2.',
+          'Push G3 → G4, backed up by both your F3 pawn and Yuji on G2, to clamp down on F5 and H5.',
         tacticalBreakdown:
-          'Nanami slides orthogonally up to 3 squares. Positioning Nanami on D2 projects his Ratio Field into the center.',
-        hint: 'Move Nanami from D1 to D2.',
+          'Unlike reckless unsupported pushes, G4 is defended twice (by F3 and Yuji on G2) and stops Naoya from ever stepping to F5 or H5.',
+        hint: 'Advance the G3 pawn to G4.',
         vectorArrows: [
-          { from: { x: 4, y: 1 }, to: { x: 4, y: 2 }, color: 'crimson', label: '7', style: 'solid' },
+          { from: { x: 7, y: 3 }, to: { x: 7, y: 4 }, color: 'emerald', label: '7', style: 'solid' },
+          { from: { x: 6, y: 3 }, to: { x: 7, y: 4 }, color: 'navy', style: 'dashed' },
         ],
         opponentResponse: {
-          from: { x: 6, y: 7 }, // Black Pawn F7
-          to: { x: 6, y: 6 },   // F6
-          commentary: 'Black advances F7 pawn to F6.',
+          from: { x: 4, y: 7 },
+          to: { x: 4, y: 6 },
+          commentary: 'Unable to infiltrate on the kingside, Black consolidates with D7 → D6.',
         },
       },
       {
         stepNumber: 8,
-        from: { x: 6, y: 5 }, // Yuji F5
-        to: { x: 5, y: 5 },   // E5
+        from: { x: 6, y: 1 },
+        to: { x: 6, y: 2 },
         actionType: 'move',
-        notation: 'Yuji F5 → E5 (Tactical Shift)',
+        notation: 'Mechamaru F1 → F2 (Artillery Reserve)',
         tukunaInstruction:
-          'Shift Yuji from F5 to E5 to place direct pressure on Black’s E6 outpost.',
+          'Step Artillery Mechamaru from F1 to F2 to complete your second-rank battery.',
         tacticalBreakdown:
-          'Positioning Yuji on E5 commands both D6 and F6 diagonals while anchored by your F3 pawn wall.',
-        hint: 'Move Yuji 1 square left to E5.',
+          'Mechamaru on F2 and Yuji on G2 sit completely safe behind the C3–D3–E3–F3–G4 wall, coiled to punish any enemy breakthrough.',
+        hint: 'Step Mechamaru from F1 up to F2.',
         vectorArrows: [
-          { from: { x: 6, y: 5 }, to: { x: 5, y: 5 }, color: 'crimson', label: '8', style: 'solid' },
+          { from: { x: 6, y: 1 }, to: { x: 6, y: 2 }, color: 'emerald', label: '8', style: 'solid' },
         ],
       },
     ],
@@ -200,174 +470,175 @@ export const CULLING_OPENING_LESSONS: CullingOpeningLesson[] = [
 
   {
     id: 'culling_open_2',
-    title: 'Lesson 2: Sovereign Shell Defense',
-    subtitle: 'Construct an impenetrable Bulwark & Warden perimeter around Satoru Gojo',
-    namedStrategy: 'Ratio-Shell Fortification',
+    title: 'Lesson 2: Sovereign Fortress vs. Flank Raid',
+    subtitle: 'Repel an aggressive H-file Rusher & Skirmisher raid while tucking Gojo into safety',
+    namedStrategy: 'Infinity Bastion Defense',
     curriculumType: 'opening',
     tier: 'beginner',
     playerColor: 'white',
     initialBoard: createInitialCullingBoard(),
     tukunaGreeting:
-      'Satoru Gojo is your Sovereign. Protecting Gojo while building a strong perimeter is essential. Deploy Bulwark Panda and Nanami to form an unbreakable citadel.',
+      'Ambitious opponents love rushing Kurourushi down the H-file toward Gojo on H1. Watch how calm second-rank defense and a well-timed pawn thrust force the raider backward with lost tempo.',
     completionMessage:
-      'Defensive shell activated! Gojo is shielded behind Panda’s Bulwark Shell and Nanami’s Ratio Field.',
+      'Impeccable defense! You blunted Black’s H-file Rusher raid without risking a single sorcerer, gained space with tempo, and sheltered Gojo inside an iron fortress.',
     patternHighlights: [
-      { x: 5, y: 1 }, { x: 6, y: 3 }, { x: 4, y: 2 }, { x: 4, y: 4 },
+      { x: 8, y: 2 }, { x: 7, y: 2 }, { x: 6, y: 1 }, { x: 7, y: 4 },
     ],
     steps: [
       {
         stepNumber: 1,
-        from: { x: 5, y: 1 }, // Panda E1
-        to: { x: 6, y: 3 },   // F3 (Knight L-jump)
+        from: { x: 7, y: 2 },
+        to: { x: 7, y: 3 },
         actionType: 'move',
-        notation: 'Panda E1 → F3 (Bulwark Outpost)',
+        notation: 'G2 → G3 (Flank Shield)',
         tukunaInstruction:
-          'Jump Bulwark Panda from E1 to F3 using a Knight L-movement pattern.',
+          'Open with G2 → G3 to cover H4 and prepare a defensive pocket on G2.',
         tacticalBreakdown:
-          'Panda’s Bulwark Shell absorbs the first capture attempt completely, creating an indestructible barrier for Gojo.',
-        hint: 'Jump Panda from E1 to F3.',
+          'G3 immediately watches H4 so enemy Rushers cannot slide uncontested down the H-column.',
+        hint: 'Push the G2 pawn to G3.',
         vectorArrows: [
-          { from: { x: 5, y: 1 }, to: { x: 6, y: 3 }, color: 'crimson', label: '1', style: 'solid' },
+          { from: { x: 7, y: 2 }, to: { x: 7, y: 3 }, color: 'emerald', label: '1', style: 'solid' },
         ],
         opponentResponse: {
-          from: { x: 3, y: 7 }, // Black Pawn C7
-          to: { x: 3, y: 6 },   // C6
-          commentary: 'Opponent advances C7 pawn to probe central sightlines.',
+          from: { x: 7, y: 8 },
+          to: { x: 8, y: 7 },
+          commentary: 'Black launches an immediate flank raid, sliding Rusher Kurourushi to H7!',
         },
       },
       {
         stepNumber: 2,
-        from: { x: 4, y: 2 }, // Pawn D2
-        to: { x: 4, y: 3 },   // D3
+        from: { x: 6, y: 1 },
+        to: { x: 7, y: 2 },
         actionType: 'move',
-        notation: 'D2 → D3 (Wall Construction)',
+        notation: 'Mechamaru F1 → G2 (Artillery Overwatch)',
         tukunaInstruction:
-          'Advance your D2 pawn to D3 to clear Nanami’s file.',
+          'Step Mechamaru diagonally from F1 to G2 to overprotect the kingside and aim Ranged Strikes at E4 and G4.',
         tacticalBreakdown:
-          'Pawn pushes construct tight barrier structures that restrict enemy movement through the center.',
-        hint: 'Push D2 pawn to D3.',
+          'Putting Artillery on G2 guards H3 and H1 while freeing F1 for Yuji to rotate toward the center.',
+        hint: 'Move Mechamaru from F1 diagonally to G2.',
         vectorArrows: [
-          { from: { x: 4, y: 2 }, to: { x: 4, y: 3 }, color: 'crimson', label: '2', style: 'solid' },
+          { from: { x: 6, y: 1 }, to: { x: 7, y: 2 }, color: 'emerald', label: '2', style: 'solid' },
         ],
         opponentResponse: {
-          from: { x: 4, y: 7 }, // Black Pawn D7
-          to: { x: 4, y: 6 },   // D6
-          commentary: 'Black advances D7 pawn to D6.',
+          from: { x: 8, y: 7 },
+          to: { x: 8, y: 6 },
+          commentary: 'Kurourushi marches down the flank to H6!',
         },
       },
       {
         stepNumber: 3,
-        from: { x: 4, y: 1 }, // Nanami D1
-        to: { x: 4, y: 2 },   // D2
+        from: { x: 7, y: 1 },
+        to: { x: 6, y: 1 },
         actionType: 'move',
-        notation: 'Nanami D1 → D2 (Warden Step)',
+        notation: 'Yuji G1 → F1 (Back-Rank Rotation)',
         tukunaInstruction:
-          'Slide Nanami from D1 to D2.',
+          'Slide Yuji from G1 to F1, clearing the H1–G1 corner for Gojo while keeping Yuji ready to deploy centrally.',
         tacticalBreakdown:
-          'Nanami on D2 projects an 8-square Ratio Field restricting adjacent enemies to 1 step maximum.',
-        hint: 'Move Nanami forward to D2.',
+          'Rotating heavy pieces laterally on Rank 1 keeps them 100% untouchable while preparing central counterplay.',
+        hint: 'Step Yuji from G1 to F1.',
         vectorArrows: [
-          { from: { x: 4, y: 1 }, to: { x: 4, y: 2 }, color: 'crimson', label: '3', style: 'solid' },
+          { from: { x: 7, y: 1 }, to: { x: 6, y: 1 }, color: 'emerald', label: '3', style: 'solid' },
         ],
         opponentResponse: {
-          from: { x: 5, y: 7 }, // Black Pawn E7
-          to: { x: 5, y: 6 },   // E6
-          commentary: 'Black advances E7 pawn to E6 to solidify their center.',
+          from: { x: 8, y: 6 },
+          to: { x: 8, y: 5 },
+          commentary: 'Kurourushi reaches H5, threatening diagonal slides toward the kingside!',
         },
       },
       {
         stepNumber: 4,
-        from: { x: 5, y: 2 }, // Pawn E2
-        to: { x: 5, y: 3 },   // E3
+        from: { x: 6, y: 2 },
+        to: { x: 6, y: 3 },
         actionType: 'move',
-        notation: 'E2 → E3 (Center Support)',
+        notation: 'F2 → F3 (Preparing the Repulse)',
         tukunaInstruction:
-          'Push your E2 pawn forward to E3.',
+          'Do not push G3 → G4 prematurely! First play F2 → F3 so your G4 thrust will have rock-solid pawn support.',
         tacticalBreakdown:
-          'Creating a pawn chain on D3-E3 covers Panda on F3 and seals the E-column.',
-        hint: 'Push E2 pawn to E3.',
+          'If you pushed G4 without F3, Kurourushi could capture G4 and trigger Jackpot. Supporting with F3 first turns G4 into a trap.',
+        hint: 'Advance the F2 pawn to F3.',
         vectorArrows: [
-          { from: { x: 5, y: 2 }, to: { x: 5, y: 3 }, color: 'crimson', label: '4', style: 'solid' },
+          { from: { x: 6, y: 2 }, to: { x: 6, y: 3 }, color: 'emerald', label: '4', style: 'solid' },
         ],
         opponentResponse: {
-          from: { x: 2, y: 7 }, // Black Pawn B7
-          to: { x: 2, y: 6 },   // B6
-          commentary: 'Opponent pushes B7 pawn to B6.',
+          from: { x: 6, y: 8 },
+          to: { x: 6, y: 6 },
+          commentary: 'Black hops Skirmisher Naoya to F6 to reinforce the kingside pressure!',
         },
       },
       {
         stepNumber: 5,
-        from: { x: 8, y: 1 }, // Gojo H1
-        to: { x: 8, y: 2 },   // H2 (Step forward onto empty H2 square)
+        from: { x: 7, y: 3 },
+        to: { x: 7, y: 4 },
         actionType: 'move',
-        notation: 'Gojo H1 → H2 (Sovereign Safety Step)',
+        notation: 'G3 → G4 (Repelling Pawn Thrust!)',
         tukunaInstruction:
-          'Step Satoru Gojo 1 square forward from H1 to H2.',
+          'Now strike with G3 → G4! Backed by F3 and Mechamaru’s Ranged Strike from G2, your 1-point pawn attacks Black’s 3.5-point Rusher on H5!',
         tacticalBreakdown:
-          'Moving Gojo to H2 tucks him safely behind Panda on F3 and Nanami on D2.',
-        hint: 'Move Gojo forward to H2.',
+          'If Kurourushi dared capture G4, Mechamaru on G2 could snipe G4 or F3×G4 would win material cleanly. Black is forced to retreat.',
+        hint: 'Push G3 to G4 to attack Kurourushi on H5.',
         vectorArrows: [
-          { from: { x: 8, y: 1 }, to: { x: 8, y: 2 }, color: 'crimson', label: '5', style: 'solid' },
+          { from: { x: 7, y: 3 }, to: { x: 7, y: 4 }, color: 'emerald', label: '5', style: 'solid' },
+          { from: { x: 7, y: 4 }, to: { x: 8, y: 5 }, color: 'navy', style: 'dashed' },
         ],
         opponentResponse: {
-          from: { x: 6, y: 7 }, // Black Pawn F7
-          to: { x: 6, y: 6 },   // F6
-          commentary: 'Black pushes F7 pawn to F6.',
+          from: { x: 8, y: 5 },
+          to: { x: 8, y: 6 },
+          commentary: 'Forced back! Kurourushi retreats from H5 to H6 to avoid losing a 3.5-point sorcerer to a pawn.',
         },
       },
       {
         stepNumber: 6,
-        from: { x: 6, y: 1 }, // Mechamaru F1
-        to: { x: 5, y: 2 },   // E2
+        from: { x: 5, y: 1 },
+        to: { x: 4, y: 3 },
         actionType: 'move',
-        notation: 'Mechamaru F1 → E2 (Battery Guard)',
+        notation: 'Panda E1 → D3 (Central Reinforcement)',
         tukunaInstruction:
-          'Step Mechamaru to E2 behind the E3 pawn line.',
+          'Capitalize on the tempo you gained by jumping Bulwark Panda from E1 to D3.',
         tacticalBreakdown:
-          'Mechamaru on E2 covers both the D3 and F3 pawns while guarding Gojo’s left flank.',
-        hint: 'Move Mechamaru to E2.',
+          'While Black wasted three moves marching Kurourushi up and back, you develop a second minor piece into an ideal central post.',
+        hint: 'Jump Panda from E1 to D3.',
         vectorArrows: [
-          { from: { x: 6, y: 1 }, to: { x: 5, y: 2 }, color: 'crimson', label: '6', style: 'solid' },
+          { from: { x: 5, y: 1 }, to: { x: 4, y: 3 }, color: 'emerald', label: '6', style: 'solid' },
         ],
         opponentResponse: {
-          from: { x: 2, y: 6 }, // Black Pawn B6
-          to: { x: 2, y: 5 },   // B5
-          commentary: 'Black advances B6 pawn to B5.',
+          from: { x: 5, y: 7 },
+          to: { x: 5, y: 6 },
+          commentary: 'Black switches plans, advancing E7 → E6 in the center.',
         },
       },
       {
         stepNumber: 7,
-        from: { x: 6, y: 3 }, // Panda F3
-        to: { x: 5, y: 5 },   // E5
+        from: { x: 5, y: 2 },
+        to: { x: 5, y: 3 },
         actionType: 'move',
-        notation: 'Panda F3 → E5 (Bulwark Outpost Advance)',
+        notation: 'E2 → E3 (Sealing the Center)',
         tukunaInstruction:
-          'Jump Panda forward to E5 in the center board.',
+          'Push E2 → E3 to lock your E3–F3–G4 pawn chain together.',
         tacticalBreakdown:
-          'Panda on E5 exerts high physical pressure while forcing Naoya to respect his Bulwark Shell.',
-        hint: 'Jump Panda from F3 to E5.',
+          'Every pawn in the chain protects the square ahead, denying Naoya on F6 any safe hop onto F4.',
+        hint: 'Advance the E2 pawn to E3.',
         vectorArrows: [
-          { from: { x: 6, y: 3 }, to: { x: 5, y: 5 }, color: 'crimson', label: '7', style: 'solid' },
+          { from: { x: 5, y: 2 }, to: { x: 5, y: 3 }, color: 'emerald', label: '7', style: 'solid' },
         ],
         opponentResponse: {
-          from: { x: 3, y: 6 }, // Black Pawn C6
-          to: { x: 3, y: 5 },   // C5
-          commentary: 'Black advances C6 pawn to C5.',
+          from: { x: 5, y: 8 },
+          to: { x: 5, y: 7 },
+          commentary: 'Black steps Warden Reggie to E7.',
         },
       },
       {
         stepNumber: 8,
-        from: { x: 4, y: 3 }, // D3 Pawn
-        to: { x: 4, y: 4 },   // D4
+        from: { x: 8, y: 1 },
+        to: { x: 8, y: 2 },
         actionType: 'move',
-        notation: 'D3 → D4 (Central Wall Advance)',
+        notation: 'Gojo H1 → H2 (Fortress Shelter)',
         tukunaInstruction:
-          'Advance your D3 pawn forward to D4 to seal the central perimeter.',
+          'Step Sovereign Gojo from H1 to H2, connecting your back rank while keeping Domain Step in reserve.',
         tacticalBreakdown:
-          'Pushing D4 secures central space and supports Panda on E5.',
-        hint: 'Push D3 pawn to D4.',
+          'Gojo sits safely behind Mechamaru (G2) and the G4 pawn, with Domain Step still unspent for mid-game emergencies.',
+        hint: 'Move Gojo one step up from H1 to H2.',
         vectorArrows: [
-          { from: { x: 4, y: 3 }, to: { x: 4, y: 4 }, color: 'crimson', label: '8', style: 'solid' },
+          { from: { x: 8, y: 1 }, to: { x: 8, y: 2 }, color: 'emerald', label: '8', style: 'solid' },
         ],
       },
     ],
@@ -375,174 +646,176 @@ export const CULLING_OPENING_LESSONS: CullingOpeningLesson[] = [
 
   {
     id: 'culling_open_3',
-    title: 'Lesson 3: Skirmisher Flank Attack',
-    subtitle: 'Utilize Heavenly Restriction for instant 2-square leaping flank entry',
-    namedStrategy: 'Heavenly Skirmish Ambush',
+    title: 'Lesson 3: Skirmisher Flank Discipline & Avoiding Traps',
+    subtitle: 'Navigate Maki into the Left Colony Arm while sidestepping pawn forks and Black Flash lanes',
+    namedStrategy: 'Zen’in Western Flanking Maneuver',
     curriculumType: 'opening',
     tier: 'beginner',
     playerColor: 'white',
     initialBoard: createInitialCullingBoard(),
     tukunaGreeting:
-      'Maki Zenin possesses Heavenly Restriction. She ignores enemy Warden Ratio Fields and can hop 2 squares orthogonally over any unit. Master her rapid flank entry!',
+      'Maki’s 2-square orthogonal hop lets her vault over pawns effortlessly—which tempts careless players into hopping straight into enemy pawn forks or Kenjaku’s Black Flash diagonal. Watch every enemy threat vector!',
     completionMessage:
-      'Flawless skirmish leap! Maki has penetrated deep behind enemy lines.',
+      'Razor-sharp positional awareness! You infiltrated the Left Colony Arm to L4 while denying Black’s B5 pawn fork and steering clear of Kenjaku’s B7–A6–L5 Black Flash line.',
     patternHighlights: [
-      { x: 3, y: 1 }, { x: 3, y: 3 }, { x: 3, y: 4 }, { x: 2, y: 5 }, { x: 1, y: 5 },
+      { x: 3, y: 3 }, { x: 1, y: 3 }, { x: 0, y: 3 }, { x: 0, y: 4 },
     ],
     steps: [
       {
         stepNumber: 1,
-        from: { x: 3, y: 1 }, // Maki C1
-        to: { x: 3, y: 3 },   // C3 (Leap over C2)
+        from: { x: 3, y: 1 },
+        to: { x: 3, y: 3 },
         actionType: 'move',
-        notation: 'Maki C1 → C3 (Heavenly Leap)',
+        notation: 'Maki C1 → C3 (Orthogonal Vault)',
         tukunaInstruction:
-          'Hop Maki Zenin from C1 directly over the C2 pawn onto C3.',
+          'Vault Skirmisher Maki 2 squares orthogonally over your C2 pawn from C1 to C3.',
         tacticalBreakdown:
-          'Skirmishers hop 2 squares orthogonally, leaping cleanly over friendly or enemy units to seize flank outposts.',
-        hint: 'Hop Maki over C2 pawn to C3.',
+          'Skirmishers leap 2 squares orthogonally over friendly or enemy units. C3 is completely safe on Rank 3 and supports a B-file advance.',
+        hint: 'Hop Maki from C1 over C2 onto C3.',
         vectorArrows: [
-          { from: { x: 3, y: 1 }, to: { x: 3, y: 3 }, color: 'crimson', label: '1', style: 'solid' },
+          { from: { x: 3, y: 1 }, to: { x: 3, y: 3 }, color: 'emerald', label: '1', style: 'solid' },
         ],
         opponentResponse: {
-          from: { x: 6, y: 7 }, // Black Pawn F7
-          to: { x: 6, y: 6 },   // F6
-          commentary: 'Naoya Zenin prepares a counter-skirmish on the opposite flank.',
+          from: { x: 3, y: 7 },
+          to: { x: 3, y: 6 },
+          commentary: 'Black pushes C7 → C6 to contest the western center.',
         },
       },
       {
         stepNumber: 2,
-        from: { x: 3, y: 3 }, // Maki C3
-        to: { x: 3, y: 4 },   // C4
+        from: { x: 2, y: 2 },
+        to: { x: 2, y: 3 },
         actionType: 'move',
-        notation: 'Maki C3 → C4 (Colony Penetration)',
+        notation: 'B2 → B3 (Western Escort)',
         tukunaInstruction:
-          'Advance Maki one step forward to C4.',
+          'Advance your B2 pawn to B3 alongside Maki.',
         tacticalBreakdown:
-          'Positioning Maki on C4 exerts heavy pressure on Black’s C-file pawns while remaining immune to Warden suppression.',
-        hint: 'Move Maki to C4.',
+          'B3 opens B2 for Rusher Hakari and prepares a supported push to B4.',
+        hint: 'Move the B2 pawn forward to B3.',
         vectorArrows: [
-          { from: { x: 3, y: 3 }, to: { x: 3, y: 4 }, color: 'crimson', label: '2', style: 'solid' },
+          { from: { x: 2, y: 2 }, to: { x: 2, y: 3 }, color: 'emerald', label: '2', style: 'solid' },
         ],
         opponentResponse: {
-          from: { x: 2, y: 7 }, // Black Pawn B7
-          to: { x: 2, y: 6 },   // B6
-          commentary: 'Opponent pushes B7 pawn to B6 to guard the C5 square.',
+          from: { x: 2, y: 7 },
+          to: { x: 2, y: 6 },
+          commentary: 'Black answers with B7 → B6, opening B7 for Kenjaku.',
         },
       },
       {
         stepNumber: 3,
-        from: { x: 2, y: 2 }, // Pawn B2
-        to: { x: 2, y: 3 },   // B3
+        from: { x: 2, y: 3 },
+        to: { x: 2, y: 4 },
         actionType: 'move',
-        notation: 'B2 → B3 (Flank Runway)',
+        notation: 'B3 → B4 (Claiming Western Space)',
         tukunaInstruction:
-          'Move your B2 pawn to B3 to support Maki’s left flank.',
+          'Push B3 → B4! Maki on C3 defends B4 diagonally, allowing your pawn to claim Rank 4 safely.',
         tacticalBreakdown:
-          'Advancing B3 protects Maki’s diagonal retreat square and opens B2 for Hakari.',
-        hint: 'Push B2 pawn to B3.',
+          'Advancing pawns WITH piece support behind them gains space while forcing the opponent to react.',
+        hint: 'Push your B3 pawn up to B4.',
         vectorArrows: [
-          { from: { x: 2, y: 2 }, to: { x: 2, y: 3 }, color: 'crimson', label: '3', style: 'solid' },
+          { from: { x: 2, y: 3 }, to: { x: 2, y: 4 }, color: 'emerald', label: '3', style: 'solid' },
+          { from: { x: 3, y: 3 }, to: { x: 2, y: 4 }, color: 'navy', style: 'dashed' },
         ],
         opponentResponse: {
-          from: { x: 2, y: 8 }, // Kenjaku B8
-          to: { x: 2, y: 7 },   // B7
-          commentary: 'Kenjaku steps onto B7 to contest the western corridor.',
+          from: { x: 2, y: 8 },
+          to: { x: 2, y: 7 },
+          commentary: 'Black steps 8-point Vanguard Kenjaku to B7—watch the B7–A6–L5 diagonal carefully!',
         },
       },
       {
         stepNumber: 4,
-        from: { x: 2, y: 1 }, // Hakari B1
-        to: { x: 2, y: 2 },   // B2
+        from: { x: 2, y: 1 },
+        to: { x: 2, y: 2 },
         actionType: 'move',
-        notation: 'Hakari B1 → B2 (Rusher Mobilization)',
+        notation: 'Hakari B1 → B2 (Rusher Deployment)',
         tukunaInstruction:
-          'Advance Hakari 1 step orthogonally to B2.',
+          'Step Rusher Hakari from B1 to B2 behind your western structure.',
         tacticalBreakdown:
-          'Hakari on B2 pairs with Maki on C4 to form a lethal dual-threat skirmish team on Black’s right wing.',
-        hint: 'Move Hakari to B2.',
+          'From B2, Hakari controls diagonal runways toward A3/D4 while staying shielded from Black’s Vanguard.',
+        hint: 'Move Hakari one square forward from B1 to B2.',
         vectorArrows: [
-          { from: { x: 2, y: 1 }, to: { x: 2, y: 2 }, color: 'crimson', label: '4', style: 'solid' },
+          { from: { x: 2, y: 1 }, to: { x: 2, y: 2 }, color: 'emerald', label: '4', style: 'solid' },
         ],
         opponentResponse: {
-          from: { x: 4, y: 7 }, // Black Pawn D7
-          to: { x: 4, y: 6 },   // D6
-          commentary: 'Black advances D7 pawn to D6.',
+          from: { x: 2, y: 6 },
+          to: { x: 2, y: 5 },
+          commentary: 'Black pushes B6 → B5! Notice how Black’s B5 pawn now attacks BOTH A4 and C4!',
         },
       },
       {
         stepNumber: 5,
-        from: { x: 3, y: 4 }, // Maki C4
-        to: { x: 2, y: 5 },   // B5
+        from: { x: 3, y: 3 },
+        to: { x: 1, y: 3 },
         actionType: 'move',
-        notation: 'Maki C4 → B5 (Diagonal Ambush)',
+        notation: 'Maki C3 → A3 (Lateral Hop Around B5 Pawn)',
         tukunaInstruction:
-          'Shift Maki diagonally to B5 to target Kenjaku on B7.',
+          'Do NOT step Maki to C4—Black’s B5 pawn would capture her for 1 point! Instead hop 2 squares laterally C3 → A3.',
         tacticalBreakdown:
-          'Maki on B5 places Kenjaku under immediate threat while bypassing B6 pawn defenses.',
-        hint: 'Move Maki diagonally to B5.',
+          'Recognizing enemy pawn diagonals saves expensive sorcerers. A3 bypasses B5’s control over A4 and C4 cleanly.',
+        hint: 'Hop Maki 2 squares left from C3 to A3.',
         vectorArrows: [
-          { from: { x: 3, y: 4 }, to: { x: 2, y: 5 }, color: 'crimson', label: '5', style: 'solid' },
+          { from: { x: 3, y: 3 }, to: { x: 1, y: 3 }, color: 'emerald', label: '5', style: 'solid' },
         ],
         opponentResponse: {
-          from: { x: 3, y: 7 }, // Black Pawn C7
-          to: { x: 3, y: 6 },   // C6
-          commentary: 'Black pushes C7 pawn to C6 to protect Kenjaku.',
+          from: { x: 4, y: 7 },
+          to: { x: 4, y: 6 },
+          commentary: 'Black reinforces the center with D7 → D6.',
         },
       },
       {
         stepNumber: 6,
-        from: { x: 3, y: 2 }, // Pawn C2
-        to: { x: 3, y: 3 },   // C3
+        from: { x: 3, y: 2 },
+        to: { x: 3, y: 3 },
         actionType: 'move',
-        notation: 'C2 → C3 (Flank Anchor)',
+        notation: 'C2 → C3 (Anchor the B4 Outpost)',
         tukunaInstruction:
-          'Push your C2 pawn forward to C3.',
+          'Before sending Maki deeper into the Left Arm, push C2 → C3 to permanently anchor your B4 pawn.',
         tacticalBreakdown:
-          'Securing C3 anchors your western pawn line and covers Maki’s rear.',
-        hint: 'Advance C2 pawn to C3.',
+          'Now that Maki vacated C3, your C3 pawn locks B4 into an unassailable wedge.',
+        hint: 'Advance the C2 pawn to C3.',
         vectorArrows: [
-          { from: { x: 3, y: 2 }, to: { x: 3, y: 3 }, color: 'crimson', label: '6', style: 'solid' },
+          { from: { x: 3, y: 2 }, to: { x: 3, y: 3 }, color: 'emerald', label: '6', style: 'solid' },
         ],
         opponentResponse: {
-          from: { x: 3, y: 8 }, // Uraume C8
-          to: { x: 2, y: 8 },   // B8
-          commentary: 'Uraume slides to B8 to defend Kenjaku.',
+          from: { x: 4, y: 8 },
+          to: { x: 5, y: 6 },
+          commentary: 'Black develops Bulwark Yorozu from D8 to E6.',
         },
       },
       {
         stepNumber: 7,
-        from: { x: 2, y: 5 }, // Maki B5
-        to: { x: 1, y: 5 },   // A5
+        from: { x: 1, y: 3 },
+        to: { x: 0, y: 3 },
         actionType: 'move',
-        notation: 'Maki B5 → A5 (Extension Corridor Entry)',
+        notation: 'Maki A3 → L3 (Left Colony Arm Entry)',
         tukunaInstruction:
-          'Step Maki into the Left Colony Extension arm square at A5.',
+          'Step Maki into the Left Colony Arm from A3 to L3, completely bypassing Black’s B5 pawn.',
         tacticalBreakdown:
-          'Entering the A-column extension allows Maki to bypass all frontal defenders and strike Sukuna from the side!',
-        hint: 'Move Maki left to A5.',
+          'The outer L-file (L2..L7) lets Skirmishers outflank A-file and B-file pawn walls without touching A4.',
+        hint: 'Step Maki left from A3 onto L3.',
         vectorArrows: [
-          { from: { x: 2, y: 5 }, to: { x: 1, y: 5 }, color: 'crimson', label: '7', style: 'solid' },
+          { from: { x: 1, y: 3 }, to: { x: 0, y: 3 }, color: 'emerald', label: '7', style: 'solid' },
         ],
         opponentResponse: {
-          from: { x: 5, y: 7 }, // Black Pawn E7
-          to: { x: 5, y: 6 },   // E6
-          commentary: 'Black advances E7 pawn to E6.',
+          from: { x: 6, y: 7 },
+          to: { x: 6, y: 6 },
+          commentary: 'Black pushes F7 → F6—hoping you will carelessly walk Maki onto L5!',
         },
       },
       {
         stepNumber: 8,
-        from: { x: 2, y: 2 }, // Hakari B2
-        to: { x: 1, y: 3 },   // A3
+        from: { x: 0, y: 3 },
+        to: { x: 0, y: 4 },
         actionType: 'move',
-        notation: 'Hakari B2 → A3 (Dual Extension Invasion)',
+        notation: 'Maki L3 → L4 (Disciplined Outpost — Avoiding L5 Black Flash)',
         tukunaInstruction:
-          'Move Hakari to A3 to follow Maki into the western extension corridor.',
+          'Advance Maki ONLY 1 square to L4! Look at B7–A6–L5: if you hopped to L5, Kenjaku on B7 would destroy Maki via 2-square Black Flash!',
         tacticalBreakdown:
-          'With both Maki and Hakari occupying the western arm, Black’s right wing is completely overrun!',
-        hint: 'Move Hakari to A3.',
+          'On L4, Maki is 100% untouchable while threatening to hop into A4/L6 once A6 is blocked or B7 moves. Restraint separates masters from novices.',
+        hint: 'Step Maki 1 square up from L3 to L4 (do NOT hop to L5!).',
         vectorArrows: [
-          { from: { x: 2, y: 2 }, to: { x: 1, y: 3 }, color: 'crimson', label: '8', style: 'solid' },
+          { from: { x: 0, y: 3 }, to: { x: 0, y: 4 }, color: 'emerald', label: '8', style: 'solid' },
+          { from: { x: 2, y: 7 }, to: { x: 0, y: 5 }, color: 'navy', style: 'dashed' },
         ],
       },
     ],
@@ -550,174 +823,176 @@ export const CULLING_OPENING_LESSONS: CullingOpeningLesson[] = [
 
   {
     id: 'culling_open_4',
-    title: 'Lesson 4: Warden 7:3 Ratio Field Strike',
-    subtitle: 'Deploy Nanami’s Ratio Field to constrain adjacent enemy pieces to 1-step max',
-    namedStrategy: 'Warden Suppression Lock',
+    title: 'Lesson 4: Escorted Warden Ratio Advance',
+    subtitle: 'March Nanami behind a central pawn escort while neutralizing enemy Rusher outposts',
+    namedStrategy: '7:3 Ratio Phalanx',
     curriculumType: 'opening',
     tier: 'intermediate',
     playerColor: 'white',
     initialBoard: createInitialCullingBoard(),
     tukunaGreeting:
-      'Kento Nanami is a Warden. Any enemy standing in the 8 squares adjacent to a Warden is subjected to a Ratio Field, reducing their movement to 1 square and disabling Artillery strikes!',
+      'Warden Nanami’s Ratio Field cripples any non-Skirmisher within 1 square—but Nanami costs 4.5 points! Never march your Warden naked in front of pawns. Advance pawns first, escort Nanami behind them, and kick intruders away with pawns.',
     completionMessage:
-      'Ratio Field locked! Enemy pieces in the central sector are suppressed.',
+      'Clinical Warden progression! Nanami stands entrenched on D3 behind a fortified D4–E3–F3–G4 pawn phalanx while Black’s invading Rusher has been forced off F5.',
     patternHighlights: [
-      { x: 4, y: 1 }, { x: 4, y: 2 }, { x: 4, y: 5 }, { x: 3, y: 5 }, { x: 3, y: 6 },
+      { x: 4, y: 3 }, { x: 4, y: 4 }, { x: 5, y: 3 }, { x: 7, y: 4 },
     ],
     steps: [
       {
         stepNumber: 1,
-        from: { x: 4, y: 2 }, // D2 Pawn
-        to: { x: 4, y: 3 },   // D3
+        from: { x: 4, y: 2 },
+        to: { x: 4, y: 3 },
         actionType: 'move',
-        notation: 'D2 → D3 (Column Open)',
+        notation: 'D2 → D3 (Warden Vanguard Escort)',
         tukunaInstruction:
-          'Push your D2 pawn to D3 to clear the D-column for Nanami.',
+          'Push your D2 pawn to D3 to clear D2 for Warden Nanami.',
         tacticalBreakdown:
-          'Wardens slide up to 3 squares orthogonally. Clearing D2 allows Nanami to thrust deep into the center board.',
-        hint: 'Push D2 pawn to D3.',
+          'Opening D2 lets Nanami step up orthogonally while keeping a pawn directly in front of him.',
+        hint: 'Advance the D2 pawn to D3.',
         vectorArrows: [
-          { from: { x: 4, y: 2 }, to: { x: 4, y: 3 }, color: 'crimson', label: '1', style: 'solid' },
+          { from: { x: 4, y: 2 }, to: { x: 4, y: 3 }, color: 'emerald', label: '1', style: 'solid' },
         ],
         opponentResponse: {
-          from: { x: 5, y: 7 }, // Black Pawn E7
-          to: { x: 5, y: 6 },   // E6
-          commentary: 'Reggie Star prepares Black’s Warden Ratio Field on E6.',
+          from: { x: 7, y: 8 },
+          to: { x: 8, y: 7 },
+          commentary: 'Black slides Rusher Kurourushi to H7, preparing a diagonal strike toward the center.',
         },
       },
       {
         stepNumber: 2,
-        from: { x: 4, y: 3 }, // D3 Pawn
-        to: { x: 4, y: 4 },   // D4
+        from: { x: 4, y: 1 },
+        to: { x: 4, y: 2 },
         actionType: 'move',
-        notation: 'D3 → D4 (Center Wall Push)',
+        notation: 'Nanami D1 → D2 (Warden Step)',
         tukunaInstruction:
-          'Push your D3 pawn forward to D4 to clear D3 for Nanami.',
+          'Step Warden Nanami from D1 to D2 directly behind your D3 pawn.',
         tacticalBreakdown:
-          'Advancing the pawn to D4 secures central space and clears the D3 square.',
-        hint: 'Push D3 pawn to D4.',
+          'Nanami slides up to 3 orthogonally. Positioning on D2 prepares him to escort D3 → D4.',
+        hint: 'Move Nanami from D1 up to D2.',
         vectorArrows: [
-          { from: { x: 4, y: 3 }, to: { x: 4, y: 4 }, color: 'crimson', label: '2', style: 'solid' },
+          { from: { x: 4, y: 1 }, to: { x: 4, y: 2 }, color: 'emerald', label: '2', style: 'solid' },
         ],
         opponentResponse: {
-          from: { x: 5, y: 8 }, // Reggie E8
-          to: { x: 5, y: 7 },   // E7 (Orthogonal Warden step)
-          commentary: 'Black advances Warden Reggie orthogonally to E7.',
+          from: { x: 8, y: 7 },
+          to: { x: 6, y: 5 },
+          commentary: 'Kurourushi slides 2 squares diagonally H7 → F5, eyeing central squares D3, E4, and G4!',
         },
       },
       {
         stepNumber: 3,
-        from: { x: 4, y: 1 }, // Nanami D1
-        to: { x: 4, y: 3 },   // D3 (Slide 2 squares orthogonally up clear D-file!)
+        from: { x: 5, y: 2 },
+        to: { x: 5, y: 3 },
         actionType: 'move',
-        notation: 'Nanami D1 → D3 (Warden Slide)',
+        notation: 'E2 → E3 (Blocking the F5–D3 Diagonal!)',
         tukunaInstruction:
-          'Slide Nanami 2 squares forward to D3.',
+          'Kurourushi on F5 is aiming down the F5–E4–D3 diagonal! Push E2 → E3 to reinforce D4 and blunt Black’s center.',
         tacticalBreakdown:
-          'Nanami on D3 projects an 8-square Ratio Field covering C3, E3, C4, E4.',
-        hint: 'Slide Nanami to D3.',
+          'E3 controls D4 and F4 while working alongside C2 and Nanami (D2) to shut down Kurourushi’s diagonal lanes.',
+        hint: 'Push the E2 pawn to E3.',
         vectorArrows: [
-          { from: { x: 4, y: 1 }, to: { x: 4, y: 3 }, color: 'crimson', label: '3', style: 'solid' },
+          { from: { x: 5, y: 2 }, to: { x: 5, y: 3 }, color: 'emerald', label: '3', style: 'solid' },
         ],
         opponentResponse: {
-          from: { x: 3, y: 7 }, // Black Pawn C7
-          to: { x: 3, y: 6 },   // C6
-          commentary: 'Black pushes C7 pawn to C6.',
+          from: { x: 5, y: 7 },
+          to: { x: 5, y: 6 },
+          commentary: 'Black pushes E7 → E6 to anchor Kurourushi’s F5 outpost!',
         },
       },
       {
         stepNumber: 4,
-        from: { x: 4, y: 3 }, // Nanami D3
-        to: { x: 3, y: 3 },   // C3 (Shift 1 square orthogonally left!)
+        from: { x: 6, y: 2 },
+        to: { x: 6, y: 3 },
         actionType: 'move',
-        notation: 'Nanami D3 → C3 (Flank Ratio Shift)',
+        notation: 'F2 → F3 (Caging the F5 Rusher)',
         tukunaInstruction:
-          'Shift Nanami 1 square left to C3.',
+          'Push F2 → F3! Together with E3, this shuts off E4 and G4 so Kurourushi on F5 cannot slide deeper.',
         tacticalBreakdown:
-          'Nanami on C3 opens the C-column for a forward slide to C5.',
-        hint: 'Move Nanami left to C3.',
+          'F3 also prepares a supported G2 → G3 → G4 pawn lever to evict Kurourushi from F5.',
+        hint: 'Advance the F2 pawn to F3.',
         vectorArrows: [
-          { from: { x: 4, y: 3 }, to: { x: 3, y: 3 }, color: 'crimson', label: '4', style: 'solid' },
+          { from: { x: 6, y: 2 }, to: { x: 6, y: 3 }, color: 'emerald', label: '4', style: 'solid' },
         ],
         opponentResponse: {
-          from: { x: 2, y: 7 }, // Black Pawn B7
-          to: { x: 2, y: 6 },   // B6
-          commentary: 'Black pushes B7 pawn to B6.',
+          from: { x: 4, y: 7 },
+          to: { x: 4, y: 6 },
+          commentary: 'Black reinforces the central column with D7 → D6.',
         },
       },
       {
         stepNumber: 5,
-        from: { x: 3, y: 3 }, // Nanami C3
-        to: { x: 3, y: 5 },   // C5 (Slide 2 squares orthogonally up C-file!)
+        from: { x: 4, y: 3 },
+        to: { x: 4, y: 4 },
         actionType: 'move',
-        notation: 'Nanami C3 → C5 (Deep Ratio Penetration)',
+        notation: 'D3 → D4 (Escorted Central Push)',
         tukunaInstruction:
-          'Slide Nanami 2 squares forward along the C-file to C5.',
+          'Advance D3 → D4, double-supported by your E3 pawn and Warden Nanami on D2.',
         tacticalBreakdown:
-          'Nanami on C5 exerts heavy Ratio Field suppression directly onto C6 and B7 Kenjaku.',
-        hint: 'Slide Nanami to C5.',
+          'Pushing D4 claims central territory and vacates D3 as a heavily fortified third-rank perch for Nanami.',
+        hint: 'Push the D3 pawn forward to D4.',
         vectorArrows: [
-          { from: { x: 3, y: 3 }, to: { x: 3, y: 5 }, color: 'crimson', label: '5', style: 'solid' },
+          { from: { x: 4, y: 3 }, to: { x: 4, y: 4 }, color: 'emerald', label: '5', style: 'solid' },
+          { from: { x: 5, y: 3 }, to: { x: 4, y: 4 }, color: 'navy', style: 'dashed' },
         ],
         opponentResponse: {
-          from: { x: 6, y: 7 }, // Black Pawn F7
-          to: { x: 6, y: 6 },   // F6
-          commentary: 'Black advances F7 pawn to F6.',
+          from: { x: 3, y: 7 },
+          to: { x: 3, y: 6 },
+          commentary: 'Black plays C7 → C6 to contest your D4 spearhead.',
         },
       },
       {
         stepNumber: 6,
-        from: { x: 3, y: 2 }, // Pawn C2
-        to: { x: 3, y: 3 },   // C3
+        from: { x: 7, y: 2 },
+        to: { x: 7, y: 3 },
         actionType: 'move',
-        notation: 'C2 → C3 (Support Push)',
+        notation: 'G2 → G3 (Preparing to Evict F5 First!)',
         tukunaInstruction:
-          'Advance C2 pawn to C3 to cover C4.',
+          'Wait before stepping Nanami onto D3—Kurourushi on F5 still eyes D3 across empty E4! First push G2 → G3 to prepare a pawn eviction!',
         tacticalBreakdown:
-          'Securing C3 creates a solid fortress supporting Nanami.',
-        hint: 'Push C2 pawn to C3.',
+          'Spotting that 3.5-point Kurourushi on F5 would threaten 4.5-point Nanami on D3 is elite threat awareness. Kick the Rusher away first!',
+        hint: 'Advance the G2 pawn to G3.',
         vectorArrows: [
-          { from: { x: 3, y: 2 }, to: { x: 3, y: 3 }, color: 'crimson', label: '6', style: 'solid' },
+          { from: { x: 7, y: 2 }, to: { x: 7, y: 3 }, color: 'emerald', label: '6', style: 'solid' },
         ],
         opponentResponse: {
-          from: { x: 2, y: 8 }, // Kenjaku B8
-          to: { x: 2, y: 7 },   // B7
-          commentary: 'Kenjaku steps onto B7.',
+          from: { x: 5, y: 8 },
+          to: { x: 5, y: 7 },
+          commentary: 'Black develops Warden Reggie to E7.',
         },
       },
       {
         stepNumber: 7,
-        from: { x: 6, y: 2 }, // F2 Pawn
-        to: { x: 6, y: 3 },   // F3
+        from: { x: 7, y: 3 },
+        to: { x: 7, y: 4 },
         actionType: 'move',
-        notation: 'F2 → F3 (Flank Guard Push)',
+        notation: 'G3 → G4 (Evicting the F5 Rusher!)',
         tukunaInstruction:
-          'Push your F2 pawn forward to F3 to protect Nanami’s right flank.',
+          'Thrust G3 → G4 (protected by F3), attacking Kurourushi on F5 and forcing Black’s Rusher off the central diagonal!',
         tacticalBreakdown:
-          'F3 secures E4 and completes the central pawn triangle supporting Nanami.',
-        hint: 'Push F2 pawn to F3.',
+          'Once Kurourushi retreats from F5, the F5–E4–D3 diagonal is completely neutralized.',
+        hint: 'Push G3 to G4 to attack Kurourushi on F5.',
         vectorArrows: [
-          { from: { x: 6, y: 2 }, to: { x: 6, y: 3 }, color: 'crimson', label: '7', style: 'solid' },
+          { from: { x: 7, y: 3 }, to: { x: 7, y: 4 }, color: 'emerald', label: '7', style: 'solid' },
+          { from: { x: 7, y: 4 }, to: { x: 6, y: 5 }, color: 'navy', style: 'dashed' },
         ],
         opponentResponse: {
-          from: { x: 7, y: 7 }, // Black Pawn G7
-          to: { x: 7, y: 6 },   // G6
-          commentary: 'Black advances G7 pawn to G6.',
+          from: { x: 6, y: 5 },
+          to: { x: 8, y: 7 },
+          commentary: 'Driven back! Kurourushi retreats 2 squares diagonally from F5 to H7.',
         },
       },
       {
         stepNumber: 8,
-        from: { x: 3, y: 5 }, // Nanami C5
-        to: { x: 3, y: 6 },   // C6 (Capture C6 pawn!)
+        from: { x: 4, y: 2 },
+        to: { x: 4, y: 3 },
         actionType: 'move',
-        notation: 'Nanami C5 × C6 (7:3 Ratio Capture Strike!)',
+        notation: 'Nanami D2 → D3 (Safe Third-Rank Ratio Command)',
         tukunaInstruction:
-          'Strike forward with Nanami from C5 to capture Black’s C6 pawn on C6!',
+          'With F5 cleared, step Warden Nanami onto D3 behind your D4 pawn! His Ratio Field now dominates C4, D4, and E4 with zero risk.',
         tacticalBreakdown:
-          'Nanami captures C6 with 7:3 Ratio precision, locking down Kenjaku on B7 and Reggie on D7 in his Ratio Field!',
-        hint: 'Capture the C6 pawn with Nanami.',
+          'Eliminating enemy threats BEFORE advancing high-value sorcerers guarantees an unbreakable position.',
+        hint: 'Step Nanami forward from D2 to D3.',
         vectorArrows: [
-          { from: { x: 3, y: 5 }, to: { x: 3, y: 6 }, color: 'crimson', label: '8', style: 'solid' },
+          { from: { x: 4, y: 2 }, to: { x: 4, y: 3 }, color: 'emerald', label: '8', style: 'solid' },
         ],
       },
     ],
@@ -725,169 +1000,170 @@ export const CULLING_OPENING_LESSONS: CullingOpeningLesson[] = [
 
   {
     id: 'culling_open_5',
-    title: 'Lesson 5: Rusher Jackpot Chain',
-    subtitle: 'Position Kinji Hakari for high rush pressure and extra Jackpot steps',
-    namedStrategy: 'Jackpot Blitz Attack',
+    title: 'Lesson 5: Rusher Hit-and-Run Jackpot vs. Defended Pawn',
+    subtitle: 'Exploit Hakari’s Jackpot Safe Step to snatch a double-defended pawn without being recaptured',
+    namedStrategy: 'Idle Death Gamble Hit-and-Run',
     curriculumType: 'opening',
     tier: 'intermediate',
     playerColor: 'white',
     initialBoard: createInitialCullingBoard(),
     tukunaGreeting:
-      'Kinji Hakari is a Rusher. Capturing an enemy piece activates his Jackpot, earning an immediate extra step into an unattacked square!',
+      'Why is Rusher Hakari uniquely feared in the opening? Normally, capturing a pawn defended by two enemy pawns loses your 3.5-point piece. Watch how Hakari captures on C5, triggers Jackpot, and steps to safety BEFORE Black even gets a turn!',
     completionMessage:
-      'Jackpot activated! Hakari’s multi-step rush creates overwhelming tempo advantages.',
+      'Pure Jackpot mastery! You won Black’s double-defended C5 spearhead pawn and retreated to B4 on the exact same turn, leaving Black’s B6 and D6 pawns punching empty air.',
     patternHighlights: [
-      { x: 2, y: 1 }, { x: 2, y: 2 }, { x: 4, y: 4 }, { x: 5, y: 5 }, { x: 6, y: 6 },
+      { x: 1, y: 3 }, { x: 3, y: 5 }, { x: 2, y: 4 },
     ],
     steps: [
       {
         stepNumber: 1,
-        from: { x: 2, y: 2 }, // B2 Pawn
-        to: { x: 2, y: 3 },   // B3
+        from: { x: 2, y: 2 },
+        to: { x: 2, y: 3 },
         actionType: 'move',
-        notation: 'B2 → B3 (Runway Push)',
+        notation: 'B2 → B3 (Opening the Rusher Pocket)',
         tukunaInstruction:
-          'Move your B2 pawn to B3 to give Hakari diagonal clearance.',
+          'Advance B2 → B3 to vacate B2 for Rusher Hakari while keeping the B4 diagonal lane clear.',
         tacticalBreakdown:
-          'Rushers slide up to 2 squares diagonally. Clearing B2 opens the B1-D3 diagonal runway.',
-        hint: 'Push B2 pawn to B3.',
+          'Rushers slide up to 2 diagonally without leaping, so keeping diagonal corridors open is essential.',
+        hint: 'Push the B2 pawn to B3.',
         vectorArrows: [
-          { from: { x: 2, y: 2 }, to: { x: 2, y: 3 }, color: 'crimson', label: '1', style: 'solid' },
+          { from: { x: 2, y: 2 }, to: { x: 2, y: 3 }, color: 'emerald', label: '1', style: 'solid' },
         ],
         opponentResponse: {
-          from: { x: 2, y: 7 }, // Black Pawn B7
-          to: { x: 2, y: 6 },   // B6
-          commentary: 'Opponent advances B7 pawn to B6.',
+          from: { x: 3, y: 7 },
+          to: { x: 3, y: 6 },
+          commentary: 'Black advances C7 → C6, preparing an ambitious queenside space push.',
         },
       },
       {
         stepNumber: 2,
-        from: { x: 2, y: 1 }, // Hakari B1
-        to: { x: 2, y: 2 },   // B2
+        from: { x: 2, y: 1 },
+        to: { x: 2, y: 2 },
         actionType: 'move',
-        notation: 'Hakari B1 → B2 (Rusher Step)',
+        notation: 'Hakari B1 → B2 (Staging on B2)',
         tukunaInstruction:
-          'Advance Hakari 1 square forward to B2.',
+          'Step Hakari orthogonally from B1 to B2.',
         tacticalBreakdown:
-          'Hakari on B2 prepares a 2-square diagonal leap into D4.',
-        hint: 'Move Hakari to B2.',
+          'From B2, Hakari can pivot to A3 or slide diagonally toward the center once Black overextends.',
+        hint: 'Move Hakari from B1 to B2.',
         vectorArrows: [
-          { from: { x: 2, y: 1 }, to: { x: 2, y: 2 }, color: 'crimson', label: '2', style: 'solid' },
+          { from: { x: 2, y: 1 }, to: { x: 2, y: 2 }, color: 'emerald', label: '2', style: 'solid' },
         ],
         opponentResponse: {
-          from: { x: 3, y: 7 }, // Black Pawn C7
-          to: { x: 3, y: 6 },   // C6
-          commentary: 'Black advances C7 pawn to C6.',
+          from: { x: 3, y: 6 },
+          to: { x: 3, y: 5 },
+          commentary: 'Black pushes C6 → C5 to seize early queenside space!',
         },
       },
       {
         stepNumber: 3,
-        from: { x: 2, y: 2 }, // Hakari B2
-        to: { x: 4, y: 4 },   // D4 (Slide 2 diagonally!)
+        from: { x: 3, y: 2 },
+        to: { x: 3, y: 3 },
         actionType: 'move',
-        notation: 'Hakari B2 → D4 (Diagonal Rusher Leap)',
+        notation: 'C2 → C3 (Fortifying Rank 3)',
         tukunaInstruction:
-          'Slide Hakari 2 squares diagonally from B2 to D4!',
+          'Play C2 → C3 to solidify Rank 3 and keep B4 open as a future diagonal thoroughfare.',
         tacticalBreakdown:
-          'Hakari’s diagonal slide penetrates the central board and threatens C6 and E6 pawns.',
-        hint: 'Slide Hakari 2 squares diagonally to D4.',
+          'Notice how B3 and C3 sit side-by-side while leaving B4 unobstructed for diagonal Rusher slides.',
+        hint: 'Advance the C2 pawn to C3.',
         vectorArrows: [
-          { from: { x: 2, y: 2 }, to: { x: 4, y: 4 }, color: 'crimson', label: '3', style: 'solid' },
+          { from: { x: 3, y: 2 }, to: { x: 3, y: 3 }, color: 'emerald', label: '3', style: 'solid' },
         ],
         opponentResponse: {
-          from: { x: 4, y: 7 }, // Black Pawn D7
-          to: { x: 4, y: 6 },   // D6
-          commentary: 'Black pushes D7 pawn to D6.',
+          from: { x: 4, y: 7 },
+          to: { x: 4, y: 6 },
+          commentary: 'Black defends the C5 pawn with D7 → D6.',
         },
       },
       {
         stepNumber: 4,
-        from: { x: 3, y: 2 }, // Pawn C2
-        to: { x: 3, y: 3 },   // C3
+        from: { x: 4, y: 2 },
+        to: { x: 4, y: 3 },
         actionType: 'move',
-        notation: 'C2 → C3 (Flank Shield)',
+        notation: 'D2 → D3 (Central Reinforcement)',
         tukunaInstruction:
-          'Push C2 pawn to C3.',
+          'Push D2 → D3 to guard C4 and E4 while letting Black commit further to the C5 wedge.',
         tacticalBreakdown:
-          'Anchoring C3 provides a safety retreat square for Hakari.',
-        hint: 'Push C2 pawn to C3.',
+          'Solid pawn structure ensures Black has zero counter-tactics when Hakari strikes.',
+        hint: 'Move the D2 pawn to D3.',
         vectorArrows: [
-          { from: { x: 3, y: 2 }, to: { x: 3, y: 3 }, color: 'crimson', label: '4', style: 'solid' },
+          { from: { x: 4, y: 2 }, to: { x: 4, y: 3 }, color: 'emerald', label: '4', style: 'solid' },
         ],
         opponentResponse: {
-          from: { x: 5, y: 7 }, // Black Pawn E7
-          to: { x: 5, y: 6 },   // E6
-          commentary: 'Black advances E7 pawn to E6.',
+          from: { x: 2, y: 7 },
+          to: { x: 2, y: 6 },
+          commentary: 'Black plays B7 → B6—now C5 is double-defended by BOTH B6 and D6 pawns!',
         },
       },
       {
         stepNumber: 5,
-        from: { x: 4, y: 4 }, // Hakari D4
-        to: { x: 5, y: 5 },   // E5
+        from: { x: 5, y: 2 },
+        to: { x: 5, y: 3 },
         actionType: 'move',
-        notation: 'Hakari D4 → E5 (Diagonal Thrust)',
+        notation: 'E2 → E3 (Completing the Shield)',
         tukunaInstruction:
-          'Advance Hakari diagonally to E5.',
+          'Advance E2 → E3 to complete your central wall before springing the trap.',
         tacticalBreakdown:
-          'Hakari on E5 directly attacks Black’s F6 pawn target.',
-        hint: 'Move Hakari diagonally to E5.',
+          'Black assumes C5 is untouchable because two pawns guard it. Next move we line up the diagonal!',
+        hint: 'Push the E2 pawn to E3.',
         vectorArrows: [
-          { from: { x: 4, y: 4 }, to: { x: 5, y: 5 }, color: 'crimson', label: '5', style: 'solid' },
+          { from: { x: 5, y: 2 }, to: { x: 5, y: 3 }, color: 'emerald', label: '5', style: 'solid' },
         ],
         opponentResponse: {
-          from: { x: 6, y: 7 }, // Black Pawn F7
-          to: { x: 6, y: 6 },   // F6
-          commentary: 'Black advances F7 pawn to F6.',
+          from: { x: 2, y: 8 },
+          to: { x: 2, y: 7 },
+          commentary: 'Black calmly develops Kenjaku to B7, certain that C5 is rock-solid.',
         },
       },
       {
         stepNumber: 6,
-        from: { x: 4, y: 2 }, // Pawn D2
-        to: { x: 4, y: 3 },   // D3
+        from: { x: 2, y: 2 },
+        to: { x: 1, y: 3 },
         actionType: 'move',
-        notation: 'D2 → D3 (Pawn Support)',
+        notation: 'Hakari B2 → A3 (Lining Up the A3–B4–C5 Diagonal)',
         tukunaInstruction:
-          'Advance D2 pawn to D3.',
+          'Slide Hakari 1 square diagonally from B2 to A3, aiming straight up the open A3–B4–C5 diagonal!',
         tacticalBreakdown:
-          'Solidifying D3 covers E4 and supports Hakari’s line of retreat.',
-        hint: 'Push D2 pawn to D3.',
+          'From A3, Hakari sits outside all enemy threats while locking onto C5 across empty B4.',
+        hint: 'Move Hakari diagonally from B2 to A3.',
         vectorArrows: [
-          { from: { x: 4, y: 2 }, to: { x: 4, y: 3 }, color: 'crimson', label: '6', style: 'solid' },
+          { from: { x: 2, y: 2 }, to: { x: 1, y: 3 }, color: 'emerald', label: '6', style: 'solid' },
+          { from: { x: 1, y: 3 }, to: { x: 3, y: 5 }, color: 'navy', style: 'dashed' },
         ],
         opponentResponse: {
-          from: { x: 2, y: 8 }, // Kenjaku B8
-          to: { x: 2, y: 7 },   // B7
-          commentary: 'Kenjaku steps onto B7.',
+          from: { x: 5, y: 7 },
+          to: { x: 5, y: 6 },
+          commentary: 'Black pushes E7 → E6, missing the Jackpot hit-and-run mechanic!',
         },
       },
       {
         stepNumber: 7,
-        from: { x: 5, y: 5 }, // Hakari E5
-        to: { x: 6, y: 6 },   // F6 (Capture F6 pawn!)
+        from: { x: 1, y: 3 },
+        to: { x: 3, y: 5 },
         actionType: 'move',
-        notation: 'Hakari E5 × F6 (Jackpot Capture Strike!)',
+        notation: 'Hakari A3 × C5 (Jackpot Capture!)',
         tukunaInstruction:
-          'Capture Black’s F6 pawn with Hakari on F6!',
+          'Strike! Slide Hakari 2 squares diagonally A3 × C5 to capture Black’s C5 pawn and trigger JACKPOT!',
         tacticalBreakdown:
-          'Hakari captures F6! Jackpot triggers instantly, earning 1 extra step.',
-        hint: 'Capture the F6 pawn with Hakari.',
+          'Capturing with a Rusher grants an immediate same-turn 1-square Safe Step to any empty unattacked square BEFORE Black can recapture!',
+        hint: 'Capture the Black Pawn on C5 with Hakari from A3.',
         vectorArrows: [
-          { from: { x: 5, y: 5 }, to: { x: 6, y: 6 }, color: 'crimson', label: '7 🎰', style: 'solid' },
+          { from: { x: 1, y: 3 }, to: { x: 3, y: 5 }, color: 'emerald', label: '7', style: 'solid' },
         ],
       },
       {
         stepNumber: 8,
-        from: { x: 6, y: 6 }, // Hakari F6
-        to: { x: 7, y: 5 },   // G5 (Unattacked Jackpot Safe Bonus Step)
+        from: { x: 3, y: 5 },
+        to: { x: 2, y: 4 },
         actionType: 'move',
-        notation: 'Hakari F6 → G5 (Jackpot Safe Bonus Step)',
+        notation: 'Hakari C5 → B4 (Jackpot Safe Step Escape!)',
         tukunaInstruction:
-          'Execute Hakari’s Jackpot bonus step to pivot safely onto G5.',
+          'JACKPOT ACTIVE! Immediately use your bonus Safe Step to glide Hakari from C5 back to B4—out of reach of Black’s B6 and D6 pawns!',
         tacticalBreakdown:
-          'Hakari’s Jackpot grants an immediate extra non-capturing step into an unattacked square (G5), maintaining total initiative.',
-        hint: 'Execute the extra Jackpot move to G5.',
+          'You won a central pawn for free AND parked Hakari on B4 defended by your C3 pawn. That is true Rusher mastery!',
+        hint: 'Step Hakari diagonally back from C5 to the unattacked B4 square.',
         vectorArrows: [
-          { from: { x: 6, y: 6 }, to: { x: 7, y: 5 }, color: 'crimson', label: '8 🎰', style: 'solid' },
+          { from: { x: 3, y: 5 }, to: { x: 2, y: 4 }, color: 'emerald', label: '8', style: 'solid' },
         ],
       },
     ],
@@ -895,174 +1171,176 @@ export const CULLING_OPENING_LESSONS: CullingOpeningLesson[] = [
 
   {
     id: 'culling_open_6',
-    title: 'Lesson 6: Colony Extension Expansion',
-    subtitle: 'Push units into top, left, right, and bottom 6-square colony extensions',
-    namedStrategy: 'Cross-Arm Corridor Control',
+    title: 'Lesson 6: Dual Colony Arm Control & Gate Seal',
+    subtitle: 'Seal the Right Colony Arm against Kurourushi while seizing the Left Arm with Hakari & Maki',
+    namedStrategy: 'Twin Colony Gate Clamp',
     curriculumType: 'opening',
     tier: 'intermediate',
     playerColor: 'white',
     initialBoard: createInitialCullingBoard(),
     tukunaGreeting:
-      'The Culling Game board features 4 extended 6-square colony arms. Moving units into these arms controls strategic spawn corridors.',
+      'The 88-square Culling Game board adds Left (L2..L7) and Right (R2..R7) Colony Arms. If an enemy Rusher enters R6, seal the gate with Artillery overwatch—while infiltrating the opposite arm safely!',
     completionMessage:
-      'Colony extensions claimed! Controlling arm corridors restricts opponent flank escapes.',
+      'Total perimeter dominance! Mechamaru locked down the Right Colony Arm from H3 while Hakari and Maki claimed an unassailable western stronghold.',
     patternHighlights: [
-      { x: 2, y: 1 }, { x: 1, y: 2 }, { x: 1, y: 3 }, { x: 1, y: 4 }, { x: 8, y: 3 }, { x: 8, y: 5 },
+      { x: 8, y: 3 }, { x: 0, y: 3 }, { x: 1, y: 4 }, { x: 3, y: 3 },
     ],
     steps: [
       {
         stepNumber: 1,
-        from: { x: 2, y: 1 }, // Hakari B1
-        to: { x: 1, y: 2 },   // A2 (Left colony entry)
+        from: { x: 2, y: 1 },
+        to: { x: 1, y: 2 },
         actionType: 'move',
-        notation: 'Hakari B1 → A2 (Left Extension Entry)',
+        notation: 'Hakari B1 → A2 (Western Gate Pivot)',
         tukunaInstruction:
-          'Move Hakari from B1 into the Left Colony Arm square at A2 (x=1, y=2).',
+          'Slide Rusher Hakari 1 square diagonally from B1 to empty A2, aiming toward the Left Colony Arm.',
         tacticalBreakdown:
-          'Entering extension arms allows fast units to bypass central chokepoints and attack laterally.',
-        hint: 'Move Hakari to A2.',
+          'A2 starts empty in Culling Game setups—making B1 → A2 → L3 the fastest, safest route into the Left Arm.',
+        hint: 'Move Hakari diagonally from B1 to A2.',
         vectorArrows: [
-          { from: { x: 2, y: 1 }, to: { x: 1, y: 2 }, color: 'crimson', label: '1', style: 'solid' },
+          { from: { x: 2, y: 1 }, to: { x: 1, y: 2 }, color: 'emerald', label: '1', style: 'solid' },
         ],
         opponentResponse: {
-          from: { x: 7, y: 8 }, // Kurourushi G8
-          to: { x: 8, y: 7 },   // H7 (Right colony arm)
-          commentary: 'Kurourushi occupies Black’s right colony arm!',
+          from: { x: 7, y: 8 },
+          to: { x: 8, y: 7 },
+          commentary: 'Black mirrors on the east, sliding Rusher Kurourushi from G8 to H7!',
         },
       },
       {
         stepNumber: 2,
-        from: { x: 1, y: 2 }, // Hakari A2
-        to: { x: 1, y: 3 },   // A3
+        from: { x: 7, y: 2 },
+        to: { x: 7, y: 3 },
         actionType: 'move',
-        notation: 'Hakari A2 → A3 (Extension Advance)',
+        notation: 'G2 → G3 (Opening Eastern Overwatch)',
         tukunaInstruction:
-          'Push Hakari deeper into the left arm at A3.',
+          'Push G2 → G3 immediately so Mechamaru can step out to seal the Right Colony Arm.',
         tacticalBreakdown:
-          'Advancing in colony corridors forces Black to shift defenders away from Sukuna.',
-        hint: 'Move Hakari to A3.',
+          'Spotting Kurourushi on H7 tells you Black plans H7 → R6. Prepare the counter-deployment before Black reaches R4.',
+        hint: 'Advance the G2 pawn to G3.',
         vectorArrows: [
-          { from: { x: 1, y: 2 }, to: { x: 1, y: 3 }, color: 'crimson', label: '2', style: 'solid' },
+          { from: { x: 7, y: 2 }, to: { x: 7, y: 3 }, color: 'emerald', label: '2', style: 'solid' },
         ],
         opponentResponse: {
-          from: { x: 8, y: 7 }, // Kurourushi H7
-          to: { x: 8, y: 6 },   // H6
-          commentary: 'Kurourushi advances down the eastern extension arm.',
+          from: { x: 8, y: 7 },
+          to: { x: 9, y: 6 },
+          commentary: 'Kurourushi enters the Right Colony Arm at R6!',
         },
       },
       {
         stepNumber: 3,
-        from: { x: 3, y: 2 }, // Pawn C2
-        to: { x: 3, y: 3 },   // C3
+        from: { x: 6, y: 1 },
+        to: { x: 7, y: 2 },
         actionType: 'move',
-        notation: 'C2 → C3 (Corridor Support)',
+        notation: 'Mechamaru F1 → G2 (Rotating Artillery East)',
         tukunaInstruction:
-          'Push your C2 pawn to C3.',
+          'Step Artillery Mechamaru diagonally from F1 to G2 to intercept Black’s Right-Arm incursion.',
         tacticalBreakdown:
-          'C3 guards the junction between the main 8x8 square and the western extension.',
-        hint: 'Push C2 pawn to C3.',
+          'Artillery is the ultimate gatekeeper: its 1-step perimeter and 2-square Ranged Strike lock down narrow Colony Arm bottlenecks.',
+        hint: 'Move Mechamaru from F1 to G2.',
         vectorArrows: [
-          { from: { x: 3, y: 2 }, to: { x: 3, y: 3 }, color: 'crimson', label: '3', style: 'solid' },
+          { from: { x: 6, y: 1 }, to: { x: 7, y: 2 }, color: 'emerald', label: '3', style: 'solid' },
         ],
         opponentResponse: {
-          from: { x: 3, y: 7 }, // Black Pawn C7
-          to: { x: 3, y: 6 },   // C6
-          commentary: 'Black advances C7 pawn to C6.',
+          from: { x: 9, y: 6 },
+          to: { x: 9, y: 5 },
+          commentary: 'Kurourushi creeps down the Right Arm to R5!',
         },
       },
       {
         stepNumber: 4,
-        from: { x: 1, y: 3 }, // Hakari A3
-        to: { x: 1, y: 4 },   // A4
+        from: { x: 7, y: 2 },
+        to: { x: 8, y: 3 },
         actionType: 'move',
-        notation: 'Hakari A3 → A4 (Deep Left Infiltration)',
+        notation: 'Mechamaru G2 → H3 (Right Gate Seal!)',
         tukunaInstruction:
-          'Advance Hakari to A4.',
+          'Step Mechamaru to H3! From H3, Mechamaru controls R4, H4, and H5 (via Ranged Strike), completely sealing the Right Colony Gate!',
         tacticalBreakdown:
-          'Hakari on A4 commands the entire western flank.',
-        hint: 'Move Hakari to A4.',
+          'Kurourushi on R5 cannot hit H3, cannot step onto R4 or H4, and cannot step onto H5 without getting sniped from H3!',
+        hint: 'Step Mechamaru diagonally from G2 to H3.',
         vectorArrows: [
-          { from: { x: 1, y: 3 }, to: { x: 1, y: 4 }, color: 'crimson', label: '4', style: 'solid' },
+          { from: { x: 7, y: 2 }, to: { x: 8, y: 3 }, color: 'emerald', label: '4', style: 'solid' },
+          { from: { x: 8, y: 3 }, to: { x: 9, y: 4 }, color: 'navy', style: 'dashed' },
         ],
         opponentResponse: {
-          from: { x: 2, y: 7 }, // Black Pawn B7
-          to: { x: 2, y: 6 },   // B6
-          commentary: 'Black pushes B7 pawn to B6.',
+          from: { x: 9, y: 5 },
+          to: { x: 9, y: 6 },
+          commentary: 'Shut out! Seeing R4, H4, and H5 locked down by Mechamaru, Kurourushi retreats to R6!',
         },
       },
       {
         stepNumber: 5,
-        from: { x: 7, y: 2 }, // Pawn G2
-        to: { x: 7, y: 3 },   // G3
+        from: { x: 1, y: 2 },
+        to: { x: 0, y: 3 },
         actionType: 'move',
-        notation: 'G2 → G3 (Eastern Gate Push)',
+        notation: 'Hakari A2 → L3 (Left Arm Deployment)',
         tukunaInstruction:
-          'Push your G2 pawn to G3.',
+          'With the Right Gate sealed, slide Hakari diagonally from A2 into the Left Colony Arm at L3.',
         tacticalBreakdown:
-          'G3 prepares Mechamaru’s entry into the right extension arm.',
-        hint: 'Push G2 pawn to G3.',
+          'From L3, Hakari commands the A4–B5 diagonal while remaining untouched by Black’s central pawns.',
+        hint: 'Slide Hakari diagonally from A2 to L3.',
         vectorArrows: [
-          { from: { x: 7, y: 2 }, to: { x: 7, y: 3 }, color: 'crimson', label: '5', style: 'solid' },
+          { from: { x: 1, y: 2 }, to: { x: 0, y: 3 }, color: 'emerald', label: '5', style: 'solid' },
         ],
         opponentResponse: {
-          from: { x: 7, y: 7 }, // Black Pawn G7
-          to: { x: 7, y: 6 },   // G6
-          commentary: 'Black advances G7 pawn to G6.',
+          from: { x: 3, y: 7 },
+          to: { x: 3, y: 6 },
+          commentary: 'Black pushes C7 → C6 to guard B5.',
         },
       },
       {
         stepNumber: 6,
-        from: { x: 6, y: 1 }, // Mechamaru F1
-        to: { x: 7, y: 2 },   // G2 (1-step diagonal onto cleared G2 square)
+        from: { x: 3, y: 1 },
+        to: { x: 3, y: 3 },
         actionType: 'move',
-        notation: 'Mechamaru F1 → G2 (Right Flank Shift)',
+        notation: 'Maki C1 → C3 (Western Tandem Hop)',
         tukunaInstruction:
-          'Step Mechamaru 1 square diagonally to G2.',
+          'Hop Skirmisher Maki 2 squares orthogonally from C1 over C2 onto C3 to team up with Hakari.',
         tacticalBreakdown:
-          'Positioning Mechamaru on G2 prepares entry into the right extension arm.',
-        hint: 'Move Mechamaru diagonally to G2.',
+          'Coordinating a Rusher in the Left Arm with a Skirmisher on the C-file creates tremendous queenside pressure.',
+        hint: 'Hop Maki from C1 to C3.',
         vectorArrows: [
-          { from: { x: 6, y: 1 }, to: { x: 7, y: 2 }, color: 'crimson', label: '6', style: 'solid' },
+          { from: { x: 3, y: 1 }, to: { x: 3, y: 3 }, color: 'emerald', label: '6', style: 'solid' },
         ],
         opponentResponse: {
-          from: { x: 6, y: 7 }, // Black Pawn F7
-          to: { x: 6, y: 6 },   // F6
-          commentary: 'Black pushes F7 pawn to F6.',
+          from: { x: 2, y: 7 },
+          to: { x: 2, y: 6 },
+          commentary: 'Black reinforces the B-file with B7 → B6.',
         },
       },
       {
         stepNumber: 7,
-        from: { x: 7, y: 2 }, // Mechamaru G2
-        to: { x: 8, y: 3 },   // H3 (Right colony entry - 1-step diagonal!)
+        from: { x: 2, y: 2 },
+        to: { x: 2, y: 3 },
         actionType: 'move',
-        notation: 'Mechamaru G2 → H3 (Right Extension Entry)',
+        notation: 'B2 → B3 (Preparing the A4 Anchor)',
         tukunaInstruction:
-          'Step Mechamaru diagonally into the Right Colony Arm square at H3 (x=8, y=3).',
+          'Push B2 → B3 so that A4 is firmly protected by a friendly pawn before Hakari steps onto it!',
         tacticalBreakdown:
-          'Mechamaru on H3 enters the eastern extension corridor, establishing dual-wing extension presence.',
-        hint: 'Move Mechamaru to H3.',
+          'Always establish pawn support on Rank 3 before stationing a sorcerer on Rank 4.',
+        hint: 'Advance the B2 pawn to B3.',
         vectorArrows: [
-          { from: { x: 7, y: 2 }, to: { x: 8, y: 3 }, color: 'crimson', label: '7', style: 'solid' },
+          { from: { x: 2, y: 2 }, to: { x: 2, y: 3 }, color: 'emerald', label: '7', style: 'solid' },
         ],
         opponentResponse: {
-          from: { x: 5, y: 7 }, // Black Pawn E7
-          to: { x: 5, y: 6 },   // E6
-          commentary: 'Black pushes E7 pawn to E6.',
+          from: { x: 5, y: 7 },
+          to: { x: 5, y: 6 },
+          commentary: 'Black plays E7 → E6 in the center.',
         },
       },
       {
         stepNumber: 8,
-        from: { x: 1, y: 4 }, // Hakari A4
-        to: { x: 2, y: 5 },   // B5
+        from: { x: 0, y: 3 },
+        to: { x: 1, y: 4 },
         actionType: 'move',
-        notation: 'Hakari A4 → B5 (Extension Flank Strike)',
+        notation: 'Hakari L3 → A4 (Anchored Flank Outpost)',
         tukunaInstruction:
-          'Pincer inwards from A4 to B5 with Hakari.',
+          'Step Hakari diagonally from L3 onto A4—supported by your B3 pawn and safely clear of Black’s B6/C6 pawns!',
         tacticalBreakdown:
-          'Striking inwards from the colony extension traps Black’s defensive line between two fires!',
-        hint: 'Move Hakari from A4 to B5.',
+          'Both Colony Gates now belong to White: Mechamaru locks down H3 on the right while Hakari & Maki dominate A4/C3 on the left.',
+        hint: 'Move Hakari diagonally from L3 to A4.',
         vectorArrows: [
-          { from: { x: 1, y: 4 }, to: { x: 2, y: 5 }, color: 'crimson', label: '8', style: 'solid' },
+          { from: { x: 0, y: 3 }, to: { x: 1, y: 4 }, color: 'emerald', label: '8', style: 'solid' },
+          { from: { x: 2, y: 3 }, to: { x: 1, y: 4 }, color: 'navy', style: 'dashed' },
         ],
       },
     ],
@@ -1070,174 +1348,175 @@ export const CULLING_OPENING_LESSONS: CullingOpeningLesson[] = [
 
   {
     id: 'culling_open_7',
-    title: 'Lesson 7: Artillery Domain Barrage',
-    subtitle: 'Align Mechamaru to fire Ranged Strikes at dist 2 without moving',
-    namedStrategy: 'Artillery Snipe Battery',
+    title: 'Lesson 7: Artillery Snipe Corridor & Counter-Battery',
+    subtitle: 'Punish overextended invaders with Mechamaru’s 2-square Ranged Strike without exposing your shooter',
+    namedStrategy: 'Ultimate Mechamaru Cannon Line',
     curriculumType: 'opening',
     tier: 'advanced',
     playerColor: 'white',
     initialBoard: createLesson7Board(),
     tukunaGreeting:
-      'Ultimate Mechamaru is an Artillery unit. When an enemy target is 2 squares away in a straight line and the middle square is clear, Mechamaru fires a Ranged Strike!',
+      'Look at F4: Black’s Skirmisher Naoya hopped too far forward! Artillery Mechamaru on F2 can fire a 2-square Ranged Strike across empty F3—eliminating Naoya while remaining safely stationed behind your lines!',
     completionMessage:
-      'Ranged Snipe successful! Mechamaru destroyed the target without exposing himself.',
+      'Devastating Artillery precision! You punished two separate F-file intrusions with Ranged Strikes while building an impenetrable Yuji + Mechamaru vertical battery.',
     patternHighlights: [
-      { x: 6, y: 1 }, { x: 6, y: 3 }, { x: 6, y: 2 }, { x: 6, y: 4 },
+      { x: 6, y: 2 }, { x: 6, y: 4 }, { x: 6, y: 3 }, { x: 6, y: 5 },
     ],
     steps: [
       {
         stepNumber: 1,
-        from: { x: 6, y: 1 }, // Mechamaru F1
-        to: { x: 6, y: 3 },   // Snipe target F3 (F2 is empty!)
+        from: { x: 6, y: 2 },
+        to: { x: 6, y: 4 },
         actionType: 'shoot',
-        notation: 'Mechamaru 🏹 F3 (Ranged Snipe Strike!)',
+        notation: 'Mechamaru F2 🏹 F4 (Ranged Strike Punish!)',
         tukunaInstruction:
-          'Fire Mechamaru’s Ranged Strike at the Black Pawn on F3 across the empty F2 square.',
+          'Select Mechamaru on F2 and execute a Ranged Strike on F4! Because F3 is empty, Mechamaru vaporizes Black’s 3.5-point Skirmisher without moving off F2!',
         tacticalBreakdown:
-          'Ranged Strikes remove enemy units from 2 squares away without moving Mechamaru from his post.',
-        hint: 'Fire Ranged Strike on F3 with Mechamaru.',
+          'Artillery Ranged Strike eliminates enemies at exact distance 2 orthogonally or diagonally across an empty middle square—risking zero counter-capture.',
+        hint: 'Click Mechamaru on F2, then click Naoya on F4 to fire Ranged Strike.',
         vectorArrows: [
-          { from: { x: 6, y: 1 }, to: { x: 6, y: 3 }, color: 'crimson', label: '1 🏹', style: 'solid' },
+          { from: { x: 6, y: 2 }, to: { x: 6, y: 4 }, color: 'emerald', label: '1', style: 'solid' },
         ],
         opponentResponse: {
-          from: { x: 3, y: 7 }, // Black Pawn C7
-          to: { x: 3, y: 6 },   // C6
-          commentary: 'Black advances C7 pawn to C6.',
+          from: { x: 6, y: 7 },
+          to: { x: 6, y: 6 },
+          commentary: 'Reeling from losing Naoya, Black pushes F7 → F6 to contest the F-column.',
         },
       },
       {
         stepNumber: 2,
-        from: { x: 7, y: 2 }, // Pawn G2
-        to: { x: 7, y: 3 },   // G3
+        from: { x: 7, y: 2 },
+        to: { x: 7, y: 3 },
         actionType: 'move',
-        notation: 'G2 → G3 (Battery Clearance)',
+        notation: 'G2 → G3 (Flank Reinforcement)',
         tukunaInstruction:
-          'Push your G2 pawn to G3.',
+          'Advance G2 → G3 to secure G2 for Vanguard Yuji and shield Gojo’s kingside.',
         tacticalBreakdown:
-          'Advancing G3 creates room for Mechamaru to step forward.',
-        hint: 'Push G2 pawn to G3.',
+          'Even when ahead by a full piece, keep reinforcing your pawn shield so the opponent gets zero counterplay.',
+        hint: 'Push the G2 pawn to G3.',
         vectorArrows: [
-          { from: { x: 7, y: 2 }, to: { x: 7, y: 3 }, color: 'crimson', label: '2', style: 'solid' },
+          { from: { x: 7, y: 2 }, to: { x: 7, y: 3 }, color: 'emerald', label: '2', style: 'solid' },
         ],
         opponentResponse: {
-          from: { x: 4, y: 7 }, // Black Pawn D7
-          to: { x: 4, y: 6 },   // D6
-          commentary: 'Black advances D7 pawn to D6.',
+          from: { x: 5, y: 8 },
+          to: { x: 5, y: 6 },
+          commentary: 'Black slides Warden Reggie from E8 to E6 to pressure your E4 pawn!',
         },
       },
       {
         stepNumber: 3,
-        from: { x: 6, y: 1 }, // Mechamaru F1
-        to: { x: 6, y: 2 },   // F2
+        from: { x: 4, y: 2 },
+        to: { x: 4, y: 3 },
         actionType: 'move',
-        notation: 'Mechamaru F1 → F2 (Battery Advance)',
+        notation: 'D2 → D3 (Defending the E4 Spearhead)',
         tukunaInstruction:
-          'Advance Mechamaru 1 step forward to F2.',
+          'Protect your E4 pawn immediately by pushing D2 → D3!',
         tacticalBreakdown:
-          'Positioning Mechamaru on F2 extends his snipe range to F4 and D4.',
-        hint: 'Move Mechamaru to F2.',
+          'D3 anchors E4 with a pawn while opening D2 for Warden Nanami.',
+        hint: 'Advance the D2 pawn to D3.',
         vectorArrows: [
-          { from: { x: 6, y: 1 }, to: { x: 6, y: 2 }, color: 'crimson', label: '3', style: 'solid' },
+          { from: { x: 4, y: 2 }, to: { x: 4, y: 3 }, color: 'emerald', label: '3', style: 'solid' },
+          { from: { x: 4, y: 3 }, to: { x: 5, y: 4 }, color: 'navy', style: 'dashed' },
         ],
         opponentResponse: {
-          from: { x: 5, y: 7 }, // Black Pawn E7
-          to: { x: 5, y: 6 },   // E6
-          commentary: 'Black pushes E7 pawn to E6.',
+          from: { x: 2, y: 7 },
+          to: { x: 2, y: 6 },
+          commentary: 'Black pushes B7 → B6 on the queenside.',
         },
       },
       {
         stepNumber: 4,
-        from: { x: 5, y: 2 }, // Pawn E2
-        to: { x: 5, y: 3 },   // E3
+        from: { x: 7, y: 1 },
+        to: { x: 7, y: 2 },
         actionType: 'move',
-        notation: 'E2 → E3 (Guard Advance)',
+        notation: 'Yuji G1 → G2 (Vanguard Overwatch)',
         tukunaInstruction:
-          'Push your E2 pawn to E3.',
+          'Step Vanguard Yuji from G1 to G2 behind your G3 pawn.',
         tacticalBreakdown:
-          'E3 secures Mechamaru’s left diagonal.',
-        hint: 'Push E2 pawn to E3.',
+          'Yuji on G2 supports F3 and H3 while preparing to double on the open F-file behind Mechamaru.',
+        hint: 'Move Yuji from G1 to G2.',
         vectorArrows: [
-          { from: { x: 5, y: 2 }, to: { x: 5, y: 3 }, color: 'crimson', label: '4', style: 'solid' },
+          { from: { x: 7, y: 1 }, to: { x: 7, y: 2 }, color: 'emerald', label: '4', style: 'solid' },
         ],
         opponentResponse: {
-          from: { x: 2, y: 7 }, // Black Pawn B7
-          to: { x: 2, y: 6 },   // B6
-          commentary: 'Black advances B7 pawn to B6.',
+          from: { x: 2, y: 8 },
+          to: { x: 2, y: 7 },
+          commentary: 'Black develops Vanguard Kenjaku to B7.',
         },
       },
       {
         stepNumber: 5,
-        from: { x: 7, y: 1 }, // Yuji G1
-        to: { x: 7, y: 2 },   // G2
+        from: { x: 6, y: 2 },
+        to: { x: 6, y: 3 },
         actionType: 'move',
-        notation: 'Yuji G1 → G2 (Vanguard Escort)',
+        notation: 'Mechamaru F2 → F3 (Advancing the Firing Line)',
         tukunaInstruction:
-          'Advance Yuji to G2.',
+          'Step Mechamaru forward from F2 to F3 (defended by Yuji on G2 and supporting E4)!',
         tacticalBreakdown:
-          'Yuji escorts Mechamaru’s right flank.',
-        hint: 'Move Yuji to G2.',
+          'On F3, Mechamaru is guarded by Yuji and aims a 2-square Ranged Strike at D5, F5, and H5!',
+        hint: 'Step Mechamaru one square up from F2 to F3.',
         vectorArrows: [
-          { from: { x: 7, y: 1 }, to: { x: 7, y: 2 }, color: 'crimson', label: '5', style: 'solid' },
+          { from: { x: 6, y: 2 }, to: { x: 6, y: 3 }, color: 'emerald', label: '5', style: 'solid' },
         ],
         opponentResponse: {
-          from: { x: 6, y: 7 }, // Black Pawn F7
-          to: { x: 6, y: 6 },   // F6 (1-step pawn advance)
-          commentary: 'Black advances F7 pawn to F6.',
+          from: { x: 3, y: 7 },
+          to: { x: 3, y: 6 },
+          commentary: 'Black plays C7 → C6.',
         },
       },
       {
         stepNumber: 6,
-        from: { x: 6, y: 2 }, // Mechamaru F2
-        to: { x: 6, y: 3 },   // F3
+        from: { x: 4, y: 1 },
+        to: { x: 4, y: 2 },
         actionType: 'move',
-        notation: 'Mechamaru F2 → F3 (Outpost Step)',
+        notation: 'Nanami D1 → D2 (Warden Reserve)',
         tukunaInstruction:
-          'Move Mechamaru to F3.',
+          'Step Warden Nanami from D1 to D2 to reinforce your central column.',
         tacticalBreakdown:
-          'Mechamaru on F3 commands the central cross.',
-        hint: 'Move Mechamaru to F3.',
+          'Every White piece now stands harmoniously connected behind the D3–E4–G3 structure.',
+        hint: 'Move Nanami from D1 to D2.',
         vectorArrows: [
-          { from: { x: 6, y: 2 }, to: { x: 6, y: 3 }, color: 'crimson', label: '6', style: 'solid' },
+          { from: { x: 4, y: 1 }, to: { x: 4, y: 2 }, color: 'emerald', label: '6', style: 'solid' },
         ],
         opponentResponse: {
-          from: { x: 2, y: 8 }, // Kenjaku B8
-          to: { x: 2, y: 7 },   // B7
-          commentary: 'Kenjaku steps onto B7.',
+          from: { x: 6, y: 6 },
+          to: { x: 6, y: 5 },
+          commentary: 'Black pushes F6 → F5 to attack your E4 pawn—forgetting Mechamaru’s firing range from F3!',
         },
       },
       {
         stepNumber: 7,
-        from: { x: 4, y: 2 }, // Pawn D2
-        to: { x: 4, y: 3 },   // D3
-        actionType: 'move',
-        notation: 'D2 → D3 (Pawn Support)',
+        from: { x: 6, y: 3 },
+        to: { x: 6, y: 5 },
+        actionType: 'shoot',
+        notation: 'Mechamaru F3 🏹 F5 (Corridor Snipe!)',
         tukunaInstruction:
-          'Push D2 pawn to D3.',
+          'Fire Mechamaru’s Ranged Strike from F3 across empty F4 to obliterate Black’s F5 pawn!',
         tacticalBreakdown:
-          'Securing D3 seals the center.',
-        hint: 'Push D2 pawn to D3.',
+          'Even though Black’s Reggie on E6 defended F5 against normal captures, Ranged Strike destroys F5 from F3 without ever stepping onto F5!',
+        hint: 'Select Mechamaru on F3 and click Black’s pawn on F5 to shoot.',
         vectorArrows: [
-          { from: { x: 4, y: 2 }, to: { x: 4, y: 3 }, color: 'crimson', label: '7', style: 'solid' },
+          { from: { x: 6, y: 3 }, to: { x: 6, y: 5 }, color: 'emerald', label: '7', style: 'solid' },
         ],
         opponentResponse: {
-          from: { x: 6, y: 6 }, // Black Pawn F6
-          to: { x: 6, y: 5 },   // F5
-          commentary: 'Black advances F6 pawn to F5 into Mechamaru’s target line.',
+          from: { x: 7, y: 7 },
+          to: { x: 7, y: 6 },
+          commentary: 'With the F-file blasted wide open, Black plays G7 → G6 defensively.',
         },
       },
       {
         stepNumber: 8,
-        from: { x: 6, y: 3 }, // Mechamaru F3
-        to: { x: 6, y: 5 },   // Snipe target F5 (F4 is empty!)
-        actionType: 'shoot',
-        notation: 'Mechamaru 🏹 F5 (2nd Ranged Snipe Barrage!)',
+        from: { x: 7, y: 2 },
+        to: { x: 6, y: 2 },
+        actionType: 'move',
+        notation: 'Yuji G2 → F2 (Vertical Cannon & Vanguard Battery)',
         tukunaInstruction:
-          'Fire a 2nd Ranged Strike with Mechamaru at F5 across empty F4!',
+          'Step Yuji from G2 onto F2 directly behind Mechamaru to complete an unstoppable F-file battery!',
         tacticalBreakdown:
-          'Mechamaru’s second ranged strike clears Black’s advanced pawns with total immunity!',
-        hint: 'Fire Ranged Strike on F5 with Mechamaru.',
+          'Stacking Yuji on F2 behind Mechamaru on F3 overprotects your Artillery and dominates the open F-column.',
+        hint: 'Move Yuji laterally from G2 to F2.',
         vectorArrows: [
-          { from: { x: 6, y: 3 }, to: { x: 6, y: 5 }, color: 'crimson', label: '8 🏹', style: 'solid' },
+          { from: { x: 7, y: 2 }, to: { x: 6, y: 2 }, color: 'emerald', label: '8', style: 'solid' },
         ],
       },
     ],
@@ -1245,174 +1524,175 @@ export const CULLING_OPENING_LESSONS: CullingOpeningLesson[] = [
 
   {
     id: 'culling_open_8',
-    title: 'Lesson 8: Domain Step Sovereign Gambit',
-    subtitle: 'Execute Gojo’s 2-square Domain Step jump to bypass enemy pins and secure check',
-    namedStrategy: 'Sovereign Domain Step Assault',
+    title: 'Lesson 8: Domain Step Castling & H-File Reversal',
+    subtitle: 'Evacuate Gojo over Yuji via Domain Step, then seize the H-file with Vanguard counter-pressure',
+    namedStrategy: 'Limitless Castling Reversal',
     curriculumType: 'opening',
     tier: 'advanced',
     playerColor: 'white',
     initialBoard: createInitialCullingBoard(),
     tukunaGreeting:
-      'Satoru Gojo possesses a once-per-game ability: Domain Step! Gojo teleports 2 squares in any straight or diagonal direction, provided he is not in check and lands safely.',
+      'Sovereign Gojo possesses a once-per-game Domain Step: a 2-square jump orthogonally or diagonally onto an empty unattacked square—even vaulting over friendly pieces! Watch how we "castle" Gojo from H1 to F1 and turn the H-file over to Yuji!',
     completionMessage:
-      'Domain Step executed! Gojo leaped across defenders, placing Sukuna in mortal check!',
+      'Grandmaster-level reversal! By castling Gojo to F1 with Domain Step, you turned Black’s H-file attack lane into Yuji’s personal Black Flash hunting ground.',
     patternHighlights: [
-      { x: 8, y: 1 }, { x: 6, y: 3 }, { x: 5, y: 4 }, { x: 4, y: 5 }, { x: 3, y: 6 }, { x: 2, y: 7 },
+      { x: 8, y: 1 }, { x: 6, y: 1 }, { x: 8, y: 2 }, { x: 8, y: 4 },
     ],
     steps: [
       {
         stepNumber: 1,
-        from: { x: 8, y: 1 }, // Gojo H1
-        to: { x: 6, y: 3 },   // F3 (Domain Step 2-square diagonal jump!)
-        actionType: 'teleport',
-        notation: 'Gojo 🌀 F3 (Domain Step Teleport!)',
+        from: { x: 6, y: 2 },
+        to: { x: 6, y: 3 },
+        actionType: 'move',
+        notation: 'F2 → F3 (Preparing the F1 Sanctuary)',
         tukunaInstruction:
-          'Activate Gojo’s Domain Step to teleport 2 squares diagonally from H1 to F3.',
+          'Advance F2 → F3 so Mechamaru can vacate F1 for Gojo’s Domain Step castling maneuver.',
         tacticalBreakdown:
-          'Domain Step bypasses enemy pawn chains, placing Gojo in a high-advantage offensive post.',
-        hint: 'Teleport Gojo from H1 to F3.',
+          'F3 shields F2 while controlling E4 and G4.',
+        hint: 'Push the F2 pawn to F3.',
         vectorArrows: [
-          { from: { x: 8, y: 1 }, to: { x: 6, y: 3 }, color: 'crimson', label: '1 🌀', style: 'solid' },
+          { from: { x: 6, y: 2 }, to: { x: 6, y: 3 }, color: 'emerald', label: '1', style: 'solid' },
         ],
         opponentResponse: {
-          from: { x: 3, y: 7 }, // Black Pawn C7
-          to: { x: 3, y: 6 },   // C6
-          commentary: 'Black advances C7 pawn to C6.',
+          from: { x: 7, y: 8 },
+          to: { x: 8, y: 7 },
+          commentary: 'Black slides Kurourushi to H7, preparing a heavy H-file battery aimed at Gojo on H1!',
         },
       },
       {
         stepNumber: 2,
-        from: { x: 6, y: 3 }, // Gojo F3
-        to: { x: 5, y: 4 },   // E4
+        from: { x: 6, y: 1 },
+        to: { x: 6, y: 2 },
         actionType: 'move',
-        notation: 'Gojo F3 → E4 (Sovereign Incursion)',
+        notation: 'Mechamaru F1 → F2 (Vacating F1)',
         tukunaInstruction:
-          'Advance Gojo 1 step diagonally to E4.',
+          'Step Mechamaru from F1 up to F2, clearing F1 as a shielded sanctuary for Gojo.',
         tacticalBreakdown:
-          'Gojo on E4 commands the central diagonals, threatening both D5 and F5.',
-        hint: 'Move Gojo diagonally to E4.',
+          'Once F1 is empty and unattacked, Gojo on H1 can leap straight over Yuji on G1 onto F1!',
+        hint: 'Move Mechamaru from F1 to F2.',
         vectorArrows: [
-          { from: { x: 6, y: 3 }, to: { x: 5, y: 4 }, color: 'crimson', label: '2', style: 'solid' },
+          { from: { x: 6, y: 1 }, to: { x: 6, y: 2 }, color: 'emerald', label: '2', style: 'solid' },
         ],
         opponentResponse: {
-          from: { x: 4, y: 7 }, // Black Pawn D7
-          to: { x: 4, y: 6 },   // D6
-          commentary: 'Black advances D7 pawn to D6.',
+          from: { x: 6, y: 8 },
+          to: { x: 8, y: 8 },
+          commentary: 'Black hops Naoya to H8 behind Kurourushi—doubling raiders on the H-column!',
         },
       },
       {
         stepNumber: 3,
-        from: { x: 7, y: 2 }, // Pawn G2
-        to: { x: 7, y: 3 },   // G3
-        actionType: 'move',
-        notation: 'G2 → G3 (Rear Reinforcement)',
+        from: { x: 8, y: 1 },
+        to: { x: 6, y: 1 },
+        actionType: 'teleport',
+        notation: 'Gojo H1 🌀 F1 (Domain Step Castling!)',
         tukunaInstruction:
-          'Push your G2 pawn to G3.',
+          'Execute Gojo’s once-per-game Domain Step from H1 across G1 onto F1!',
         tacticalBreakdown:
-          'Advancing G3 covers Gojo’s rear retreat line.',
-        hint: 'Push G2 pawn to G3.',
+          'In a single move, Gojo evacuates the H-column into the fortified F1 sanctuary behind Panda (E1), Mechamaru (F2), and F3—rendering Black’s H-file battery harmless against your Sovereign!',
+        hint: 'Select Gojo on H1 and click F1 to perform Domain Step.',
         vectorArrows: [
-          { from: { x: 7, y: 2 }, to: { x: 7, y: 3 }, color: 'crimson', label: '3', style: 'solid' },
+          { from: { x: 8, y: 1 }, to: { x: 6, y: 1 }, color: 'emerald', label: '3', style: 'solid' },
         ],
         opponentResponse: {
-          from: { x: 2, y: 7 }, // Black Pawn B7
-          to: { x: 2, y: 6 },   // B6
-          commentary: 'Black pushes B7 pawn to B6.',
+          from: { x: 8, y: 7 },
+          to: { x: 8, y: 6 },
+          commentary: 'Kurourushi advances to H6 anyway, trying to salvage Black’s flank initiative.',
         },
       },
       {
         stepNumber: 4,
-        from: { x: 7, y: 1 }, // Yuji G1
-        to: { x: 7, y: 2 },   // G2
+        from: { x: 7, y: 2 },
+        to: { x: 7, y: 3 },
         actionType: 'move',
-        notation: 'Yuji G1 → G2 (Vanguard Mobilization)',
+        notation: 'G2 → G3 (Securing H4 Control)',
         tukunaInstruction:
-          'Advance Yuji to G2.',
+          'Push G2 → G3! Now your G3 pawn controls H4—providing pawn protection for Yuji to seize the H-file!',
         tacticalBreakdown:
-          'Yuji steps to G2 to escort Gojo’s central thrust.',
-        hint: 'Move Yuji to G2.',
+          'G3 covers H4 while sealing the diagonal toward Gojo on F1.',
+        hint: 'Advance the G2 pawn to G3.',
         vectorArrows: [
-          { from: { x: 7, y: 1 }, to: { x: 7, y: 2 }, color: 'crimson', label: '4', style: 'solid' },
+          { from: { x: 7, y: 2 }, to: { x: 7, y: 3 }, color: 'emerald', label: '4', style: 'solid' },
         ],
         opponentResponse: {
-          from: { x: 2, y: 8 }, // Kenjaku B8
-          to: { x: 2, y: 7 },   // B7
-          commentary: 'Kenjaku steps onto B7.',
+          from: { x: 5, y: 7 },
+          to: { x: 5, y: 6 },
+          commentary: 'Realizing H4 is covered by G3, Black plays E7 → E6.',
         },
       },
       {
         stepNumber: 5,
-        from: { x: 5, y: 4 }, // Gojo E4
-        to: { x: 6, y: 5 },   // F5 (Unattacked diagonal step!)
+        from: { x: 7, y: 1 },
+        to: { x: 8, y: 2 },
         actionType: 'move',
-        notation: 'Gojo E4 → F5 (Sovereign Flank Pressure)',
+        notation: 'Yuji G1 → H2 (Vanguard Seizes the H-File)',
         tukunaInstruction:
-          'Shift Gojo diagonally to F5 onto an unattacked square.',
+          'Step Vanguard Yuji diagonally from G1 onto H2—claiming the open H-file with your 8-point powerhouse!',
         tacticalBreakdown:
-          'Gojo on F5 avoids Black’s C6 pawn sightline while threatening Black’s E-file.',
-        hint: 'Move Gojo diagonally to F5.',
+          'With Gojo safely castled on F1, the H-file transforms from a defensive liability into Yuji’s open highway.',
+        hint: 'Move Yuji diagonally from G1 to H2.',
         vectorArrows: [
-          { from: { x: 5, y: 4 }, to: { x: 6, y: 5 }, color: 'crimson', label: '5', style: 'solid' },
+          { from: { x: 7, y: 1 }, to: { x: 8, y: 2 }, color: 'emerald', label: '5', style: 'solid' },
         ],
         opponentResponse: {
-          from: { x: 5, y: 7 }, // Black Pawn E7
-          to: { x: 5, y: 6 },   // E6
-          commentary: 'Black advances E7 pawn to E6.',
+          from: { x: 8, y: 8 },
+          to: { x: 6, y: 8 },
+          commentary: 'Black aborts the H-file plan, hopping Naoya back from H8 to F8.',
         },
       },
       {
         stepNumber: 6,
-        from: { x: 6, y: 5 }, // Gojo F5
-        to: { x: 6, y: 4 },   // F4 (Sovereign Safe Step)
+        from: { x: 5, y: 2 },
+        to: { x: 5, y: 3 },
         actionType: 'move',
-        notation: 'Gojo F5 → F4 (Sovereign Tactical Step)',
+        notation: 'E2 → E3 (Central Shield Extension)',
         tukunaInstruction:
-          'Step Gojo 1 square back to F4 onto an unattacked square.',
+          'Push E2 → E3 to extend Gojo’s central shield across E3–F3–G3.',
         tacticalBreakdown:
-          'Gojo on F4 avoids Black’s F7 pawn attack diagonal while maintaining central presence.',
-        hint: 'Move Gojo to F4.',
+          'Gojo on F1 now enjoys a triple-layered shelter of pawns and pieces.',
+        hint: 'Advance the E2 pawn to E3.',
         vectorArrows: [
-          { from: { x: 6, y: 5 }, to: { x: 6, y: 4 }, color: 'crimson', label: '6', style: 'solid' },
+          { from: { x: 5, y: 2 }, to: { x: 5, y: 3 }, color: 'emerald', label: '6', style: 'solid' },
         ],
         opponentResponse: {
-          from: { x: 6, y: 7 }, // Black Pawn F7
-          to: { x: 6, y: 6 },   // F6
-          commentary: 'Black advances F7 pawn to F6.',
+          from: { x: 4, y: 7 },
+          to: { x: 4, y: 6 },
+          commentary: 'Black pushes D7 → D6.',
         },
       },
       {
         stepNumber: 7,
-        from: { x: 6, y: 2 }, // Pawn F2
-        to: { x: 6, y: 3 },   // F3
+        from: { x: 5, y: 1 },
+        to: { x: 4, y: 3 },
         actionType: 'move',
-        notation: 'F2 → F3 (Base Anchor Push)',
+        notation: 'Panda E1 → D3 (Central Bulwark Development)',
         tukunaInstruction:
-          'Push F2 pawn to F3.',
+          'Develop Bulwark Panda from E1 to D3 to connect your entire back rank.',
         tacticalBreakdown:
-          'F3 secures Gojo’s line of communication.',
-        hint: 'Push F2 pawn to F3.',
+          'Every minor and major sorcerer on your eastern half is now actively developed and completely safe.',
+        hint: 'Jump Panda from E1 to D3.',
         vectorArrows: [
-          { from: { x: 6, y: 2 }, to: { x: 6, y: 3 }, color: 'crimson', label: '7', style: 'solid' },
+          { from: { x: 5, y: 1 }, to: { x: 4, y: 3 }, color: 'emerald', label: '7', style: 'solid' },
         ],
         opponentResponse: {
-          from: { x: 2, y: 6 }, // Black Pawn B6
-          to: { x: 2, y: 5 },   // B5
-          commentary: 'Black Pawn advances to B5.',
+          from: { x: 5, y: 8 },
+          to: { x: 5, y: 7 },
+          commentary: 'Black develops Warden Reggie to E7—leaving Kurourushi exposed on H6!',
         },
       },
       {
         stepNumber: 8,
-        from: { x: 6, y: 4 }, // Gojo F4
-        to: { x: 5, y: 4 },   // E4 (Unattacked Sovereign Step)
+        from: { x: 8, y: 2 },
+        to: { x: 8, y: 4 },
         actionType: 'move',
-        notation: 'Gojo F4 → E4 (Sovereign Central Control)',
+        notation: 'Yuji H2 → H4 (Protected Thrust — Threatening H6!)',
         tukunaInstruction:
-          'Step Gojo 1 square left to E4 to command the central cross!',
+          'Slide Yuji 2 squares up the H-file from H2 to H4 (guarded by your G3 pawn), threatening an unstoppable 2-square Black Flash on Kurourushi at H6!',
         tacticalBreakdown:
-          'Gojo on E4 commands the central cross with complete sovereign invulnerability.',
-        hint: 'Move Gojo left to E4.',
+          'Yuji on H4 is protected by G3, untouched by any Black pawn or sorcerer, and forces Kurourushi to flee H6 immediately!',
+        hint: 'Slide Yuji from H2 up to H4.',
         vectorArrows: [
-          { from: { x: 6, y: 4 }, to: { x: 5, y: 4 }, color: 'crimson', label: '8 ⚔️', style: 'solid' },
+          { from: { x: 8, y: 2 }, to: { x: 8, y: 4 }, color: 'emerald', label: '8', style: 'solid' },
+          { from: { x: 8, y: 4 }, to: { x: 8, y: 6 }, color: 'navy', style: 'dashed' },
         ],
       },
     ],
@@ -1424,174 +1704,175 @@ export const CULLING_OPENING_LESSONS: CullingOpeningLesson[] = [
 
   {
     id: 'culling_mid_1',
-    title: 'Lesson 9: Vanguard Coordination & Kenjaku Counter-Strike',
-    subtitle: 'Synchronize Vanguard Yuji and Warden Nanami to trap enemy Kenjaku',
-    namedStrategy: 'Dual Vanguard Pincer',
+    title: 'Lesson 9: Vanguard Black Flash Strike-in-Place',
+    subtitle: 'Eliminate pawn-protected enemy pieces from 2 squares away without stepping into pawn recapture',
+    namedStrategy: 'Divergent Fist Black Flash',
     curriculumType: 'midgame',
     tier: 'beginner',
     playerColor: 'white',
-    initialBoard: createInitialCullingBoard(),
+    initialBoard: createMidLesson1Board(),
     tukunaGreeting:
-      'In the mid-game, piece coordination decides survival. Synchronize Vanguard Yuji with Warden Nanami to corner enemy Vanguard Kenjaku.',
+      'Study F5 carefully: Black’s Skirmisher Naoya (3.5pt) is defended by Black’s G6 pawn (1pt). If Yuji captured normally by landing on F5, G6×F5 would cost you an 8-point Vanguard! Instead, Yuji’s exact 2-square Black Flash strikes in place—destroying Naoya while staying safely on F3!',
     completionMessage:
-      'Kenjaku eliminated! Dual-piece coordination neutralized Black’s main vanguard force.',
+      'Flawless Black Flash execution! You won a full Skirmisher without ever exposing your 8-point Vanguard to Black’s G6 pawn, then capped off the sequence with a diagonal Ranged Strike.',
     patternHighlights: [
-      { x: 7, y: 2 }, { x: 7, y: 1 }, { x: 4, y: 1 }, { x: 4, y: 4 }, { x: 7, y: 4 }, { x: 3, y: 6 },
+      { x: 6, y: 3 }, { x: 6, y: 5 }, { x: 4, y: 4 }, { x: 5, y: 3 },
     ],
     steps: [
       {
         stepNumber: 1,
-        from: { x: 7, y: 2 }, // G2 Pawn
-        to: { x: 7, y: 3 },   // G3
-        actionType: 'move',
-        notation: 'G2 → G3 (Clear Yuji)',
+        from: { x: 6, y: 3 },
+        to: { x: 6, y: 5 },
+        actionType: 'black_flash',
+        notation: 'Yuji F3 ⚡ F5 (Black Flash Strike-in-Place!)',
         tukunaInstruction:
-          'Push G2 pawn to G3 to clear Yuji’s column.',
+          'Unleash Yuji’s Black Flash from F3 onto Naoya at F5! Because F4 is empty and F5 is exactly 2 squares away, Yuji obliterates Naoya without stepping into Black’s G6 pawn!',
         tacticalBreakdown:
-          'Opening the G-column allows Yuji to slide into the central battle zone.',
-        hint: 'Push G2 pawn to G3.',
+          'Vanguard captures at exact distance 2 trigger Black Flash (strike-in-place). Distance 1 or 3 captures move onto the target square—so maintaining exact 2-square spacing is priceless!',
+        hint: 'Select Yuji on F3 and click Naoya on F5 to execute Black Flash.',
         vectorArrows: [
-          { from: { x: 7, y: 2 }, to: { x: 7, y: 3 }, color: 'crimson', label: '1', style: 'solid' },
+          { from: { x: 6, y: 3 }, to: { x: 6, y: 5 }, color: 'emerald', label: '1', style: 'solid' },
         ],
         opponentResponse: {
-          from: { x: 2, y: 7 }, // Black Pawn B7
-          to: { x: 2, y: 6 },   // B6
-          commentary: 'Black advances B7 pawn to B6 to clear Kenjaku’s vanguard column.',
+          from: { x: 5, y: 6 },
+          to: { x: 5, y: 5 },
+          commentary: 'Stung by losing Naoya, Black pushes E6 → E5 to contest central lines!',
         },
       },
       {
         stepNumber: 2,
-        from: { x: 7, y: 1 }, // Yuji G1
-        to: { x: 7, y: 2 },   // G2 (Step onto cleared G2 square)
+        from: { x: 4, y: 3 },
+        to: { x: 4, y: 4 },
         actionType: 'move',
-        notation: 'Yuji G1 → G2 (Vanguard Step)',
+        notation: 'D3 → D4 (Challenging the E5 Pawn)',
         tukunaInstruction:
-          'Step Yuji to G2 behind the G3 pawn.',
+          'Challenge Black’s E5 pawn immediately with D3 → D4 (supported by your C3 and E3 pawns)!',
         tacticalBreakdown:
-          'Yuji on G2 prepares a diagonal shift onto the central cross.',
-        hint: 'Move Yuji to G2.',
+          'When ahead in material, use supported pawn levers to pry open lines for your superior pieces.',
+        hint: 'Push the D3 pawn to D4.',
         vectorArrows: [
-          { from: { x: 7, y: 1 }, to: { x: 7, y: 2 }, color: 'crimson', label: '2', style: 'solid' },
+          { from: { x: 4, y: 3 }, to: { x: 4, y: 4 }, color: 'emerald', label: '2', style: 'solid' },
+          { from: { x: 4, y: 4 }, to: { x: 5, y: 5 }, color: 'navy', style: 'dashed' },
         ],
         opponentResponse: {
-          from: { x: 2, y: 8 }, // Kenjaku B8
-          to: { x: 2, y: 7 },   // B7
-          commentary: 'Kenjaku steps onto B7 to establish an aggressive outpost.',
+          from: { x: 5, y: 5 },
+          to: { x: 4, y: 4 },
+          commentary: 'Black exchanges E5 × D4, hoping to break up your center.',
         },
       },
       {
         stepNumber: 3,
-        from: { x: 7, y: 3 }, // G3 Pawn
-        to: { x: 7, y: 4 },   // G4
+        from: { x: 5, y: 3 },
+        to: { x: 4, y: 4 },
         actionType: 'move',
-        notation: 'G3 → G4 (Pawn Wedge Advance)',
+        notation: 'E3 × D4 (Recapturing Toward the Center)',
         tukunaInstruction:
-          'Push G3 pawn to G4 to clear the G3 square.',
+          'Recapture on D4 with your E3 pawn (E3 × D4), opening the E-column while maintaining a central spearhead!',
         tacticalBreakdown:
-          'Advancing G4 opens diagonal attack lanes for Yuji.',
-        hint: 'Push G3 pawn to G4.',
+          'Recapturing with a pawn keeps Yuji safely behind the line and opens the E-file toward Black’s Warden Reggie on E7.',
+        hint: 'Capture Black’s pawn on D4 with your E3 pawn.',
         vectorArrows: [
-          { from: { x: 7, y: 3 }, to: { x: 7, y: 4 }, color: 'crimson', label: '3', style: 'solid' },
+          { from: { x: 5, y: 3 }, to: { x: 4, y: 4 }, color: 'emerald', label: '3', style: 'solid' },
         ],
         opponentResponse: {
-          from: { x: 3, y: 7 }, // Black Pawn C7
-          to: { x: 3, y: 6 },   // C6
-          commentary: 'Black advances C7 pawn to C6.',
+          from: { x: 5, y: 7 },
+          to: { x: 5, y: 6 },
+          commentary: 'Black steps Warden Reggie forward to E6 to guard the open E-column.',
         },
       },
       {
         stepNumber: 4,
-        from: { x: 7, y: 2 }, // Yuji G2
-        to: { x: 6, y: 3 },   // F3 (Diagonal shift)
+        from: { x: 4, y: 1 },
+        to: { x: 4, y: 3 },
         actionType: 'move',
-        notation: 'Yuji G2 → F3 (Diagonal Shift)',
+        notation: 'Nanami D1 → D3 (Warden Column Lift)',
         tukunaInstruction:
-          'Shift Yuji diagonally to F3 onto the open F-file.',
+          'Slide Warden Nanami 2 squares orthogonally from D1 to D3 behind your D4 pawn!',
         tacticalBreakdown:
-          'Yuji on F3 sets up a long-range Vanguard thrust up the F-column.',
-        hint: 'Move Yuji diagonally to F3.',
+          'Nanami overprotects D4 and anchors your central pawn structure.',
+        hint: 'Slide Nanami from D1 up to D3.',
         vectorArrows: [
-          { from: { x: 7, y: 2 }, to: { x: 6, y: 3 }, color: 'crimson', label: '4', style: 'solid' },
+          { from: { x: 4, y: 1 }, to: { x: 4, y: 3 }, color: 'emerald', label: '4', style: 'solid' },
         ],
         opponentResponse: {
-          from: { x: 4, y: 7 }, // Black Pawn D7
-          to: { x: 4, y: 6 },   // D6
-          commentary: 'Black pushes D7 pawn to D6.',
+          from: { x: 7, y: 8 },
+          to: { x: 8, y: 7 },
+          commentary: 'Black activates Rusher Kurourushi to H7 on the eastern flank.',
         },
       },
       {
         stepNumber: 5,
-        from: { x: 6, y: 3 }, // Yuji F3
-        to: { x: 6, y: 5 },   // F5 (Slide 2 squares up open F-column!)
+        from: { x: 6, y: 2 },
+        to: { x: 5, y: 2 },
         actionType: 'move',
-        notation: 'Yuji F3 → F5 (Vanguard Pincer Thrust)',
+        notation: 'Mechamaru F2 → E2 (Rotating Artillery to Open File)',
         tukunaInstruction:
-          'Slide Yuji 2 squares forward along the open F-column to F5.',
+          'Shift Artillery Mechamaru laterally from F2 to E2 to prepare a third-rank firing post on E3.',
         tacticalBreakdown:
-          'Yuji’s slide pierces deep into Black’s center, threatening D6 and E6 pawns.',
-        hint: 'Slide Yuji to F5.',
+          'Placing Mechamaru on E3 between Nanami (D3) and Yuji (F3) creates a lethal 3-piece command line.',
+        hint: 'Step Mechamaru left from F2 to E2.',
         vectorArrows: [
-          { from: { x: 6, y: 3 }, to: { x: 6, y: 5 }, color: 'crimson', label: '5', style: 'solid' },
+          { from: { x: 6, y: 2 }, to: { x: 5, y: 2 }, color: 'emerald', label: '5', style: 'solid' },
         ],
         opponentResponse: {
-          from: { x: 5, y: 7 }, // Black Pawn E7
-          to: { x: 5, y: 6 },   // E6
-          commentary: 'Black advances E7 pawn to E6.',
+          from: { x: 4, y: 8 },
+          to: { x: 6, y: 7 },
+          commentary: 'Black jumps Bulwark Yorozu from D8 to F7.',
         },
       },
       {
         stepNumber: 6,
-        from: { x: 4, y: 2 }, // D2 Pawn
-        to: { x: 4, y: 3 },   // D3
+        from: { x: 5, y: 2 },
+        to: { x: 5, y: 3 },
         actionType: 'move',
-        notation: 'D2 → D3 (Nanami Runway Push)',
+        notation: 'Mechamaru E2 → E3 (Central Firing Perch)',
         tukunaInstruction:
-          'Push D2 pawn to D3 to clear D2 for Warden Nanami.',
+          'Step Mechamaru up to E3—flanked by Nanami on D3 and Yuji on F3!',
         tacticalBreakdown:
-          'Clearing D2 allows Nanami to step forward.',
-        hint: 'Push D2 pawn to D3.',
+          'From E3, Mechamaru aims 2-square Ranged Strikes at C5, E5, and G5 across empty Rank 4 squares!',
+        hint: 'Step Mechamaru forward from E2 to E3.',
         vectorArrows: [
-          { from: { x: 4, y: 2 }, to: { x: 4, y: 3 }, color: 'crimson', label: '6', style: 'solid' },
+          { from: { x: 5, y: 2 }, to: { x: 5, y: 3 }, color: 'emerald', label: '6', style: 'solid' },
         ],
         opponentResponse: {
-          from: { x: 6, y: 7 }, // Black Pawn F7
-          to: { x: 6, y: 6 },   // F6
-          commentary: 'Black pushes F7 pawn to F6.',
+          from: { x: 8, y: 7 },
+          to: { x: 8, y: 6 },
+          commentary: 'Kurourushi advances to H6.',
         },
       },
       {
         stepNumber: 7,
-        from: { x: 4, y: 1 }, // Nanami D1
-        to: { x: 4, y: 2 },   // D2 (Orthogonal Warden step)
+        from: { x: 7, y: 3 },
+        to: { x: 7, y: 4 },
         actionType: 'move',
-        notation: 'Nanami D1 → D2 (Warden Ratio Deployment)',
+        notation: 'G3 → G4 (Kingside Clamp)',
         tukunaInstruction:
-          'Step Warden Nanami orthogonally to D2.',
+          'Push G3 → G4 (protected by Yuji on F3) to clamp down on H5 and challenge Black’s kingside.',
         tacticalBreakdown:
-          'Nanami on D2 projects his 8-square Ratio Field into the center board.',
-        hint: 'Move Nanami to D2.',
+          'G4 shuts down Kurourushi’s H6–G5–F4 diagonal.',
+        hint: 'Advance the G3 pawn to G4.',
         vectorArrows: [
-          { from: { x: 4, y: 1 }, to: { x: 4, y: 2 }, color: 'crimson', label: '7', style: 'solid' },
+          { from: { x: 7, y: 3 }, to: { x: 7, y: 4 }, color: 'emerald', label: '7', style: 'solid' },
         ],
         opponentResponse: {
-          from: { x: 3, y: 8 }, // Uraume C8
-          to: { x: 3, y: 7 },   // C7
-          commentary: 'Uraume advances to C7.',
+          from: { x: 7, y: 6 },
+          to: { x: 7, y: 5 },
+          commentary: 'Black blocks with G6 → G5—walking straight into Mechamaru’s E3–F4–G5 diagonal firing line!',
         },
       },
       {
         stepNumber: 8,
-        from: { x: 6, y: 5 }, // Yuji F5
-        to: { x: 5, y: 5 },   // E5
-        actionType: 'move',
-        notation: 'Yuji F5 → E5 (Dual Vanguard Pincer Execution!)',
+        from: { x: 5, y: 3 },
+        to: { x: 7, y: 5 },
+        actionType: 'shoot',
+        notation: 'Mechamaru E3 🏹 G5 (Diagonal Ranged Strike!)',
         tukunaInstruction:
-          'Shift Yuji left to E5 to complete the dual vanguard pincer!',
+          'Finish the lesson in style! Fire Mechamaru’s diagonal Ranged Strike from E3 across empty F4 to snipe Black’s G5 pawn!',
         tacticalBreakdown:
-          'Yuji on E5 commands both D6 and F6 diagonals while guarded by your F3 pawn wall. The pincer is complete!',
-        hint: 'Move Yuji left to E5.',
+          'Combining Black Flash on Step 1 with diagonal Artillery snipes on Step 8 dismantles pawn-protected formations without risking a single sorcerer.',
+        hint: 'Select Mechamaru on E3 and click Black’s pawn on G5 to shoot.',
         vectorArrows: [
-          { from: { x: 6, y: 5 }, to: { x: 5, y: 5 }, color: 'crimson', label: '8 ⚔️', style: 'solid' },
+          { from: { x: 5, y: 3 }, to: { x: 7, y: 5 }, color: 'emerald', label: '8', style: 'solid' },
         ],
       },
     ],
@@ -1599,174 +1880,176 @@ export const CULLING_OPENING_LESSONS: CullingOpeningLesson[] = [
 
   {
     id: 'culling_mid_2',
-    title: 'Lesson 10: Ranged Snipe Synergy (Mechamaru & Uraume Tactics)',
-    subtitle: 'Construct 2-square firing corridors for Mechamaru ranged snipes',
-    namedStrategy: 'Corridor Battery Snipe',
+    title: 'Lesson 10: Artillery Battery & Diagonal Snipe',
+    subtitle: 'Clear diagonal firing lanes via pawn exchange to snipe piece-defended targets from safety',
+    namedStrategy: 'Diagonal Puppet Barrage',
     curriculumType: 'midgame',
     tier: 'intermediate',
     playerColor: 'white',
-    initialBoard: createLesson7Board(),
+    initialBoard: createMidLesson2Board(),
     tukunaGreeting:
-      'Artillery units excel when firing through empty 2-square gaps. Learn to clear corridors and systematically eliminate enemy key pieces.',
+      'Artillery Mechamaru doesn’t only shoot straight—he also fires diagonally across any empty square! Watch how we snipe Black’s E4 pawn orthogonally, trade off our D4 pawn to vacate D4, and fire diagonally at C5!',
     completionMessage:
-      'Battery synergy achieved! Mechamaru’s sniping lines cleared the enemy mid-board.',
+      'Brilliant lane clearance! By trading D4×C5 first, you opened the E3–D4–C5 diagonal so Mechamaru could snipe C5 right under Artillery Uraume’s nose.',
     patternHighlights: [
-      { x: 6, y: 1 }, { x: 6, y: 3 }, { x: 6, y: 2 }, { x: 6, y: 4 }, { x: 6, y: 5 },
+      { x: 5, y: 2 }, { x: 5, y: 4 }, { x: 5, y: 3 }, { x: 3, y: 5 },
     ],
     steps: [
       {
         stepNumber: 1,
-        from: { x: 6, y: 1 }, // Mechamaru F1
-        to: { x: 6, y: 3 },   // Snipe F3 target (F2 empty)
+        from: { x: 5, y: 2 },
+        to: { x: 5, y: 4 },
         actionType: 'shoot',
-        notation: 'Mechamaru 🏹 F3 (1st Corridor Snipe)',
+        notation: 'Mechamaru E2 🏹 E4 (Orthogonal Vanguard Snipe)',
         tukunaInstruction:
-          'Execute a Ranged Strike on F3 with Mechamaru.',
+          'Fire Mechamaru’s orthogonal Ranged Strike from E2 across empty E3 to eliminate Black’s advanced E4 pawn!',
         tacticalBreakdown:
-          'Destroying the F3 target clears the F-column for deeper sniping operations.',
-        hint: 'Fire Ranged Strike on F3.',
+          'Eliminating Black’s E4 pawn removes all pressure against F3 and clears E3 for Mechamaru to step forward.',
+        hint: 'Select Mechamaru on E2 and click Black’s pawn on E4.',
         vectorArrows: [
-          { from: { x: 6, y: 1 }, to: { x: 6, y: 3 }, color: 'crimson', label: '1 🏹', style: 'solid' },
+          { from: { x: 5, y: 2 }, to: { x: 5, y: 4 }, color: 'emerald', label: '1', style: 'solid' },
         ],
         opponentResponse: {
-          from: { x: 3, y: 7 }, // Black Pawn C7
-          to: { x: 3, y: 6 },   // C6
-          commentary: 'Black advances C7 pawn to C6.',
+          from: { x: 2, y: 8 },
+          to: { x: 2, y: 7 },
+          commentary: 'Black develops Vanguard Kenjaku from B8 to B7.',
         },
       },
       {
         stepNumber: 2,
-        from: { x: 7, y: 2 }, // Pawn G2
-        to: { x: 7, y: 3 },   // G3
+        from: { x: 4, y: 4 },
+        to: { x: 3, y: 5 },
         actionType: 'move',
-        notation: 'G2 → G3 (Clear Side Corridor)',
+        notation: 'D4 × C5 (Line-Clearing Pawn Exchange!)',
         tukunaInstruction:
-          'Push G2 pawn to G3.',
+          'Capture Black’s C5 pawn with your D4 pawn (D4 × C5) specifically to vacate the D4 square!',
         tacticalBreakdown:
-          'Clearing G2 gives Mechamaru lateral maneuverability.',
-        hint: 'Push G2 pawn to G3.',
+          'Why trade pawns here? Because once D4 is empty, the E3–D4–C5 diagonal opens up for Mechamaru!',
+        hint: 'Capture the C5 pawn with your D4 pawn.',
         vectorArrows: [
-          { from: { x: 7, y: 2 }, to: { x: 7, y: 3 }, color: 'crimson', label: '2', style: 'solid' },
+          { from: { x: 4, y: 4 }, to: { x: 3, y: 5 }, color: 'emerald', label: '2', style: 'solid' },
         ],
         opponentResponse: {
-          from: { x: 4, y: 7 }, // Black Pawn D7
-          to: { x: 4, y: 6 },   // D6
-          commentary: 'Black pushes D7 pawn to D6.',
+          from: { x: 2, y: 6 },
+          to: { x: 3, y: 5 },
+          commentary: 'Black recaptures B6 × C5, assuming Uraume on C7 keeps C5 completely safe.',
         },
       },
       {
         stepNumber: 3,
-        from: { x: 6, y: 1 }, // Mechamaru F1
-        to: { x: 6, y: 2 },   // F2
+        from: { x: 5, y: 2 },
+        to: { x: 5, y: 3 },
         actionType: 'move',
-        notation: 'Mechamaru F1 → F2 (Battery Advance)',
+        notation: 'Mechamaru E2 → E3 (Aiming Down E3–D4–C5)',
         tukunaInstruction:
-          'Advance Mechamaru to F2.',
+          'Step Mechamaru up from E2 to E3! Notice the clear diagonal line of sight across empty D4 straight at C5!',
         tacticalBreakdown:
-          'Mechamaru on F2 looks up the F-column across empty F3 to target F4 or F5.',
-        hint: 'Move Mechamaru to F2.',
+          'On E3, Mechamaru stands safely behind F3 while locking onto Black’s C5 pawn.',
+        hint: 'Step Mechamaru forward from E2 to E3.',
         vectorArrows: [
-          { from: { x: 6, y: 1 }, to: { x: 6, y: 2 }, color: 'crimson', label: '3', style: 'solid' },
+          { from: { x: 5, y: 2 }, to: { x: 5, y: 3 }, color: 'emerald', label: '3', style: 'solid' },
+          { from: { x: 5, y: 3 }, to: { x: 3, y: 5 }, color: 'navy', style: 'dashed' },
         ],
         opponentResponse: {
-          from: { x: 5, y: 7 }, // Black Pawn E7
-          to: { x: 5, y: 6 },   // E6
-          commentary: 'Black advances E7 pawn to E6.',
+          from: { x: 6, y: 6 },
+          to: { x: 6, y: 5 },
+          commentary: 'Black pushes F6 → F5 on the kingside.',
         },
       },
       {
         stepNumber: 4,
-        from: { x: 5, y: 2 }, // Pawn E2
-        to: { x: 5, y: 3 },   // E3
-        actionType: 'move',
-        notation: 'E2 → E3 (Diagonal Guard)',
+        from: { x: 5, y: 3 },
+        to: { x: 3, y: 5 },
+        actionType: 'shoot',
+        notation: 'Mechamaru E3 🏹 C5 (Diagonal Snipe!)',
         tukunaInstruction:
-          'Push E2 pawn to E3.',
+          'Execute Mechamaru’s diagonal Ranged Strike from E3 across empty D4 to destroy Black’s C5 pawn!',
         tacticalBreakdown:
-          'Securing E3 guards Mechamaru’s left diagonal.',
-        hint: 'Push E2 pawn to E3.',
+          'Even though Artillery Uraume on C7 aimed at C5, Mechamaru never steps onto C5—winning a second clean pawn!',
+        hint: 'Select Mechamaru on E3 and click Black’s C5 pawn to shoot.',
         vectorArrows: [
-          { from: { x: 5, y: 2 }, to: { x: 5, y: 3 }, color: 'crimson', label: '4', style: 'solid' },
+          { from: { x: 5, y: 3 }, to: { x: 3, y: 5 }, color: 'emerald', label: '4', style: 'solid' },
         ],
         opponentResponse: {
-          from: { x: 2, y: 7 }, // Black Pawn B7
-          to: { x: 2, y: 6 },   // B6
-          commentary: 'Black advances B7 pawn to B6.',
+          from: { x: 3, y: 7 },
+          to: { x: 3, y: 6 },
+          commentary: 'Black steps Uraume forward to C6 to plug the C-file.',
         },
       },
       {
         stepNumber: 5,
-        from: { x: 7, y: 1 }, // Yuji G1
-        to: { x: 7, y: 2 },   // G2
+        from: { x: 4, y: 2 },
+        to: { x: 4, y: 4 },
         actionType: 'move',
-        notation: 'Yuji G1 → G2 (Guard Mobilization)',
+        notation: 'Nanami D2 → D4 (Central Warden Dominance)',
         tukunaInstruction:
-          'Advance Yuji to G2.',
+          'Slide Warden Nanami from D2 to D4—defended by both your C3 pawn and Mechamaru on E3!',
         tacticalBreakdown:
-          'Yuji guards Mechamaru’s right flank.',
-        hint: 'Move Yuji to G2.',
+          'Because we cleared Black’s B6, C5, and E4 pawns, zero enemy pawns can challenge Nanami’s commanding D4 post!',
+        hint: 'Slide Nanami 2 squares up from D2 to D4.',
         vectorArrows: [
-          { from: { x: 7, y: 1 }, to: { x: 7, y: 2 }, color: 'crimson', label: '5', style: 'solid' },
+          { from: { x: 4, y: 2 }, to: { x: 4, y: 4 }, color: 'emerald', label: '5', style: 'solid' },
+          { from: { x: 3, y: 3 }, to: { x: 4, y: 4 }, color: 'navy', style: 'dashed' },
         ],
         opponentResponse: {
-          from: { x: 6, y: 7 }, // Black Pawn F7
-          to: { x: 6, y: 6 },   // F6
-          commentary: 'Black advances F7 pawn to F6.',
+          from: { x: 5, y: 7 },
+          to: { x: 5, y: 6 },
+          commentary: 'Black steps Warden Reggie to E6 defensively.',
         },
       },
       {
         stepNumber: 6,
-        from: { x: 6, y: 2 }, // Mechamaru F2
-        to: { x: 6, y: 3 },   // F3
+        from: { x: 5, y: 3 },
+        to: { x: 6, y: 2 },
         actionType: 'move',
-        notation: 'Mechamaru F2 → F3 (Forward Battery Step)',
+        notation: 'Mechamaru E3 → F2 (Pivoting Artillery Behind F3 Shield!)',
         tukunaInstruction:
-          'Step Mechamaru forward to F3.',
+          'Alert! Reggie on E6 just aimed 3 squares down the open E-file at Mechamaru on E3! Step Mechamaru diagonally back from E3 to F2 behind your F3 pawn!',
         tacticalBreakdown:
-          'Mechamaru on F3 sets up a 2-square gap firing line across F4 to hit F5!',
-        hint: 'Move Mechamaru to F3.',
+          'Never leave an undefended 4-point Artillery on an open column in front of a 4.5-point enemy Warden. Pivoting to F2 keeps your 2-pawn lead rock-solid!',
+        hint: 'Step Mechamaru diagonally from E3 to F2.',
         vectorArrows: [
-          { from: { x: 6, y: 2 }, to: { x: 6, y: 3 }, color: 'crimson', label: '6', style: 'solid' },
+          { from: { x: 5, y: 3 }, to: { x: 6, y: 2 }, color: 'emerald', label: '6', style: 'solid' },
         ],
         opponentResponse: {
-          from: { x: 6, y: 6 }, // Black Pawn F6
-          to: { x: 6, y: 5 },   // F5
-          commentary: 'Black advances F6 pawn to F5!',
+          from: { x: 7, y: 8 },
+          to: { x: 8, y: 7 },
+          commentary: 'With E3 evacuated, Black moves Kurourushi to H7.',
         },
       },
       {
         stepNumber: 7,
-        from: { x: 4, y: 2 }, // Pawn D2
-        to: { x: 4, y: 3 },   // D3
+        from: { x: 3, y: 1 },
+        to: { x: 3, y: 2 },
         actionType: 'move',
-        notation: 'D2 → D3 (Wall Consolidation)',
+        notation: 'Maki C1 → C2 (Connecting the Queenside)',
         tukunaInstruction:
-          'Push D2 pawn to D3.',
+          'Step Skirmisher Maki from C1 to C2 to reinforce your queenside second rank.',
         tacticalBreakdown:
-          'Anchoring D3 secures the central line.',
-        hint: 'Push D2 pawn to D3.',
+          'From C2, Maki connects Hakari and prepares to vault over C3 whenever needed.',
+        hint: 'Move Maki from C1 to C2.',
         vectorArrows: [
-          { from: { x: 4, y: 2 }, to: { x: 4, y: 3 }, color: 'crimson', label: '7', style: 'solid' },
+          { from: { x: 3, y: 1 }, to: { x: 3, y: 2 }, color: 'emerald', label: '7', style: 'solid' },
         ],
         opponentResponse: {
-          from: { x: 3, y: 8 }, // Uraume C8
-          to: { x: 3, y: 7 },   // C7
-          commentary: 'Uraume advances to C7.',
+          from: { x: 7, y: 6 },
+          to: { x: 7, y: 5 },
+          commentary: 'Black advances G6 → G5.',
         },
       },
       {
         stepNumber: 8,
-        from: { x: 6, y: 3 }, // Mechamaru F3
-        to: { x: 6, y: 5 },   // Fire Ranged Strike at F5 enemy pawn! (F4 is empty!)
-        actionType: 'shoot',
-        notation: 'Mechamaru 🏹 F5 (Master Battery Snipe Barrage!)',
+        from: { x: 8, y: 1 },
+        to: { x: 8, y: 2 },
+        actionType: 'move',
+        notation: 'Gojo H1 → H2 (Sovereign Consolidation)',
         tukunaInstruction:
-          'Execute Mechamaru’s 2nd Ranged Strike to eliminate the F5 enemy pawn!',
+          'Step Gojo from H1 to H2 to complete your two-pawn-up mid-game clamp.',
         tacticalBreakdown:
-          'Mechamaru snipes the enemy pawn on F5 across empty F4, dominating the F-column with zero risk!',
-        hint: 'Fire Ranged Strike on F5 enemy pawn with Mechamaru.',
+          'Up two central pawns with every piece protected, White owns a decisive strategic advantage.',
+        hint: 'Step Gojo from H1 to H2.',
         vectorArrows: [
-          { from: { x: 6, y: 3 }, to: { x: 6, y: 5 }, color: 'crimson', label: '8 🏹', style: 'solid' },
+          { from: { x: 8, y: 1 }, to: { x: 8, y: 2 }, color: 'emerald', label: '8', style: 'solid' },
         ],
       },
     ],
@@ -1774,174 +2057,176 @@ export const CULLING_OPENING_LESSONS: CullingOpeningLesson[] = [
 
   {
     id: 'culling_mid_3',
-    title: 'Lesson 11: Ratio Field Lockdown (Nanami & Reggie Control)',
-    subtitle: 'Deploy Nanami’s Ratio Field to neutralize fast Rusher units',
-    namedStrategy: 'Ratio Suppression Web',
+    title: 'Lesson 11: Ratio Field Suffocation Trap',
+    subtitle: 'Clamp an invading 8-point Vanguard with Nanami’s Ratio Field from a double-pawn-defended square',
+    namedStrategy: 'Overtime Ratio Clamp',
     curriculumType: 'midgame',
     tier: 'intermediate',
     playerColor: 'white',
-    initialBoard: createInitialCullingBoard(),
+    initialBoard: createMidLesson3Board(),
     tukunaGreeting:
-      'Fast Rusher pieces like Hakari and Kurourushi rely on multi-square leaps. Warden Nanami’s Ratio Field reduces their movement to 1 square, completely neutralizing their speed.',
+      'Black’s 8-point Vanguard Kenjaku has raided into E5! Never throw an undefended piece at him—instead slide Warden Nanami (4.5pt) onto D4, DOUBLE-DEFENDED by your C3 and E3 pawns! Kenjaku cannot take Nanami without losing 8 points for 4.5, and Ratio Field strips Kenjaku down to 1-square steps!',
     completionMessage:
-      'Rusher neutralized! Nanami’s Ratio Field locked down enemy high-speed threats.',
+      'Masterclass in Ratio Field geometry! You suffocated Black’s 8-point Vanguard, chased him backward with pawns, and calmly sidestepped Black’s C5 counter-poke.',
     patternHighlights: [
-      { x: 4, y: 1 }, { x: 4, y: 3 }, { x: 4, y: 4 }, { x: 4, y: 5 }, { x: 3, y: 5 },
+      { x: 4, y: 4 }, { x: 5, y: 5 }, { x: 6, y: 5 }, { x: 4, y: 3 },
     ],
     steps: [
       {
         stepNumber: 1,
-        from: { x: 4, y: 2 }, // D2 Pawn
-        to: { x: 4, y: 3 },   // D3
+        from: { x: 4, y: 2 },
+        to: { x: 4, y: 4 },
         actionType: 'move',
-        notation: 'D2 → D3 (Clear D-file)',
+        notation: 'Nanami D2 → D4 (Double-Defended Ratio Clamp!)',
         tukunaInstruction:
-          'Push D2 pawn to D3 to clear Nanami’s runway.',
+          'Slide Warden Nanami from D2 to D4! Protected by BOTH C3 and E3 pawns, Nanami projects his Ratio Field onto Kenjaku at E5!',
         tacticalBreakdown:
-          'Opening the D-file allows Warden Nanami to project his Ratio Field into the center.',
-        hint: 'Push D2 pawn to D3.',
+          'Inside Nanami’s Ratio Field, Kenjaku loses his 3-square slide and Black Flash, capped at a single 1-square retreat! And if Kenjaku captured D4, C3×D4 wins an 8-point Vanguard for 4.5!',
+        hint: 'Slide Nanami 2 squares up from D2 to D4.',
         vectorArrows: [
-          { from: { x: 4, y: 2 }, to: { x: 4, y: 3 }, color: 'crimson', label: '1', style: 'solid' },
+          { from: { x: 4, y: 2 }, to: { x: 4, y: 4 }, color: 'emerald', label: '1', style: 'solid' },
+          { from: { x: 4, y: 4 }, to: { x: 5, y: 5 }, color: 'navy', style: 'dashed' },
         ],
         opponentResponse: {
-          from: { x: 6, y: 7 }, // Black Pawn F7
-          to: { x: 6, y: 6 },   // F6
-          commentary: 'Black advances F7 pawn to F6 to clear diagonal for Kurourushi!',
+          from: { x: 5, y: 5 },
+          to: { x: 5, y: 6 },
+          commentary: 'Crippled to 1-square movement by Ratio Field, Kenjaku limps backward from E5 to E6!',
         },
       },
       {
         stepNumber: 2,
-        from: { x: 4, y: 1 }, // Nanami D1
-        to: { x: 4, y: 2 },   // D2
+        from: { x: 6, y: 3 },
+        to: { x: 6, y: 4 },
         actionType: 'move',
-        notation: 'Nanami D1 → D2 (Warden Entry)',
+        notation: 'F3 → F4 (Advancing the Pawn Wave)',
         tukunaInstruction:
-          'Step Nanami forward to D2.',
+          'Push F3 → F4 (supported by E3 and Mechamaru on F2) to prepare a direct pawn chase against Kenjaku on E6!',
         tacticalBreakdown:
-          'Nanami on D2 establishes his initial 8-square Ratio Field.',
-        hint: 'Move Nanami to D2.',
+          'Note that Yuji on G2 still defends your G4 pawn vertically while F4 prepares F4 → F5.',
+        hint: 'Advance the F3 pawn to F4.',
         vectorArrows: [
-          { from: { x: 4, y: 1 }, to: { x: 4, y: 2 }, color: 'crimson', label: '2', style: 'solid' },
+          { from: { x: 6, y: 3 }, to: { x: 6, y: 4 }, color: 'emerald', label: '2', style: 'solid' },
         ],
         opponentResponse: {
-          from: { x: 7, y: 8 }, // Kurourushi G8
-          to: { x: 5, y: 6 },   // E6 (Diagonal slide 2 squares)
-          commentary: 'Kurourushi slides 2 squares diagonally to E6!',
+          from: { x: 4, y: 7 },
+          to: { x: 4, y: 6 },
+          commentary: 'Black plays D7 → D6 to cover E5.',
         },
       },
       {
         stepNumber: 3,
-        from: { x: 4, y: 3 }, // D3 Pawn
-        to: { x: 4, y: 4 },   // D4
+        from: { x: 6, y: 4 },
+        to: { x: 6, y: 5 },
         actionType: 'move',
-        notation: 'D3 → D4 (Central Clearance Push)',
+        notation: 'F4 → F5 (Harassing the Enemy Vanguard!)',
         tukunaInstruction:
-          'Push D3 pawn to D4 to clear the D3 square for Warden Nanami.',
+          'Push F4 → F5 (protected by your G4 pawn), directly attacking 8-point Kenjaku on E6!',
         tacticalBreakdown:
-          'Clearing D3 allows Nanami to slide up the open D-column.',
-        hint: 'Push D3 pawn to D4.',
+          'Using defended 1-point pawns to hound an 8-point Vanguard wins massive space and tempo for free.',
+        hint: 'Push F4 to F5 to attack Kenjaku on E6.',
         vectorArrows: [
-          { from: { x: 4, y: 3 }, to: { x: 4, y: 4 }, color: 'crimson', label: '3', style: 'solid' },
+          { from: { x: 6, y: 4 }, to: { x: 6, y: 5 }, color: 'emerald', label: '3', style: 'solid' },
+          { from: { x: 6, y: 5 }, to: { x: 5, y: 6 }, color: 'navy', style: 'dashed' },
         ],
         opponentResponse: {
-          from: { x: 5, y: 6 }, // Kurourushi E6
-          to: { x: 5, y: 5 },   // E5
-          commentary: 'Kurourushi steps to E5.',
+          from: { x: 5, y: 6 },
+          to: { x: 5, y: 7 },
+          commentary: 'Forced back again! Kenjaku retreats onto E7 behind Black’s D6 pawn.',
         },
       },
       {
         stepNumber: 4,
-        from: { x: 4, y: 2 }, // Nanami D2
-        to: { x: 4, y: 3 },   // D3
+        from: { x: 7, y: 2 },
+        to: { x: 7, y: 3 },
         actionType: 'move',
-        notation: 'Nanami D2 → D3 (Warden Advance)',
+        notation: 'Yuji G2 → G3 (Reinforcing the Kingside Wedge)',
         tukunaInstruction:
-          'Step Nanami forward to D3.',
+          'Step Yuji from G2 to G3 directly behind your G4 pawn.',
         tacticalBreakdown:
-          'Nanami on D3 projects his 8-square Ratio Field towards E5.',
-        hint: 'Move Nanami to D3.',
+          'Yuji on G3 overprotects F4, G4, and H4 while staying completely shielded.',
+        hint: 'Step Yuji forward from G2 to G3.',
         vectorArrows: [
-          { from: { x: 4, y: 2 }, to: { x: 4, y: 3 }, color: 'crimson', label: '4', style: 'solid' },
+          { from: { x: 7, y: 2 }, to: { x: 7, y: 3 }, color: 'emerald', label: '4', style: 'solid' },
         ],
         opponentResponse: {
-          from: { x: 3, y: 7 }, // Black Pawn C7
-          to: { x: 3, y: 6 },   // C6
-          commentary: 'Black pushes C7 pawn to C6.',
+          from: { x: 7, y: 7 },
+          to: { x: 7, y: 6 },
+          commentary: 'Black pushes G7 → G6 to contest your F5 spearhead.',
         },
       },
       {
         stepNumber: 5,
-        from: { x: 4, y: 4 }, // D4 Pawn
-        to: { x: 4, y: 5 },   // D5
+        from: { x: 6, y: 2 },
+        to: { x: 6, y: 3 },
         actionType: 'move',
-        notation: 'D4 → D5 (Pawn Runway Advance)',
+        notation: 'Mechamaru F2 → F3 (Supporting the Spearhead)',
         tukunaInstruction:
-          'Push D4 pawn forward to D5 to prepare clearing the D-file.',
+          'Step Mechamaru from F2 up to F3! Now Mechamaru supports E4 and aims Ranged Strikes up the F-column.',
         tacticalBreakdown:
-          'Advancing D4 pawn to D5 opens up the D4 square for Nanami.',
-        hint: 'Push D4 pawn to D5.',
+          'Your heavy pieces march forward step-by-step behind the pawn wall, never ahead of it.',
+        hint: 'Move Mechamaru from F2 to F3.',
         vectorArrows: [
-          { from: { x: 4, y: 4 }, to: { x: 4, y: 5 }, color: 'crimson', label: '5', style: 'solid' },
+          { from: { x: 6, y: 2 }, to: { x: 6, y: 3 }, color: 'emerald', label: '5', style: 'solid' },
         ],
         opponentResponse: {
-          from: { x: 2, y: 7 }, // Black Pawn B7
-          to: { x: 2, y: 6 },   // B6
-          commentary: 'Black advances B7 pawn to B6.',
+          from: { x: 7, y: 8 },
+          to: { x: 8, y: 7 },
+          commentary: 'Black develops Kurourushi to H7.',
         },
       },
       {
         stepNumber: 6,
-        from: { x: 4, y: 5 }, // D5 Pawn
-        to: { x: 4, y: 6 },   // D6
+        from: { x: 5, y: 3 },
+        to: { x: 5, y: 4 },
         actionType: 'move',
-        notation: 'D5 → D6 (Full File Opening)',
+        notation: 'E3 → E4 (Rolling Central Wedge)',
         tukunaInstruction:
-          'Push D5 pawn forward to D6 to clear D5 for Nanami.',
+          'Advance E3 → E4 (protected by Nanami on D4 and Mechamaru on F3)!',
         tacticalBreakdown:
-          'Clearing D5 opens the D-file straight to D5, adjacent to Kurourushi on E5.',
-        hint: 'Push D5 pawn to D6.',
+          'Your E4–F5–G4 pawn wedge cramps Black’s entire half of the board.',
+        hint: 'Push the E3 pawn to E4.',
         vectorArrows: [
-          { from: { x: 4, y: 5 }, to: { x: 4, y: 6 }, color: 'crimson', label: '6', style: 'solid' },
+          { from: { x: 5, y: 3 }, to: { x: 5, y: 4 }, color: 'emerald', label: '6', style: 'solid' },
         ],
         opponentResponse: {
-          from: { x: 2, y: 8 }, // Kenjaku B8
-          to: { x: 2, y: 7 },   // B7
-          commentary: 'Kenjaku steps onto B7.',
+          from: { x: 3, y: 6 },
+          to: { x: 3, y: 5 },
+          commentary: 'Watch out! Black plays a smart countermove C6 → C5, attacking Warden Nanami on D4 with a 1-point pawn!',
         },
       },
       {
         stepNumber: 7,
-        from: { x: 4, y: 3 }, // Nanami D3
-        to: { x: 4, y: 5 },   // D5
+        from: { x: 4, y: 4 },
+        to: { x: 4, y: 3 },
         actionType: 'move',
-        notation: 'Nanami D3 → D5 (Ratio Clamping)',
+        notation: 'Nanami D4 → D3 (Principled Retreat from Pawn Attack!)',
         tukunaInstruction:
-          'Slide Nanami 2 squares to D5 directly adjacent to Kurourushi on E5!',
+          'Respect Black’s C5 pawn threat! Immediately step Nanami back from D4 to D3 so Black’s 1-point pawn cannot capture your 4.5-point Warden!',
         tacticalBreakdown:
-          'Nanami on D5 restricts Kurourushi on E5 to 1-step maximum movement under Ratio Field suppression.',
-        hint: 'Move Nanami to D5.',
+          'Good players never leave a piece in front of an enemy pawn. On D3, Nanami stays completely safe while still guarding D4 and E3.',
+        hint: 'Retreat Nanami one square from D4 to D3.',
         vectorArrows: [
-          { from: { x: 4, y: 3 }, to: { x: 4, y: 5 }, color: 'crimson', label: '7', style: 'solid' },
+          { from: { x: 4, y: 4 }, to: { x: 4, y: 3 }, color: 'emerald', label: '7', style: 'solid' },
         ],
         opponentResponse: {
-          from: { x: 3, y: 8 }, // Uraume C8
-          to: { x: 3, y: 7 },   // C7
-          commentary: 'Uraume steps to C7.',
+          from: { x: 3, y: 8 },
+          to: { x: 3, y: 7 },
+          commentary: 'With Nanami safe, Black steps Artillery Uraume from C8 to C7.',
         },
       },
       {
         stepNumber: 8,
-        from: { x: 4, y: 5 }, // Nanami D5
-        to: { x: 5, y: 5 },   // E5 (Capture Kurourushi!)
+        from: { x: 3, y: 3 },
+        to: { x: 3, y: 4 },
         actionType: 'move',
-        notation: 'Nanami D5 × E5 (Ratio Suppression Execution!)',
+        notation: 'C3 → C4 (Locking the Queenside)',
         tukunaInstruction:
-          'Capture Kurourushi on E5 with Nanami!',
+          'Push C3 → C4 to freeze Black’s C5 pawn in its tracks and lock in your massive space advantage!',
         tacticalBreakdown:
-          'Nanami executes Kurourushi on E5 with 7:3 Ratio precision, eliminating Black’s fast Rusher threat!',
-        hint: 'Capture Kurourushi on E5 with Nanami.',
+          'From C4–E4–F5–G4, White controls four ranks of territory with zero hanging pieces.',
+        hint: 'Advance the C3 pawn to C4.',
         vectorArrows: [
-          { from: { x: 4, y: 5 }, to: { x: 5, y: 5 }, color: 'crimson', label: '8 ⚔️', style: 'solid' },
+          { from: { x: 3, y: 3 }, to: { x: 3, y: 4 }, color: 'emerald', label: '8', style: 'solid' },
         ],
       },
     ],
@@ -1949,175 +2234,175 @@ export const CULLING_OPENING_LESSONS: CullingOpeningLesson[] = [
 
   {
     id: 'culling_mid_4',
-    title: 'Lesson 12: Bulwark Shell Absorption & Counter-Attack',
-    subtitle: 'Tank an enemy strike with Panda’s Bulwark Shell and execute an immediate counter-attack',
-    namedStrategy: 'Bulwark Shell Counter',
+    title: 'Lesson 12: Defended Bulwark Shell Bait & Punish',
+    subtitle: 'Use Panda’s intact Bulwark Shell to absorb an enemy strike and win the stranded attacker with a pawn',
+    namedStrategy: 'Gorilla Core Counter-Bait',
     curriculumType: 'midgame',
     tier: 'advanced',
     playerColor: 'white',
-    initialBoard: createInitialCullingBoard(),
+    initialBoard: createMidLesson4Board(),
     tukunaGreeting:
-      'Panda’s Bulwark Shell absorbs the first capture attempt completely. Use Panda as bait to lure enemy heavy hitters, then counter-strike!',
+      'Bulwark Panda starts with an intact Shell: the first enemy non-pawn strike cracks the Shell into Gorilla Mode WITHOUT capturing Panda, leaving the attacker stuck on its origin square! Watch how we trap Black’s invading Naoya on F4!',
     completionMessage:
-      'Bulwark tanking successful! Panda absorbed the strike and cleared the attacker.',
+      'Brilliant Bulwark mechanics! Panda’s Shell absorbed Naoya’s desperate strike, leaving Naoya stranded on F4 for your E3 pawn to capture cleanly—and then you wisely withdrew Gorilla-Mode Panda to safety!',
     patternHighlights: [
-      { x: 5, y: 1 }, { x: 6, y: 3 }, { x: 5, y: 5 }, { x: 6, y: 6 },
+      { x: 6, y: 3 }, { x: 5, y: 3 }, { x: 6, y: 4 }, { x: 4, y: 2 },
     ],
     steps: [
       {
         stepNumber: 1,
-        from: { x: 5, y: 1 }, // Panda E1
-        to: { x: 6, y: 3 },   // F3 (Knight L-jump)
+        from: { x: 5, y: 1 },
+        to: { x: 6, y: 3 },
         actionType: 'move',
-        notation: 'Panda E1 → F3 (Bulwark Baiting)',
+        notation: 'Panda E1 → F3 (Intact-Shell Blockade!)',
         tukunaInstruction:
-          'Jump Panda from E1 to F3.',
+          'Leap Bulwark Panda from E1 onto F3 directly in front of Black’s invading Skirmisher Naoya on F4!',
         tacticalBreakdown:
-          'Panda on F3 offers his intact Bulwark Shell as bait to entice Black’s forward units.',
-        hint: 'Jump Panda to F3.',
+          'Because Panda’s Shell is intact (and F3 is backed by E2, Mechamaru F1, and Yuji G2), Naoya cannot capture Panda on this turn!',
+        hint: 'Jump Panda from E1 to F3.',
         vectorArrows: [
-          { from: { x: 5, y: 1 }, to: { x: 6, y: 3 }, color: 'crimson', label: '1', style: 'solid' },
+          { from: { x: 5, y: 1 }, to: { x: 6, y: 3 }, color: 'emerald', label: '1', style: 'solid' },
         ],
         opponentResponse: {
-          from: { x: 6, y: 7 }, // Black Pawn F7
-          to: { x: 6, y: 6 },   // F6
-          commentary: 'Black advances F7 pawn to F6 to challenge Panda.',
+          from: { x: 7, y: 8 },
+          to: { x: 8, y: 7 },
+          commentary: 'Black slides Kurourushi to H7, keeping Naoya on F4.',
         },
       },
       {
         stepNumber: 2,
-        from: { x: 4, y: 2 }, // Pawn D2
-        to: { x: 4, y: 3 },   // D3
+        from: { x: 5, y: 2 },
+        to: { x: 5, y: 3 },
         actionType: 'move',
-        notation: 'D2 → D3 (Fortress Reinforcement)',
+        notation: 'E2 → E3 (Pawn Attack on Stranded Naoya!)',
         tukunaInstruction:
-          'Push D2 pawn to D3.',
+          'Push E2 → E3 to attack Naoya on F4 with a 1-point pawn!',
         tacticalBreakdown:
-          'Securing D3 provides a solid base supporting Panda.',
-        hint: 'Push D2 pawn to D3.',
+          'Cornered on F4, Naoya tries to smash through Panda on F3—falling straight into our Shell trap!',
+        hint: 'Advance the E2 pawn to E3 to attack F4.',
         vectorArrows: [
-          { from: { x: 4, y: 2 }, to: { x: 4, y: 3 }, color: 'crimson', label: '2', style: 'solid' },
+          { from: { x: 5, y: 2 }, to: { x: 5, y: 3 }, color: 'emerald', label: '2', style: 'solid' },
+          { from: { x: 5, y: 3 }, to: { x: 6, y: 4 }, color: 'navy', style: 'dashed' },
         ],
         opponentResponse: {
-          from: { x: 6, y: 6 }, // Black Pawn F6
-          to: { x: 6, y: 5 },   // F5
-          commentary: 'Black advances F6 pawn to F5!',
+          from: { x: 6, y: 4 },
+          to: { x: 6, y: 3 },
+          commentary: 'CLANG! Naoya strikes Panda on F3, cracking Panda’s Shell into Gorilla Mode—but Naoya bounces back and stays stuck on F4!',
         },
       },
       {
         stepNumber: 3,
-        from: { x: 6, y: 3 }, // Panda F3
-        to: { x: 5, y: 5 },   // E5 (Jump in front of F5 pawn)
+        from: { x: 5, y: 3 },
+        to: { x: 6, y: 4 },
         actionType: 'move',
-        notation: 'Panda F3 → E5 (Bulwark Blockade)',
+        notation: 'E3 × F4 (Winning the Rebounded Skirmisher!)',
         tukunaInstruction:
-          'Jump Panda to E5 directly in front of the advanced enemy pawn.',
+          'Capture Black’s stranded Skirmisher Naoya on F4 with your E3 pawn (E3 × F4)!',
         tacticalBreakdown:
-          'Panda on E5 forces Black to attack his intact Bulwark Shell.',
-        hint: 'Jump Panda to E5.',
+          'Trading Panda’s replaceable Shell to win a full 3.5-point enemy Skirmisher with a 1-point pawn is massive profit.',
+        hint: 'Capture Naoya on F4 with your E3 pawn.',
         vectorArrows: [
-          { from: { x: 6, y: 3 }, to: { x: 5, y: 5 }, color: 'crimson', label: '3', style: 'solid' },
+          { from: { x: 5, y: 3 }, to: { x: 6, y: 4 }, color: 'emerald', label: '3', style: 'solid' },
         ],
         opponentResponse: {
-          from: { x: 6, y: 8 }, // Naoya F8
-          to: { x: 6, y: 6 },   // F6 (Skirmisher leap)
-          commentary: 'Naoya leaps to F6 threatening Panda!',
+          from: { x: 5, y: 6 },
+          to: { x: 5, y: 5 },
+          commentary: 'Black lashes out with E6 → E5, challenging your F4 pawn!',
         },
       },
       {
         stepNumber: 4,
-        from: { x: 5, y: 2 }, // Pawn E2
-        to: { x: 5, y: 3 },   // E3
+        from: { x: 6, y: 4 },
+        to: { x: 5, y: 5 },
         actionType: 'move',
-        notation: 'E2 → E3 (Base Support)',
+        notation: 'F4 × E5 (Central Pawn Capture)',
         tukunaInstruction:
-          'Push E2 pawn to E3.',
+          'Capture Black’s E5 pawn with your F4 pawn (F4 × E5)—do NOT jump broken-Shell Panda into D6’s pawn fire!',
         tacticalBreakdown:
-          'E3 anchors the central pawn wedge behind Panda.',
-        hint: 'Push E2 pawn to E3.',
+          'Crucial detail: once Panda’s Shell is broken (Gorilla Mode), Panda can be captured normally! Never jump a broken-Shell Bulwark into a pawn-guarded square.',
+        hint: 'Capture on E5 with your F4 pawn.',
         vectorArrows: [
-          { from: { x: 5, y: 2 }, to: { x: 5, y: 3 }, color: 'crimson', label: '4', style: 'solid' },
+          { from: { x: 6, y: 4 }, to: { x: 5, y: 5 }, color: 'emerald', label: '4', style: 'solid' },
         ],
         opponentResponse: {
-          from: { x: 6, y: 6 }, // Naoya F6
-          to: { x: 5, y: 5 },   // Attack Panda on E5! (Shell absorbs capture!)
-          commentary: 'Naoya strikes Panda on E5! Panda’s Bulwark Shell completely absorbs the strike!',
+          from: { x: 4, y: 6 },
+          to: { x: 5, y: 5 },
+          commentary: 'Black recaptures D6 × E5.',
         },
       },
       {
         stepNumber: 5,
-        from: { x: 5, y: 5 }, // Panda on E5 (Gorilla core)
-        to: { x: 6, y: 7 },   // F7 (Knight L-jump: 5+1=6, 5+2=7)
+        from: { x: 6, y: 3 },
+        to: { x: 4, y: 2 },
         actionType: 'move',
-        notation: 'Panda E5 → F7 (Gorilla Counter-Jump)',
+        notation: 'Panda F3 → D2 (Rotating Gorilla-Mode Panda to Safety)',
         tukunaInstruction:
-          'With his Gorilla Core revealed, jump Panda to F7 behind enemy lines!',
+          'Hop Gorilla-Mode Panda from F3 back to D2 behind your D3 pawn, simultaneously opening the F-file for Mechamaru!',
         tacticalBreakdown:
-          'Panda’s Gorilla form retains full mobility, penetrating deep into Black’s home rank.',
-        hint: 'Jump Panda to F7.',
+          'Rotating a damaged Bulwark behind your pawn chain preserves its full 3.5-point Knight value for the endgame.',
+        hint: 'Jump Panda from F3 to D2.',
         vectorArrows: [
-          { from: { x: 5, y: 5 }, to: { x: 6, y: 7 }, color: 'crimson', label: '5 🦍', style: 'solid' },
+          { from: { x: 6, y: 3 }, to: { x: 4, y: 2 }, color: 'emerald', label: '5', style: 'solid' },
         ],
         opponentResponse: {
-          from: { x: 5, y: 7 }, // Black Pawn E7
-          to: { x: 5, y: 6 },   // E6
-          commentary: 'Black advances E7 pawn to E6.',
+          from: { x: 5, y: 8 },
+          to: { x: 5, y: 6 },
+          commentary: 'Black slides Warden Reggie from E8 to E6.',
         },
       },
       {
         stepNumber: 6,
-        from: { x: 6, y: 2 }, // Pawn F2
-        to: { x: 6, y: 3 },   // F3
+        from: { x: 6, y: 1 },
+        to: { x: 6, y: 2 },
         actionType: 'move',
-        notation: 'F2 → F3 (Clear Yuji Runway)',
+        notation: 'Mechamaru F1 → F2 (Activating Artillery)',
         tukunaInstruction:
-          'Push F2 pawn to F3 to clear the F2 square for Yuji.',
+          'Step Artillery Mechamaru from F1 to F2 along the newly cleared F-column.',
         tacticalBreakdown:
-          'Clearing F2 allows Vanguard Yuji to step into the F-column.',
-        hint: 'Push F2 pawn to F3.',
+          'Mechamaru takes over the F-column behind Yuji’s protection.',
+        hint: 'Step Mechamaru from F1 up to F2.',
         vectorArrows: [
-          { from: { x: 6, y: 2 }, to: { x: 6, y: 3 }, color: 'crimson', label: '6', style: 'solid' },
+          { from: { x: 6, y: 1 }, to: { x: 6, y: 2 }, color: 'emerald', label: '6', style: 'solid' },
         ],
         opponentResponse: {
-          from: { x: 3, y: 7 }, // Black Pawn C7
-          to: { x: 3, y: 6 },   // C6
-          commentary: 'Black advances C7 pawn to C6.',
+          from: { x: 2, y: 8 },
+          to: { x: 2, y: 7 },
+          commentary: 'Black steps Kenjaku to B7.',
         },
       },
       {
         stepNumber: 7,
-        from: { x: 4, y: 3 }, // Pawn D3
-        to: { x: 4, y: 4 },   // D4
+        from: { x: 6, y: 2 },
+        to: { x: 6, y: 3 },
         actionType: 'move',
-        notation: 'D3 → D4 (Ratio Runway Push)',
+        notation: 'Mechamaru F2 → F3 (Guarded Third-Rank Cannon)',
         tukunaInstruction:
-          'Push D3 pawn to D4 to clear the D3 square for Warden Nanami.',
+          'Advance Mechamaru to F3 (guarded by Yuji on G2), locking down D5 via diagonal Ranged Strike!',
         tacticalBreakdown:
-          'Clearing D3 allows Nanami to project his Ratio Field into the central cross.',
-        hint: 'Push D3 pawn to D4.',
+          'Black’s E5 pawn cannot advance to E4 without weakening D5, and Mechamaru stays 100% protected.',
+        hint: 'Step Mechamaru from F2 to F3.',
         vectorArrows: [
-          { from: { x: 4, y: 3 }, to: { x: 4, y: 4 }, color: 'crimson', label: '7', style: 'solid' },
+          { from: { x: 6, y: 2 }, to: { x: 6, y: 3 }, color: 'emerald', label: '7', style: 'solid' },
         ],
         opponentResponse: {
-          from: { x: 2, y: 7 }, // Black Pawn B7
-          to: { x: 2, y: 6 },   // B6
-          commentary: 'Black advances B7 pawn to B6.',
+          from: { x: 4, y: 8 },
+          to: { x: 6, y: 7 },
+          commentary: 'Black develops Yorozu to F7.',
         },
-
       },
       {
         stepNumber: 8,
-        from: { x: 4, y: 1 }, // Nanami D1
-        to: { x: 4, y: 3 },   // D3
+        from: { x: 8, y: 1 },
+        to: { x: 8, y: 2 },
         actionType: 'move',
-        notation: 'Nanami D1 → D3 (Ratio Field Clamp)',
+        notation: 'Gojo H1 → H2 (Fortress Complete)',
         tukunaInstruction:
-          'Slide Nanami to D3 onto the cleared central square!',
+          'Step Gojo from H1 to H2 to secure your winning material lead.',
         tacticalBreakdown:
-          'Nanami on D3 locks Naoya in his 8-square Ratio Field alongside Panda and Yuji. Counter-attack complete!',
-        hint: 'Move Nanami to D3.',
+          'A clean piece ahead with zero weaknesses—textbook Bulwark bait-and-punish.',
+        hint: 'Move Gojo from H1 to H2.',
         vectorArrows: [
-          { from: { x: 4, y: 1 }, to: { x: 4, y: 3 }, color: 'crimson', label: '8 ⚔️', style: 'solid' },
+          { from: { x: 8, y: 1 }, to: { x: 8, y: 2 }, color: 'emerald', label: '8', style: 'solid' },
         ],
       },
     ],
@@ -2125,170 +2410,170 @@ export const CULLING_OPENING_LESSONS: CullingOpeningLesson[] = [
 
   {
     id: 'culling_mid_5',
-    title: 'Lesson 13: Rusher Jackpot Multi-Step Combo',
-    subtitle: 'Capture a pawn with Hakari to trigger Jackpot and fork enemy high-value pieces',
-    namedStrategy: 'Jackpot Multi-Fork Combo',
+    title: 'Lesson 13: Rusher Jackpot Hit-and-Run vs. Warden',
+    subtitle: 'Assassinate a double-pawn-defended 4.5-point Warden and vanish with Jackpot Safe Step',
+    namedStrategy: 'Fever Pitch Warden Assassination',
     curriculumType: 'midgame',
     tier: 'advanced',
     playerColor: 'white',
-    initialBoard: createInitialCullingBoard(),
+    initialBoard: createMidLesson5Board(),
     tukunaGreeting:
-      'Hakari’s Jackpot turns single captures into game-changing multi-step tactical combinations. Master the capture-fork sequence!',
+      'Look at D5: Black’s 4.5-point Warden Reggie is double-defended by C6 and E6 pawns! No normal piece can touch Reggie without getting recaptured by a pawn—except Rusher Hakari! Line up B3, strike D5, and vanish via Jackpot!',
     completionMessage:
-      'Jackpot fork executed! Hakari trapped Black’s high-value pieces in a single move turn.',
+      'Spectacular hit-and-run! You assassinated Black’s 4.5-point central Warden right out from between two defending pawns, escaped with Jackpot, and sidestepped Black’s E5 counter-thrust!',
     patternHighlights: [
-      { x: 2, y: 1 }, { x: 2, y: 2 }, { x: 4, y: 4 }, { x: 5, y: 5 }, { x: 6, y: 6 }, { x: 7, y: 7 },
+      { x: 2, y: 3 }, { x: 4, y: 5 }, { x: 4, y: 4 }, { x: 4, y: 3 },
     ],
     steps: [
       {
         stepNumber: 1,
-        from: { x: 2, y: 2 }, // B2 Pawn
-        to: { x: 2, y: 3 },   // B3
+        from: { x: 2, y: 2 },
+        to: { x: 2, y: 3 },
         actionType: 'move',
-        notation: 'B2 → B3 (Runway Open)',
+        notation: 'Hakari B2 → B3 (Aligning the B3–C4–D5 Diagonal!)',
         tukunaInstruction:
-          'Push B2 pawn to B3.',
+          'Step Rusher Hakari orthogonally from B2 to B3, aligning a 2-square diagonal strike across empty C4 onto Warden Reggie at D5!',
         tacticalBreakdown:
-          'Clearing B2 opens Hakari’s diagonal surge vector.',
-        hint: 'Push B2 pawn to B3.',
+          ' Note: B3 sits outside Reggie’s adjacent Ratio Field, preserving Hakari’s full 2-square diagonal slide!',
+        hint: 'Step Hakari forward from B2 to B3.',
         vectorArrows: [
-          { from: { x: 2, y: 2 }, to: { x: 2, y: 3 }, color: 'crimson', label: '1', style: 'solid' },
+          { from: { x: 2, y: 2 }, to: { x: 2, y: 3 }, color: 'emerald', label: '1', style: 'solid' },
+          { from: { x: 2, y: 3 }, to: { x: 4, y: 5 }, color: 'navy', style: 'dashed' },
         ],
         opponentResponse: {
-          from: { x: 6, y: 7 }, // Black Pawn F7
-          to: { x: 6, y: 6 },   // F6
-          commentary: 'Black advances F7 pawn to F6.',
+          from: { x: 7, y: 8 },
+          to: { x: 8, y: 7 },
+          commentary: 'Black slides Kurourushi to H7, trusting C6 and E6 pawns to protect Reggie on D5!',
         },
       },
       {
         stepNumber: 2,
-        from: { x: 2, y: 1 }, // Hakari B1
-        to: { x: 2, y: 2 },   // B2
+        from: { x: 2, y: 3 },
+        to: { x: 4, y: 5 },
         actionType: 'move',
-        notation: 'Hakari B1 → B2 (Mobilization)',
+        notation: 'Hakari B3 × D5 (Assassinating the Warden — JACKPOT!)',
         tukunaInstruction:
-          'Advance Hakari to B2.',
+          'Slide Hakari 2 squares diagonally B3 × D5 to eliminate Black’s 4.5-point Warden Reggie and trigger JACKPOT!',
         tacticalBreakdown:
-          'Hakari on B2 prepares his diagonal thrust.',
-        hint: 'Move Hakari to B2.',
+          'Capturing triggers Jackpot immediately—giving Hakari a free non-capturing 1-square step to an unattacked square BEFORE C6 or E6 can recapture!',
+        hint: 'Capture Warden Reggie on D5 with Hakari from B3.',
         vectorArrows: [
-          { from: { x: 2, y: 1 }, to: { x: 2, y: 2 }, color: 'crimson', label: '2', style: 'solid' },
+          { from: { x: 2, y: 3 }, to: { x: 4, y: 5 }, color: 'emerald', label: '2', style: 'solid' },
         ],
-        opponentResponse: {
-          from: { x: 4, y: 7 }, // Black Pawn D7
-          to: { x: 4, y: 6 },   // D6
-          commentary: 'Black advances D7 pawn to D6.',
-        },
       },
       {
         stepNumber: 3,
-        from: { x: 2, y: 2 }, // Hakari B2
-        to: { x: 4, y: 4 },   // D4 (Slide 2 diagonally!)
+        from: { x: 4, y: 5 },
+        to: { x: 4, y: 4 },
         actionType: 'move',
-        notation: 'Hakari B2 → D4 (Diagonal Incursion)',
+        notation: 'Hakari D5 → D4 (Jackpot Safe Step Escape!)',
         tukunaInstruction:
-          'Slide Hakari 2 squares diagonally to D4.',
+          'JACKPOT BONUS! Step Hakari orthogonally down from D5 to unattacked D4—slipping straight out of C6 and E6’s pawn jaws!',
         tacticalBreakdown:
-          'Hakari on D4 threatens both E6 and C6 pawns.',
-        hint: 'Slide Hakari to D4.',
+          'A clean +4.5-point Warden won for zero material lost!',
+        hint: 'Step Hakari from D5 down to D4.',
         vectorArrows: [
-          { from: { x: 2, y: 2 }, to: { x: 4, y: 4 }, color: 'crimson', label: '3', style: 'solid' },
+          { from: { x: 4, y: 5 }, to: { x: 4, y: 4 }, color: 'emerald', label: '3', style: 'solid' },
         ],
         opponentResponse: {
-          from: { x: 2, y: 7 }, // Black Pawn B7
-          to: { x: 2, y: 6 },   // B6
-          commentary: 'Black advances B7 pawn to B6.',
+          from: { x: 5, y: 6 },
+          to: { x: 5, y: 5 },
+          commentary: 'Furious, Black pushes E6 → E5 to attack Hakari on D4 with a pawn!',
         },
       },
       {
         stepNumber: 4,
-        from: { x: 3, y: 2 }, // Pawn C2
-        to: { x: 3, y: 3 },   // C3
+        from: { x: 4, y: 4 },
+        to: { x: 4, y: 3 },
         actionType: 'move',
-        notation: 'C2 → C3 (Flank Base)',
+        notation: 'Hakari D4 → D3 (Stepping Out of Pawn Range!)',
         tukunaInstruction:
-          'Push C2 pawn to C3.',
+          'Never leave Hakari in front of Black’s E5 pawn! Step Hakari calmly down from D4 to D3 behind your C3 and E3 pawns.',
         tacticalBreakdown:
-          'Securing C3 anchors Hakari’s rear.',
-        hint: 'Push C2 pawn to C3.',
+          'Protecting your newly won material lead with disciplined retreats stamps out all opponent counterplay.',
+        hint: 'Step Hakari down from D4 to D3.',
         vectorArrows: [
-          { from: { x: 3, y: 2 }, to: { x: 3, y: 3 }, color: 'crimson', label: '4', style: 'solid' },
+          { from: { x: 4, y: 4 }, to: { x: 4, y: 3 }, color: 'emerald', label: '4', style: 'solid' },
         ],
         opponentResponse: {
-          from: { x: 3, y: 7 }, // Black Pawn C7
-          to: { x: 3, y: 6 },   // C6
-          commentary: 'Black advances C7 pawn to C6.',
+          from: { x: 6, y: 8 },
+          to: { x: 6, y: 7 },
+          commentary: 'Black steps Naoya to F7.',
         },
       },
       {
         stepNumber: 5,
-        from: { x: 4, y: 4 }, // Hakari D4
-        to: { x: 5, y: 5 },   // E5
+        from: { x: 3, y: 1 },
+        to: { x: 3, y: 2 },
         actionType: 'move',
-        notation: 'Hakari D4 → E5 (Target Lock)',
+        notation: 'Maki C1 → C2 (Queenside Mobilization)',
         tukunaInstruction:
-          'Advance Hakari diagonally to E5.',
+          'Step Skirmisher Maki from C1 to C2, preparing an orthogonal vault onto C4.',
         tacticalBreakdown:
-          'Hakari on E5 locks onto the F6 pawn.',
-        hint: 'Move Hakari to E5.',
+          'Bring your remaining reserves into active play.',
+        hint: 'Move Maki from C1 to C2.',
         vectorArrows: [
-          { from: { x: 4, y: 4 }, to: { x: 5, y: 5 }, color: 'crimson', label: '5', style: 'solid' },
+          { from: { x: 3, y: 1 }, to: { x: 3, y: 2 }, color: 'emerald', label: '5', style: 'solid' },
         ],
         opponentResponse: {
-          from: { x: 3, y: 8 }, // Uraume C8
-          to: { x: 3, y: 7 },   // C7
-          commentary: 'Uraume advances to C7.',
+          from: { x: 3, y: 8 },
+          to: { x: 3, y: 7 },
+          commentary: 'Black steps Artillery Uraume from C8 to C7.',
         },
       },
       {
         stepNumber: 6,
-        from: { x: 4, y: 2 }, // Pawn D2
-        to: { x: 4, y: 3 },   // D3
+        from: { x: 3, y: 2 },
+        to: { x: 3, y: 4 },
         actionType: 'move',
-        notation: 'D2 → D3 (Pawn Wall)',
+        notation: 'Maki C2 → C4 (Central Skirmisher Outpost)',
         tukunaInstruction:
-          'Push D2 pawn to D3.',
+          'Hop Maki 2 squares orthogonally over your C3 pawn onto C4!',
         tacticalBreakdown:
-          'D3 anchors E4 and completes the central pawn wedge.',
-        hint: 'Push D2 pawn to D3.',
+          'Note that Black’s E5 pawn attacks D4 and F4—not C4! Maki stands completely safe on C4.',
+        hint: 'Hop Maki from C2 over C3 onto C4.',
         vectorArrows: [
-          { from: { x: 4, y: 2 }, to: { x: 4, y: 3 }, color: 'crimson', label: '6', style: 'solid' },
+          { from: { x: 3, y: 2 }, to: { x: 3, y: 4 }, color: 'emerald', label: '6', style: 'solid' },
         ],
         opponentResponse: {
-          from: { x: 5, y: 7 }, // Black Pawn E7
-          to: { x: 5, y: 6 },   // E6
-          commentary: 'Black pushes E7 pawn to E6.',
+          from: { x: 3, y: 6 },
+          to: { x: 3, y: 5 },
+          commentary: 'Black pushes C6 → C5 in front of Maki.',
         },
-
       },
       {
         stepNumber: 7,
-        from: { x: 5, y: 5 }, // Hakari E5
-        to: { x: 6, y: 6 },   // Capture F6 pawn!
+        from: { x: 5, y: 3 },
+        to: { x: 5, y: 4 },
         actionType: 'move',
-        notation: 'Hakari E5 × F6 (Jackpot Capture Combo Trigger!)',
+        notation: 'E3 → E4 (Freezing Black’s Center)',
         tukunaInstruction:
-          'Capture the F6 pawn with Hakari on F6!',
+          'Push E3 → E4 (protected by F3 and Maki on C4? Guarded by F3 pawn and Maki steps 1 to D4, while E4 blocks E5 cold)!',
         tacticalBreakdown:
-          'Hakari captures F6! Jackpot triggers instantly, earning 1 extra step.',
-        hint: 'Capture F6 pawn with Hakari.',
+          'E4 locks Black’s E5 pawn permanently in place, backed by your F3 pawn.',
+        hint: 'Advance the E3 pawn to E4.',
         vectorArrows: [
-          { from: { x: 5, y: 5 }, to: { x: 6, y: 6 }, color: 'crimson', label: '7 🎰', style: 'solid' },
+          { from: { x: 5, y: 3 }, to: { x: 5, y: 4 }, color: 'emerald', label: '7', style: 'solid' },
         ],
+        opponentResponse: {
+          from: { x: 8, y: 7 },
+          to: { x: 8, y: 6 },
+          commentary: 'Black moves Kurourushi to H6.',
+        },
       },
       {
         stepNumber: 8,
-        from: { x: 6, y: 6 }, // Hakari F6
-        to: { x: 7, y: 5 },   // Jackpot safe step to empty unattacked G5 square!
+        from: { x: 8, y: 1 },
+        to: { x: 8, y: 2 },
         actionType: 'move',
-        notation: 'Hakari F6 → G5 (Jackpot Safe Step Positioning!)',
+        notation: 'Gojo H1 → H2 (Securing the Victory)',
         tukunaInstruction:
-          'Execute Hakari’s Jackpot bonus step to relocate onto the unattacked G5 square!',
+          'Step Gojo from H1 to H2 to complete your fortress up a full 4.5-point Warden.',
         tacticalBreakdown:
-          'Hakari’s Jackpot bonus step provides a free non-capturing move to G5, maintaining total tempo!',
-        hint: 'Execute Jackpot safe step to G5 with Hakari.',
+          'Hit-and-run precision followed by airtight defense leaves Black zero hope of recovery.',
+        hint: 'Move Gojo from H1 to H2.',
         vectorArrows: [
-          { from: { x: 6, y: 6 }, to: { x: 7, y: 5 }, color: 'crimson', label: '8 🎰', style: 'solid' },
+          { from: { x: 8, y: 1 }, to: { x: 8, y: 2 }, color: 'emerald', label: '8', style: 'solid' },
         ],
       },
     ],
@@ -2296,175 +2581,175 @@ export const CULLING_OPENING_LESSONS: CullingOpeningLesson[] = [
 
   {
     id: 'culling_mid_6',
-    title: 'Lesson 14: Cross-Arena Flank Infiltration',
-    subtitle: 'Infiltrate top and left colony extension arms with Skirmisher Maki',
-    namedStrategy: 'Extension Flank Invasion',
+    title: 'Lesson 14: Heavenly Restriction Bypassing Ratio Field',
+    subtitle: 'Use Maki’s Ratio-Field immunity to vault straight over a pawn shield and win Black’s Artillery',
+    namedStrategy: 'Zero Cursed Energy Vault',
     curriculumType: 'midgame',
     tier: 'advanced',
     playerColor: 'white',
-    initialBoard: createInitialCullingBoard(),
+    initialBoard: createMidLesson6Board(),
     tukunaGreeting:
-      'Colony extension arms allow Skirmishers to infiltrate behind enemy lines undetected. Infiltrate the western arm to threaten Sukuna from the side!',
+      'Black’s Warden Reggie on B5 projects a Ratio Field onto C4—which caps every normal sorcerer to 1 square! Black assumes Artillery Uraume on C6 is safe behind the C5 pawn. Show them why Skirmisher Maki’s Heavenly Restriction ignores Ratio Fields completely!',
     completionMessage:
-      'Infiltration complete! Maki commands the western colony arm, threatening Sukuna directly.',
+      'Unstoppable Heavenly Restriction! Maki stepped right into Reggie’s Ratio Field on C4, vaulted C5 to eliminate Uraume on C6, and hopped cleanly back out of Kenjaku’s reach!',
     patternHighlights: [
-      { x: 3, y: 1 }, { x: 3, y: 3 }, { x: 1, y: 3 }, { x: 1, y: 5 }, { x: 1, y: 7 },
+      { x: 3, y: 4 }, { x: 3, y: 6 }, { x: 2, y: 4 },
     ],
     steps: [
       {
         stepNumber: 1,
-        from: { x: 3, y: 1 }, // Maki C1
-        to: { x: 3, y: 3 },   // C3 (Leap over C2)
+        from: { x: 3, y: 3 },
+        to: { x: 3, y: 4 },
         actionType: 'move',
-        notation: 'Maki C1 → C3 (Heavenly Leap)',
+        notation: 'Maki C3 → C4 (Entering the Ratio Field Protected!)',
         tukunaInstruction:
-          'Hop Maki over the C2 pawn onto C3.',
+          'Step Maki from C3 onto C4—double-defended by your B3 and D3 pawns! Notice: Reggie on B5 moves only orthogonally (cannot touch C4), and C5 blocks Uraume’s Ranged Strike!',
         tacticalBreakdown:
-          'Maki’s 2-square orthogonal leap bypasses the front pawn line.',
-        hint: 'Hop Maki to C3.',
+          'Any other piece on C4 would be restricted to 1-step movement by Reggie on B5—but Maki’s Heavenly Restriction ignores Ratio Field completely!',
+        hint: 'Step Maki forward from C3 to C4.',
         vectorArrows: [
-          { from: { x: 3, y: 1 }, to: { x: 3, y: 3 }, color: 'crimson', label: '1', style: 'solid' },
+          { from: { x: 3, y: 3 }, to: { x: 3, y: 4 }, color: 'emerald', label: '1', style: 'solid' },
+          { from: { x: 3, y: 4 }, to: { x: 3, y: 6 }, color: 'navy', style: 'dashed' },
         ],
         opponentResponse: {
-          from: { x: 2, y: 7 }, // Black Pawn B7
-          to: { x: 2, y: 6 },   // B6
-          commentary: 'Black advances B7 pawn to B6.',
+          from: { x: 8, y: 7 },
+          to: { x: 8, y: 6 },
+          commentary: 'Blind to Heavenly Restriction, Black advances Kurourushi H7 → H6 assuming Reggie’s Ratio Field holds C4!',
         },
       },
       {
         stepNumber: 2,
-        from: { x: 3, y: 3 }, // Maki C3
-        to: { x: 1, y: 3 },   // A3 (Leap 2 squares left into extension!)
+        from: { x: 3, y: 4 },
+        to: { x: 3, y: 6 },
         actionType: 'move',
-        notation: 'Maki C3 → A3 (Colony Extension Entry)',
+        notation: 'Maki C4 × C6 (Heavenly Restriction Vault Capture!)',
         tukunaInstruction:
-          'Hop Maki 2 squares left from C3 into the Left Colony Arm at A3!',
+          'Vault Maki 2 squares orthogonally over Black’s C5 pawn (C4 × C6) to eliminate 4-point Artillery Uraume!',
         tacticalBreakdown:
-          'Entering the A-column arm at A3 places Maki inside the western corridor beyond enemy pawn control.',
-        hint: 'Hop Maki left to A3.',
+          'Zero Cursed Energy bypasses Reggie’s Ratio Field on C4, and C6 is unattacked by every remaining Black piece!',
+        hint: 'Hop Maki from C4 over C5 to capture Uraume on C6.',
         vectorArrows: [
-          { from: { x: 3, y: 3 }, to: { x: 1, y: 3 }, color: 'crimson', label: '2', style: 'solid' },
+          { from: { x: 3, y: 4 }, to: { x: 3, y: 6 }, color: 'emerald', label: '2', style: 'solid' },
         ],
         opponentResponse: {
-          from: { x: 3, y: 7 }, // Black Pawn C7
-          to: { x: 3, y: 6 },   // C6
-          commentary: 'Black pushes C7 pawn to C6.',
+          from: { x: 2, y: 8 },
+          to: { x: 2, y: 7 },
+          commentary: 'Black rushes Vanguard Kenjaku from B8 to B7, threatening to capture Maki on C6!',
         },
       },
       {
         stepNumber: 3,
-        from: { x: 1, y: 3 }, // Maki A3
-        to: { x: 1, y: 5 },   // A5 (Advance 2 squares up corridor!)
+        from: { x: 3, y: 6 },
+        to: { x: 3, y: 4 },
         actionType: 'move',
-        notation: 'Maki A3 → A5 (Corridor Rush)',
+        notation: 'Maki C6 → C4 (Clean Extraction Vault!)',
         tukunaInstruction:
-          'Advance Maki 2 squares up the A-column corridor to A5.',
+          'Extract Maki immediately! Vault 2 squares orthogonally back over C5 from C6 to pawn-defended C4!',
         tacticalBreakdown:
-          'Maki on A5 commands the entire western flank.',
-        hint: 'Move Maki to A5.',
+          'Strike and extract: never leave a 3.5-point Skirmisher sitting in front of an 8-point Vanguard after winning your target.',
+        hint: 'Hop Maki back from C6 over C5 onto C4.',
         vectorArrows: [
-          { from: { x: 1, y: 3 }, to: { x: 1, y: 5 }, color: 'crimson', label: '3', style: 'solid' },
+          { from: { x: 3, y: 6 }, to: { x: 3, y: 4 }, color: 'emerald', label: '3', style: 'solid' },
         ],
         opponentResponse: {
-          from: { x: 4, y: 7 }, // Black Pawn D7
-          to: { x: 4, y: 6 },   // D6
-          commentary: 'Black advances D7 pawn to D6.',
+          from: { x: 2, y: 5 },
+          to: { x: 2, y: 6 },
+          commentary: 'With Uraume gone, Warden Reggie retreats from B5 to B6.',
         },
       },
       {
         stepNumber: 4,
-        from: { x: 2, y: 2 }, // Pawn B2
-        to: { x: 2, y: 3 },   // B3
+        from: { x: 2, y: 3 },
+        to: { x: 2, y: 4 },
         actionType: 'move',
-        notation: 'B2 → B3 (Flank Base)',
+        notation: 'B3 → B4 (Undermining Black’s C5 Pawn)',
         tukunaInstruction:
-          'Push B2 pawn to B3.',
+          'Push B3 → B4 (supported by your A3 pawn and Maki on C4) to attack Black’s isolated C5 pawn!',
         tacticalBreakdown:
-          'B3 secures Maki’s line of communication.',
-        hint: 'Push B2 pawn to B3.',
+          'Trade off Black’s advanced pawn to open queenside lanes for Hakari and Nanami.',
+        hint: 'Advance the B3 pawn to B4.',
         vectorArrows: [
-          { from: { x: 2, y: 2 }, to: { x: 2, y: 3 }, color: 'crimson', label: '4', style: 'solid' },
+          { from: { x: 2, y: 3 }, to: { x: 2, y: 4 }, color: 'emerald', label: '4', style: 'solid' },
         ],
         opponentResponse: {
-          from: { x: 5, y: 7 }, // Black Pawn E7
-          to: { x: 5, y: 6 },   // E6
-          commentary: 'Black advances E7 pawn to E6.',
+          from: { x: 3, y: 5 },
+          to: { x: 2, y: 4 },
+          commentary: 'Black captures C5 × B4.',
         },
       },
       {
         stepNumber: 5,
-        from: { x: 1, y: 5 }, // Maki A5
-        to: { x: 2, y: 5 },   // B5 (Flank Position Shift)
+        from: { x: 1, y: 3 },
+        to: { x: 2, y: 4 },
         actionType: 'move',
-        notation: 'Maki A5 → B5 (Flank Infiltration)',
+        notation: 'A3 × B4 (Anchored Recapture)',
         tukunaInstruction:
-          'Shift Maki diagonally to B5 along the western colony corridor.',
+          'Recapture on B4 with your A3 pawn (A3 × B4), backed by Hakari (B2) and Maki (C4)!',
         tacticalBreakdown:
-          'Maki on B5 prepares a 2-square orthogonal leap to B7 to capture Kenjaku.',
-        hint: 'Move Maki to B5.',
+          'Maki on C4 and the B4 pawn form an iron queenside duo.',
+        hint: 'Capture Black’s pawn on B4 with your A3 pawn.',
         vectorArrows: [
-          { from: { x: 1, y: 5 }, to: { x: 2, y: 5 }, color: 'crimson', label: '5', style: 'solid' },
+          { from: { x: 1, y: 3 }, to: { x: 2, y: 4 }, color: 'emerald', label: '5', style: 'solid' },
         ],
         opponentResponse: {
-          from: { x: 6, y: 7 }, // Black Pawn F7
-          to: { x: 6, y: 6 },   // F6
-          commentary: 'Black advances F7 pawn to F6.',
+          from: { x: 5, y: 6 },
+          to: { x: 5, y: 5 },
+          commentary: 'Black pushes E6 → E5.',
         },
-
       },
       {
         stepNumber: 6,
-        from: { x: 3, y: 2 }, // Pawn C2
-        to: { x: 3, y: 3 },   // C3
+        from: { x: 6, y: 1 },
+        to: { x: 6, y: 2 },
         actionType: 'move',
-        notation: 'C2 → C3 (Rear Security)',
+        notation: 'Mechamaru F1 → F2 (Central Artillery Support)',
         tukunaInstruction:
-          'Push C2 pawn to C3.',
+          'Step Mechamaru from F1 to F2.',
         tacticalBreakdown:
-          'Securing C3 anchors the western sector.',
-        hint: 'Push C2 pawn to C3.',
+          'Developing your remaining back-rank pieces extinguishes all counterplay.',
+        hint: 'Move Mechamaru from F1 to F2.',
         vectorArrows: [
-          { from: { x: 3, y: 2 }, to: { x: 3, y: 3 }, color: 'crimson', label: '6', style: 'solid' },
+          { from: { x: 6, y: 1 }, to: { x: 6, y: 2 }, color: 'emerald', label: '6', style: 'solid' },
         ],
         opponentResponse: {
-          from: { x: 7, y: 7 }, // Black Pawn G7
-          to: { x: 7, y: 6 },   // G6
-          commentary: 'Black advances G7 pawn to G6.',
+          from: { x: 7, y: 8 },
+          to: { x: 7, y: 7 },
+          commentary: 'Black steps Naoya from G8 to G7.',
         },
       },
       {
         stepNumber: 7,
-        from: { x: 2, y: 1 }, // Hakari B1
-        to: { x: 1, y: 2 },   // A2 (1-step diagonal Rusher move into left arm!)
+        from: { x: 5, y: 1 },
+        to: { x: 3, y: 2 },
         actionType: 'move',
-        notation: 'Hakari B1 → A2 (Left Corridor Entry)',
+        notation: 'Panda E1 → C2 (Bulwark Queenside Link)',
         tukunaInstruction:
-          'Move Hakari to A2 to support Maki.',
+          'Jump Bulwark Panda from E1 to C2 behind Maki.',
         tacticalBreakdown:
-          'Hakari on A2 secures the corridor behind Maki.',
-        hint: 'Move Hakari to A2.',
+          'Panda connects Gojo and Mechamaru with your dominant queenside wing.',
+        hint: 'Jump Panda in an L-shape from E1 to C2.',
         vectorArrows: [
-          { from: { x: 2, y: 1 }, to: { x: 1, y: 2 }, color: 'crimson', label: '7', style: 'solid' },
+          { from: { x: 5, y: 1 }, to: { x: 3, y: 2 }, color: 'emerald', label: '7', style: 'solid' },
         ],
         opponentResponse: {
-          from: { x: 3, y: 8 }, // Uraume C8
-          to: { x: 3, y: 7 },   // C7
-          commentary: 'Uraume steps to C7.',
+          from: { x: 5, y: 8 },
+          to: { x: 4, y: 6 },
+          commentary: 'Black jumps Yorozu from E8 to D6.',
         },
       },
       {
         stepNumber: 8,
-        from: { x: 2, y: 5 }, // Maki B5
-        to: { x: 2, y: 7 },   // Move Maki to B7!
+        from: { x: 8, y: 1 },
+        to: { x: 8, y: 2 },
         actionType: 'move',
-        notation: 'Maki B5 → B7 (Skirmisher Infiltration Strike - Check!)',
+        notation: 'Gojo H1 → H2 (Winning Consolidation)',
         tukunaInstruction:
-          'Hop Maki 2 squares up from B5 to capture Kenjaku on B7!',
+          'Step Gojo from H1 to H2 to seal your clean 4-point Artillery advantage.',
         tacticalBreakdown:
-          'Maki captures Kenjaku on B7, delivering direct mortal check on Sovereign Sukuna at A8!',
-        hint: 'Capture Kenjaku on B7 with Maki.',
+          'Heavenly Restriction turned Black’s Ratio Field trap into a clean one-piece victory.',
+        hint: 'Move Gojo from H1 to H2.',
         vectorArrows: [
-          { from: { x: 2, y: 5 }, to: { x: 2, y: 7 }, color: 'crimson', label: '8 ⚔️', style: 'solid' },
+          { from: { x: 8, y: 1 }, to: { x: 8, y: 2 }, color: 'emerald', label: '8', style: 'solid' },
         ],
       },
     ],
@@ -2472,174 +2757,175 @@ export const CULLING_OPENING_LESSONS: CullingOpeningLesson[] = [
 
   {
     id: 'culling_mid_7',
-    title: 'Lesson 15: Triple-Role Combination Strike',
-    subtitle: 'Combine Skirmisher, Warden, and Vanguard for a tactical combination gain',
-    namedStrategy: 'Triple-Role Synergy Combo',
+    title: 'Lesson 15: Triple-Role Pin, Snipe & Black Flash Synergy',
+    subtitle: 'Weave Vanguard Black Flash, Warden captures, and Artillery diagonal snipes into one seamless plan',
+    namedStrategy: 'Tokyo Jujutsu High Trinity',
     curriculumType: 'midgame',
     tier: 'advanced',
     playerColor: 'white',
-    initialBoard: createInitialCullingBoard(),
+    initialBoard: createMidLesson7Board(),
     tukunaGreeting:
-      'The highest level of Culling strategy coordinates three roles simultaneously: Warden Ratio suppression, Skirmisher leap, and Vanguard line-of-sight.',
+      'True Culling Game mastery means combining roles: use Yuji’s Black Flash against pawn-defended pieces, Nanami (4.5pt) rather than Yuji (8pt) when contesting enemy Wardens, and Mechamaru’s diagonal snipes to pick off flanking pawns!',
     completionMessage:
-      'Combination strike successful! Triple-role synergy forced a decisive piece gain.',
+      'Supreme tactical harmony! Every role executed its specialty without once exposing a higher-value sorcerer to a lower-value trade.',
     patternHighlights: [
-      { x: 3, y: 1 }, { x: 4, y: 1 }, { x: 7, y: 1 }, { x: 3, y: 3 }, { x: 4, y: 4 }, { x: 7, y: 4 },
+      { x: 6, y: 3 }, { x: 4, y: 4 }, { x: 5, y: 4 }, { x: 5, y: 3 },
     ],
     steps: [
       {
         stepNumber: 1,
-        from: { x: 3, y: 1 }, // Maki C1
-        to: { x: 3, y: 3 },   // C3 (Leap over C2)
-        actionType: 'move',
-        notation: 'Maki C1 → C3 (Role 1: Skirmisher Leap)',
+        from: { x: 6, y: 3 },
+        to: { x: 6, y: 5 },
+        actionType: 'black_flash',
+        notation: 'Yuji F3 ⚡ F5 (Black Flash Elimination!)',
         tukunaInstruction:
-          'Hop Maki over C2 pawn to C3.',
+          'Open with Yuji’s 2-square Black Flash from F3 onto Naoya at F5, destroying Naoya without stepping into Black’s G6 pawn!',
         tacticalBreakdown:
-          'Skirmisher Maki seizes C3 to exert pressure on Black’s right flank.',
-        hint: 'Hop Maki to C3.',
+          'Strike-in-place keeps Yuji anchored on F3 where he defends E4 and G4.',
+        hint: 'Select Yuji on F3 and click Naoya on F5.',
         vectorArrows: [
-          { from: { x: 3, y: 1 }, to: { x: 3, y: 3 }, color: 'crimson', label: '1', style: 'solid' },
+          { from: { x: 6, y: 3 }, to: { x: 6, y: 5 }, color: 'emerald', label: '1', style: 'solid' },
         ],
         opponentResponse: {
-          from: { x: 2, y: 7 }, // Black Pawn B7
-          to: { x: 2, y: 6 },   // B6
-          commentary: 'Black advances B7 pawn to B6.',
+          from: { x: 5, y: 6 },
+          to: { x: 5, y: 5 },
+          commentary: 'Black pushes E6 → E5, attacking Warden Nanami on D4 with a 1-point pawn!',
         },
       },
       {
         stepNumber: 2,
-        from: { x: 4, y: 2 }, // Pawn D2
-        to: { x: 4, y: 3 },   // D3
+        from: { x: 4, y: 4 },
+        to: { x: 4, y: 3 },
         actionType: 'move',
-        notation: 'D2 → D3 (Role 2 Prep)',
+        notation: 'Nanami D4 → D3 (Disciplined Warden Retreat!)',
         tukunaInstruction:
-          'Push D2 pawn to D3.',
+          'Respect Black’s E5 pawn threat! Step Warden Nanami back from D4 to D3—keeping him safe while vacating D4 as a future sniping window!',
         tacticalBreakdown:
-          'Clearing D2 prepares Warden Nanami’s entry.',
-        hint: 'Push D2 pawn to D3.',
+          'Retreating Nanami from a 1-point pawn poke preserves your 4.5-point Warden and opens the E3–D4–C5 diagonal.',
+        hint: 'Step Nanami down from D4 to D3.',
         vectorArrows: [
-          { from: { x: 4, y: 2 }, to: { x: 4, y: 3 }, color: 'crimson', label: '2', style: 'solid' },
+          { from: { x: 4, y: 4 }, to: { x: 4, y: 3 }, color: 'emerald', label: '2', style: 'solid' },
         ],
         opponentResponse: {
-          from: { x: 3, y: 7 }, // Black Pawn C7
-          to: { x: 3, y: 6 },   // C6
-          commentary: 'Black pushes C7 pawn to C6.',
+          from: { x: 3, y: 6 },
+          to: { x: 3, y: 5 },
+          commentary: 'Black advances C6 → C5 to claim queenside space.',
         },
       },
       {
         stepNumber: 3,
-        from: { x: 4, y: 3 }, // D3 Pawn
-        to: { x: 4, y: 4 },   // D4
+        from: { x: 5, y: 3 },
+        to: { x: 5, y: 4 },
         actionType: 'move',
-        notation: 'D3 → D4 (Role 2 Runway Push)',
+        notation: 'E3 → E4 (Freezing E5 & Vacating E3!)',
         tukunaInstruction:
-          'Push D3 pawn to D4 to clear D3 for Warden Nanami.',
+          'Push E3 → E4 (guarded by Yuji on F3) to freeze Black’s E5 pawn in place and vacate E3 for Mechamaru!',
         tacticalBreakdown:
-          'Clearing D3 allows Warden Nanami to step into the central field.',
-        hint: 'Push D3 pawn to D4.',
+          'Now E3 is open and D4 is empty—giving Mechamaru a crystal-clear diagonal toward C5!',
+        hint: 'Advance the E3 pawn to E4.',
         vectorArrows: [
-          { from: { x: 4, y: 3 }, to: { x: 4, y: 4 }, color: 'crimson', label: '3', style: 'solid' },
+          { from: { x: 5, y: 3 }, to: { x: 5, y: 4 }, color: 'emerald', label: '3', style: 'solid' },
         ],
         opponentResponse: {
-          from: { x: 4, y: 7 }, // Black Pawn D7
-          to: { x: 4, y: 6 },   // D6
-          commentary: 'Black pushes D7 pawn to D6.',
+          from: { x: 2, y: 8 },
+          to: { x: 2, y: 7 },
+          commentary: 'Black develops Kenjaku from B8 to B7.',
         },
       },
       {
         stepNumber: 4,
-        from: { x: 4, y: 1 }, // Nanami D1
-        to: { x: 4, y: 3 },   // D3 (Slide 2 squares up open D-column!)
+        from: { x: 5, y: 2 },
+        to: { x: 5, y: 3 },
         actionType: 'move',
-        notation: 'Nanami D1 → D3 (Role 2: Warden Ratio Field)',
+        notation: 'Mechamaru E2 → E3 (Tokyo Jujutsu High Trinity!)',
         tukunaInstruction:
-          'Slide Warden Nanami 2 squares to D3.',
+          'Step Artillery Mechamaru from E2 onto E3 between Nanami (D3) and Yuji (F3), locking onto C5 across empty D4!',
         tacticalBreakdown:
-          'Nanami on D3 projects his Ratio Field onto C6 and D6.',
-        hint: 'Slide Nanami to D3.',
+          'Three distinct roles—Warden, Artillery, Vanguard—stand shoulder-to-shoulder behind your pawn wall.',
+        hint: 'Step Mechamaru forward from E2 to E3.',
         vectorArrows: [
-          { from: { x: 4, y: 1 }, to: { x: 4, y: 3 }, color: 'crimson', label: '4', style: 'solid' },
+          { from: { x: 5, y: 2 }, to: { x: 5, y: 3 }, color: 'emerald', label: '4', style: 'solid' },
+          { from: { x: 5, y: 3 }, to: { x: 3, y: 5 }, color: 'navy', style: 'dashed' },
         ],
         opponentResponse: {
-          from: { x: 2, y: 8 }, // Kenjaku B8
-          to: { x: 2, y: 7 },   // B7
-          commentary: 'Kenjaku steps onto B7.',
+          from: { x: 7, y: 7 },
+          to: { x: 8, y: 6 },
+          commentary: 'Black slides Kurourushi from G7 to H6.',
         },
       },
       {
         stepNumber: 5,
-        from: { x: 7, y: 2 }, // Pawn G2
-        to: { x: 7, y: 3 },   // G3
-        actionType: 'move',
-        notation: 'G2 → G3 (Role 3 Runway Push)',
+        from: { x: 5, y: 3 },
+        to: { x: 3, y: 5 },
+        actionType: 'shoot',
+        notation: 'Mechamaru E3 🏹 C5 (Diagonal Ranged Strike!)',
         tukunaInstruction:
-          'Push G2 pawn to G3 to open the G-column for Vanguard Yuji.',
+          'Fire Mechamaru’s diagonal Ranged Strike from E3 across empty D4 to obliterate Black’s C5 pawn!',
         tacticalBreakdown:
-          'Clearing G2 mobilizes Vanguard Yuji to support the triple-role synergy.',
-        hint: 'Push G2 pawn to G3.',
+          'First Yuji erased Naoya with Black Flash; now Mechamaru erases C5 with Ranged Strike!',
+        hint: 'Select Mechamaru on E3 and click Black’s pawn on C5.',
         vectorArrows: [
-          { from: { x: 7, y: 2 }, to: { x: 7, y: 3 }, color: 'crimson', label: '5', style: 'solid' },
+          { from: { x: 5, y: 3 }, to: { x: 3, y: 5 }, color: 'emerald', label: '5', style: 'solid' },
         ],
         opponentResponse: {
-          from: { x: 5, y: 7 }, // Black Pawn E7
-          to: { x: 5, y: 6 },   // E6
-          commentary: 'Black pushes E7 pawn to E6.',
+          from: { x: 4, y: 6 },
+          to: { x: 3, y: 6 },
+          commentary: 'Black shifts Warden Reggie from D6 to C6.',
         },
       },
       {
         stepNumber: 6,
-        from: { x: 3, y: 3 }, // Maki C3
-        to: { x: 3, y: 5 },   // C5 (Orthogonal hop 2 squares up C-column!)
+        from: { x: 3, y: 3 },
+        to: { x: 3, y: 4 },
         actionType: 'move',
-        notation: 'Maki C3 → C5 (Skirmisher Infiltration Hop)',
+        notation: 'C3 → C4 (Supported Queenside Clamp)',
         tukunaInstruction:
-          'Hop Maki 2 squares up the C-column to C5.',
+          'Advance C3 → C4 (protected by your B3 pawn) to seize the vacated queenside!',
         tacticalBreakdown:
-          'Maki’s 2-square leap brings her into the 5th rank right beside Nanami’s Ratio Field.',
-        hint: 'Hop Maki to C5.',
+          'C4 and E4 form a classic central clamp while vacating C3 for Skirmisher Maki.',
+        hint: 'Push the C3 pawn to C4.',
         vectorArrows: [
-          { from: { x: 3, y: 3 }, to: { x: 3, y: 5 }, color: 'crimson', label: '6', style: 'solid' },
+          { from: { x: 3, y: 3 }, to: { x: 3, y: 4 }, color: 'emerald', label: '6', style: 'solid' },
         ],
         opponentResponse: {
-          from: { x: 6, y: 7 }, // Black Pawn F7
-          to: { x: 6, y: 6 },   // F6
-          commentary: 'Black advances F7 pawn to F6.',
+          from: { x: 8, y: 6 },
+          to: { x: 8, y: 5 },
+          commentary: 'Kurourushi steps to H5—completely blocked from F3 by your G4 pawn!',
         },
       },
       {
         stepNumber: 7,
-        from: { x: 3, y: 5 }, // Maki C5
-        to: { x: 3, y: 7 },   // C7 (Orthogonal hop 2 squares up C-column!)
+        from: { x: 3, y: 2 },
+        to: { x: 3, y: 3 },
         actionType: 'move',
-        notation: 'Maki C5 → C7 (Flank Encirclement Leap)',
+        notation: 'Maki C2 → C3 (Four-Sorcerer Third-Rank Line!)',
         tukunaInstruction:
-          'Hop Maki 2 squares up to C7 on Black’s 7th rank!',
+          'Step Skirmisher Maki from C2 to C3, completing an iron 4-sorcerer line across C3–D3–E3–F3!',
         tacticalBreakdown:
-          'Maki on C7 penetrates deep into Black’s perimeter, positioning directly beside Kenjaku on B7.',
-        hint: 'Hop Maki to C7.',
+          'Maki (C3), Nanami (D3), Mechamaru (E3), and Yuji (F3) stand completely shielded behind B3–C4–E4–G4–H3.',
+        hint: 'Step Maki forward from C2 to C3.',
         vectorArrows: [
-          { from: { x: 3, y: 5 }, to: { x: 3, y: 7 }, color: 'crimson', label: '7', style: 'solid' },
+          { from: { x: 3, y: 2 }, to: { x: 3, y: 3 }, color: 'emerald', label: '7', style: 'solid' },
         ],
         opponentResponse: {
-          from: { x: 3, y: 8 }, // Uraume C8
-          to: { x: 4, y: 7 },   // D7
-          commentary: 'Uraume slides to D7.',
+          from: { x: 3, y: 6 },
+          to: { x: 4, y: 6 },
+          commentary: 'Unable to find any weakness, Reggie shifts back to D6.',
         },
       },
       {
         stepNumber: 8,
-        from: { x: 3, y: 7 }, // Maki C7
-        to: { x: 2, y: 7 },   // Capture Kenjaku on B7!
+        from: { x: 8, y: 2 },
+        to: { x: 7, y: 2 },
         actionType: 'move',
-        notation: 'Maki C7 × B7 (Triple-Role Combination Strike!)',
+        notation: 'Gojo H2 → G2 (Sovereign Overwatch)',
         tukunaInstruction:
-          'Execute the combination strike with Maki capturing Kenjaku on B7!',
+          'Step Sovereign Gojo from H2 to G2 to centralize your King behind the fortress!',
         tacticalBreakdown:
-          'Maki captures Kenjaku on B7! The triple-role combination forces a decisive material advantage!',
-        hint: 'Capture Kenjaku on B7 with Maki.',
+          'Zero blunders, two clean special-action eliminations, and total board control.',
+        hint: 'Step Gojo left from H2 to G2.',
         vectorArrows: [
-          { from: { x: 3, y: 7 }, to: { x: 2, y: 7 }, color: 'crimson', label: '8 ⚔️', style: 'solid' },
+          { from: { x: 8, y: 2 }, to: { x: 7, y: 2 }, color: 'emerald', label: '8', style: 'solid' },
         ],
       },
     ],
@@ -2647,174 +2933,177 @@ export const CULLING_OPENING_LESSONS: CullingOpeningLesson[] = [
 
   {
     id: 'culling_mid_8',
-    title: 'Lesson 16: Sovereign Checkmate Execution',
-    subtitle: 'Close the ring on Sovereign Sukuna and deliver final checkmate',
-    namedStrategy: 'Sovereign Ring Checkmate',
+    title: 'Lesson 16: Coordinated Sovereign Checkmate Net',
+    subtitle: 'Strip away Sukuna’s pawn cover and weave an inescapable 5-square corner checkmate on A8',
+    namedStrategy: 'Six Eyes Sovereign Execution',
     curriculumType: 'midgame',
     tier: 'advanced',
     playerColor: 'white',
-    initialBoard: createInitialCullingBoard(),
+    initialBoard: createMidLesson8Board(),
     tukunaGreeting:
-      'The culmination of all Culling Game mastery is checkmating Sovereign Sukuna. Systematically constrict his escape squares and deliver checkmate.',
+      'Final exam, sorcerer! Sukuna’s Domain Step is spent, and he lurks near A8. Remember cross-board geometry: A8 borders FIVE playable squares—B9, B8, B7, A7, and L7! Strip away his B7 pawn shield, anchor B7 with C6 and Nanami, and deliver Checkmate with Yuji!',
     completionMessage:
-      'CHECKMATE! Sovereign Sukuna has been completely enclosed and defeated. Culling Game Dojo Mastered!',
+      'SUPREME VICTORY! Yuji on B7—defended by both your C6 pawn and Warden Nanami on B5—checks Sukuna on A8 while sealing B8, B9, A7, and L7 simultaneously! You have graduated the Culling Game Dojo!',
     patternHighlights: [
-      { x: 8, y: 1 }, { x: 6, y: 3 }, { x: 3, y: 1 }, { x: 1, y: 5 }, { x: 1, y: 7 }, { x: 2, y: 8 },
+      { x: 3, y: 6 }, { x: 1, y: 5 }, { x: 2, y: 5 }, { x: 2, y: 7 },
     ],
     steps: [
       {
         stepNumber: 1,
-        from: { x: 8, y: 1 }, // Gojo H1
-        to: { x: 6, y: 3 },   // F3 (Domain Step 2-square diagonal jump!)
-        actionType: 'teleport',
-        notation: 'Gojo 🌀 F3 (Domain Step Opening)',
+        from: { x: 3, y: 5 },
+        to: { x: 3, y: 6 },
+        actionType: 'move',
+        notation: 'C5 → C6 (Cracking Sukuna’s B7 Shield!)',
         tukunaInstruction:
-          'Activate Gojo’s Domain Step to jump to F3.',
+          'Advance your C5 pawn to C6 (defended by Vanguard Yuji on D5), attacking Sukuna’s B7 shield pawn and permanently controlling B7!',
         tacticalBreakdown:
-          'Gojo leaps forward to initiate the Sovereign hunt.',
-        hint: 'Teleport Gojo to F3.',
+          'C6 is the linchpin of the entire checkmate net: once planted on C6, it guards B7 for Yuji’s final blow.',
+        hint: 'Push the C5 pawn to C6.',
         vectorArrows: [
-          { from: { x: 8, y: 1 }, to: { x: 6, y: 3 }, color: 'crimson', label: '1 🌀', style: 'solid' },
+          { from: { x: 3, y: 5 }, to: { x: 3, y: 6 }, color: 'emerald', label: '1', style: 'solid' },
+          { from: { x: 3, y: 6 }, to: { x: 2, y: 7 }, color: 'navy', style: 'dashed' },
         ],
         opponentResponse: {
-          from: { x: 2, y: 7 }, // Black Pawn B7
-          to: { x: 2, y: 6 },   // B6
-          commentary: 'Black advances B7 pawn to B6.',
+          from: { x: 2, y: 7 },
+          to: { x: 2, y: 6 },
+          commentary: 'Black pushes B7 → B6 to avoid losing the shield pawn immediately!',
         },
       },
       {
         stepNumber: 2,
-        from: { x: 3, y: 1 }, // Maki C1
-        to: { x: 3, y: 3 },   // C3 (Heavenly Leap over C2)
+        from: { x: 1, y: 4 },
+        to: { x: 1, y: 5 },
         actionType: 'move',
-        notation: 'Maki C1 → C3 (Flank Flurry)',
+        notation: 'A4 → A5 (Prying Open the A & B Files)',
         tukunaInstruction:
-          'Hop Maki over C2 pawn onto C3.',
+          'Push A4 → A5 to challenge Black’s B6 pawn and pry open the western files!',
         tacticalBreakdown:
-          'Maki’s 2-square leap opens up the western attack corridor.',
-        hint: 'Hop Maki to C3.',
+          'Clearing B6 removes the last obstacle between Warden Nanami and the B5 anchor square.',
+        hint: 'Advance the A4 pawn to A5.',
         vectorArrows: [
-          { from: { x: 3, y: 1 }, to: { x: 3, y: 3 }, color: 'crimson', label: '2', style: 'solid' },
+          { from: { x: 1, y: 4 }, to: { x: 1, y: 5 }, color: 'emerald', label: '2', style: 'solid' },
         ],
         opponentResponse: {
-          from: { x: 4, y: 7 }, // Black Pawn D7
-          to: { x: 4, y: 6 },   // D6
-          commentary: 'Black advances D7 pawn to D6.',
+          from: { x: 2, y: 6 },
+          to: { x: 1, y: 5 },
+          commentary: 'Black captures B6 × A5.',
         },
       },
       {
         stepNumber: 3,
-        from: { x: 3, y: 3 }, // Maki C3
-        to: { x: 1, y: 3 },   // A3 (Heavenly Leap left)
+        from: { x: 3, y: 4 },
+        to: { x: 1, y: 4 },
         actionType: 'move',
-        notation: 'Maki C3 → A3 (Colony Extension Entry)',
+        notation: 'Maki C4 → A4 (Lateral Skirmisher Pursuit)',
         tukunaInstruction:
-          'Hop Maki 2 squares left to A3 into the western corridor.',
+          'Hop Skirmisher Maki 2 squares laterally from C4 to A4 to eliminate Black’s A5 pawn!',
         tacticalBreakdown:
-          'Entering the A-column bypasses Black’s central pawns.',
-        hint: 'Hop Maki to A3.',
+          'Capturing A5 with Maki also seals A7 via her 2-square orthogonal hop.',
+        hint: 'Hop Maki left from C4 to A4.',
         vectorArrows: [
-          { from: { x: 3, y: 3 }, to: { x: 1, y: 3 }, color: 'crimson', label: '3', style: 'solid' },
+          { from: { x: 3, y: 4 }, to: { x: 1, y: 4 }, color: 'emerald', label: '3', style: 'solid' },
         ],
         opponentResponse: {
-          from: { x: 3, y: 7 }, // Black Pawn C7
-          to: { x: 3, y: 6 },   // C6
-          commentary: 'Black advances C7 pawn to C6.',
+          from: { x: 2, y: 8 },
+          to: { x: 1, y: 8 },
+          commentary: 'Sensing danger on the open B-file, Sukuna steps into the A8 corner!',
         },
       },
       {
         stepNumber: 4,
-        from: { x: 1, y: 3 }, // Maki A3
-        to: { x: 1, y: 5 },   // A5
+        from: { x: 1, y: 4 },
+        to: { x: 1, y: 5 },
         actionType: 'move',
-        notation: 'Maki A3 → A5 (Corridor Incursion)',
+        notation: 'Maki A4 × A5 (Eliminating the Last Western Pawn)',
         tukunaInstruction:
-          'Advance Maki 2 squares up the A-column to A5.',
+          'Capture Black’s A5 pawn with Maki (A4 × A5)! From A5, Maki locks onto A7.',
         tacticalBreakdown:
-          'Maki on A5 prepares a 2-square orthogonal leap to A7 to check Sukuna.',
-        hint: 'Move Maki to A5.',
+          'Every Black defender on the western wing has been liquidated.',
+        hint: 'Capture the A5 pawn with Maki.',
         vectorArrows: [
-          { from: { x: 1, y: 3 }, to: { x: 1, y: 5 }, color: 'crimson', label: '4', style: 'solid' },
+          { from: { x: 1, y: 4 }, to: { x: 1, y: 5 }, color: 'emerald', label: '4', style: 'solid' },
         ],
         opponentResponse: {
-          from: { x: 2, y: 8 }, // Kenjaku B8
-          to: { x: 2, y: 7 },   // B7
-          commentary: 'Kenjaku mobilizes to B7, clearing B8 for Sukuna.',
+          from: { x: 5, y: 7 },
+          to: { x: 5, y: 6 },
+          commentary: 'Black pushes E7 → E6, trying desperately to open lines from the east.',
         },
       },
       {
         stepNumber: 5,
-        from: { x: 1, y: 5 }, // Maki A5
-        to: { x: 2, y: 5 },   // B5
+        from: { x: 4, y: 5 },
+        to: { x: 4, y: 7 },
         actionType: 'move',
-        notation: 'Maki A5 → B5 (Flank Infiltration)',
+        notation: 'Yuji D5 → D7 (Dodging E6 Pawn Into Rank 7!)',
         tukunaInstruction:
-          'Shift Maki diagonally to B5 along the western corridor.',
+          'Alert! Black’s E6 pawn just threatened 8-point Yuji on D5! Slide Yuji 2 squares forward from D5 to D7—dodging E6 while still guarding C6 and infiltrating the mating rank!',
         tacticalBreakdown:
-          'Maki on B5 prepares a forward push into the western sector.',
-        hint: 'Move Maki to B5.',
+          'Turning an opponent’s pawn poke into a forward infiltration onto Rank 7 saves Yuji and accelerates checkmate.',
+        hint: 'Slide Yuji 2 squares up from D5 to D7.',
         vectorArrows: [
-          { from: { x: 1, y: 5 }, to: { x: 2, y: 5 }, color: 'crimson', label: '5', style: 'solid' },
+          { from: { x: 4, y: 5 }, to: { x: 4, y: 7 }, color: 'emerald', label: '5', style: 'solid' },
+          { from: { x: 4, y: 7 }, to: { x: 2, y: 7 }, color: 'navy', style: 'dashed' },
         ],
         opponentResponse: {
-          from: { x: 5, y: 7 }, // Black Pawn E7
-          to: { x: 5, y: 6 },   // E6
-          commentary: 'Black advances E7 pawn to E6.',
+          from: { x: 6, y: 7 },
+          to: { x: 6, y: 6 },
+          commentary: 'Black pushes F7 → F6.',
         },
       },
       {
         stepNumber: 6,
-        from: { x: 6, y: 3 }, // Gojo F3
-        to: { x: 5, y: 4 },   // E4
+        from: { x: 2, y: 3 },
+        to: { x: 2, y: 5 },
         actionType: 'move',
-        notation: 'Gojo F3 → E4 (Sovereign Ring Constriction)',
+        notation: 'Nanami B3 → B5 (Warden B-File Anchor)',
         tukunaInstruction:
-          'Advance Gojo diagonally to E4 to tighten the checkmate ring.',
+          'Slide Warden Nanami 2 squares orthogonally from B3 to B5, double-guarding B7 alongside your C6 pawn!',
         tacticalBreakdown:
-          'Gojo on E4 commands the central diagonal to trap Sukuna.',
-        hint: 'Move Gojo to E4.',
+          'Overprotecting B7 ensures Sukuna cannot capture Yuji when checkmate lands.',
+        hint: 'Slide Nanami from B3 up to B5.',
         vectorArrows: [
-          { from: { x: 6, y: 3 }, to: { x: 5, y: 4 }, color: 'crimson', label: '6', style: 'solid' },
+          { from: { x: 2, y: 3 }, to: { x: 2, y: 5 }, color: 'emerald', label: '6', style: 'solid' },
         ],
         opponentResponse: {
-          from: { x: 6, y: 7 }, // Black Pawn F7
-          to: { x: 6, y: 6 },   // F6
-          commentary: 'Black advances F7 pawn to F6.',
+          from: { x: 7, y: 8 },
+          to: { x: 6, y: 8 },
+          commentary: 'Black rushes Warden Reggie toward the queenside (G8 → F8), but he is far too late!',
         },
       },
       {
         stepNumber: 7,
-        from: { x: 2, y: 5 }, // Maki B5
-        to: { x: 2, y: 6 },   // Capture Black Pawn B6 on B6!
+        from: { x: 6, y: 2 },
+        to: { x: 5, y: 3 },
         actionType: 'move',
-        notation: 'Maki B5 × B6 (Pawn Clearance)',
+        notation: 'Mechamaru F2 → E3 (Reinforcing the Center Before the Kill)',
         tukunaInstruction:
-          'Capture Black’s B6 pawn with Maki on B6!',
+          'Step Mechamaru from F2 to E3 to anchor your E4 pawn before delivering the finishing strike.',
         tacticalBreakdown:
-          'Maki clears B6, positioning directly behind Kenjaku on B7.',
-        hint: 'Capture B6 pawn with Maki.',
+          'Every friendly unit stands rock-solid as the checkmate net snaps shut.',
+        hint: 'Step Mechamaru diagonally from F2 to E3.',
         vectorArrows: [
-          { from: { x: 2, y: 5 }, to: { x: 2, y: 6 }, color: 'crimson', label: '7 ⚔️', style: 'solid' },
+          { from: { x: 6, y: 2 }, to: { x: 5, y: 3 }, color: 'emerald', label: '7', style: 'solid' },
         ],
         opponentResponse: {
-          from: { x: 3, y: 8 }, // Uraume C8
-          to: { x: 3, y: 7 },   // C7
-          commentary: 'Uraume advances to C7.',
+          from: { x: 7, y: 7 },
+          to: { x: 7, y: 6 },
+          commentary: 'Helpless to reach B7 or A8 from F8, Black plays G7 → G6.',
         },
       },
       {
         stepNumber: 8,
-        from: { x: 2, y: 6 }, // Maki B6
-        to: { x: 2, y: 7 },   // Capture Kenjaku on B7 - Check!
+        from: { x: 4, y: 7 },
+        to: { x: 2, y: 7 },
         actionType: 'move',
-        notation: 'Maki B6 × B7 (Skirmisher Slice - Sovereign Check!)',
+        notation: 'Yuji D7 → B7 # (SOVEREIGN CHECKMATE!)',
         tukunaInstruction:
-          'Deliver the final blow with Maki from B6 to capture Kenjaku on B7!',
+          'Deliver the finishing blow! Slide Vanguard Yuji from D7 onto B7 for SOVEREIGN CHECKMATE!',
         tacticalBreakdown:
-          'Maki captures Kenjaku on B7, delivering Sovereign Checkmate! You have mastered the Culling Game Dojo!',
-        hint: 'Capture Kenjaku on B7 with Maki for Checkmate.',
+          'From B7 (double-guarded by C6 and Nanami on B5), Yuji checks Sukuna on A8 while simultaneously sealing B8, B9, A7, and L7! Checkmate!',
+        hint: 'Slide Yuji 2 squares left from D7 to B7 for Checkmate!',
         vectorArrows: [
-          { from: { x: 2, y: 6 }, to: { x: 2, y: 7 }, color: 'crimson', label: '8 🏆', style: 'solid' },
+          { from: { x: 4, y: 7 }, to: { x: 2, y: 7 }, color: 'emerald', label: '8', style: 'solid' },
+          { from: { x: 2, y: 7 }, to: { x: 1, y: 8 }, color: 'navy', style: 'dashed' },
         ],
       },
     ],

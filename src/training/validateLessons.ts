@@ -14,9 +14,11 @@ import type { CullingOpeningLesson, CullingOpeningStep, DojoLesson, KataStep } f
 import {
   createInitialCullingMatch,
   executeCullingMove,
+  applyCullingMoveToBoard,
   getLegalMovesForSquare as getCullingLegalMovesForSquare,
   getAllLegalMoves as getAllCullingLegalMoves,
   isCullingKingInCheck,
+  isSquareAttackedBy,
   cloneCullingBoard,
 } from '../game/cullingEngine.js';
 import {
@@ -28,6 +30,7 @@ import {
 } from '../game/engine.ts';
 import type { Position, PieceColor } from '../types/game.ts';
 import type { CullingPos, CullingMatchState, CullingBoard } from '../types/cullingGame.ts';
+import { getPieceRole, CULLING_MATERIAL_VALUES, posToCullingSquare } from '../types/cullingGame.ts';
 
 export interface ValidationFailure {
   lessonId: string;
@@ -131,19 +134,23 @@ export function validateCullingOpeningLesson(
       break;
     }
 
-    // 3. Label & Notation & Vector Consistency
+    // 3. Label & Notation & Vector Consistency (Primary move arrow must match step.from -> step.to)
     if (step.vectorArrows && step.vectorArrows.length > 0) {
-      for (const vec of step.vectorArrows) {
-        if (vec.from.x !== from.x || vec.from.y !== from.y || vec.to.x !== to.x || vec.to.y !== to.y) {
-          failures.push({
-            lessonId: lesson.id,
-            lessonTitle: lesson.title,
-            stepIndex: stepNum,
-            rule: 'RULE_3_VECTOR_MISMATCH',
-            expected: `Vector from (${from.x},${from.y}) to (${to.x},${to.y})`,
-            actual: `Vector from (${vec.from.x},${vec.from.y}) to (${vec.to.x},${vec.to.y})`,
-          });
-        }
+      const primaryVec = step.vectorArrows[0];
+      if (
+        primaryVec.from.x !== from.x ||
+        primaryVec.from.y !== from.y ||
+        primaryVec.to.x !== to.x ||
+        primaryVec.to.y !== to.y
+      ) {
+        failures.push({
+          lessonId: lesson.id,
+          lessonTitle: lesson.title,
+          stepIndex: stepNum,
+          rule: 'RULE_3_VECTOR_MISMATCH',
+          expected: `Primary vector from (${from.x},${from.y}) to (${to.x},${to.y})`,
+          actual: `Primary vector from (${primaryVec.from.x},${primaryVec.from.y}) to (${primaryVec.to.x},${primaryVec.to.y})`,
+        });
       }
     }
 
@@ -231,6 +238,88 @@ export function validateCullingOpeningLesson(
       }
     }
 
+    // 4b. TACTICAL PIECE-SAFETY AUDIT (RULE_7_PIECE_SAFETY):
+    // When turn passes to Opponent (i.e. match is active and no same-turn Jackpot bonus is pending),
+    // verify NO friendly non-pawn piece (>= 3.5 value) is left hanging to:
+    //  (a) an enemy Pawn (1.0 value),
+    //  (b) an enemy Ranged Strike ('shoot') or Black Flash ('black_flash') that destroys it without moving,
+    //  (c) a lower-value enemy piece, or
+    //  (d) an undefended free capture (en prise).
+    // Intact Bulwark Shell ('panda') absorbs the first hit without dying, EXCEPT we still forbid gifting
+    // Panda's Shell to a 1-point enemy Pawn!
+    if (match.status === 'active' && match.turn !== lesson.playerColor) {
+      const oppLegalNow = getAllCullingLegalMoves(match);
+      for (const oppMove of oppLegalNow) {
+        const victim = match.board[oppMove.to.y]?.[oppMove.to.x];
+        if (!victim || victim.color !== lesson.playerColor) continue;
+
+        const victimRole = getPieceRole(victim.type);
+        if (victimRole === 'pawn' || victimRole === 'swarm') continue;
+
+        const attackerRole = getPieceRole(oppMove.piece.type);
+        const victimVal = CULLING_MATERIAL_VALUES[victimRole];
+        const attackerVal = CULLING_MATERIAL_VALUES[attackerRole];
+        const hasIntactShell = victimRole === 'bulwark' && victim.pandaCore !== 'gorilla';
+
+        // Never place any expensive piece (even intact Panda) where an enemy Pawn can hit it!
+        if (attackerRole === 'pawn') {
+          failures.push({
+            lessonId: lesson.id,
+            lessonTitle: lesson.title,
+            stepIndex: stepNum,
+            rule: 'RULE_7_EXPENSIVE_PIECE_IN_PAWN_RANGE',
+            expected: `No friendly non-pawn unit exposed to enemy pawn capture`,
+            actual: `${victim.type} at ${posToCullingSquare(oppMove.to)} can be struck by enemy pawn from ${posToCullingSquare(oppMove.from)}`,
+          });
+          break;
+        }
+
+        // If victim has intact Bulwark Shell against a non-pawn attacker, it cannot be captured this ply
+        if (hasIntactShell) continue;
+
+        // Ranged Strike ('shoot') or Black Flash ('black_flash') destroys our piece without moving onto square
+        if (oppMove.actionType === 'shoot' || oppMove.actionType === 'black_flash') {
+          failures.push({
+            lessonId: lesson.id,
+            lessonTitle: lesson.title,
+            stepIndex: stepNum,
+            rule: 'RULE_7_EXPOSED_TO_RANGED_OR_BLACK_FLASH',
+            expected: `No friendly non-pawn unit exposed to free ${oppMove.actionType}`,
+            actual: `${victim.type} at ${posToCullingSquare(oppMove.to)} can be eliminated via ${oppMove.actionType} by ${oppMove.piece.type} at ${posToCullingSquare(oppMove.from)}`,
+          });
+          break;
+        }
+
+        // Lower-value attacker capturing strictly higher-value friendly piece (losing trade even if defended)
+        if (attackerVal < victimVal) {
+          failures.push({
+            lessonId: lesson.id,
+            lessonTitle: lesson.title,
+            stepIndex: stepNum,
+            rule: 'RULE_7_UNFAVORABLE_EXCHANGE_EXPOSURE',
+            expected: `Higher-value ${victim.type} (${victimVal}) not exposed to lower-value ${oppMove.piece.type} (${attackerVal})`,
+            actual: `${oppMove.piece.type} at ${posToCullingSquare(oppMove.from)} can capture ${victim.type} at ${posToCullingSquare(oppMove.to)}`,
+          });
+          break;
+        }
+
+        // Equal/higher-value attacker capturing an UNDEFENDED friendly non-pawn piece (en prise)
+        const { board: afterOppCap } = applyCullingMoveToBoard(match.board, oppMove, match.turnCount);
+        const canPlayerRecapture = isSquareAttackedBy(afterOppCap, oppMove.to, lesson.playerColor);
+        if (!canPlayerRecapture) {
+          failures.push({
+            lessonId: lesson.id,
+            lessonTitle: lesson.title,
+            stepIndex: stepNum,
+            rule: 'RULE_7_UNDEFENDED_PIECE_HANGING',
+            expected: `${victim.type} at ${posToCullingSquare(oppMove.to)} defended or unattacked`,
+            actual: `Undefended ${victim.type} at ${posToCullingSquare(oppMove.to)} hangs for free to ${oppMove.piece.type} at ${posToCullingSquare(oppMove.from)}`,
+          });
+          break;
+        }
+      }
+    }
+
     // 5. Scripted Opponent Response
     if (step.opponentResponse) {
       const opp = step.opponentResponse;
@@ -247,22 +336,25 @@ export function validateCullingOpeningLesson(
         break;
       }
 
+      const oppAction = opp.actionType || 'move';
       const oppLegal = getCullingLegalMovesForSquare(match, opp.from);
-      const isOppLegal = oppLegal.some((m) => m.to.x === opp.to.x && m.to.y === opp.to.y);
+      const isOppLegal = oppLegal.some(
+        (m) => m.to.x === opp.to.x && m.to.y === opp.to.y && (m.actionType || 'move') === oppAction
+      );
       if (!isOppLegal) {
         failures.push({
           lessonId: lesson.id,
           lessonTitle: lesson.title,
           stepIndex: stepNum,
           rule: 'RULE_5_OPPONENT_MOVE_ILLEGAL',
-          expected: `Opponent response (${opp.from.x},${opp.from.y}) -> (${opp.to.x},${opp.to.y}) legal`,
+          expected: `Opponent response (${opp.from.x},${opp.from.y}) -> (${opp.to.x},${opp.to.y}) [${oppAction}] legal`,
           actual: `Illegal opponent move`,
-          legalMoves: oppLegal.map((m) => `(${m.to.x},${m.to.y})`),
+          legalMoves: oppLegal.map((m) => `(${m.to.x},${m.to.y})[${m.actionType || 'move'}]`),
         });
         break;
       }
 
-      const oppRes = executeCullingMove(match, opp.from, opp.to, 'move');
+      const oppRes = executeCullingMove(match, opp.from, opp.to, oppAction);
       if (!oppRes.success) {
         failures.push({
           lessonId: lesson.id,

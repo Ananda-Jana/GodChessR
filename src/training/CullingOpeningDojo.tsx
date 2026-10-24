@@ -23,9 +23,11 @@ import {
   createInitialCullingMatch,
   cloneCullingBoard,
   executeCullingMove,
+  applyCullingMoveToBoard,
+  isSquareAttackedBy,
 } from '../game/cullingEngine';
 import type { CullingMatchState, CullingPos, CullingSpecialAction } from '../types/cullingGame';
-import { CULLING_ROSTER } from '../types/cullingGame';
+import { CULLING_ROSTER, getPieceRole, posToCullingSquare } from '../types/cullingGame';
 import { CullingBoard } from '../components/CullingBoard';
 import { CullingOpeningVectorOverlay } from './CullingOpeningVectorOverlay';
 import { CullingRulesModal } from '../components/CullingRulesModal';
@@ -210,7 +212,7 @@ export const CullingOpeningDojo: React.FC<CullingOpeningDojoProps> = ({
           match = res.state;
           if (step.opponentResponse) {
             const opp = step.opponentResponse;
-            const oppRes = executeCullingMove(match, opp.from, opp.to, 'move');
+            const oppRes = executeCullingMove(match, opp.from, opp.to, opp.actionType || 'move');
             if (oppRes.success) {
               match = oppRes.state;
             }
@@ -333,12 +335,33 @@ export const CullingOpeningDojo: React.FC<CullingOpeningDojoProps> = ({
     if (!isMatch) {
       const movingPiece = matchState.board[from.y]?.[from.x];
       const pieceName = movingPiece ? CULLING_ROSTER[movingPiece.type]?.name || 'unit' : 'piece';
+      const oppColor = activeLesson.playerColor === 'white' ? 'black' : 'white';
 
-      let reason = `Moving your ${pieceName} from (${from.x},${from.y}) to (${to.x},${to.y}) departs from Sensei Tukuna's recommended line.`;
-      if (from.x !== currentStep.from.x || from.y !== currentStep.from.y) {
-        reason = `Discipline, pupil! You moved your ${pieceName} instead of deploying the designated opening unit.`;
+      let exposesValuablePiece = false;
+      if (movingPiece && getPieceRole(movingPiece.type) !== 'pawn') {
+        const { board: testBoard } = applyCullingMoveToBoard(matchState.board, {
+          from,
+          to,
+          piece: movingPiece,
+          actionType: (actionType || 'move') as CullingSpecialAction,
+          san: '',
+          timestamp: Date.now(),
+        });
+        const landingPos = actionType === 'shoot' || actionType === 'black_flash' ? from : to;
+        if (isSquareAttackedBy(testBoard, landingPos, oppColor)) {
+          exposesValuablePiece = true;
+        }
+      }
+
+      let reason = `Moving your ${pieceName} to ${posToCullingSquare(to)} departs from Sensei Tukuna's protective line.`;
+      if (exposesValuablePiece) {
+        reason = `Piece safety first! Placing ${pieceName} on ${posToCullingSquare(to)} exposes an expensive role to enemy capture. Protect your key units behind pawns and follow the emerald vector.`;
+      } else if (from.x !== currentStep.from.x || from.y !== currentStep.from.y) {
+        const expectedPiece = matchState.board[currentStep.from.y]?.[currentStep.from.x];
+        const expectedName = expectedPiece ? CULLING_ROSTER[expectedPiece.type]?.name || 'designated unit' : 'designated unit';
+        reason = `Deploy ${expectedName} on ${posToCullingSquare(currentStep.from)} first—follow the navy origin box and emerald vector.`;
       } else {
-        reason = `Inaccurate square! Moving your ${pieceName} there weakens your tactical alignment. Follow the crimson vector!`;
+        reason = `Inaccurate destination for ${pieceName}! Aim for ${posToCullingSquare(currentStep.to)} along the emerald vector to keep your formation sound.`;
       }
 
       sounds.playCheck();
@@ -378,7 +401,7 @@ export const CullingOpeningDojo: React.FC<CullingOpeningDojoProps> = ({
         const opp = currentStep.opponentResponse;
         setTimeout(() => {
           setMatchState((prev) => {
-            const oppRes = executeCullingMove(prev, opp.from, opp.to, 'move');
+            const oppRes = executeCullingMove(prev, opp.from, opp.to, opp.actionType || 'move');
             if (oppRes.success) {
               sounds.playMove();
               return oppRes.state;
@@ -744,12 +767,12 @@ export const CullingOpeningDojo: React.FC<CullingOpeningDojoProps> = ({
                 }}
                 className={`w-full p-2 text-xs font-black uppercase border flex items-center justify-between ${
                   showArrows
-                    ? 'bg-red-950 text-red-200 border-red-500'
+                    ? 'bg-emerald-950 text-emerald-200 border-emerald-500'
                     : 'bg-neutral-900 text-neutral-400 border-neutral-800'
                 }`}
               >
                 <span className="flex items-center gap-1.5">
-                  {showArrows ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />} Vector Arrows
+                  {showArrows ? <Eye className="w-4 h-4 text-emerald-400" /> : <EyeOff className="w-4 h-4" />} Vector Arrows
                 </span>
                 <span>{showArrows ? 'VISIBLE' : 'HIDDEN'}</span>
               </button>
@@ -966,11 +989,11 @@ export const CullingOpeningDojo: React.FC<CullingOpeningDojoProps> = ({
               }}
               className={`px-2 py-1 text-[11px] font-black uppercase border flex items-center gap-1 cursor-pointer shadow-[1px_1px_0px_#000] ${
                 showArrows
-                  ? 'bg-red-950 text-red-200 border-red-600'
+                  ? 'bg-emerald-950 text-emerald-200 border-emerald-500'
                   : 'bg-neutral-900 text-neutral-400 border-neutral-800'
               }`}
             >
-              {showArrows ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
+              {showArrows ? <Eye className="w-3.5 h-3.5 text-emerald-400" /> : <EyeOff className="w-3.5 h-3.5" />}
               <span>Vectors</span>
             </button>
 
@@ -1062,9 +1085,31 @@ export const CullingOpeningDojo: React.FC<CullingOpeningDojoProps> = ({
                 />
               )}
 
-              {/* Strategic Red Pattern Overlay Squares */}
-              {(isFullStrategyMode || showArrows) && activeLesson.patternHighlights && (
-                <div className="absolute inset-0 pointer-events-none z-20 grid grid-cols-10 grid-rows-10 p-1">
+              {/* Active Step Navy Origin & Emerald/Navy Target Guide Boxes */}
+              {showArrows && currentStep && !isFreePractice && !isFullStrategyMode && !isLessonFinished && (
+                <div className="absolute inset-0 pointer-events-none z-20 grid grid-cols-10 grid-rows-10 p-1 sm:p-2">
+                  {/* Origin Square (Deep Navy Accent) */}
+                  <div
+                    style={{
+                      gridColumnStart: currentStep.from.x + 1,
+                      gridRowStart: 9 - currentStep.from.y + 1,
+                    }}
+                    className="w-full h-full bg-[#1e3a8a]/35 border-[2.5px] border-[#1d4ed8] rounded-sm opacity-80 shadow-[inset_0_0_8px_rgba(30,58,138,0.75)]"
+                  />
+                  {/* Target Square (Emerald Green with Deep Navy Accent Ring) */}
+                  <div
+                    style={{
+                      gridColumnStart: currentStep.to.x + 1,
+                      gridRowStart: 9 - currentStep.to.y + 1,
+                    }}
+                    className="w-full h-full bg-[#10b981]/30 border-[2.5px] border-[#1e3a8a] ring-2 ring-inset ring-[#10b981] rounded-sm opacity-80 shadow-[0_0_10px_rgba(16,185,129,0.55)]"
+                  />
+                </div>
+              )}
+
+              {/* Full Strategy Review Zone Highlights (Deep Navy Blue instead of Red) */}
+              {isFullStrategyMode && activeLesson.patternHighlights && (
+                <div className="absolute inset-0 pointer-events-none z-20 grid grid-cols-10 grid-rows-10 p-1 sm:p-2">
                   {activeLesson.patternHighlights.map((pos, pIdx) => {
                     const col = pos.x;
                     const row = 9 - pos.y;
@@ -1075,7 +1120,7 @@ export const CullingOpeningDojo: React.FC<CullingOpeningDojoProps> = ({
                           gridColumnStart: col + 1,
                           gridRowStart: row + 1,
                         }}
-                        className="w-full h-full bg-red-600/30 border-2 border-red-500 rounded-sm animate-pulse"
+                        className="w-full h-full bg-[#1e3a8a]/30 border-2 border-[#3b82f6]/85 rounded-sm opacity-80"
                       />
                     );
                   })}

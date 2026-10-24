@@ -1,8 +1,9 @@
 /**
  * CullingOpeningVectorOverlay.tsx
  *
- * Renders glowing SVG move vectors, numbered crimson arrows, and gold dashed threat lines
- * directly over the 88-square Culling Game cross board.
+ * Renders high-contrast, thicker, semi-transparent Emerald Green & Deep Navy Blue
+ * tactical move vectors directly over the 88-square Culling Game cross board.
+ * Designed for crystal legibility across both cream (#F2EFE4) and crimson (#e11d48) squares.
  */
 
 import React from 'react';
@@ -10,12 +11,11 @@ import type { CullingVectorArrow } from './types';
 
 interface CullingOpeningVectorOverlayProps {
   arrows: CullingVectorArrow[];
-  boardDimension: number; // e.g. 400px
+  boardDimension: number;
 }
 
 export const CullingOpeningVectorOverlay: React.FC<CullingOpeningVectorOverlayProps> = ({
   arrows,
-  boardDimension,
 }) => {
   if (!arrows || arrows.length === 0) return null;
 
@@ -38,102 +38,135 @@ export const CullingOpeningVectorOverlay: React.FC<CullingOpeningVectorOverlayPr
       className="w-full h-full absolute inset-0 pointer-events-none z-30 overflow-visible"
     >
       <defs>
-        {/* Crimson Arrowhead */}
+        {/* Primary Emerald Green Arrowhead with Deep Navy Casing */}
         <marker
-          id="crimson-arrowhead"
-          markerWidth="10"
-          markerHeight="8"
-          refX="8"
-          refY="4"
+          id="emerald-arrowhead"
+          markerUnits="userSpaceOnUse"
+          markerWidth="38"
+          markerHeight="34"
+          refX="28"
+          refY="17"
           orient="auto"
         >
-          <polygon points="0 0, 10 4, 0 8" fill="#ef4444" />
+          <polygon
+            points="2 2, 34 17, 2 32, 8 17"
+            fill="#10b981"
+            stroke="#1e3a8a"
+            strokeWidth="3.5"
+            strokeLinejoin="round"
+          />
         </marker>
 
-        {/* Gold Arrowhead */}
+        {/* Secondary Deep Navy Blue Arrowhead */}
         <marker
-          id="gold-arrowhead"
-          markerWidth="10"
-          markerHeight="8"
-          refX="8"
-          refY="4"
+          id="navy-arrowhead"
+          markerUnits="userSpaceOnUse"
+          markerWidth="36"
+          markerHeight="32"
+          refX="26"
+          refY="16"
           orient="auto"
         >
-          <polygon points="0 0, 10 4, 0 8" fill="#eab308" />
+          <polygon
+            points="2 2, 32 16, 2 30, 8 16"
+            fill="#1e3a8a"
+            stroke="#bae6fd"
+            strokeWidth="3"
+            strokeLinejoin="round"
+          />
         </marker>
-
-        {/* Glow Filters */}
-        <filter id="glow-crimson" x="-20%" y="-20%" width="140%" height="140%">
-          <feGaussianBlur stdDeviation="2.5" result="blur" />
-          <feComposite in="SourceGraphic" in2="blur" operator="over" />
-        </filter>
-        <filter id="glow-gold" x="-20%" y="-20%" width="140%" height="140%">
-          <feGaussianBlur stdDeviation="2.5" result="blur" />
-          <feComposite in="SourceGraphic" in2="blur" operator="over" />
-        </filter>
       </defs>
 
       {arrows.map((arrow, idx) => {
-        const start = getCenter(arrow.from.x, arrow.from.y);
-        const end = getCenter(arrow.to.x, arrow.to.y);
+        const rawStart = getCenter(arrow.from.x, arrow.from.y);
+        const rawEnd = getCenter(arrow.to.x, arrow.to.y);
 
-        const isCrimson = arrow.color === 'crimson';
-        const strokeColor = isCrimson ? '#ef4444' : '#eab308';
-        const markerId = isCrimson ? 'crimson-arrowhead' : 'gold-arrowhead';
-        const filterId = isCrimson ? 'glow-crimson' : 'glow-gold';
+        const dx = rawEnd.cx - rawStart.cx;
+        const dy = rawEnd.cy - rawStart.cy;
+        const len = Math.hypot(dx, dy) || 1;
+        const ux = dx / len;
+        const uy = dy / len;
+
+        // Inset start & end slightly so piece icons and target square remain clearly visible
+        const startOffset = Math.min(20, len * 0.18);
+        const endOffset = Math.min(24, len * 0.22);
+
+        const x1 = rawStart.cx + ux * startOffset;
+        const y1 = rawStart.cy + uy * startOffset;
+        const x2 = rawEnd.cx - ux * endOffset;
+        const y2 = rawEnd.cy - uy * endOffset;
+
+        // Map legacy 'crimson' -> emerald, 'gold' -> navy
+        const isEmerald = arrow.color === 'emerald' || arrow.color === 'crimson';
+        const coreStroke = isEmerald ? '#10b981' : '#1e3a8a';
+        const casingStroke = isEmerald ? '#1e3a8a' : '#e0f2fe';
+        const markerId = isEmerald ? 'emerald-arrowhead' : 'navy-arrowhead';
         const isDashed = arrow.style === 'dashed';
 
-        // Calculate midpoint for label badge
-        const midX = (start.cx + end.cx) / 2;
-        const midY = (start.cy + end.cy) / 2;
+        // Place sequence label slightly toward origin (38% along shaft) to avoid covering middle pieces
+        const badgeX = rawStart.cx + dx * 0.38;
+        const badgeY = rawStart.cy + dy * 0.38;
 
         return (
-          <g key={`arrow_${idx}_${arrow.from.x}_${arrow.from.y}`}>
+          <g
+            key={`arrow_${idx}_${arrow.from.x}_${arrow.from.y}`}
+            opacity="0.78"
+          >
             <title>
-              {isCrimson ? 'Recommended move' : 'Tactical threat'} vector from square ({arrow.from.x}, {arrow.from.y}) to ({arrow.to.x}, {arrow.to.y})
+              {isEmerald ? 'Recommended move' : 'Tactical accent'} vector from ({arrow.from.x}, {arrow.from.y}) to ({arrow.to.x}, {arrow.to.y})
               {arrow.label ? ` step ${arrow.label}` : ''}
             </title>
-            {/* Outer Glow Line */}
-            <line
-              x1={start.cx}
-              y1={start.cy}
-              x2={end.cx}
-              y2={end.cy}
-              stroke={strokeColor}
-              strokeWidth="4"
-              strokeOpacity="0.4"
-              strokeDasharray={isDashed ? '6 4' : undefined}
-              filter={`url(#${filterId})`}
+
+            {/* Origin Anchor Ring (Deep Navy Accent) */}
+            <circle
+              cx={rawStart.cx}
+              cy={rawStart.cy}
+              r="11"
+              fill="#1e3a8a"
+              stroke="#10b981"
+              strokeWidth="3"
             />
 
-            {/* Core Vector Line */}
+            {/* Outer Contrast Casing Shaft */}
             <line
-              x1={start.cx}
-              y1={start.cy}
-              x2={end.cx}
-              y2={end.cy}
-              stroke={strokeColor}
-              strokeWidth="3"
-              strokeDasharray={isDashed ? '6 4' : undefined}
+              x1={x1}
+              y1={y1}
+              x2={x2}
+              y2={y2}
+              stroke={casingStroke}
+              strokeWidth="20"
+              strokeLinecap="round"
+              strokeDasharray={isDashed ? '22 14' : undefined}
+            />
+
+            {/* Thicker Core Vector Shaft */}
+            <line
+              x1={x1}
+              y1={y1}
+              x2={x2}
+              y2={y2}
+              stroke={coreStroke}
+              strokeWidth="13"
+              strokeLinecap="round"
+              strokeDasharray={isDashed ? '22 14' : undefined}
               markerEnd={`url(#${markerId})`}
             />
 
-            {/* Sequence Label Badge */}
+            {/* Sequence Label Badge (Deep Navy Pill Circle with Emerald Ring) */}
             {arrow.label && (
-              <g transform={`translate(${midX}, ${midY})`}>
+              <g transform={`translate(${badgeX}, ${badgeY})`}>
                 <circle
-                  r="10"
-                  fill={isCrimson ? '#991b1b' : '#854d0e'}
-                  stroke={strokeColor}
-                  strokeWidth="1.5"
-                  className="shadow-lg"
+                  r="16"
+                  fill="#0f172a"
+                  stroke={isEmerald ? '#10b981' : '#93c5fd'}
+                  strokeWidth="3"
                 />
                 <text
                   x="0"
-                  y="3.5"
+                  y="5"
                   textAnchor="middle"
                   fill="#ffffff"
-                  fontSize="10"
+                  fontSize="14"
                   fontWeight="900"
                   fontFamily="sans-serif"
                 >

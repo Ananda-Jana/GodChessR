@@ -36,6 +36,7 @@ interface ChessBoardProps {
   checkmateGrids?: Position[];
   defeatedKingPos?: Position | null;
   pieceTheme?: PieceTheme;
+  boardPalette?: 'default' | 'crimson';
 }
 
 export const ChessBoard: React.FC<ChessBoardProps> = ({
@@ -57,6 +58,7 @@ export const ChessBoard: React.FC<ChessBoardProps> = ({
   checkmateGrids = [],
   defeatedKingPos = null,
   pieceTheme = 'classic',
+  boardPalette = 'default',
 }) => {
   const { theme } = useTheme();
   const [selectedPos, setSelectedPos] = useState<Position | null>(null);
@@ -238,29 +240,42 @@ export const ChessBoard: React.FC<ChessBoardProps> = ({
                 defeatedKingPos && defeatedKingPos.x === x && defeatedKingPos.y === y
               );
 
-              // Soft low-contrast square palette with slightly increased contrast
-              let squareBg = isThemeLight
-                ? isLight ? 'bg-white' : 'bg-[#d8e0f0]'
-                : isLight ? 'bg-[#2b3c5a]' : 'bg-[#101726]';
+              const isCrimsonPalette = boardPalette === 'crimson';
+              const crimsonBaseBg = isLight ? 'bg-[#F2EFE4]' : 'bg-[#BC1434]';
+
+              // Soft low-contrast square palette with optional cream/crimson bot match palette
+              let squareBg = isCrimsonPalette
+                ? crimsonBaseBg
+                : isThemeLight
+                  ? isLight ? 'bg-white' : 'bg-[#d8e0f0]'
+                  : isLight ? 'bg-[#2b3c5a]' : 'bg-[#101726]';
 
               if (isLastMoveFrom || isLastMoveTo) {
-                squareBg = isThemeLight
-                  ? 'bg-amber-300/35'
-                  : 'bg-amber-400/20';
+                squareBg = isCrimsonPalette
+                  ? `${crimsonBaseBg} ring-2 ring-inset ring-amber-400/90`
+                  : isThemeLight
+                    ? 'bg-amber-300/35'
+                    : 'bg-amber-400/20';
               }
               if (isSelected) {
-                squareBg = 'bg-amber-400/40 ring-2 ring-inset ring-amber-400/80';
+                squareBg = isCrimsonPalette
+                  ? `${crimsonBaseBg} ring-3 ring-inset ring-amber-400 brightness-105`
+                  : 'bg-amber-400/40 ring-2 ring-inset ring-amber-400/80';
               }
               if (isKingInCheckSquare) {
                 squareBg = 'bg-red-600/80 ring-2 ring-inset ring-red-500';
               }
 
               if (isCraftCandidate) {
-                squareBg = 'bg-amber-400/35 ring-2 ring-inset ring-amber-400';
+                squareBg = isCrimsonPalette
+                  ? `${crimsonBaseBg} ring-2 ring-inset ring-amber-400`
+                  : 'bg-amber-400/35 ring-2 ring-inset ring-amber-400';
               } else if (isCraftAttacked) {
-                squareBg = isThemeLight
-                  ? 'bg-red-200/80 ring-1 ring-inset ring-red-500 cursor-not-allowed'
-                  : 'bg-red-950/70 ring-1 ring-inset ring-red-500 cursor-not-allowed';
+                squareBg = isCrimsonPalette
+                  ? `${crimsonBaseBg} ring-1 ring-inset ring-red-950/70 cursor-not-allowed`
+                  : isThemeLight
+                    ? 'bg-red-200/80 ring-1 ring-inset ring-red-500 cursor-not-allowed'
+                    : 'bg-red-950/70 ring-1 ring-inset ring-red-500 cursor-not-allowed';
               }
 
               // All grids used for checkmate are made entirely red
@@ -268,9 +283,11 @@ export const ChessBoard: React.FC<ChessBoardProps> = ({
                 squareBg = 'bg-red-600 ring-2 ring-inset ring-red-400 shadow-[inset_0_0_12px_rgba(0,0,0,0.6)] animate-pulse';
               }
 
-              const coordColor = isThemeLight
-                ? isLight ? 'text-slate-400' : 'text-slate-500'
-                : isLight ? 'text-slate-400' : 'text-slate-500';
+              const coordColor = isCrimsonPalette
+                ? isLight ? 'text-[#BC1434]/80' : 'text-[#F2EFE4]/85'
+                : isThemeLight
+                  ? isLight ? 'text-slate-400' : 'text-slate-500'
+                  : isLight ? 'text-slate-400' : 'text-slate-500';
 
               const isFocused = focusedPos.x === x && focusedPos.y === y;
 
@@ -321,10 +338,10 @@ export const ChessBoard: React.FC<ChessBoardProps> = ({
                     </span>
                   )}
 
-                  {/* Piece Graphic with Chunky Soft Under-Piece Shadow */}
+                  {/* Piece Graphic */}
                   {piece && (
                     <div
-                      className={`w-full h-full flex items-center justify-center relative chess-piece-shadow transition-all duration-700 ease-out ${
+                      className={`w-full h-full flex items-center justify-center relative transition-all duration-700 ease-out ${
                         isDefeatedKing
                           ? 'transform rotate-90 translate-y-2 origin-bottom-right drop-shadow-lg z-20'
                           : ''
