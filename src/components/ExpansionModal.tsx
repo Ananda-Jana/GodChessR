@@ -22,8 +22,11 @@ export const ExpansionModal: React.FC<ExpansionModalProps> = ({
   const { theme } = useTheme();
   const isThemeLight = theme === 'light';
   
-  // Mandatory choice, no backdrop/escape dismiss
-  const modalRef = useModalFocus(true, () => {}, false);
+  // Keyboard focus trap with Escape handling (auto-picks default on Escape)
+  const modalRef = useModalFocus(true, () => {
+    const autoSide: ExpansionSide = playerColor === 'white' ? 'bottom' : 'top';
+    onExpand(autoSide);
+  }, true);
 
   const [timeLeft, setTimeLeft] = useState<number>(() =>
     Math.max(0, Math.ceil((expiresAt - Date.now()) / 1000))
@@ -84,7 +87,7 @@ export const ExpansionModal: React.FC<ExpansionModalProps> = ({
         role="dialog"
         aria-modal="true"
         aria-labelledby="expansion-modal-title"
-        className="w-full max-w-lg border-4 transition-colors bg-black border-white shadow-[8px_8px_0px_#ffffff] text-white max-h-[90dvh] flex flex-col animate-in slide-in-from-bottom-4 sm:slide-in-from-bottom-0 sm:zoom-in-95 duration-150"
+        className="w-[min(calc(100vw-32px),500px)] max-h-[85dvh] overflow-y-auto border-4 transition-colors bg-black border-white shadow-[8px_8px_0px_#ffffff] text-white flex flex-col animate-in slide-in-from-bottom-4 sm:slide-in-from-bottom-0 sm:zoom-in-95 duration-150"
       >
         {/* Header */}
         <div className="flex items-center justify-between gap-3 border-b-2 border-white p-4 sm:p-6 shrink-0 bg-black">

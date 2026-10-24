@@ -107,14 +107,9 @@ export const PracticeBoard: React.FC<PracticeBoardProps> = ({
     gameOutcome: 'active',
   });
 
-  // Auto-scroll down smoothly to debrief outcome when match concludes
+  // Match conclusion state (no programmatic scrolling - board position is sacred)
   useEffect(() => {
-    if (matchOutcome) {
-      const scrollTimer = setTimeout(() => {
-        resultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-      }, 120);
-      return () => clearTimeout(scrollTimer);
-    }
+    // Zero scroll on match completion
   }, [matchOutcome]);
 
   // Reset board when mode changes
@@ -482,9 +477,9 @@ export const PracticeBoard: React.FC<PracticeBoardProps> = ({
   };
 
   return (
-    <div className="flex flex-col lg:flex-row gap-5 items-start justify-center w-full">
+    <div className="flex flex-col lg:grid lg:grid-cols-[1fr_380px] gap-6 items-start justify-center w-full">
       {/* Board Container Section */}
-      <div className="flex flex-col items-center w-full max-w-[500px]">
+      <div className="flex flex-col items-center w-full flex-1">
         {/* Mode Selector Pill Bar */}
         <div className="flex items-center justify-between w-full mb-3 bg-neutral-200 dark:bg-[#18181b] p-1.5 border-2 border-black dark:border-white shadow-[2px_2px_0px_#000]">
           <span className="text-[11px] font-black uppercase text-neutral-600 dark:text-neutral-400 pl-1 flex items-center gap-1">
@@ -531,7 +526,7 @@ export const PracticeBoard: React.FC<PracticeBoardProps> = ({
           /* 8x8 Board Container */
           <div
             style={maxBoardDimension ? { width: `${maxBoardDimension}px`, height: `${maxBoardDimension}px` } : undefined}
-            className="relative border-3 sm:border-4 border-black dark:border-white shadow-[4px_4px_0px_#000000] dark:shadow-[4px_4px_0px_#ffffff] bg-black select-none max-w-[460px] w-full aspect-square shrink-0"
+            className="relative border-3 sm:border-4 border-black dark:border-white shadow-[4px_4px_0px_#000000] dark:shadow-[4px_4px_0px_#ffffff] bg-black select-none w-[min(calc(100vw-16px),calc(100dvh-224px),520px)] h-[min(calc(100vw-16px),calc(100dvh-224px),520px)] lg:w-[min(calc(100dvh-140px),calc(100%-48px),760px)] lg:h-[min(calc(100dvh-140px),calc(100%-48px),760px)] aspect-square shrink-0"
           >
             <div className="grid grid-cols-8 grid-rows-8 w-full h-full">
               {Array.from({ length: 8 }).map((_, rankIdx) => {
@@ -771,7 +766,7 @@ export const PracticeBoard: React.FC<PracticeBoardProps> = ({
       </div>
 
       {/* Right Sidebar: Sparring Match Setup & Info */}
-      <div className="w-full lg:w-72 flex flex-col gap-3">
+      <div className="w-full lg:w-[380px] flex flex-col gap-3 shrink-0">
         <div className="bg-white dark:bg-[#0c0c0e] border-3 border-black dark:border-white shadow-[4px_4px_0px_#000000] dark:shadow-[4px_4px_0px_#ffffff] p-3.5">
           <div className="flex items-center gap-2 mb-2 pb-1.5 border-b-2 border-black dark:border-neutral-700">
             <Swords className="w-4 h-4 text-amber-500" />

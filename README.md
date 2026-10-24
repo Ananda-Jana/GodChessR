@@ -1708,3 +1708,24 @@ The implementation is integrated into the existing application and is designed t
 The update stays lightweight by using only Tailwind utilities and standard React patterns. No new libraries were added. Zero game logic or data persistence rules were modified; the changes are strictly presentational.
 
 **Logic Touched**: No.
+
+## UI Update: Dice Chess Layout (2026-10-23)
+
+### Dice-Phase Rule & Deterministic Test
+In `src/game/engine.ts` (`executeMove`), `totalCaptures` counts **combined captures across both sides** of **any piece type** (pawns, minor/major pieces, Princes, and crafted units). While `totalCaptures < 3` (`diceActive !== false`), the active side must roll before moving unless its King is in check. On the **3rd combined capture** (`totalCaptures === 3`), `diceActive` flips permanently to `false` once and `dice` resets to `null`, continuing as normal chess across Standard vs Bot, Crafted vs Bot, and Multiplayer Challenge (including board expansion, crafting, and mid-game reconnects).
+- **Test Result**: Added `test/dice_phase.test.ts` (26 deterministic assertions covering 0–4+ captures, Crafted pieces, expansion, and craft placement) — **PASSED**. Full regression suites (`npx tsc --noEmit`, `npm run test:training`, `npm test`, `mechanics.test.ts`, `multiplayer_reconnect.test.ts`, `reproduce_freeze.test.ts`) also **PASSED**.
+
+### Mobile (`< 768px`) & Desktop (`>= 768px`) Layout
+- **Mobile (`< 768px`)**: Fixed `100dvh` non-scrolling 3-zone layout plus bottom bar:
+  1. **Top (`48px`)**: Compact header with back button, opponent, material diff, clocks, and turn pill.
+  2. **Middle**: Single `<ChessBoard />` instance fitted via `ResizeObserver` from viewport width and height, independent of dice, log, or phase transitions.
+  3. **Dice Stage (`90px` fixed)**: Directly under the board with 300ms transform-only roll animation (`prefers-reduced-motion` respected), piece-name text labels, and a `>= 44px` roll button (`WAITING FOR OPPONENT` when disabled). Converts in-place to `"NORMAL CHESS - dice phase over"` with turn indicator so nothing reflows.
+  4. **Bottom Bar (`52px + safe-area-inset-bottom`) & Sheet (`max-h-[50dvh]`)**: Labeled `>= 44px` buttons (`LOG` with 1-line last-move preview, `INFO`, mode-conditional `CRAFT`/`EXPAND`, `RULES`, and confirmed `RESIGN`). `LOG`/`INFO` open an overlay bottom sheet (Predictor, captures, theme toggle, move feed with scroll-up pause, drag handle, close button, Escape, focus return, and polite/assertive ARIA live regions).
+- **Desktop (`>= 768px`)**: Preserves existing widths and columns; swaps the right column so `DiceRoller` (or post-dice status panel) renders **above** and `Live Move Log` (`max-h-[168px]` internal scroll) renders **below**.
+
+### Files Changed, Bugs Audited & Bundle Size
+- **Files Changed**: `src/components/MatchView.tsx`, `src/components/DiceRoller.tsx`, `test/dice_phase.test.ts`, `README.md`.
+- **Bugs Audited**: Zero bugs in game logic. Fixed two UI-only issues in `MatchView.tsx`: dynamic `board.length` piece counting for expanded boards (replacing hardcoded `8x8`) and strict hook ordering via `MatchViewContent`.
+- **Bundle Size**: Before: `1,265.48 kB` JS (`299.07 kB` gzip), `137.62 kB` CSS (`19.50 kB` gzip). After: `1,298.62 kB` JS (`304.35 kB` gzip, `+5.28 kB` gzip), `138.94 kB` CSS (`19.71 kB` gzip, `+0.21 kB` gzip); zero new packages.
+
+**Verdict**: Stayed lightweight (`+5.49 kB` total gzip, zero new dependencies, GPU transform-only motion); game logic touched: **no**.

@@ -97,17 +97,26 @@ export const CullingBoard: React.FC<CullingBoardProps> = ({
 
   return (
     <div
-      className="relative p-1 sm:p-2 rounded-xl border-3 sm:border-4 border-black dark:border-white shadow-[4px_4px_0px_#000000] dark:shadow-[4px_4px_0px_#ffffff] select-none touch-manipulation max-w-full max-h-full overflow-hidden shrink-0 flex items-center justify-center"
+      className={`relative aspect-square p-1 sm:p-2 rounded-xl border-3 sm:border-4 border-black dark:border-white shadow-[4px_4px_0px_#000000] dark:shadow-[4px_4px_0px_#ffffff] select-none touch-manipulation max-w-full max-h-full overflow-hidden shrink-0 flex items-center justify-center ${
+        maxDimension
+          ? ''
+          : 'w-[min(calc(100vw-16px),calc(100dvh-200px-env(safe-area-inset-bottom,0px)),540px)] lg:w-[min(calc(100dvh-64px),calc(100vw-680px),1200px)]'
+      }`}
       style={{
         backgroundColor: '#e11d48',
-        ...(maxDimension ? { width: `min(100%, ${maxDimension + 14}px)`, height: `min(100%, ${maxDimension + 14}px)` } : {}),
+        ...(maxDimension
+          ? {
+              width: `${maxDimension + 14}px`,
+              height: `${maxDimension + 14}px`,
+              maxWidth: '100%',
+              maxHeight: '100%',
+            }
+          : {}),
       }}
     >
       {/* 10x10 Cross-Shaped Board Grid: Rock-Solid Dimensions Anchored to Viewport */}
       <div
-        className={`grid grid-cols-10 grid-rows-10 border-2 border-black/40 dark:border-white/20 bg-transparent aspect-square touch-manipulation select-none max-w-full max-h-full ${
-          maxDimension ? 'w-full h-full' : 'w-[min(calc(100dvh-150px),calc(100vw-18px),540px)] h-[min(calc(100dvh-150px),calc(100vw-18px),540px)] lg:w-[min(calc(100dvh-140px),620px)] lg:h-[min(calc(100dvh-140px),620px)]'
-        }`}
+        className="grid grid-cols-10 grid-rows-10 border-2 border-black/40 dark:border-white/20 bg-transparent aspect-square touch-manipulation select-none max-w-full max-h-full w-full h-full"
         style={maxDimension ? { maxWidth: `${maxDimension}px`, maxHeight: `${maxDimension}px` } : undefined}
       >
         {rowIndices.map((y) =>

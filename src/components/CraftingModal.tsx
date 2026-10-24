@@ -26,8 +26,11 @@ export const CraftingModal: React.FC<CraftingModalProps> = ({
   const { theme } = useTheme();
   const isThemeLight = theme === 'light';
   
-  // Closing is potentially destructive/cancels perk, so we don't allow backdrop/escape dismiss
-  const modalRef = useModalFocus(true, () => {}, false);
+  // Keyboard focus trap with Escape handling
+  const modalRef = useModalFocus(true, () => {
+    if (onCancel) onCancel();
+    else onAutoPick();
+  }, true);
 
   // Step 1: Selection list; Step 2: Inspection & 9x9 preview window
   const [selectedPieceId, setSelectedPieceId] = useState<PieceType | null>(null);
@@ -65,7 +68,7 @@ export const CraftingModal: React.FC<CraftingModalProps> = ({
         role="dialog"
         aria-modal="true"
         aria-labelledby="crafting-modal-title"
-        className="w-full max-w-lg border-4 transition-colors max-h-[90dvh] flex flex-col bg-black border-white shadow-[8px_8px_0px_#ffffff] text-white animate-in slide-in-from-bottom-4 sm:slide-in-from-bottom-0 sm:zoom-in-95 duration-150"
+        className="w-[min(calc(100vw-32px),500px)] max-h-[85dvh] overflow-y-auto border-4 transition-colors flex flex-col bg-black border-white shadow-[8px_8px_0px_#ffffff] text-white animate-in slide-in-from-bottom-4 sm:slide-in-from-bottom-0 sm:zoom-in-95 duration-150"
       >
         {/* Header - Red Accent */}
         <div className="bg-red-600 text-white p-2.5 sm:p-3 border-b-2 border-white flex items-center justify-between gap-2 shrink-0">

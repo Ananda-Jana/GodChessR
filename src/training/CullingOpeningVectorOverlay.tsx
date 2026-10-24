@@ -19,27 +19,22 @@ export const CullingOpeningVectorOverlay: React.FC<CullingOpeningVectorOverlayPr
 }) => {
   if (!arrows || arrows.length === 0) return null;
 
-  // Each square on 10x10 board is boardDimension / 10
-  const squareSize = boardDimension / 10;
-
-  // Convert (x, y) board coordinate (x=0..9, y=0..9) to SVG pixel center
-  // Note: Culling board renders y=0 at bottom or top depending on perspective.
-  // Standard Culling board renders y=0 at top (row 0 = rank 10), y=9 at bottom (row 9 = rank 1).
+  // Convert (x, y) board coordinate (x=0..9, y=0..9) to normalized 1000x1000 SVG pixel center
+  // 10x10 grid: each square is 100 units wide and 100 units high. Center is col*100 + 50, row*100 + 50.
   const getCenter = (x: number, y: number) => {
-    // In CullingBoard.tsx, rank Y is mapped to row = 9 - y or row = y.
-    // In cullingEngine: White starts at y=1 and y=2 (ranks 1-2 at bottom), Black starts at y=8 and y=7.
-    // Rendering: row = 9 - y, col = x.
     const col = x;
     const row = 9 - y;
     return {
-      cx: col * squareSize + squareSize / 2,
-      cy: row * squareSize + squareSize / 2,
+      cx: col * 100 + 50,
+      cy: row * 100 + 50,
     };
   };
 
   return (
     <svg
-      viewBox={`0 0 ${boardDimension} ${boardDimension}`}
+      viewBox="0 0 1000 1000"
+      preserveAspectRatio="xMidYMid meet"
+      aria-hidden="true"
       className="w-full h-full absolute inset-0 pointer-events-none z-30 overflow-visible"
     >
       <defs>

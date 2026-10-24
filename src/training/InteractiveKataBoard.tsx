@@ -428,15 +428,7 @@ export const InteractiveKataBoard: React.FC<InteractiveKataBoardProps> = ({
 
   return (
     <div className="flex flex-col items-center justify-center w-full max-w-full select-none">
-      {/* 2-Mistake Guidance Banner (Compact) */}
-      {showGoldenGuide && (
-        <div className="mb-1 px-2.5 py-0.5 bg-amber-400 text-black font-black text-[10px] sm:text-xs uppercase border border-black flex items-center gap-1 shadow-[1px_1px_0px_#000] animate-bounce shrink-0">
-          <Sparkles className="w-3 h-3 text-black shrink-0" />
-          <span>Sensei's Golden Guide: Move from pulsing gold to dashed square</span>
-        </div>
-      )}
-
-      {/* Main Board View: Either Authentic Culling Cross Board or Standard 8x8 */}
+      {/* Main Board View: Either Authentic Culling Cross Board or Standard 8x8 (Zero banner shifts above) */}
       {isCullingMode ? (
         <div className="relative flex flex-col items-center justify-center shrink-0">
           <CullingBoard
@@ -477,7 +469,7 @@ export const InteractiveKataBoard: React.FC<InteractiveKataBoardProps> = ({
         /* Standard / Crafted 8x8 Board Container */
         <div
           style={maxBoardDimension ? { width: `${maxBoardDimension}px`, height: `${maxBoardDimension}px` } : undefined}
-          className="relative border-3 sm:border-4 border-black dark:border-white shadow-[4px_4px_0px_#000000] dark:shadow-[4px_4px_0px_#ffffff] bg-black select-none max-w-[460px] w-full aspect-square shrink-0"
+          className="relative border-3 sm:border-4 border-black dark:border-white shadow-[4px_4px_0px_#000000] dark:shadow-[4px_4px_0px_#ffffff] bg-black select-none w-[min(calc(100vw-16px),calc(100dvh-224px),520px)] h-[min(calc(100vw-16px),calc(100dvh-224px),520px)] lg:w-[min(calc(100dvh-140px),calc(100%-48px),760px)] lg:h-[min(calc(100dvh-140px),calc(100%-48px),760px)] aspect-square shrink-0"
         >
           <div className="grid grid-cols-8 grid-rows-8 w-full h-full">
             {Array.from({ length: 8 }).map((_, rankIdx) => {
@@ -579,20 +571,46 @@ export const InteractiveKataBoard: React.FC<InteractiveKataBoardProps> = ({
         </div>
       )}
 
-      {/* Progress & Error Status Strip */}
-      <div className="mt-1.5 flex items-center justify-between w-full max-w-[460px] text-[10px] sm:text-xs font-black uppercase tracking-wider px-1 shrink-0">
-        <span className="text-neutral-400">
-          Step {Math.min(currentStepIndex + 1, lesson.correctSteps.length)}/{lesson.correctSteps.length}
-        </span>
-        {consecutiveMistakes > 0 && !isFinished && (
-          <span className="text-amber-400 flex items-center gap-1 font-mono text-[10px]">
-            <AlertTriangle className="w-3 h-3 text-amber-400 shrink-0" />
-            <span>Attempts: {consecutiveMistakes}/2 {consecutiveMistakes >= 2 ? '(Guide On)' : ''}</span>
-          </span>
-        )}
-        <span className={isFinished ? (isGatoru ? 'text-sky-400' : 'text-amber-400') : 'text-neutral-500'}>
-          {isFinished ? '✓ Mastered' : 'Active Kata'}
-        </span>
+      {/* Tier 3: Fixed 104px Training Action Stage (Zero reflow, permanent height) */}
+      <div className="w-full h-[104px] min-h-[104px] max-h-[104px] mt-2 px-1 shrink-0 flex items-stretch">
+        <div className="w-full h-full bg-white dark:bg-[#0c0c0e] border-3 border-black dark:border-white p-2.5 shadow-[3px_3px_0px_#000000] dark:shadow-[3px_3px_0px_#ffffff] flex items-center justify-between gap-2.5 overflow-hidden">
+          {showGoldenGuide ? (
+            <div className="flex items-center gap-2.5 text-black dark:text-white min-w-0">
+              <div className="w-10 h-10 bg-amber-400 text-black border-2 border-black flex items-center justify-center shrink-0 shadow-[1px_1px_0px_#000]">
+                <Sparkles className="w-5 h-5" />
+              </div>
+              <div className="min-w-0">
+                <span className="text-xs font-black uppercase text-amber-500 block truncate">
+                  Sensei's Golden Guide Active
+                </span>
+                <span className="text-[11px] font-mono block text-neutral-600 dark:text-neutral-300">
+                  Move piece from pulsing gold to dashed target
+                </span>
+              </div>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2.5 text-black dark:text-white min-w-0">
+              <div className={`w-10 h-10 ${isGatoru ? 'bg-sky-400' : 'bg-amber-400'} text-black border-2 border-black flex items-center justify-center font-black text-xs shrink-0 shadow-[1px_1px_0px_#000]`}>
+                #{Math.min(currentStepIndex + 1, lesson.correctSteps.length)}
+              </div>
+              <div className="min-w-0">
+                <span className="text-xs font-black uppercase block truncate">
+                  {expectedStep?.notation || lesson.title}
+                </span>
+                <span className="text-[11px] font-mono block text-neutral-600 dark:text-neutral-400 truncate">
+                  Step {Math.min(currentStepIndex + 1, lesson.correctSteps.length)} of {lesson.correctSteps.length} · Find the martial strike
+                </span>
+              </div>
+            </div>
+          )}
+          <div className="shrink-0 text-right">
+            <span className={`text-[10px] font-mono font-black uppercase px-2 py-0.5 border border-black block ${
+              isFinished ? 'bg-emerald-400 text-black' : 'bg-neutral-100 dark:bg-neutral-900 text-neutral-700 dark:text-neutral-300'
+            }`}>
+              {isFinished ? 'Mastered' : `Step ${Math.min(currentStepIndex + 1, lesson.correctSteps.length)}`}
+            </span>
+          </div>
+        </div>
       </div>
       {/* Post-Step Tactical Breakdown Modal Popup */}
       {pendingModalData && (

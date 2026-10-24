@@ -121,3 +121,20 @@
   font-weight: 800;
   text-transform: uppercase;
 }
+
+/* Ensure reaction ticker and floating emojis never block touch/pointer events on the chess board */
+.rose-theme .reaction-ticker-container,
+.rose-theme .floating-reaction,
+.rose-theme [data-reaction-ticker] {
+  pointer-events: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rose-theme .floating-reaction,
+  .rose-theme .animate-bounce,
+  .rose-theme .animate-pulse,
+  .rose-theme .animate-ping {
+    animation: none !important;
+    transition: none !important;
+  }
+}

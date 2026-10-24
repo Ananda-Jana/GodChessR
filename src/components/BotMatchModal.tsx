@@ -324,18 +324,18 @@ export const BotMatchModal: React.FC<BotMatchModalProps> = ({
               <button
                 type="button"
                 onClick={() => setDifficulty('grandmaster')}
-                className={`w-full p-2.5 border-2 border-black dark:border-white text-left flex items-start justify-between cursor-pointer ${
+                className={`w-full min-h-[48px] p-3 border-2 border-black dark:border-white text-left flex items-center justify-between cursor-pointer transition-all ${
                   difficulty === 'grandmaster'
-                    ? 'bg-amber-400 text-black shadow-[3px_3px_0px_var(--shadow)]'
-                    : 'bg-neutral-100 dark:bg-neutral-900 text-neutral-800 dark:text-neutral-200'
+                    ? 'bg-amber-400 text-black shadow-[3px_3px_0px_var(--shadow)] ring-2 ring-black dark:ring-white'
+                    : 'bg-neutral-100 dark:bg-neutral-900 text-neutral-800 dark:text-neutral-200 hover:bg-neutral-200 dark:hover:bg-neutral-800'
                 }`}
               >
                 <div>
-                  <span className="font-black uppercase block">Grandmaster Level</span>
-                  <span className="text-[10px] font-normal block">Depth 3 minimax + positional piece-square tables</span>
+                  <span className="font-black uppercase block text-xs sm:text-sm">Grandmaster Level</span>
+                  <span className="text-[10px] font-normal block opacity-85">Depth 3 minimax + positional piece-square tables</span>
                 </div>
                 {difficulty === 'grandmaster' && (
-                  <span className="text-[10px] bg-black text-amber-400 px-1 border border-black font-black uppercase">
+                  <span className="text-[10px] bg-black text-amber-400 px-2 py-0.5 border border-black font-black uppercase shrink-0">
                     Active
                   </span>
                 )}
@@ -344,18 +344,18 @@ export const BotMatchModal: React.FC<BotMatchModalProps> = ({
               <button
                 type="button"
                 onClick={() => setDifficulty('master')}
-                className={`w-full p-2.5 border-2 border-black dark:border-white text-left flex items-start justify-between cursor-pointer ${
+                className={`w-full min-h-[48px] p-3 border-2 border-black dark:border-white text-left flex items-center justify-between cursor-pointer transition-all ${
                   difficulty === 'master'
-                    ? 'bg-amber-400 text-black shadow-[3px_3px_0px_var(--shadow)]'
-                    : 'bg-neutral-100 dark:bg-neutral-900 text-neutral-800 dark:text-neutral-200'
+                    ? 'bg-amber-400 text-black shadow-[3px_3px_0px_var(--shadow)] ring-2 ring-black dark:ring-white'
+                    : 'bg-neutral-100 dark:bg-neutral-900 text-neutral-800 dark:text-neutral-200 hover:bg-neutral-200 dark:hover:bg-neutral-800'
                 }`}
               >
                 <div>
-                  <span className="font-black uppercase block">Master Level</span>
-                  <span className="text-[10px] font-normal block">Depth 2 tactical engine</span>
+                  <span className="font-black uppercase block text-xs sm:text-sm">Master Level</span>
+                  <span className="text-[10px] font-normal block opacity-85">Depth 2 tactical engine</span>
                 </div>
                 {difficulty === 'master' && (
-                  <span className="text-[10px] bg-black text-amber-400 px-1 border border-black font-black uppercase">
+                  <span className="text-[10px] bg-black text-amber-400 px-2 py-0.5 border border-black font-black uppercase shrink-0">
                     Active
                   </span>
                 )}

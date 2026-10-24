@@ -16,6 +16,7 @@ import type {
   CullingOpeningTier,
   CullingCurriculumType,
   CullingOpeningStep,
+  TrainingToolId,
 } from './types';
 import { CULLING_OPENING_LESSONS } from './cullingOpeningData';
 import {
@@ -55,9 +56,15 @@ import {
 
 interface CullingOpeningDojoProps {
   onBackToDojo: () => void;
+  onNextDojo?: () => void;
+  onSelectDojo?: (toolId: TrainingToolId) => void;
 }
 
-export const CullingOpeningDojo: React.FC<CullingOpeningDojoProps> = ({ onBackToDojo }) => {
+export const CullingOpeningDojo: React.FC<CullingOpeningDojoProps> = ({
+  onBackToDojo,
+  onNextDojo,
+  onSelectDojo,
+}) => {
   // Curriculum Tab: 'opening' | 'midgame'
   const [activeCurriculum, setActiveCurriculum] = useState<CullingCurriculumType>('opening');
 
@@ -99,8 +106,8 @@ export const CullingOpeningDojo: React.FC<CullingOpeningDojoProps> = ({ onBackTo
   // Playback state for Full Strategy Mode
   const [isPlaying, setIsPlaying] = useState(false);
 
-  // Mobile Dropdown Menu State ('none' | 'lessons' | 'tools' | 'rules')
-  const [activeMobileDropdown, setActiveMobileDropdown] = useState<'none' | 'lessons' | 'tools' | 'rules'>('none');
+  // Mobile Dropdown Menu State ('none' | 'dojo' | 'lessons' | 'tools')
+  const [activeMobileDropdown, setActiveMobileDropdown] = useState<'none' | 'dojo' | 'lessons' | 'tools'>('none');
   const [showMobileHint, setShowMobileHint] = useState(false);
   const [mobileRuleModalOpen, setMobileRuleModalOpen] = useState(false);
 
@@ -141,7 +148,7 @@ export const CullingOpeningDojo: React.FC<CullingOpeningDojoProps> = ({ onBackTo
         const { width, height } = entry.contentRect;
         const available = Math.min(width - 12, height - 12);
         if (available > 100) {
-          const clamped = Math.min(available, 400);
+          const clamped = Math.min(available, 1200);
           setMobileBoardDimension(clamped);
         }
       }
@@ -408,114 +415,177 @@ export const CullingOpeningDojo: React.FC<CullingOpeningDojoProps> = ({ onBackTo
       {/* ========================================================================= */}
       {/* 1. MOBILE TOP HEADER (44px, md:hidden) */}
       {/* ========================================================================= */}
-      <header className="md:hidden h-11 bg-black border-b-2 border-red-600 px-2 shrink-0 flex items-center justify-between z-40 relative shadow-[0_2px_12px_rgba(220,38,38,0.4)]">
-        {/* Return Button */}
+      <header className="md:hidden h-11 bg-black border-b-2 border-red-600 px-1.5 shrink-0 flex items-center justify-between gap-1 z-40 relative shadow-[0_2px_12px_rgba(220,38,38,0.4)]">
+        {/* 1. Return Button (Square) */}
         <button
           onClick={() => {
+            setActiveMobileDropdown('none');
             sounds.playMove();
             onBackToDojo();
           }}
-          className="h-8 px-2 bg-red-950 border border-red-500 text-red-200 text-xs font-black uppercase flex items-center gap-1 active:scale-95 transition-transform"
+          aria-label="Return to Dojo"
+          title="Return to Dojo"
+          className="w-8 h-8 aspect-square bg-red-950 border border-red-500 text-red-200 flex items-center justify-center shrink-0 active:scale-95 transition-transform cursor-pointer"
         >
           <ArrowLeft className="w-3.5 h-3.5 text-red-400" />
-          <span>Exit</span>
         </button>
 
-        {/* Center Nav Dropdown Buttons */}
-        <div className="flex items-center gap-1">
-          {/* Lessons Menu Toggle */}
-          <button
-            onClick={() => {
-              setActiveMobileDropdown((prev) => (prev === 'lessons' ? 'none' : 'lessons'));
-              sounds.playSelect();
-            }}
-            aria-expanded={activeMobileDropdown === 'lessons'}
-            aria-haspopup="true"
-            className={`h-8 px-2 border text-[11px] font-black uppercase flex items-center gap-1 active:scale-95 transition-transform touch-manipulation ${
-              activeMobileDropdown === 'lessons'
-                ? 'bg-red-600 text-white border-white'
-                : 'bg-neutral-900 text-red-300 border-red-900'
-            }`}
-          >
-            <BookOpen className="w-3 h-3 text-red-400" />
-            <span className="max-w-[70px] truncate">L{activeLessonIndex + 1}</span>
-            {activeMobileDropdown === 'lessons' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-          </button>
+        {/* 2. Dojo Mode Selection Dropdown */}
+        <button
+          onClick={() => {
+            setActiveMobileDropdown((prev) => (prev === 'dojo' ? 'none' : 'dojo'));
+            sounds.playSelect();
+          }}
+          aria-expanded={activeMobileDropdown === 'dojo'}
+          aria-haspopup="true"
+          aria-label="Select Dojo Mode"
+          className={`h-8 px-1.5 border text-[10px] font-black uppercase flex items-center justify-between gap-1 min-w-0 flex-1 max-w-[112px] active:scale-95 transition-transform cursor-pointer ${
+            activeMobileDropdown === 'dojo'
+              ? 'bg-red-600 text-white border-white'
+              : 'bg-neutral-900 text-amber-400 border-red-900'
+          }`}
+        >
+          <span className="flex items-center gap-1 min-w-0 truncate">
+            <span className="shrink-0">🔥</span>
+            <span className="truncate">Cull Open</span>
+          </span>
+          {activeMobileDropdown === 'dojo' ? <ChevronUp className="w-3 h-3 shrink-0" /> : <ChevronDown className="w-3 h-3 shrink-0" />}
+        </button>
 
-          {/* Tools Menu Toggle */}
-          <button
-            onClick={() => {
-              setActiveMobileDropdown((prev) => (prev === 'tools' ? 'none' : 'tools'));
-              sounds.playSelect();
-            }}
-            aria-expanded={activeMobileDropdown === 'tools'}
-            aria-haspopup="true"
-            className={`h-8 px-2 border text-[11px] font-black uppercase flex items-center gap-1 active:scale-95 transition-transform touch-manipulation ${
-              activeMobileDropdown === 'tools'
-                ? 'bg-red-600 text-white border-white'
-                : 'bg-neutral-900 text-neutral-300 border-neutral-800'
-            }`}
-          >
-            <Layers className="w-3 h-3 text-amber-400" />
-            <span>Tools</span>
-            {activeMobileDropdown === 'tools' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-          </button>
+        {/* 3. Lessons Menu Dropdown */}
+        <button
+          onClick={() => {
+            setActiveMobileDropdown((prev) => (prev === 'lessons' ? 'none' : 'lessons'));
+            sounds.playSelect();
+          }}
+          aria-expanded={activeMobileDropdown === 'lessons'}
+          aria-haspopup="true"
+          aria-label="Select Lesson"
+          className={`h-8 px-1.5 border text-[10px] font-black uppercase flex items-center gap-1 shrink-0 active:scale-95 transition-transform cursor-pointer ${
+            activeMobileDropdown === 'lessons'
+              ? 'bg-red-600 text-white border-white'
+              : 'bg-neutral-900 text-red-300 border-red-900'
+          }`}
+        >
+          <span>L{activeLessonIndex + 1}/{filteredLessons.length}</span>
+          {activeMobileDropdown === 'lessons' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+        </button>
 
-          {/* Rules Dropdown Toggle */}
-          <button
-            onClick={() => {
-              setActiveMobileDropdown((prev) => (prev === 'rules' ? 'none' : 'rules'));
-              sounds.playSelect();
-            }}
-            aria-expanded={activeMobileDropdown === 'rules'}
-            aria-haspopup="true"
-            className={`h-8 px-2 border text-[11px] font-black uppercase flex items-center gap-1 active:scale-95 transition-transform touch-manipulation ${
-              activeMobileDropdown === 'rules'
-                ? 'bg-red-600 text-white border-white'
-                : 'bg-neutral-900 text-neutral-300 border-neutral-800'
-            }`}
-          >
-            <HelpCircle className="w-3.5 h-3.5 text-neutral-400" />
-            {activeMobileDropdown === 'rules' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-          </button>
+        {/* 4. Quick Next Lesson Button */}
+        <button
+          onClick={() => {
+            sounds.playSelect();
+            setActiveLessonIndex((prev) => (prev + 1) % filteredLessons.length);
+            setActiveMobileDropdown('none');
+          }}
+          aria-label="Next lesson"
+          title={`Jump to Next Lesson (L${((activeLessonIndex + 1) % filteredLessons.length) + 1})`}
+          className="relative h-8 px-1.5 bg-gradient-to-r from-red-950 via-red-600 to-amber-600 border border-amber-400/90 text-white font-black text-[10px] uppercase flex items-center gap-0.5 shrink-0 active:scale-95 transition-all cursor-pointer"
+        >
+          <SkipForward className="w-3 h-3 text-amber-200" />
+          <span className="font-mono text-[9px] font-bold text-amber-100">L{((activeLessonIndex + 1) % filteredLessons.length) + 1}</span>
+        </button>
 
-          {/* Modernistic Animated Next Lesson Button */}
-          <button
-            onClick={() => {
-              sounds.playSelect();
-              setActiveLessonIndex((prev) => (prev + 1) % filteredLessons.length);
-              setActiveMobileDropdown('none');
-            }}
-            aria-label="Next lesson"
-            title={`Jump to Next Lesson (L${((activeLessonIndex + 1) % filteredLessons.length) + 1})`}
-            className="relative h-11 px-2 bg-gradient-to-r from-red-950 via-red-600 to-amber-600 border border-amber-400/90 text-white font-black text-[10px] uppercase flex items-center gap-1 shrink-0 active:scale-90 hover:scale-105 transition-all duration-300 shadow-[0_0_10px_rgba(245,158,11,0.5)] group overflow-hidden rounded-sm"
-          >
-            {/* Shimmer line transition */}
-            <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
-            {/* Glowing ring pulse */}
-            <span className="absolute -inset-0.5 bg-gradient-to-r from-red-500 to-amber-500 rounded-sm opacity-60 group-hover:opacity-100 blur-[2px] transition duration-300 -z-10 animate-pulse" />
-            
-            <SkipForward className="w-3.5 h-3.5 text-amber-200 group-hover:translate-x-0.5 transition-transform" />
-            <span className="font-mono text-[9px] font-bold tracking-tight text-amber-100">L{((activeLessonIndex + 1) % filteredLessons.length) + 1}</span>
-          </button>
-        </div>
+        {/* 5. Tools Dropdown Toggle (Square) */}
+        <button
+          onClick={() => {
+            setActiveMobileDropdown((prev) => (prev === 'tools' ? 'none' : 'tools'));
+            sounds.playSelect();
+          }}
+          aria-expanded={activeMobileDropdown === 'tools'}
+          aria-haspopup="true"
+          aria-label="Dojo Tools"
+          title="Dojo Tools & Overlays"
+          className={`w-8 h-8 aspect-square border flex items-center justify-center shrink-0 active:scale-95 transition-transform cursor-pointer ${
+            activeMobileDropdown === 'tools'
+              ? 'bg-red-600 text-white border-white'
+              : 'bg-neutral-900 text-amber-400 border-neutral-800'
+          }`}
+        >
+          <Layers className="w-3.5 h-3.5" />
+        </button>
 
-        {/* Progress Counter */}
-        <span className="text-[10px] font-mono font-bold text-red-400 bg-red-950/90 px-1.5 py-0.5 border border-red-800 shrink-0">
-          {completedLessonIds.length}/16
-        </span>
+        {/* 6. Rulebook Button (Always Visible Square Icon Button on Right) */}
+        <button
+          onClick={() => {
+            setActiveMobileDropdown('none');
+            setMobileRuleModalOpen(true);
+            sounds.playSelect();
+          }}
+          aria-label="Open Culling Rulebook"
+          title="Read Culling Theory & Rules"
+          className="w-8 h-8 aspect-square bg-neutral-900 hover:bg-neutral-800 border border-red-500 text-red-300 flex items-center justify-center shrink-0 active:scale-95 transition-transform cursor-pointer"
+        >
+          <BookOpen className="w-3.5 h-3.5 text-red-400" />
+        </button>
       </header>
 
       {/* ========================================================================= */}
       {/* MOBILE DROPDOWN OVERLAYS (md:hidden) */}
       {/* ========================================================================= */}
       {activeMobileDropdown !== 'none' && (
-        <div 
+        <div
           className="md:hidden fixed top-11 inset-x-0 bottom-0 bg-black/85 backdrop-blur-md z-50 flex flex-col p-3 animate-in fade-in"
           onClick={(e) => {
             if (e.target === e.currentTarget) setActiveMobileDropdown('none');
           }}
         >
+          {/* Dojo Mode Switcher Dropdown */}
+          {activeMobileDropdown === 'dojo' && (
+            <div className="bg-[#0e0a0e] border-2 border-amber-500 p-3 rounded-none shadow-[0_4px_24px_rgba(245,158,11,0.4)] flex flex-col gap-1.5">
+              <div className="flex items-center justify-between pb-2 border-b border-neutral-800 mb-1">
+                <span className="text-xs font-black uppercase text-amber-400 flex items-center gap-1.5">
+                  <Layers className="w-4 h-4" /> Select Training Dojo
+                </span>
+                <button
+                  onClick={() => setActiveMobileDropdown('none')}
+                  aria-label="Close Dojo menu"
+                  className="p-1 bg-neutral-900 text-neutral-400 hover:text-white cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+              {(
+                [
+                  { id: 'culling_opening', label: 'Culling Opening Dojo', icon: '🔥' },
+                  { id: 'opening', label: 'Opening Dojo', icon: '⛩️' },
+                  { id: 'tactics', label: 'Tactical Dojo', icon: '⚔️' },
+                  { id: 'culling', label: 'Culling Dojo', icon: '🩸' },
+                  { id: 'practice', label: 'Practice Board', icon: '🥋' },
+                  { id: 'theory', label: 'Theory Library', icon: '📜' },
+                ] as const
+              ).map((tab) => {
+                const isActive = tab.id === 'culling_opening';
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => {
+                      setActiveMobileDropdown('none');
+                      if (tab.id !== 'culling_opening') {
+                        if (onSelectDojo) {
+                          onSelectDojo(tab.id);
+                        } else {
+                          onBackToDojo();
+                        }
+                      }
+                    }}
+                    className={`px-3 py-2.5 text-xs font-black uppercase border-2 flex items-center justify-between cursor-pointer ${
+                      isActive
+                        ? 'bg-amber-400 text-black border-white'
+                        : 'bg-neutral-900 text-neutral-200 border-neutral-700 hover:border-amber-400'
+                    }`}
+                  >
+                    <span className="flex items-center gap-2">
+                      <span>{tab.icon}</span>
+                      <span>{tab.label}</span>
+                    </span>
+                    {isActive ? <span className="text-[10px] font-black">✓ ACTIVE</span> : <ArrowRight className="w-3.5 h-3.5 opacity-60" />}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
           {/* Lessons Dropdown */}
           {activeMobileDropdown === 'lessons' && (
             <div className="bg-[#0e0a0e] border-2 border-red-600 p-3 rounded-none shadow-[0_4px_24px_rgba(220,38,38,0.5)] flex flex-col max-h-[80vh] overflow-hidden">
@@ -703,45 +773,15 @@ export const CullingOpeningDojo: React.FC<CullingOpeningDojoProps> = ({ onBackTo
                 </span>
                 <span>{isFreePractice ? 'ACTIVE' : 'OFF'}</span>
               </button>
-            </div>
-          )}
-
-          {/* Rules Dropdown */}
-          {activeMobileDropdown === 'rules' && (
-            <div className="bg-[#0e0a0e] border-2 border-neutral-600 p-3 rounded-none shadow-xl space-y-2">
-              <div className="flex items-center justify-between pb-2 border-b border-neutral-800">
-                <span className="text-xs font-black uppercase text-neutral-300">
-                  Dojo Rules & Controls
-                </span>
-                <button
-                  onClick={() => setActiveMobileDropdown('none')}
-                  className="p-1 bg-neutral-900 text-neutral-400"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-
-              <button
-                onClick={() => {
-                  setMobileRuleModalOpen(true);
-                  setActiveMobileDropdown('none');
-                }}
-                className="w-full p-2.5 bg-red-950 hover:bg-red-900 border border-red-600 text-red-200 font-black text-xs uppercase flex items-center justify-between"
-              >
-                <span className="flex items-center gap-2">
-                  <BookOpen className="w-4 h-4 text-red-400" /> Read Culling Theory Book
-                </span>
-                <ArrowRight className="w-4 h-4" />
-              </button>
-
+              {/* Reset Lesson Quick Action */}
               <button
                 onClick={() => {
                   resetCurrentLesson();
                   setActiveMobileDropdown('none');
                 }}
-                className="w-full p-2.5 bg-neutral-900 hover:bg-neutral-800 border border-neutral-700 text-neutral-200 font-black text-xs uppercase flex items-center justify-between"
+                className="w-full p-2 text-xs font-black uppercase border border-neutral-700 bg-neutral-900 text-neutral-200 flex items-center justify-between"
               >
-                <span className="flex items-center gap-2">
+                <span className="flex items-center gap-1.5">
                   <RotateCcw className="w-4 h-4 text-amber-400" /> Reset Current Lesson
                 </span>
               </button>
@@ -1317,51 +1357,73 @@ export const CullingOpeningDojo: React.FC<CullingOpeningDojoProps> = ({ onBackTo
       {/* ========================================================================= */}
       {/* 4. FIXED MOBILE BOTTOM ACTION BAR (48px, md:hidden) */}
       {/* ========================================================================= */}
-      <footer className="md:hidden fixed bottom-0 inset-x-0 h-12 bg-black border-t-2 border-red-600 px-2 flex items-center justify-between z-40 shadow-[0_-4px_16px_rgba(220,38,38,0.4)]">
-        {/* Prev Step Button */}
-        <button
-          onClick={() => {
-            if (currentStepIndex > 0) {
-              handleJumpToStep(currentStepIndex - 1);
-            }
-          }}
-          disabled={currentStepIndex === 0}
-          className="h-9 px-2 bg-neutral-900 hover:bg-neutral-800 disabled:opacity-30 border border-neutral-700 text-neutral-200 text-xs font-black uppercase flex items-center gap-1 shrink-0 active:scale-95 transition-transform"
-        >
-          <ArrowLeft className="w-3.5 h-3.5" />
-          <span>Prev</span>
-        </button>
+      <footer className="md:hidden fixed bottom-0 inset-x-0 h-12 bg-black border-t-2 border-red-600 px-1.5 flex items-center justify-between gap-1 z-40 shadow-[0_-4px_16px_rgba(220,38,38,0.4)] pb-[env(safe-area-inset-bottom,0px)]">
+        {/* Step & Reset Controls: Prev + Step/Skip + Reset */}
+        <div className="flex items-center gap-1 shrink-0">
+          <button
+            onClick={() => {
+              if (currentStepIndex > 0) {
+                handleJumpToStep(currentStepIndex - 1);
+              }
+            }}
+            disabled={currentStepIndex === 0}
+            aria-label="Previous step"
+            title="Previous step"
+            className="w-8 h-8 aspect-square bg-neutral-900 hover:bg-neutral-800 disabled:opacity-30 border border-neutral-700 text-neutral-200 flex items-center justify-center shrink-0 active:scale-95 transition-transform cursor-pointer"
+          >
+            <ArrowLeft className="w-3.5 h-3.5" />
+          </button>
 
-        {/* Step Indicator & Skip Control */}
-        <div className="flex items-center gap-1 bg-red-950/90 border border-red-800 px-2 py-1">
-          <span className="text-[10px] font-mono font-bold text-red-400">
-            STEP {currentStepIndex + 1}/{activeLesson.steps.length}
-          </span>
           <button
             onClick={handleSkipStep}
-            className="ml-1 text-[10px] font-bold uppercase text-amber-300 underline underline-offset-2 flex items-center gap-0.5 active:scale-95"
-            title="Stuck? Skip step"
+            aria-label="Skip current step"
+            title="Advance or skip current step"
+            className="h-8 px-1.5 bg-red-950/90 border border-red-700 text-[10px] font-mono font-bold text-amber-300 flex items-center gap-1 shrink-0 active:scale-95 cursor-pointer"
           >
+            <span className="text-red-300">{currentStepIndex + 1}/{activeLesson.steps.length}</span>
             <SkipForward className="w-3 h-3 text-amber-400" />
-            <span>Skip</span>
+          </button>
+
+          <button
+            onClick={resetCurrentLesson}
+            aria-label="Reset current lesson"
+            title="Reset current lesson"
+            className="w-8 h-8 aspect-square bg-neutral-900 hover:bg-neutral-800 border border-neutral-700 text-neutral-200 flex items-center justify-center shrink-0 active:scale-95 transition-transform cursor-pointer"
+          >
+            <RotateCcw className="w-3.5 h-3.5" />
           </button>
         </div>
 
-        {/* Next Step or Auto-Play Button */}
-        <div className="flex items-center gap-1">
+        {/* Lesson & Dojo Progression Controls */}
+        <div className="flex items-center gap-1 shrink-0">
           <button
             onClick={() => {
-              if (currentStepIndex < activeLesson.steps.length - 1) {
-                handleJumpToStep(currentStepIndex + 1);
-              } else if (activeLessonIndex < filteredLessons.length - 1) {
-                setActiveLessonIndex(activeLessonIndex + 1);
+              sounds.playSelect();
+              setActiveLessonIndex((prev) => (prev + 1) % filteredLessons.length);
+            }}
+            aria-label="Next lesson in Culling Opening Dojo"
+            title="Next lesson in this Dojo"
+            className="h-8 px-2 bg-amber-400 hover:bg-amber-300 text-black border border-black text-[10px] font-black uppercase flex items-center gap-0.5 shrink-0 active:scale-95 transition-transform shadow-[1px_1px_0px_#000] cursor-pointer"
+          >
+            <span>Next Lesson</span>
+            <ArrowRight className="w-3 h-3" />
+          </button>
+
+          <button
+            onClick={() => {
+              sounds.playMove();
+              if (onNextDojo) {
+                onNextDojo();
+              } else {
+                onBackToDojo();
               }
             }}
-            disabled={currentStepIndex >= activeLesson.steps.length - 1 && activeLessonIndex >= filteredLessons.length - 1}
-            className="h-9 px-2.5 bg-red-600 hover:bg-red-500 disabled:opacity-30 text-white border border-white text-xs font-black uppercase flex items-center gap-1 shrink-0 active:scale-95 transition-transform shadow-[1px_1px_0px_#000]"
+            aria-label="Switch to next Dojo"
+            title="Switch to next Dojo"
+            className="h-8 px-2 bg-red-600 hover:bg-red-500 text-white border border-amber-400 text-[10px] font-black uppercase flex items-center gap-0.5 shrink-0 active:scale-95 transition-transform shadow-[1px_1px_0px_#000] cursor-pointer"
           >
-            <span>Next</span>
-            <ArrowRight className="w-3.5 h-3.5" />
+            <span>Next Dojo</span>
+            <SkipForward className="w-3 h-3" />
           </button>
         </div>
       </footer>

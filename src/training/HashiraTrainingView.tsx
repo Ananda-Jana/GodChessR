@@ -32,7 +32,9 @@ import {
   Flame,
   Layers,
   RotateCcw,
+  SkipForward,
   Trophy,
+  X,
 } from 'lucide-react';
 
 interface HashiraTrainingViewProps {
@@ -98,7 +100,7 @@ export const HashiraTrainingView: React.FC<HashiraTrainingViewProps> = ({ onBack
       if (resizeObserver) resizeObserver.disconnect();
       window.removeEventListener('resize', updateSize);
     };
-  }, []);
+  }, [activeTool]);
 
   const maxBoardDimension = useMemo(() => {
     // Stage height minus margins and the bottom status strip (~32px)
@@ -132,33 +134,34 @@ export const HashiraTrainingView: React.FC<HashiraTrainingViewProps> = ({ onBack
   const activeLesson: DojoLesson | undefined = currentLessons[activeLessonIndex] || currentLessons[0];
   const [activeStepIndex, setActiveStepIndex] = useState(0);
 
-  // Lesson transition declaration banner state
+  // Lesson / Rank / Dojo transition declaration banner state
   const [lessonDeclaration, setLessonDeclaration] = useState<{
     visible: boolean;
+    badge: string;
     title: string;
-    index: number;
   } | null>(null);
+  const declarationTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  const triggerDeclaration = useCallback((badge: string, title: string) => {
+    if (declarationTimerRef.current) {
+      clearTimeout(declarationTimerRef.current);
+    }
+    setLessonDeclaration({ visible: true, badge, title });
+    declarationTimerRef.current = setTimeout(() => {
+      setLessonDeclaration((prev) => (prev ? { ...prev, visible: false } : null));
+    }, 1700);
+  }, []);
 
   const prevLessonIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (activeLesson && prevLessonIdRef.current !== null && prevLessonIdRef.current !== activeLesson.id) {
-      setLessonDeclaration({
-        visible: true,
-        title: activeLesson.title,
-        index: activeLessonIndex + 1,
-      });
-
-      const timer = setTimeout(() => {
-        setLessonDeclaration((prev) => (prev ? { ...prev, visible: false } : null));
-      }, 1800);
-
-      return () => clearTimeout(timer);
+      triggerDeclaration(`KATA ${activeLessonIndex + 1}`, activeLesson.title);
     }
     if (activeLesson) {
       prevLessonIdRef.current = activeLesson.id;
     }
-  }, [activeLesson?.id, activeLesson?.title, activeLessonIndex]);
+  }, [activeLesson?.id, activeLesson?.title, activeLessonIndex, triggerDeclaration]);
 
   // Sensei Mentor Expression & Dialogue State
   const [mentorExpression, setMentorExpression] = useState<MentorExpression>('stern');
@@ -235,11 +238,14 @@ export const HashiraTrainingView: React.FC<HashiraTrainingViewProps> = ({ onBack
     setMentorMessage(profile.greetingPrompt);
   };
 
-  // Cleanup prompt restore timer on unmount
+  // Cleanup timers on unmount
   useEffect(() => {
     return () => {
       if (promptRestoreTimerRef.current) {
         clearTimeout(promptRestoreTimerRef.current);
+      }
+      if (declarationTimerRef.current) {
+        clearTimeout(declarationTimerRef.current);
       }
     };
   }, []);
@@ -284,20 +290,25 @@ export const HashiraTrainingView: React.FC<HashiraTrainingViewProps> = ({ onBack
   };
 
   const handleNextKata = () => {
-    if (activeLessonIndex < currentLessons.length - 1) {
-      if (promptRestoreTimerRef.current) {
-        clearTimeout(promptRestoreTimerRef.current);
-        promptRestoreTimerRef.current = null;
-      }
-      const nextIdx = activeLessonIndex + 1;
-      setActiveLessonIndex(nextIdx);
-      setActiveHintText(null);
-      setActiveStepIndex(0);
-      const nextLesson = currentLessons[nextIdx];
+    if (currentLessons.length === 0) return;
+    if (promptRestoreTimerRef.current) {
+      clearTimeout(promptRestoreTimerRef.current);
+      promptRestoreTimerRef.current = null;
+    }
+    const nextIdx = (activeLessonIndex + 1) % currentLessons.length;
+    setActiveLessonIndex(nextIdx);
+    setActiveHintText(null);
+    setActiveStepIndex(0);
+    const nextLesson = currentLessons[nextIdx];
+    if (nextLesson) {
       setMentorExpression('stern');
       setMentorMessage(nextLesson.mentorPrompt);
-      sounds.playMove();
+      if (currentLessons.length === 1) {
+        setResetSignal((s) => s + 1);
+        triggerDeclaration('KATA 1', nextLesson.title);
+      }
     }
+    sounds.playMove();
   };
 
   const handleResetKata = () => {
@@ -346,29 +357,65 @@ export const HashiraTrainingView: React.FC<HashiraTrainingViewProps> = ({ onBack
 
   const isCurrentKataCompleted = activeLesson ? progress.completedKataIds.includes(activeLesson.id) : false;
 
-  const dojoTabs: Array<{ id: TrainingToolId; label: string; icon: string }> = [
-    { id: 'culling_opening', label: 'Culling Opening Dojo', icon: '🩸' },
-    { id: 'opening', label: 'Opening Dojo', icon: '⛩️' },
-    { id: 'tactics', label: 'Tactical Dojo', icon: '⚔️' },
-    { id: 'culling', label: 'Culling Dojo', icon: '🩸' },
-    { id: 'practice', label: 'Practice Board', icon: '🥋' },
-    { id: 'theory', label: 'Theory Library', icon: '📜' },
+  const dojoTabs: Array<{ id: TrainingToolId; label: string; shortLabel: string; icon: string }> = [
+    { id: 'culling_opening', label: 'Culling Opening Dojo', shortLabel: 'Cull Open', icon: '🔥' },
+    { id: 'opening', label: 'Opening Dojo', shortLabel: 'Opening', icon: '⛩️' },
+    { id: 'tactics', label: 'Tactical Dojo', shortLabel: 'Tactics', icon: '⚔️' },
+    { id: 'culling', label: 'Culling Dojo', shortLabel: 'Culling', icon: '🩸' },
+    { id: 'practice', label: 'Practice Board', shortLabel: 'Practice', icon: '🥋' },
+    { id: 'theory', label: 'Theory Library', shortLabel: 'Theory', icon: '📜' },
   ];
 
+  const nextRankInfo = useMemo(() => {
+    const idx = HASHIRA_RANKS.findIndex((r) => r.id === selectedRankId);
+    return HASHIRA_RANKS[(idx + 1) % HASHIRA_RANKS.length];
+  }, [selectedRankId]);
+
+  const handleNextRank = () => {
+    const nextRank = nextRankInfo;
+    setSelectedRankId(nextRank.id);
+    updateProgress((p) => ({ ...p, selectedRank: nextRank.id }));
+    closeAllMobileMenus();
+    sounds.playMove();
+    triggerDeclaration(`RANK ${nextRank.kanji}`, nextRank.name);
+  };
+
+  const handleNextDojo = () => {
+    const idx = dojoTabs.findIndex((t) => t.id === activeTool);
+    const nextTab = dojoTabs[(idx + 1) % dojoTabs.length];
+    setActiveTool(nextTab.id);
+    closeAllMobileMenus();
+    sounds.playMove();
+    triggerDeclaration('DOJO', nextTab.label);
+  };
+
   if (activeTool === 'culling_opening') {
-    return <CullingOpeningDojo onBackToDojo={() => setActiveTool('culling')} />;
+    return (
+      <CullingOpeningDojo
+        onBackToDojo={() => setActiveTool('culling')}
+        onNextDojo={handleNextDojo}
+        onSelectDojo={(toolId) => {
+          setActiveTool(toolId);
+          sounds.playMove();
+          const chosen = dojoTabs.find((t) => t.id === toolId);
+          if (chosen) triggerDeclaration('DOJO', chosen.label);
+        }}
+      />
+    );
   }
+
+  const activeDojoTab = dojoTabs.find((t) => t.id === activeTool) || dojoTabs[1];
 
   return (
     <div className="h-[100dvh] w-full bg-[#070709] text-white flex flex-col font-sans select-none antialiased overflow-hidden relative">
-      {/* Lesson Declaration Banner */}
+      {/* Lesson / Rank / Dojo Declaration Banner */}
       {lessonDeclaration && lessonDeclaration.visible && (
         <div className="fixed top-12 left-1/2 -translate-x-1/2 z-[60] pointer-events-none transition-all duration-300 animate-in fade-in slide-in-from-top-3">
           <div className="bg-gradient-to-r from-neutral-900 via-black to-neutral-900 border-2 border-amber-400 shadow-[0_0_20px_rgba(245,158,11,0.6)] px-3.5 py-1.5 rounded-none flex items-center gap-2 max-w-[92vw]">
             <Flame className="w-4 h-4 text-amber-400 fill-amber-500 animate-bounce shrink-0" />
             <div className="flex items-center gap-2 truncate">
               <span className="text-[10px] font-mono font-black text-amber-300 uppercase tracking-wide shrink-0 bg-neutral-800 px-1.5 py-0.5 border border-amber-400/80">
-                KATA {lessonDeclaration.index}
+                {lessonDeclaration.badge}
               </span>
               <span className="text-xs font-black text-white uppercase truncate tracking-tight">
                 {lessonDeclaration.title}
@@ -378,9 +425,10 @@ export const HashiraTrainingView: React.FC<HashiraTrainingViewProps> = ({ onBack
         </div>
       )}
 
-      {/* 1. Top Navigation Stripe (Mobile: single 44px fixed stripe) */}
-      <header className="bg-black border-b-2 border-amber-400 px-2.5 py-1.5 h-11 shrink-0 flex items-center justify-between shadow-[0_4px_12px_rgba(0,0,0,0.8)] z-30">
-        <div className="flex items-center gap-2">
+      {/* 1. Top Navigation Stripe (Mobile: compact single 44px bar, zero clipping; Desktop: full stripe) */}
+      <header className="bg-black border-b-2 border-amber-400 px-1.5 lg:px-2.5 h-11 shrink-0 flex items-center justify-between gap-1 shadow-[0_4px_12px_rgba(0,0,0,0.8)] z-50 relative">
+        {/* DESKTOP LEFT GROUP */}
+        <div className="hidden lg:flex items-center gap-2">
           <button
             onClick={() => {
               sounds.playMove();
@@ -390,16 +438,14 @@ export const HashiraTrainingView: React.FC<HashiraTrainingViewProps> = ({ onBack
             title="Return to Main Sanctuary"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Sanctuary</span>
+            <span>Sanctuary</span>
           </button>
 
-          {/* Desktop Title Only */}
-          <h1 className="hidden lg:flex text-base font-black uppercase tracking-tight text-amber-400 items-center gap-1.5">
+          <h1 className="text-base font-black uppercase tracking-tight text-amber-400 flex items-center gap-1.5">
             <Flame className="w-4 h-4 text-amber-400 fill-amber-400" />
             CHESS HASHIRA TRAINING
           </h1>
 
-          {/* Desktop Rulebook Button */}
           <button
             onClick={() => {
               sounds.playMove();
@@ -409,17 +455,16 @@ export const HashiraTrainingView: React.FC<HashiraTrainingViewProps> = ({ onBack
                 setIsRulebookOpen(true);
               }
             }}
-            className="hidden lg:flex px-2.5 py-1 bg-neutral-900 hover:bg-neutral-800 border border-neutral-700 hover:border-amber-400 text-amber-400 items-center gap-1.5 text-xs font-black uppercase cursor-pointer active:translate-x-0.5 active:translate-y-0.5"
+            className="px-2.5 py-1 bg-neutral-900 hover:bg-neutral-800 border border-neutral-700 hover:border-amber-400 text-amber-400 flex items-center gap-1.5 text-xs font-black uppercase cursor-pointer active:translate-x-0.5 active:translate-y-0.5"
             title="Open Rules & Codex"
           >
             <BookOpen className="w-3.5 h-3.5 text-amber-400" />
             <span>Rulebook</span>
           </button>
 
-          {/* Desktop Trainer Switch Button (Thukuna Crimson <-> Gatoru Luchha Neon Blue) */}
           <button
             onClick={handleToggleTrainer}
-            className={`hidden lg:flex px-2.5 py-1 items-center gap-1.5 text-xs font-black uppercase cursor-pointer border-2 transition-all shadow-[2px_2px_0px_#000] active:translate-x-0.5 active:translate-y-0.5 ${
+            className={`px-2.5 py-1 flex items-center gap-1.5 text-xs font-black uppercase cursor-pointer border-2 transition-all shadow-[2px_2px_0px_#000] active:translate-x-0.5 active:translate-y-0.5 ${
               selectedTrainerId === 'thukuna'
                 ? 'bg-gradient-to-r from-red-950 to-neutral-900 border-amber-400 text-amber-300 hover:border-amber-300'
                 : 'bg-gradient-to-r from-sky-950 to-neutral-900 border-sky-400 text-sky-300 hover:border-sky-300'
@@ -432,78 +477,158 @@ export const HashiraTrainingView: React.FC<HashiraTrainingViewProps> = ({ onBack
           </button>
         </div>
 
-        {/* Mobile 3 Horizontal Buttons in Top Navigation Bar + Trainer Toggle */}
-        <div className="flex lg:hidden items-center gap-1.5 relative">
-          {/* Mobile Trainer Switch Toggle Button */}
+        {/* MOBILE SINGLE-ROW COMPACT TOP BAR (< lg): Every button guaranteed visible with zero overflow */}
+        <div className="flex lg:hidden items-center justify-between gap-1 w-full min-w-0">
+          {/* 1. Back Button (Square) */}
           <button
-            onClick={handleToggleTrainer}
-            className={`px-1.5 py-1 items-center gap-1 text-[10px] sm:text-[11px] font-black uppercase border cursor-pointer active:translate-x-0.5 active:translate-y-0.5 transition-all z-40 flex shrink-0 ${
+            onClick={() => {
+              closeAllMobileMenus();
+              sounds.playMove();
+              onBack();
+            }}
+            aria-label="Return to Sanctuary"
+            title="Return to Sanctuary"
+            className="w-8 h-8 aspect-square bg-neutral-900 hover:bg-neutral-800 text-white border border-white flex items-center justify-center shrink-0 active:scale-95 cursor-pointer"
+          >
+            <ArrowLeft className="w-3.5 h-3.5" />
+          </button>
+
+          {/* 2. Trainer Switch Button (Small Square: Thukuna 宿 <-> Gatoru 悟) */}
+          <button
+            onClick={() => {
+              closeAllMobileMenus();
+              handleToggleTrainer();
+            }}
+            aria-label={`Switch Trainer (Current: ${selectedTrainerId === 'thukuna' ? 'Thukuna' : 'Gatoru Luchha'})`}
+            title={`Switch Sensei (${selectedTrainerId === 'thukuna' ? 'Thukuna → Gatoru' : 'Gatoru → Thukuna'})`}
+            className={`relative w-8 h-8 aspect-square border flex items-center justify-center shrink-0 active:scale-95 cursor-pointer transition-colors ${
               selectedTrainerId === 'thukuna'
                 ? 'bg-red-950 text-amber-300 border-amber-400 shadow-[1px_1px_0px_#000]'
                 : 'bg-sky-950 text-sky-300 border-sky-400 shadow-[1px_1px_0px_#000]'
             }`}
-            title="Switch Sensei between Thukuna and Gatoru Luchha"
           >
-            <span className="font-serif font-black">{selectedTrainerId === 'thukuna' ? '宿' : '悟'}</span>
-            <span className="hidden min-[380px]:inline">{selectedTrainerId === 'thukuna' ? 'Thukuna' : 'Gatoru'}</span>
-            <span className="text-[8px] font-mono opacity-80">⇄</span>
+            <span className="font-serif text-sm font-black leading-none">
+              {selectedTrainerId === 'thukuna' ? '宿' : '悟'}
+            </span>
+            <span className="absolute bottom-0 right-0.5 text-[7px] font-mono font-bold leading-none opacity-90">
+              ⇄
+            </span>
           </button>
 
-          {/* Backdrop when any mobile dropdown is open */}
-          {(isMobileRankOpen || isMobileDojoOpen || isMobileKatasOpen) && (
-            <div
-              className="fixed inset-0 z-40 bg-black/40 backdrop-blur-[1px]"
-              onClick={closeAllMobileMenus}
-            />
-          )}
-
-          {/* 1. Rank Selector Trigger */}
+          {/* 3. Hashira Rank Dropdown Button */}
           <button
             onClick={() => {
-              setIsMobileRankOpen(!isMobileRankOpen);
+              setIsMobileRankOpen((prev) => !prev);
               setIsMobileDojoOpen(false);
               setIsMobileKatasOpen(false);
               sounds.playMove();
             }}
             aria-expanded={isMobileRankOpen}
             aria-haspopup="true"
-            className={`px-2 py-1 border text-[10px] sm:text-[11px] font-black uppercase flex items-center gap-1 cursor-pointer transition-colors z-40 active:scale-95 ${
+            aria-label={`Select Hashira Rank: ${currentRankInfo.name}`}
+            title={`Select Hashira Rank (${currentRankInfo.name})`}
+            className={`h-8 px-1.5 border text-[10px] font-black uppercase flex items-center justify-between gap-0.5 min-w-0 flex-1 max-w-[96px] cursor-pointer transition-colors ${
               isMobileRankOpen
-                ? 'bg-amber-400 text-black border-black shadow-[1px_1px_0px_#000]'
+                ? 'bg-amber-400 text-black border-white'
                 : 'bg-neutral-900 border-neutral-700 text-amber-400'
             }`}
           >
-            <span className="font-serif">{currentRankInfo.kanji}</span>
-            <span className="truncate max-w-[60px] sm:max-w-[76px]">{currentRankInfo.name}</span>
-            {isMobileRankOpen ? <ChevronUp className="w-2.5 h-2.5 shrink-0" /> : <ChevronDown className="w-2.5 h-2.5 shrink-0" />}
+            <span className="flex items-center gap-1 min-w-0 truncate">
+              <span className="font-serif shrink-0">{currentRankInfo.kanji}</span>
+              <span className="truncate">{currentRankInfo.name}</span>
+            </span>
+            {isMobileRankOpen ? (
+              <ChevronUp className="w-3 h-3 shrink-0" />
+            ) : (
+              <ChevronDown className="w-3 h-3 shrink-0" />
+            )}
           </button>
 
-          {/* 2. Dojo Mode Selector Trigger */}
+          {/* 4. Quick Next Rank Button */}
+          <button
+            onClick={handleNextRank}
+            aria-label={`Advance to next rank: ${nextRankInfo.name}`}
+            title={`Next Rank: ${nextRankInfo.name} (${nextRankInfo.kanji})`}
+            className="h-8 px-1.5 bg-gradient-to-r from-amber-950 to-amber-700 border border-amber-400 text-amber-200 text-[9px] font-black uppercase flex items-center justify-center gap-0.5 shrink-0 active:scale-95 cursor-pointer"
+          >
+            <SkipForward className="w-3 h-3 text-amber-300 shrink-0" />
+            <span className="font-serif text-[10px] leading-none">{nextRankInfo.kanji}</span>
+          </button>
+
+          {/* 5. Dojo Mode Selection Dropdown Button */}
           <button
             onClick={() => {
-              setIsMobileDojoOpen(!isMobileDojoOpen);
+              setIsMobileDojoOpen((prev) => !prev);
               setIsMobileRankOpen(false);
               setIsMobileKatasOpen(false);
               sounds.playMove();
             }}
             aria-expanded={isMobileDojoOpen}
             aria-haspopup="true"
-            className={`px-2 py-1 border text-[10px] sm:text-[11px] font-black uppercase flex items-center gap-1 cursor-pointer transition-colors z-40 active:scale-95 ${
+            aria-label={`Select Dojo Mode: ${activeDojoTab.label}`}
+            title={`Select Dojo Mode (${activeDojoTab.label})`}
+            className={`h-8 px-1.5 border text-[10px] font-black uppercase flex items-center justify-between gap-0.5 min-w-0 flex-1 max-w-[104px] cursor-pointer transition-colors ${
               isMobileDojoOpen
-                ? 'bg-amber-400 text-black border-black shadow-[1px_1px_0px_#000]'
+                ? 'bg-amber-400 text-black border-white'
                 : 'bg-neutral-900 border-neutral-700 text-amber-400'
             }`}
           >
-            <span>{dojoTabs.find((t) => t.id === activeTool)?.icon}</span>
-            <span className="truncate max-w-[62px] sm:max-w-[78px]">
-              {dojoTabs.find((t) => t.id === activeTool)?.label.replace(' Dojo', '')}
+            <span className="flex items-center gap-1 min-w-0 truncate">
+              <span className="shrink-0">{activeDojoTab.icon}</span>
+              <span className="truncate">{activeDojoTab.shortLabel}</span>
             </span>
-            {isMobileDojoOpen ? <ChevronUp className="w-2.5 h-2.5 shrink-0" /> : <ChevronDown className="w-2.5 h-2.5 shrink-0" />}
+            {isMobileDojoOpen ? (
+              <ChevronUp className="w-3 h-3 shrink-0" />
+            ) : (
+              <ChevronDown className="w-3 h-3 shrink-0" />
+            )}
           </button>
 
-          {/* Small Square Rulebook Opening Button next to Dojo Selector */}
+          {/* 6. Katas Selector OR Trophy Room Button */}
+          {activeTool !== 'practice' && activeTool !== 'theory' ? (
+            <button
+              onClick={() => {
+                setIsMobileKatasOpen((prev) => !prev);
+                setIsMobileRankOpen(false);
+                setIsMobileDojoOpen(false);
+                sounds.playMove();
+              }}
+              aria-expanded={isMobileKatasOpen}
+              aria-haspopup="true"
+              aria-label={`Select Kata (${activeLessonIndex + 1} of ${currentLessons.length})`}
+              title="Open Kata Lessons List"
+              className={`h-8 px-1.5 border text-[10px] font-mono font-black flex items-center gap-0.5 shrink-0 cursor-pointer transition-colors ${
+                isMobileKatasOpen
+                  ? 'bg-amber-400 text-black border-white'
+                  : 'bg-neutral-900 border-neutral-700 text-neutral-200'
+              }`}
+            >
+              <span>{activeLessonIndex + 1}/{currentLessons.length}</span>
+              {isMobileKatasOpen ? (
+                <ChevronUp className="w-2.5 h-2.5 shrink-0" />
+              ) : (
+                <ChevronDown className="w-2.5 h-2.5 shrink-0" />
+              )}
+            </button>
+          ) : (
+            <button
+              onClick={() => {
+                closeAllMobileMenus();
+                setIsTrophyRoomOpen(true);
+                sounds.playMove();
+              }}
+              aria-label="Open Trophy Room"
+              title="Open Trophy Room"
+              className="w-8 h-8 aspect-square bg-neutral-900 border border-neutral-700 text-amber-400 flex items-center justify-center shrink-0 active:scale-95 cursor-pointer"
+            >
+              <Trophy className="w-3.5 h-3.5 text-amber-400" />
+            </button>
+          )}
+
+          {/* 7. Rulebook Button (Always Visible Square Icon Button on Right) */}
           <button
             onClick={() => {
+              closeAllMobileMenus();
               sounds.playMove();
               if (activeTool === 'culling' || activeLesson?.mode === 'culling') {
                 setIsCullingRulesOpen(true);
@@ -511,130 +636,12 @@ export const HashiraTrainingView: React.FC<HashiraTrainingViewProps> = ({ onBack
                 setIsRulebookOpen(true);
               }
             }}
-            className="w-7 h-7 sm:w-8 sm:h-8 bg-neutral-900 hover:bg-neutral-800 border border-neutral-700 hover:border-amber-400 text-amber-400 flex items-center justify-center cursor-pointer shadow-[1px_1px_0px_#000] active:translate-x-0.5 active:translate-y-0.5 z-40 shrink-0"
+            aria-label="Open Rulebook and Codex"
             title="Open Rules & Codex"
+            className="w-8 h-8 aspect-square bg-neutral-900 hover:bg-neutral-800 border border-amber-400/80 text-amber-400 flex items-center justify-center shrink-0 active:scale-95 cursor-pointer"
           >
             <BookOpen className="w-3.5 h-3.5 text-amber-400" />
           </button>
-
-          {/* 3. Katas Trigger OR Trophy Button */}
-          {activeTool !== 'practice' && activeTool !== 'theory' ? (
-            <button
-              onClick={() => {
-                setIsMobileKatasOpen(!isMobileKatasOpen);
-                setIsMobileRankOpen(false);
-                setIsMobileDojoOpen(false);
-                sounds.playMove();
-              }}
-              aria-expanded={isMobileKatasOpen}
-              aria-haspopup="true"
-              className={`px-2 py-1 border text-[10px] sm:text-[11px] font-black uppercase flex items-center gap-1 cursor-pointer transition-colors z-40 active:scale-95 ${
-                isMobileKatasOpen
-                  ? 'bg-amber-400 text-black border-black shadow-[1px_1px_0px_#000]'
-                  : 'bg-neutral-900 border-neutral-700 text-neutral-200'
-              }`}
-            >
-              <Layers className="w-3 h-3 text-amber-500 shrink-0" />
-              <span>{activeLessonIndex + 1}/{currentLessons.length}</span>
-              {isMobileKatasOpen ? <ChevronUp className="w-2.5 h-2.5 shrink-0" /> : <ChevronDown className="w-2.5 h-2.5 shrink-0" />}
-            </button>
-          ) : (
-            <button
-              onClick={() => {
-                setIsTrophyRoomOpen(true);
-                sounds.playMove();
-              }}
-              className="px-2 py-1 bg-neutral-900 border border-neutral-700 text-amber-400 font-black text-[10px] sm:text-[11px] uppercase flex items-center gap-1 cursor-pointer z-40"
-            >
-              <Trophy className="w-3 h-3 text-amber-400 shrink-0" />
-              <span>Trophies</span>
-            </button>
-          )}
-
-          {/* Rank Dropdown Panel (Auto-closes on select) */}
-          {isMobileRankOpen && (
-            <div className="absolute top-full right-0 mt-1 bg-[#121216] border-2 border-amber-400 p-2 shadow-2xl z-50 grid grid-cols-3 gap-1.5 w-72 max-h-[50dvh] overflow-y-auto">
-              {HASHIRA_RANKS.map((rank) => (
-                <button
-                  key={rank.id}
-                  onClick={() => {
-                    setSelectedRankId(rank.id);
-                    updateProgress((p) => ({ ...p, selectedRank: rank.id }));
-                    setIsMobileRankOpen(false);
-                    sounds.playMove();
-                  }}
-                  className={`p-1.5 text-[10px] font-black uppercase border text-center cursor-pointer ${
-                    rank.id === selectedRankId
-                      ? 'bg-amber-400 text-black border-black'
-                      : 'bg-neutral-900 text-neutral-300 border-neutral-700'
-                  }`}
-                >
-                  <div className="font-serif text-sm">{rank.kanji}</div>
-                  <div className="truncate">{rank.name}</div>
-                </button>
-              ))}
-            </div>
-          )}
-
-          {/* Dojo Mode Dropdown Panel (Auto-closes on select) */}
-          {isMobileDojoOpen && (
-            <div className="absolute top-full right-0 mt-1 bg-[#121216] border-2 border-amber-400 p-2 shadow-2xl z-50 flex flex-col gap-1 w-64 max-h-[50dvh] overflow-y-auto">
-              {dojoTabs.map((tab) => (
-                <button
-                  key={tab.id}
-                  onClick={() => {
-                    setActiveTool(tab.id);
-                    setIsMobileDojoOpen(false);
-                    sounds.playMove();
-                  }}
-                  className={`px-2.5 py-2 text-xs font-black uppercase border flex items-center justify-between cursor-pointer ${
-                    activeTool === tab.id
-                      ? 'bg-amber-400 text-black border-black'
-                      : 'bg-neutral-900 text-neutral-300 border-neutral-700'
-                  }`}
-                >
-                  <span className="flex items-center gap-2">
-                    <span>{tab.icon}</span>
-                    <span>{tab.label}</span>
-                  </span>
-                  {activeTool === tab.id && <span>✓</span>}
-                </button>
-              ))}
-            </div>
-          )}
-
-          {/* Katas Drawer Panel (Auto-closes on select) */}
-          {isMobileKatasOpen && activeTool !== 'practice' && activeTool !== 'theory' && (
-            <div className="absolute top-full right-0 mt-1 bg-[#121216] border-2 border-amber-400 p-2 shadow-2xl z-50 max-h-[50dvh] overflow-y-auto flex flex-col gap-1 w-72">
-              {currentLessons.map((lesson, idx) => {
-                const isSelected = idx === activeLessonIndex;
-                const isDone = progress.completedKataIds.includes(lesson.id);
-                return (
-                  <div
-                    key={lesson.id}
-                    onClick={() => {
-                      setActiveLessonIndex(idx);
-                      setMentorExpression('stern');
-                      setMentorMessage(lesson.mentorPrompt);
-                      setIsMobileKatasOpen(false);
-                      sounds.playMove();
-                    }}
-                    className={`p-2 border cursor-pointer ${
-                      isSelected
-                        ? 'bg-amber-400 text-black border-black font-black'
-                        : 'bg-neutral-900 text-white border-neutral-800'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between text-[9px] mb-0.5">
-                      <span className="uppercase">Kata #{idx + 1}</span>
-                      {isDone && <span className="text-emerald-400 font-bold">Passed</span>}
-                    </div>
-                    <div className="text-xs font-black truncate">{lesson.title}</div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
         </div>
 
         {/* Desktop Rank & Trophy */}
@@ -676,6 +683,169 @@ export const HashiraTrainingView: React.FC<HashiraTrainingViewProps> = ({ onBack
           </button>
         </div>
       </header>
+
+      {/* MOBILE DROPDOWN OVERLAYS (< lg): Rendered outside header so menus are never clipped */}
+      {(isMobileRankOpen || isMobileDojoOpen || isMobileKatasOpen) && (
+        <div
+          className="lg:hidden fixed top-11 inset-x-0 bottom-0 z-50 bg-black/80 backdrop-blur-xs p-2.5 flex flex-col animate-in fade-in duration-150"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) closeAllMobileMenus();
+          }}
+        >
+          {/* 1. Hashira Rank Dropdown Panel */}
+          {isMobileRankOpen && (
+            <div className="bg-[#121216] border-2 border-amber-400 p-3 shadow-[0_6px_24px_rgba(245,158,11,0.35)] flex flex-col max-h-[70dvh] overflow-hidden">
+              <div className="flex items-center justify-between pb-2 mb-2 border-b border-neutral-800">
+                <span className="text-xs font-black uppercase text-amber-400 flex items-center gap-1.5">
+                  <Flame className="w-3.5 h-3.5" />
+                  Select Hashira Rank
+                </span>
+                <button
+                  onClick={closeAllMobileMenus}
+                  aria-label="Close rank menu"
+                  className="p-1 bg-neutral-900 border border-neutral-700 text-neutral-300 hover:text-white cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 overflow-y-auto">
+                {HASHIRA_RANKS.map((rank) => {
+                  const isSelected = rank.id === selectedRankId;
+                  return (
+                    <button
+                      key={rank.id}
+                      onClick={() => {
+                        setSelectedRankId(rank.id);
+                        updateProgress((p) => ({ ...p, selectedRank: rank.id }));
+                        closeAllMobileMenus();
+                        sounds.playMove();
+                        triggerDeclaration(`RANK ${rank.kanji}`, rank.name);
+                      }}
+                      className={`p-2.5 text-left border-2 transition-all cursor-pointer ${
+                        isSelected
+                          ? 'bg-amber-400 text-black border-white font-black shadow-[2px_2px_0px_#000]'
+                          : 'bg-neutral-900 text-neutral-200 border-neutral-700 hover:border-amber-400'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between mb-0.5">
+                        <span className="font-serif text-base font-black">{rank.kanji}</span>
+                        {isSelected && <span className="text-[10px] font-black">✓ ACTIVE</span>}
+                      </div>
+                      <div className="text-xs font-black uppercase truncate">{rank.name}</div>
+                      <div className={`text-[9px] truncate ${isSelected ? 'text-black/80 font-bold' : 'text-neutral-400'}`}>
+                        {rank.element}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* 2. Dojo Mode Dropdown Panel */}
+          {isMobileDojoOpen && (
+            <div className="bg-[#121216] border-2 border-amber-400 p-3 shadow-[0_6px_24px_rgba(245,158,11,0.35)] flex flex-col max-h-[75dvh] overflow-hidden">
+              <div className="flex items-center justify-between pb-2 mb-2 border-b border-neutral-800">
+                <span className="text-xs font-black uppercase text-amber-400 flex items-center gap-1.5">
+                  <Layers className="w-3.5 h-3.5" />
+                  Select Training Dojo
+                </span>
+                <button
+                  onClick={closeAllMobileMenus}
+                  aria-label="Close Dojo menu"
+                  className="p-1 bg-neutral-900 border border-neutral-700 text-neutral-300 hover:text-white cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              <div className="flex flex-col gap-1.5 overflow-y-auto">
+                {dojoTabs.map((tab) => {
+                  const isActive = activeTool === tab.id;
+                  return (
+                    <button
+                      key={tab.id}
+                      onClick={() => {
+                        setActiveTool(tab.id);
+                        closeAllMobileMenus();
+                        sounds.playMove();
+                        triggerDeclaration('DOJO', tab.label);
+                      }}
+                      className={`px-3 py-2.5 text-xs font-black uppercase border-2 flex items-center justify-between cursor-pointer transition-all ${
+                        isActive
+                          ? 'bg-amber-400 text-black border-white shadow-[2px_2px_0px_#000]'
+                          : 'bg-neutral-900 text-neutral-200 border-neutral-700 hover:border-amber-400'
+                      }`}
+                    >
+                      <span className="flex items-center gap-2">
+                        <span className="text-sm">{tab.icon}</span>
+                        <span>{tab.label}</span>
+                      </span>
+                      {isActive ? <span className="text-[10px] font-black">✓ ACTIVE</span> : <ArrowRight className="w-3.5 h-3.5 opacity-60" />}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* 3. Katas Lesson Dropdown Panel */}
+          {isMobileKatasOpen && activeTool !== 'practice' && activeTool !== 'theory' && (
+            <div className="bg-[#121216] border-2 border-amber-400 p-3 shadow-[0_6px_24px_rgba(245,158,11,0.35)] flex flex-col max-h-[75dvh] overflow-hidden">
+              <div className="flex items-center justify-between pb-2 mb-2 border-b border-neutral-800">
+                <span className="text-xs font-black uppercase text-amber-400 flex items-center gap-1.5">
+                  <Layers className="w-3.5 h-3.5" />
+                  {activeDojoTab.label} Katas ({currentLessons.length})
+                </span>
+                <button
+                  onClick={closeAllMobileMenus}
+                  aria-label="Close katas menu"
+                  className="p-1 bg-neutral-900 border border-neutral-700 text-neutral-300 hover:text-white cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              <div className="flex flex-col gap-1.5 overflow-y-auto pr-0.5">
+                {currentLessons.map((lesson, idx) => {
+                  const isSelected = idx === activeLessonIndex;
+                  const isDone = progress.completedKataIds.includes(lesson.id);
+                  return (
+                    <button
+                      key={lesson.id}
+                      onClick={() => {
+                        setActiveLessonIndex(idx);
+                        setActiveHintText(null);
+                        setActiveStepIndex(0);
+                        setMentorExpression('stern');
+                        setMentorMessage(lesson.mentorPrompt);
+                        closeAllMobileMenus();
+                        sounds.playMove();
+                      }}
+                      className={`p-2.5 text-left border-2 cursor-pointer transition-all ${
+                        isSelected
+                          ? 'bg-amber-400 text-black border-white font-black'
+                          : 'bg-neutral-900 text-white border-neutral-800 hover:border-amber-400'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between text-[10px] mb-0.5">
+                        <span className="uppercase font-mono font-bold">Kata #{idx + 1}</span>
+                        {isDone && (
+                          <span className={`font-black flex items-center gap-0.5 ${isSelected ? 'text-black' : 'text-emerald-400'}`}>
+                            <CheckCircle2 className="w-3 h-3" /> Passed
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-xs font-black uppercase truncate">{lesson.title}</div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* 2. Mobile Wide Rectangle Banner for Sensei (Just below top nav) */}
       <div className="lg:hidden bg-[#0b0b0e] border-b border-neutral-800 px-2 py-1 shrink-0 flex flex-col">
@@ -942,57 +1112,77 @@ export const HashiraTrainingView: React.FC<HashiraTrainingViewProps> = ({ onBack
         </aside>
       </div>
 
-      {/* 4. Mobile Bottom Navigation Bar (Fixed 1 Single Stripe) */}
-      <div className="lg:hidden bg-black border-t-2 border-neutral-800 px-2.5 py-1.5 shrink-0 flex items-center justify-between z-30 pb-[max(0.375rem,env(safe-area-inset-bottom))]">
-        <div className="flex items-center gap-1.5 min-w-0 pr-2">
-          <span className="text-[10px] sm:text-[11px] font-black uppercase text-amber-400 truncate">
+      {/* 4. Mobile Bottom Navigation Bar (Fixed Single Stripe with Hint, Reset, Next Lesson & Next Dojo) */}
+      <footer className="lg:hidden bg-black border-t-2 border-neutral-800 px-1.5 py-1.5 shrink-0 flex items-center justify-between gap-1.5 z-40 pb-[max(0.375rem,env(safe-area-inset-bottom))]">
+        {/* Current Lesson / Mode Status */}
+        <div className="flex items-center gap-1 min-w-0 flex-1">
+          <span className="text-[10px] font-black uppercase text-amber-400 truncate">
             {activeLesson
-              ? `Kata #${activeLessonIndex + 1}: ${activeLesson.title}`
+              ? `#${activeLessonIndex + 1} ${activeLesson.title}`
               : activeTool === 'practice'
-              ? '🥋 Sparring Arena'
-              : '📜 Sacred Scrolls'}
+              ? '🥋 Sparring'
+              : '📜 Scrolls'}
           </span>
           {isCurrentKataCompleted && (
-            <span className="text-[9px] text-emerald-400 font-bold shrink-0">✓ Passed</span>
+            <span className="text-[9px] text-emerald-400 font-black shrink-0" title="Lesson Passed">
+              ✓
+            </span>
           )}
         </div>
 
-        <div className="flex items-center gap-1.5 shrink-0">
+        {/* Accessible Action Buttons: Hint, Reset, Next Lesson (Same Dojo), Next Dojo */}
+        <div className="flex items-center gap-1 shrink-0">
           {activeLesson?.hint && (
             <button
               onClick={handleSeekHint}
-              className={`px-2 py-1 font-black text-[10px] uppercase border cursor-pointer active:translate-x-0.5 active:translate-y-0.5 transition-all ${
+              aria-label="Show tactical hint"
+              title="Seek tactical advice from Sensei"
+              className={`h-8 px-2 font-black text-[10px] uppercase border cursor-pointer active:scale-95 transition-all ${
                 activeHintText
-                  ? 'bg-sky-300 text-black border-black shadow-[1px_1px_0px_#000] ring-2 ring-sky-400'
+                  ? 'bg-sky-300 text-black border-black ring-2 ring-sky-400'
                   : 'bg-sky-400 hover:bg-sky-300 text-black border-black shadow-[1px_1px_0px_#000]'
               }`}
-              title="Seek tactical advice from Sensei"
             >
               Hint
             </button>
           )}
-          <button
-            onClick={handleResetKata}
-            className="px-2 py-1 bg-neutral-800 hover:bg-neutral-700 text-white font-black text-[10px] uppercase border border-neutral-600 shadow-[1px_1px_0px_#fff] flex items-center gap-1 cursor-pointer active:translate-x-0.5 active:translate-y-0.5"
-            title="Reset current kata"
-          >
-            <RotateCcw className="w-3 h-3" />
-            <span>Reset</span>
-          </button>
-          {activeLessonIndex < currentLessons.length - 1 && (
+
+          {activeLesson && (
             <button
-              onClick={handleNextKata}
-              className={`px-2 py-1 bg-amber-400 hover:bg-amber-300 text-black font-black text-[10px] uppercase border border-black shadow-[1px_1px_0px_#000] flex items-center gap-0.5 cursor-pointer active:translate-x-0.5 active:translate-y-0.5 ${
-                isCurrentKataCompleted ? 'animate-pulse' : ''
-              }`}
-              title="Advance to next kata"
+              onClick={handleResetKata}
+              aria-label="Reset current lesson"
+              title="Reset current kata"
+              className="w-8 h-8 aspect-square bg-neutral-800 hover:bg-neutral-700 text-white border border-neutral-600 flex items-center justify-center cursor-pointer active:scale-95"
             >
-              <span>Next</span>
-              <ArrowRight className="w-3 h-3" />
+              <RotateCcw className="w-3.5 h-3.5" />
             </button>
           )}
+
+          {currentLessons.length > 0 && (
+            <button
+              onClick={handleNextKata}
+              aria-label="Next lesson in current Dojo"
+              title="Next lesson in current Dojo"
+              className={`h-8 px-2 bg-amber-400 hover:bg-amber-300 text-black font-black text-[10px] uppercase border border-black shadow-[1px_1px_0px_#000] flex items-center gap-0.5 cursor-pointer active:scale-95 ${
+                isCurrentKataCompleted ? 'animate-pulse' : ''
+              }`}
+            >
+              <span>Next Lesson</span>
+              <ArrowRight className="w-3 h-3 shrink-0" />
+            </button>
+          )}
+
+          <button
+            onClick={handleNextDojo}
+            aria-label="Switch to next Dojo"
+            title="Advance to next Dojo"
+            className="h-8 px-2 bg-red-600 hover:bg-red-500 text-white font-black text-[10px] uppercase border border-amber-400 shadow-[1px_1px_0px_#000] flex items-center gap-0.5 cursor-pointer active:scale-95"
+          >
+            <span>Next Dojo</span>
+            <SkipForward className="w-3 h-3 shrink-0" />
+          </button>
         </div>
-      </div>
+      </footer>
 
       {/* Trophy Room Modal */}
       <TrophyRoomModal

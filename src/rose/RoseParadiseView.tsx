@@ -135,6 +135,7 @@ export const RoseParadiseView: React.FC<RoseParadiseViewProps> = ({ onBack }) =>
   const [legalDestinations, setLegalDestinations] = useState<{ x: number; y: number }[]>([]);
   const [copiedCode, setCopiedCode] = useState(false);
   const [chatInputText, setChatInputText] = useState('');
+  const [isMobileChatOpen, setIsMobileChatOpen] = useState(false);
 
   // Lovingly Concede Confirmation Modal (replaces browser confirm)
   const [showConcedeConfirm, setShowConcedeConfirm] = useState(false);
@@ -694,7 +695,7 @@ export const RoseParadiseView: React.FC<RoseParadiseViewProps> = ({ onBack }) =>
     : ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
 
   return (
-    <div className="rose-theme min-h-screen flex flex-col p-3 sm:p-6 select-none bg-black text-white font-mono">
+    <div className={`rose-theme ${activeMatch ? 'h-[100dvh] max-h-[100dvh] overflow-hidden' : 'min-h-screen'} flex flex-col p-1 sm:p-3 md:p-6 select-none bg-black text-white font-mono`}>
       {/* Floating Live Reactions */}
       {reactions.map((r) => (
         <div
@@ -710,8 +711,8 @@ export const RoseParadiseView: React.FC<RoseParadiseViewProps> = ({ onBack }) =>
       ))}
 
       {/* ==================== BRUTALIST TOP NAVIGATION ==================== */}
-      <header className="z-10 max-w-6xl mx-auto w-full flex items-center justify-between pb-4 mb-4 border-b-4 border-white">
-        <div className="flex items-center gap-3">
+      <header className={`z-10 w-full flex items-center justify-between border-b-3 md:border-b-4 border-white ${activeMatch ? 'h-12 md:h-14 px-2 md:px-6 mb-1 md:mb-3 shrink-0' : 'max-w-6xl mx-auto pb-4 mb-4'}`}>
+        <div className="flex items-center gap-2 sm:gap-3">
           <button
             onClick={() => {
               if (activeMatch) {
@@ -725,35 +726,36 @@ export const RoseParadiseView: React.FC<RoseParadiseViewProps> = ({ onBack }) =>
                 onBack();
               }
             }}
-            className="brutal-button px-3 py-1.5 text-xs font-black uppercase flex items-center gap-1.5 cursor-pointer hover:bg-white hover:text-black"
+            className="brutal-button px-2.5 sm:px-3 py-1.5 text-xs font-black uppercase flex items-center gap-1.5 cursor-pointer hover:bg-white hover:text-black"
           >
             <ArrowLeft className="w-4 h-4" />
-            {activeMatch ? 'Leave Match' : 'Main Menu'}
+            <span className="hidden sm:inline">{activeMatch ? 'Leave Match' : 'Main Menu'}</span>
+            <span className="sm:hidden">{activeMatch ? 'Leave' : 'Back'}</span>
           </button>
 
-          <div className="flex items-center gap-2">
-            <span className="text-xl">🌹</span>
-            <span className="text-sm sm:text-base font-black tracking-tight uppercase">
+          <div className="flex items-center gap-1.5 sm:gap-2">
+            <span className="text-lg sm:text-xl">🌹</span>
+            <span className="text-xs sm:text-base font-black tracking-tight uppercase truncate max-w-[120px] sm:max-w-none">
               Rose Paradise
             </span>
-            <span className="text-[10px] px-2 py-0.5 bg-amber-400 text-black font-black uppercase border border-white">
-              Untimed Couples
+            <span className="text-[9px] sm:text-[10px] px-1.5 py-0.5 bg-amber-400 text-black font-black uppercase border border-white">
+              Couples
             </span>
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 sm:gap-2">
           <button
             onClick={() => setShowRulebook(true)}
-            className="brutal-button px-3 py-1.5 text-xs font-black uppercase flex items-center gap-1.5 cursor-pointer text-amber-300 border-amber-300 shadow-[3px_3px_0px_#fbbf24] hover:bg-amber-300 hover:text-black"
+            className="brutal-button px-2.5 sm:px-3 py-1.5 text-xs font-black uppercase flex items-center gap-1.5 cursor-pointer text-amber-300 border-amber-300 shadow-[2px_2px_0px_#fbbf24] hover:bg-amber-300 hover:text-black"
           >
-            <BookOpen className="w-3.5 h-3.5" /> Rules
+            <BookOpen className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Rules</span>
           </button>
 
           {activeMatch && activeMatch.status === 'active' && (
             <button
               onClick={() => setShowConcedeConfirm(true)}
-              className="brutal-button px-3 py-1.5 text-xs font-black uppercase flex items-center gap-1.5 cursor-pointer text-red-400 border-red-400 shadow-[3px_3px_0px_#f43f5e] hover:bg-red-400 hover:text-black"
+              className="hidden sm:flex brutal-button px-3 py-1.5 text-xs font-black uppercase items-center gap-1.5 cursor-pointer text-red-400 border-red-400 shadow-[2px_2px_0px_#f43f5e] hover:bg-red-400 hover:text-black"
             >
               <Flag className="w-3.5 h-3.5" /> Concede
             </button>
@@ -1052,312 +1054,45 @@ export const RoseParadiseView: React.FC<RoseParadiseViewProps> = ({ onBack }) =>
 
       {/* ==================== 2. ACTIVE MATCH VIEW (PROPER BRUTALISM) ==================== */}
       {activeMatch && (
-        <div className="z-10 max-w-6xl mx-auto w-full flex flex-col lg:flex-row gap-6 items-start justify-center flex-1">
-          {/* Left Sidebar: Predictor, Partner Info & In-Game Love Chat Box */}
-          <div className="w-full lg:w-72 flex flex-col gap-4">
-            {/* Live Skill Predictor Panel */}
-            <PredictorPanel
-              metrics={extractRoseMetrics(activeMatch, effectiveMyColor)}
-              modeLabel="Rose Paradise"
-            />
+        <>
+          <main className="flex-1 min-h-0 w-full mx-auto flex flex-col md:grid md:grid-cols-[1fr_320px] lg:grid-cols-[280px_1fr_320px] h-[calc(100dvh-48px)] md:h-[calc(100dvh-56px)] gap-4 md:gap-6 p-1 md:p-6 overflow-hidden max-w-[1600px]">
+            {/* Left Sidebar (Desktop Only): Predictor, Partner Info & In-Game Love Chat Box */}
+            <div className="hidden lg:flex flex-col gap-4 overflow-y-auto pr-1">
+              {/* Live Skill Predictor Panel */}
+              <PredictorPanel
+                metrics={extractRoseMetrics(activeMatch, effectiveMyColor)}
+                modeLabel="Rose Paradise"
+              />
 
-            {/* Partner Info Box */}
-            <div className="brutal-card p-4 flex flex-col gap-3 border-3 border-white shadow-[4px_4px_0px_#fff]">
-              <div className="flex items-center justify-between border-b-2 border-neutral-800 pb-2">
-                <span className="text-xs font-black uppercase text-neutral-400">Partner</span>
-                <span className="text-xs font-black uppercase text-amber-400">
-                  {opponentSeat?.role === 'boyfriend' ? '👑 Boyfriend' : '👸 Girlfriend'}
-                </span>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-neutral-900 border-2 border-white flex items-center justify-center font-black text-white shadow-[2px_2px_0px_#fff]">
-                  {opponentSeat?.displayName?.slice(0, 2).toUpperCase() || 'P2'}
+              {/* Partner Info Box */}
+              <div className="brutal-card p-4 flex flex-col gap-3 border-3 border-white shadow-[4px_4px_0px_#fff]">
+                <div className="flex items-center justify-between border-b-2 border-neutral-800 pb-2">
+                  <span className="text-xs font-black uppercase text-neutral-400">Partner</span>
+                  <span className="text-xs font-black uppercase text-amber-400">
+                    {opponentSeat?.role === 'boyfriend' ? '👑 Boyfriend' : '👸 Girlfriend'}
+                  </span>
                 </div>
-                <div>
-                  <div className="font-black text-sm text-white">{opponentSeat?.displayName || 'Partner'}</div>
-                  <div className="text-xs text-neutral-400 font-mono">
-                    {activeMatch.turn === opponentSeat?.color ? '⏳ Thinking with love...' : 'Waiting'}
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-neutral-900 border-2 border-white flex items-center justify-center font-black text-white shadow-[2px_2px_0px_#fff]">
+                    {opponentSeat?.displayName?.slice(0, 2).toUpperCase() || 'P2'}
+                  </div>
+                  <div>
+                    <div className="font-black text-sm text-white">{opponentSeat?.displayName || 'Partner'}</div>
+                    <div className="text-xs text-neutral-400 font-mono">
+                      {activeMatch.turn === opponentSeat?.color ? '⏳ Thinking with love...' : 'Waiting'}
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              {/* Petal Meter */}
-              <div className="flex items-center justify-between pt-2 border-t-2 border-neutral-800">
-                <span className="text-[11px] font-black uppercase text-neutral-300">Petals Harvested:</span>
-                <div className="flex gap-1.5">
-                  {[1, 2, 3].map((p) => (
-                    <span
-                      key={p}
-                      className={`text-base transition-opacity ${
-                        (opponentSeat?.petals || 0) >= p ? 'opacity-100 drop-shadow-[0_0_8px_#f43f5e]' : 'opacity-20'
-                      }`}
-                    >
-                      🌹
-                    </span>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* Quick Reactions Palette */}
-            <div className="brutal-card p-3 flex flex-col gap-2 border-3 border-rose-400/80 shadow-[4px_4px_0px_#f43f5e] bg-[#12050c]">
-              <span className="text-[11px] font-black uppercase text-rose-300 flex items-center justify-between">
-                <span className="flex items-center gap-1.5">
-                  <Heart className="w-3.5 h-3.5 text-rose-500 fill-rose-500" /> Send Reaction
-                </span>
-                <span className="text-[9px] font-mono opacity-70">Tap an emoji</span>
-              </span>
-              <div className="grid grid-cols-6 gap-1">
-                {['❤️', '🌹', '✨', '💍', '🥰', '😉', '💖', '👑', '🥺', '💅', '🧋', '⚔️'].map((emo) => (
-                  <button
-                    key={emo}
-                    type="button"
-                    onClick={() => handleSendReaction(emo)}
-                    className="p-1.5 bg-neutral-950/80 hover:bg-rose-950 border border-rose-500/40 hover:border-rose-400 text-base cursor-pointer flex items-center justify-center transition-all hover:scale-110 active:scale-95 rounded"
-                  >
-                    {emo}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* In-Game Romantic Chat Box - Highlighted with Radiant Rose Glow */}
-            <div className="brutal-card p-3.5 flex flex-col gap-2.5 border-3 border-rose-500 shadow-[0_0_15px_rgba(244,63,94,0.35),4px_4px_0px_#f43f5e] bg-gradient-to-b from-[#180710] to-[#0a0307]">
-              <div className="flex items-center justify-between border-b-2 border-rose-500/40 pb-2">
-                <div className="flex items-center gap-1.5 text-xs font-black uppercase text-rose-300 tracking-wide">
-                  <MessageSquare className="w-3.5 h-3.5 text-rose-400" />
-                  <span>Love Messages & Banter</span>
-                </div>
-                <div className="flex items-center gap-1 bg-rose-500/20 border border-rose-500/40 px-2 py-0.5 rounded text-[10px] font-mono text-rose-300">
-                  <span className="w-1.5 h-1.5 rounded-full bg-rose-400 animate-pulse" />
-                  <span>LIVE</span>
-                </div>
-              </div>
-
-              {/* Quick Message Suggestion Chips */}
-              <div className="flex flex-wrap gap-1">
-                {[
-                  '❤️ Love you',
-                  '🌹 Good move!',
-                  '😉 Cute!',
-                  '🙈 Oops!',
-                  '👑 Queen power!',
-                  '🧋 Boba date later?',
-                ].map((chip) => (
-                  <button
-                    key={chip}
-                    type="button"
-                    onClick={() => setChatInputText(chip)}
-                    className="px-2 py-0.5 text-[10px] font-bold bg-rose-950/80 hover:bg-rose-900 border border-rose-400/60 hover:border-rose-300 text-rose-200 rounded cursor-pointer transition-colors"
-                  >
-                    {chip}
-                  </button>
-                ))}
-              </div>
-
-              <div className="h-44 overflow-y-auto flex flex-col gap-2 p-2 bg-[#0c0308] border-2 border-rose-500/50 text-xs font-mono rounded">
-                {chatMessages.length === 0 ? (
-                  <div className="text-[11px] text-rose-300/60 italic text-center my-auto flex flex-col items-center gap-1">
-                    <Heart className="w-4 h-4 text-rose-500/50" />
-                    <span>Say something sweet or playful to your partner...</span>
-                  </div>
-                ) : (
-                  chatMessages.map((msg) => {
-                    const isMe = msg.senderUserId === (user?.id || 'usr_human');
-                    return (
-                      <div
-                        key={msg.id}
-                        className={`flex flex-col p-2 border-2 rounded ${
-                          isMe
-                            ? 'bg-[#220916] border-rose-400 text-rose-100 ml-3 shadow-[1px_1px_0px_#f43f5e]'
-                            : 'bg-[#150720] border-fuchsia-400 text-fuchsia-100 mr-3 shadow-[1px_1px_0px_#d946ef]'
-                        }`}
-                      >
-                        <div className="flex items-center justify-between gap-1 mb-0.5">
-                          <span
-                            className={`text-[10px] font-black uppercase ${
-                              isMe ? 'text-rose-300' : 'text-fuchsia-300'
-                            }`}
-                          >
-                            {msg.senderDisplayName}
-                          </span>
-                          <span className="text-[9px] text-neutral-400 font-mono">
-                            {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                          </span>
-                        </div>
-                        <span className="text-white text-xs break-words">{msg.text}</span>
-                      </div>
-                    );
-                  })
-                )}
-              </div>
-
-              <form onSubmit={handleSendChat} className="flex gap-1.5">
-                <input
-                  type="text"
-                  placeholder="Type a sweet or cheeky message..."
-                  value={chatInputText}
-                  onChange={(e) => setChatInputText(e.target.value)}
-                  className="flex-1 bg-[#13040c] border-2 border-rose-400/80 focus:border-rose-300 px-3 py-1.5 text-xs text-white placeholder-rose-300/40 focus:outline-none focus:ring-1 focus:ring-rose-400 rounded-sm"
-                />
-                <button
-                  type="submit"
-                  disabled={!chatInputText.trim()}
-                  className="px-3.5 py-1.5 bg-rose-500 hover:bg-rose-400 text-white disabled:opacity-40 text-xs font-black uppercase cursor-pointer border-2 border-white shadow-[2px_2px_0px_#000] flex items-center justify-center transition-colors"
-                >
-                  <Send className="w-3.5 h-3.5" />
-                </button>
-              </form>
-            </div>
-          </div>
-
-          {/* Center: Brutalist Chess Board */}
-          <div className="flex flex-col items-center gap-3 flex-1 w-full max-w-[540px]">
-            {/* Turn Banner with Complete Clarity */}
-            <div className={`w-full px-4 py-2.5 brutal-card border-3 border-white shadow-[4px_4px_0px_#fff] flex items-center justify-between text-xs font-black uppercase ${isMyTurn ? 'bg-amber-400 text-black' : 'bg-black text-white'}`}>
-              <div className="flex items-center gap-2">
-                <span className={`w-2.5 h-2.5 ${isMyTurn ? 'bg-black animate-ping' : 'bg-neutral-500'}`} />
-                <span>
-                  {isMyTurn
-                    ? `👉 YOUR TURN · ${effectiveMyColor === 'white' ? 'White' : 'Black'} TO MOVE (YOU)`
-                    : `PARTNER'S TURN · ${effectiveMyColor === 'white' ? 'Black' : 'White'} TO MOVE`}
-                </span>
-              </div>
-              <div className="text-[11px] font-mono">
-                Move {activeMatch.turnCount}
-              </div>
-            </div>
-
-            {/* Universal Summon Placement Mode Banner */}
-            {summoningUnit && (
-              <div className="w-full p-3 bg-amber-400 text-black border-3 border-white shadow-[4px_4px_0px_#fff] font-black uppercase text-xs flex items-center justify-between animate-pulse">
-                <span>⚡ SUMMON {summoningUnit.toUpperCase()}: Click any highlighted square on the board!</span>
-                <button
-                  onClick={() => setSummoningUnit(null)}
-                  className="px-2.5 py-1 bg-black text-white hover:bg-neutral-800 text-[10px] uppercase font-black cursor-pointer border border-white"
-                >
-                  Cancel
-                </button>
-              </div>
-            )}
-
-            {/* Brutalist Board Tray */}
-            <div className="w-full brutal-board-tray p-3 sm:p-4 border-4 border-white shadow-[8px_8px_0px_#fff] flex flex-col items-center" style={{ backgroundColor: '#e11d48' }}>
-              {/* Board Files Top (A - H) */}
-              <div className="w-full grid grid-cols-8 text-center text-xs font-black text-white mb-1">
-                {fileLabels.map((f) => (
-                  <span key={f}>{f}</span>
-                ))}
-              </div>
-
-              {/* 8x8 Board Container with Strict 1:1 Aspect Ratio Squares */}
-              <div className="w-full aspect-square border-3 border-white grid grid-cols-8 grid-rows-8 bg-black/40">
-                {displayYIndices.map((y) =>
-                  displayXIndices.map((x) => {
-                    const piece = activeMatch.board[y][x];
-                    const isSelected = selectedSquare?.x === x && selectedSquare?.y === y;
-                    const isLegalDest = legalDestinations.some((d) => d.x === x && d.y === y);
-                    const isDark = (x + y) % 2 === 1;
-
-                    // Highlight ANY square that is a valid summon square
-                    const canSummonHere = summoningUnit && validSummonSquares.some((sq) => sq.x === x && sq.y === y);
-
-                    // Check and ray path highlighting
-                    const isKingInCheckSquare = checkDetails.kingPos && checkDetails.kingPos.x === x && checkDetails.kingPos.y === y && checkDetails.inCheck;
-                    const isAttackerSquare = checkDetails.attackerPositions.some(ap => ap.x === x && ap.y === y);
-                    const isRaySquare = checkDetails.rayPositions.some(rp => rp.x === x && rp.y === y);
-
-                    let squareBg = isDark ? 'rgba(40, 5, 12, 0.5)' : '#F2EFE4';
-                    let squareRing = '';
-
-                    if (canSummonHere) {
-                      squareBg = 'rgba(251, 191, 36, 0.5)';
-                      squareRing = 'ring-4 ring-amber-400 z-10';
-                    } else if (isKingInCheckSquare) {
-                      squareBg = 'rgba(239, 68, 68, 0.7)';
-                      squareRing = 'ring-4 ring-red-600 animate-pulse z-20';
-                    } else if (isAttackerSquare) {
-                      squareBg = 'rgba(239, 68, 68, 0.5)';
-                      squareRing = 'ring-2 ring-red-500 z-15';
-                    } else if (isRaySquare) {
-                      squareBg = 'rgba(239, 68, 68, 0.25)';
-                    } else if (isSelected) {
-                      squareBg = 'rgba(251, 191, 36, 0.35)';
-                      squareRing = 'ring-4 ring-amber-400 z-20';
-                    }
-
-                    return (
-                      <div
-                        key={`${x}-${y}`}
-                        onClick={() => handleSquareClick(x, y)}
-                        style={{
-                          backgroundColor: squareBg,
-                          backdropFilter: isDark ? 'blur(3px)' : undefined,
-                          WebkitBackdropFilter: isDark ? 'blur(3px)' : undefined,
-                        }}
-                        className={`aspect-square w-full h-full flex items-center justify-center relative cursor-pointer select-none transition-colors border border-black/20 ${squareRing}`}
-                      >
-                        {/* Legal Move Dot */}
-                        {isLegalDest && !piece && (
-                          <div className="w-4 h-4 bg-amber-400 border-2 border-black shadow-[1px_1px_0px_#000] z-20" />
-                        )}
-                        {/* Legal Capture Indicator */}
-                        {isLegalDest && piece && (
-                          <div className="absolute inset-1 border-3 border-red-500 bg-red-500/30 pointer-events-none z-20" />
-                        )}
-                        {canSummonHere && (
-                          <div className="text-xs font-black animate-bounce z-20">🌹</div>
-                        )}
-                        {isKingInCheckSquare && (
-                          <div className="absolute top-0.5 right-0.5 text-[9px] bg-red-600 text-white px-1 font-black uppercase z-20">CHECK</div>
-                        )}
-                        {piece && <ChessPiece type={piece.type} color={piece.color} />}
-                      </div>
-                    );
-                  })
-                )}
-              </div>
-
-              {/* Board Files Bottom (A - H) */}
-              <div className="w-full grid grid-cols-8 text-center text-xs font-black text-white mt-1">
-                {fileLabels.map((f) => (
-                  <span key={f}>{f}</span>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* Right Sidebar: My Status, Petals & Summoning */}
-          <div className="w-full lg:w-72 flex flex-col gap-4">
-            <div className="brutal-card p-4 flex flex-col gap-3 border-3 border-white shadow-[4px_4px_0px_#fff]">
-              <div className="flex items-center justify-between border-b-2 border-neutral-800 pb-2">
-                <span className="text-xs font-black uppercase text-neutral-400">
-                  You ({mySeat?.role === 'boyfriend' ? '👑 Boyfriend' : '👸 Girlfriend'})
-                </span>
-                <span className="text-xs font-black text-amber-400 uppercase">{effectiveMyColor}</span>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-amber-400 text-black border-2 border-white flex items-center justify-center font-black shadow-[2px_2px_0px_#fff]">
-                  {user.displayName?.slice(0, 2).toUpperCase() || 'YOU'}
-                </div>
-                <div>
-                  <div className="font-black text-sm text-white">{user.displayName || 'You'}</div>
-                  <div className="text-xs text-neutral-400 font-mono">
-                    {isInCheck ? '⚠️ KING IN CHECK!' : isMyTurn ? '👉 YOUR MOVE' : 'WAITING FOR PARTNER'}
-                  </div>
-                </div>
-              </div>
-
-              {/* Petal Meter & Summon Action */}
-              <div className="flex items-center justify-between pt-2.5 border-t-2 border-neutral-800">
-                <div className="flex items-center gap-1.5">
-                  <span className="text-[11px] font-black uppercase text-neutral-300">Petals:</span>
+                {/* Petal Meter */}
+                <div className="flex items-center justify-between pt-2 border-t-2 border-neutral-800">
+                  <span className="text-[11px] font-black uppercase text-neutral-300">Petals Harvested:</span>
                   <div className="flex gap-1.5">
                     {[1, 2, 3].map((p) => (
                       <span
                         key={p}
                         className={`text-base transition-opacity ${
-                          (mySeat?.petals || 0) >= p ? 'opacity-100 drop-shadow-[0_0_8px_#f43f5e]' : 'opacity-20'
+                          (opponentSeat?.petals || 0) >= p ? 'opacity-100 drop-shadow-[0_0_8px_#f43f5e]' : 'opacity-20'
                         }`}
                       >
                         🌹
@@ -1365,145 +1100,645 @@ export const RoseParadiseView: React.FC<RoseParadiseViewProps> = ({ onBack }) =>
                     ))}
                   </div>
                 </div>
-
-                <button
-                  onClick={() => setIsSummonModalOpen(true)}
-                  disabled={!isMyTurn || (mySeat?.petals || 0) < 3 || (mySeat?.summonsUsed || 0) >= 2 || isInCheck}
-                  title={isInCheck ? 'Cannot summon while King is in check! Escape check first.' : undefined}
-                  className={`px-3 py-1.5 text-xs font-black uppercase transition-all ${
-                    (mySeat?.petals || 0) < 3 || !isMyTurn || isInCheck
-                      ? 'opacity-40 cursor-not-allowed bg-neutral-900 border-2 border-neutral-700 text-neutral-500'
-                      : 'cursor-pointer brutal-button-rose text-white'
-                  }`}
-                >
-                  {isInCheck ? '⚠️ Check Active' : (mySeat?.petals || 0) < 3 ? 'Summon (3 🌹)' : '⚡ Summon (3 🌹)'}
-                </button>
               </div>
-            </div>
 
-            {/* Active Piece Inspector (Right Sidebar Bottom Portion) */}
-            <div className="brutal-card p-4 flex flex-col gap-3 border-3 border-white shadow-[4px_4px_0px_#fff]">
-              <div className="flex items-center justify-between border-b-2 border-neutral-800 pb-2">
-                <span className="text-xs font-black uppercase text-amber-400 flex items-center gap-1.5">
-                  <Sparkles className="w-3.5 h-3.5" /> Piece Inspector
+              {/* Quick Reactions Palette */}
+              <div className="brutal-card p-3 flex flex-col gap-2 border-3 border-rose-400/80 shadow-[4px_4px_0px_#f43f5e] bg-[#12050c]">
+                <span className="text-[11px] font-black uppercase text-rose-300 flex items-center justify-between">
+                  <span className="flex items-center gap-1.5">
+                    <Heart className="w-3.5 h-3.5 text-rose-500 fill-rose-500" /> Send Reaction
+                  </span>
+                  <span className="text-[9px] font-mono opacity-70">Tap an emoji</span>
                 </span>
-                <span className="text-[10px] font-mono text-neutral-400">Activity</span>
+                <div className="grid grid-cols-6 gap-1">
+                  {['❤️', '🌹', '✨', '💍', '🥰', '😉', '💖', '👑', '🥺', '💅', '🧋', '⚔️'].map((emo) => (
+                    <button
+                      key={emo}
+                      type="button"
+                      onClick={() => handleSendReaction(emo)}
+                      className="p-1.5 bg-neutral-950/80 hover:bg-rose-950 border border-rose-500/40 hover:border-rose-400 text-base cursor-pointer flex items-center justify-center transition-all hover:scale-110 active:scale-95 rounded"
+                    >
+                      {emo}
+                    </button>
+                  ))}
+                </div>
               </div>
 
-              {(() => {
-                const targetPiece = (selectedSquare && activeMatch.board[selectedSquare.y][selectedSquare.x]) 
-                  || (activeMatch.lastMove ? activeMatch.lastMove.piece : null);
-                
-                const isSelectedByMe = selectedSquare && activeMatch.board[selectedSquare.y][selectedSquare.x]?.color === effectiveMyColor;
-                const isLastMoveMine = activeMatch.lastMove && activeMatch.lastMove.piece.color === effectiveMyColor;
-
-                const isMine = isSelectedByMe || (activeMatch.lastMove && !selectedSquare && isLastMoveMine);
-
-                const opponentRole = opponentSeat?.role || (effectiveMyColor === 'white' ? 'girlfriend' : 'boyfriend');
-                const opponentName = opponentSeat?.displayName || (opponentRole === 'boyfriend' ? 'Boyfriend Bot 👑' : 'Girlfriend Bot 👸');
-
-                if (!targetPiece) {
-                  return (
-                    <div className="py-6 text-center text-neutral-500 text-xs font-mono">
-                      Click any piece on the board to inspect.
-                    </div>
-                  );
-                }
-
-                const pieceName = PIECE_DISPLAY_NAMES[targetPiece.type] || targetPiece.type.toUpperCase();
-                let actionMsg = '';
-                if (isMine) {
-                  actionMsg = `You are moving the ${pieceName}`;
-                } else {
-                  const roleLabel = opponentRole === 'boyfriend' ? 'boyfriend' : 'girlfriend';
-                  actionMsg = `Your ${roleLabel} (${opponentName}) is moving the ${pieceName}`;
-                }
-
-                return (
-                  <div className="flex flex-col items-center gap-3 py-2">
-                    <div className="w-20 h-20 sm:w-24 sm:h-24 bg-neutral-950 border-3 border-amber-400 p-2 flex items-center justify-center shadow-[4px_4px_0px_#fbbf24]">
-                      <ChessPiece type={targetPiece.type} color={targetPiece.color} className="w-full h-full" />
-                    </div>
-                    <div className="text-center">
-                      <div className="font-black text-sm uppercase text-white">{pieceName}</div>
-                      <div className="text-xs text-amber-300 font-mono mt-1 font-bold leading-relaxed">
-                        {actionMsg}!
-                      </div>
-                    </div>
+              {/* In-Game Romantic Chat Box - Highlighted with Radiant Rose Glow */}
+              <div className="brutal-card p-3.5 flex flex-col gap-2.5 border-3 border-rose-500 shadow-[0_0_15px_rgba(244,63,94,0.35),4px_4px_0px_#f43f5e] bg-gradient-to-b from-[#180710] to-[#0a0307]">
+                <div className="flex items-center justify-between border-b-2 border-rose-500/40 pb-2">
+                  <div className="flex items-center gap-1.5 text-xs font-black uppercase text-rose-300 tracking-wide">
+                    <MessageSquare className="w-3.5 h-3.5 text-rose-400" />
+                    <span>Love Messages & Banter</span>
                   </div>
-                );
-              })()}
-            </div>
-
-            {/* Game Over Banner */}
-            {activeMatch.status === 'completed' && (
-              <div className="brutal-card p-6 border-3 border-amber-400 text-center flex flex-col gap-4 shadow-[6px_6px_0px_#fbbf24]">
-                <Trophy className="w-10 h-10 text-amber-400 mx-auto animate-bounce" />
-                <div>
-                  <h3 className="text-lg font-black uppercase">
-                    {activeMatch.winner === 'draw' ? 'Match Drawn in Harmony!' : `${activeMatch.winner} Triumphs!`}
-                  </h3>
-                  <p className="text-xs text-neutral-400 mt-1 font-mono">{activeMatch.winReason}</p>
+                  <div className="flex items-center gap-1 bg-rose-500/20 border border-rose-500/40 px-2 py-0.5 rounded text-[10px] font-mono text-rose-300">
+                    <span className="w-1.5 h-1.5 rounded-full bg-rose-400 animate-pulse" />
+                    <span>LIVE</span>
+                  </div>
                 </div>
 
-                {earnedRoseCards.length > 0 && (
-                  <div className="w-full bg-[#1e0712] border-2 border-rose-400 p-3 text-left my-1">
-                    <div className="text-[11px] font-black uppercase text-rose-300 mb-2 flex items-center gap-1">
-                      <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-                      Earned Rose Badges (Click badge to inspect & download)
+                {/* Quick Message Suggestion Chips */}
+                <div className="flex flex-wrap gap-1">
+                  {[
+                    '❤️ Love you',
+                    '🌹 Good move!',
+                    '😉 Cute!',
+                    '🙈 Oops!',
+                    '👑 Queen power!',
+                    '🧋 Boba date later?',
+                  ].map((chip) => (
+                    <button
+                      key={chip}
+                      type="button"
+                      onClick={() => setChatInputText(chip)}
+                      className="px-2 py-0.5 text-[10px] font-bold bg-rose-950/80 hover:bg-rose-900 border border-rose-400/60 hover:border-rose-300 text-rose-200 rounded cursor-pointer transition-colors"
+                    >
+                      {chip}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="h-44 overflow-y-auto flex flex-col gap-2 p-2 bg-[#0c0308] border-2 border-rose-500/50 text-xs font-mono rounded">
+                  {chatMessages.length === 0 ? (
+                    <div className="text-[11px] text-rose-300/60 italic text-center my-auto flex flex-col items-center gap-1">
+                      <Heart className="w-4 h-4 text-rose-500/50" />
+                      <span>Say something sweet or playful to your partner...</span>
                     </div>
-                    <div className="flex flex-wrap items-center gap-2">
-                      {displayRoseCards.map((card) => (
+                  ) : (
+                    chatMessages.map((msg) => {
+                      const isMe = msg.senderUserId === (user?.id || 'usr_human');
+                      return (
                         <div
-                          key={card.id}
-                          onClick={() => {
-                            setSelectedRoseCard(card);
-                            setIsRoseTrophyRoomOpen(true);
-                          }}
-                          className="p-2 bg-black/80 hover:bg-black border-2 border-rose-400 cursor-pointer flex items-center gap-2 shadow-[2px_2px_0px_#000] hover:scale-105 transition-all"
+                          key={msg.id}
+                          className={`flex flex-col p-2 border-2 rounded ${
+                            isMe
+                              ? 'bg-[#220916] border-rose-400 text-rose-100 ml-3 shadow-[1px_1px_0px_#f43f5e]'
+                              : 'bg-[#150720] border-fuchsia-400 text-fuchsia-100 mr-3 shadow-[1px_1px_0px_#d946ef]'
+                          }`}
                         >
-                          <span className="text-xl">{card.motifSymbol}</span>
-                          <div>
-                            <div className="font-extrabold text-xs text-white uppercase">{card.title}</div>
-                            <div className="text-[10px] text-rose-300 font-mono">Rating: {card.predictedRating}</div>
+                          <div className="flex items-center justify-between gap-1 mb-0.5">
+                            <span
+                              className={`text-[10px] font-black uppercase ${
+                                isMe ? 'text-rose-300' : 'text-fuchsia-300'
+                              }`}
+                            >
+                              {msg.senderDisplayName}
+                            </span>
+                            <span className="text-[9px] text-neutral-400 font-mono">
+                              {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </span>
                           </div>
+                          <span className="text-white text-xs break-words">{msg.text}</span>
                         </div>
-                      ))}
+                      );
+                    })
+                  )}
+                </div>
+
+                <form onSubmit={handleSendChat} className="flex gap-1.5">
+                  <input
+                    type="text"
+                    placeholder="Type a sweet or cheeky message..."
+                    value={chatInputText}
+                    onChange={(e) => setChatInputText(e.target.value)}
+                    className="flex-1 bg-[#13040c] border-2 border-rose-400/80 focus:border-rose-300 px-3 py-1.5 text-xs text-white placeholder-rose-300/40 focus:outline-none focus:ring-1 focus:ring-rose-400 rounded-sm"
+                  />
+                  <button
+                    type="submit"
+                    disabled={!chatInputText.trim()}
+                    className="px-3.5 py-1.5 bg-rose-500 hover:bg-rose-400 text-white disabled:opacity-40 text-xs font-black uppercase cursor-pointer border-2 border-white shadow-[2px_2px_0px_#000] flex items-center justify-center transition-colors"
+                  >
+                    <Send className="w-3.5 h-3.5" />
+                  </button>
+                </form>
+              </div>
+            </div>
+
+            {/* Center: Brutalist Chess Board (Tier 2 & Desktop Center) */}
+            <div className="flex-1 min-h-0 w-full flex flex-col items-center justify-center relative overflow-hidden px-1 py-1 md:p-0">
+              {/* Turn Banner - Desktop / Tablet */}
+              <div className={`hidden md:flex w-full max-w-[540px] lg:max-w-none px-4 py-2 border-3 border-white shadow-[4px_4px_0px_#fff] items-center justify-between text-xs font-black uppercase mb-2 ${isMyTurn ? 'bg-amber-400 text-black' : 'bg-black text-white'}`}>
+                <div className="flex items-center gap-2">
+                  <span className={`w-2.5 h-2.5 ${isMyTurn ? 'bg-black animate-ping' : 'bg-neutral-500'}`} />
+                  <span>
+                    {isMyTurn
+                      ? `👉 YOUR TURN · ${effectiveMyColor === 'white' ? 'White' : 'Black'} TO MOVE (YOU)`
+                      : `PARTNER'S TURN · ${effectiveMyColor === 'white' ? 'Black' : 'White'} TO MOVE`}
+                  </span>
+                </div>
+                <div className="text-[11px] font-mono">
+                  Move {activeMatch.turnCount}
+                </div>
+              </div>
+
+              {/* Desktop Universal Summon Placement Mode Banner */}
+              {summoningUnit && (
+                <div className="hidden md:flex w-full max-w-[540px] lg:max-w-none p-2.5 bg-amber-400 text-black border-3 border-white shadow-[4px_4px_0px_#fff] font-black uppercase text-xs items-center justify-between mb-2">
+                  <span>⚡ SUMMON {summoningUnit.toUpperCase()}: Click any highlighted square on the board!</span>
+                  <button
+                    onClick={() => setSummoningUnit(null)}
+                    className="px-2.5 py-1 bg-black text-white hover:bg-neutral-800 text-[10px] uppercase font-black cursor-pointer border border-white"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              )}
+
+              {/* Brutalist Board Tray - Sacred Square Container */}
+              <div
+                className="w-[min(calc(100vw-16px),calc(100dvh-224px-env(safe-area-inset-bottom,0px)),520px)] lg:w-[min(calc(100dvh-140px),calc(100%-48px),800px)] aspect-square brutal-board-tray p-2 sm:p-3 border-4 border-white shadow-[8px_8px_0px_#fff] flex flex-col items-center justify-center shrink-0"
+                style={{ backgroundColor: '#e11d48' }}
+              >
+                {/* Board Files Top (A - H) */}
+                <div className="w-full grid grid-cols-8 text-center text-[10px] sm:text-xs font-black text-white mb-0.5">
+                  {fileLabels.map((f) => (
+                    <span key={f}>{f}</span>
+                  ))}
+                </div>
+
+                {/* 8x8 Board Container with Strict 1:1 Aspect Ratio Squares */}
+                <div className="w-full aspect-square border-3 border-white grid grid-cols-8 grid-rows-8 bg-black/40">
+                  {displayYIndices.map((y) =>
+                    displayXIndices.map((x) => {
+                      const piece = activeMatch.board[y][x];
+                      const isSelected = selectedSquare?.x === x && selectedSquare?.y === y;
+                      const isLegalDest = legalDestinations.some((d) => d.x === x && d.y === y);
+                      const isDark = (x + y) % 2 === 1;
+
+                      // Highlight ANY square that is a valid summon square
+                      const canSummonHere = summoningUnit && validSummonSquares.some((sq) => sq.x === x && sq.y === y);
+
+                      // Check and ray path highlighting
+                      const isKingInCheckSquare = checkDetails.kingPos && checkDetails.kingPos.x === x && checkDetails.kingPos.y === y && checkDetails.inCheck;
+                      const isAttackerSquare = checkDetails.attackerPositions.some(ap => ap.x === x && ap.y === y);
+                      const isRaySquare = checkDetails.rayPositions.some(rp => rp.x === x && rp.y === y);
+
+                      let squareBg = isDark ? 'rgba(40, 5, 12, 0.5)' : '#F2EFE4';
+                      let squareRing = '';
+
+                      if (canSummonHere) {
+                        squareBg = 'rgba(251, 191, 36, 0.5)';
+                        squareRing = 'ring-4 ring-amber-400 z-10';
+                      } else if (isKingInCheckSquare) {
+                        squareBg = 'rgba(239, 68, 68, 0.7)';
+                        squareRing = 'ring-4 ring-red-600 animate-pulse z-20';
+                      } else if (isAttackerSquare) {
+                        squareBg = 'rgba(239, 68, 68, 0.5)';
+                        squareRing = 'ring-2 ring-red-500 z-15';
+                      } else if (isRaySquare) {
+                        squareBg = 'rgba(239, 68, 68, 0.25)';
+                      } else if (isSelected) {
+                        squareBg = 'rgba(251, 191, 36, 0.35)';
+                        squareRing = 'ring-4 ring-amber-400 z-20';
+                      }
+
+                      return (
+                        <div
+                          key={`${x}-${y}`}
+                          onClick={() => handleSquareClick(x, y)}
+                          style={{
+                            backgroundColor: squareBg,
+                            backdropFilter: isDark ? 'blur(3px)' : undefined,
+                            WebkitBackdropFilter: isDark ? 'blur(3px)' : undefined,
+                          }}
+                          className={`aspect-square w-full h-full flex items-center justify-center relative cursor-pointer select-none transition-colors border border-black/20 ${squareRing}`}
+                        >
+                          {/* Legal Move Dot */}
+                          {isLegalDest && !piece && (
+                            <div className="w-3.5 h-3.5 sm:w-4 sm:h-4 bg-amber-400 border-2 border-black shadow-[1px_1px_0px_#000] z-20" />
+                          )}
+                          {/* Legal Capture Indicator */}
+                          {isLegalDest && piece && (
+                            <div className="absolute inset-1 border-3 border-red-500 bg-red-500/30 pointer-events-none z-20" />
+                          )}
+                          {canSummonHere && (
+                            <div className="text-xs font-black animate-bounce z-20">🌹</div>
+                          )}
+                          {isKingInCheckSquare && (
+                            <div className="absolute top-0.5 right-0.5 text-[8px] sm:text-[9px] bg-red-600 text-white px-1 font-black uppercase z-20">CHECK</div>
+                          )}
+                          {piece && <ChessPiece type={piece.type} color={piece.color} />}
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+
+                {/* Board Files Bottom (A - H) */}
+                <div className="w-full grid grid-cols-8 text-center text-[10px] sm:text-xs font-black text-white mt-0.5">
+                  {fileLabels.map((f) => (
+                    <span key={f}>{f}</span>
+                  ))}
+                </div>
+              </div>
+
+              {/* Tier 3: Mobile Fixed 100px Rose Stage Directly Under Board */}
+              <div className="md:hidden h-[100px] min-h-[100px] max-h-[100px] w-full px-1.5 pb-1 shrink-0 flex items-stretch mt-1">
+                {summoningUnit ? (
+                  <div className="w-full h-full bg-amber-400 text-black border-3 border-white shadow-[3px_3px_0px_#fff] p-2 flex items-center justify-between gap-2 overflow-hidden">
+                    <div className="flex-1 min-w-0">
+                      <span className="text-xs font-black uppercase block truncate">
+                        ⚡ SUMMON {summoningUnit.toUpperCase()}
+                      </span>
+                      <span className="text-[10px] font-mono block leading-tight">
+                        Tap highlighted square on board
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setSummoningUnit(null)}
+                      className="min-h-[44px] px-3 bg-black text-white hover:bg-neutral-800 text-[10px] uppercase font-black cursor-pointer border border-white shrink-0"
+                    >
+                      CANCEL
+                    </button>
+                  </div>
+                ) : (
+                  <div className="w-full h-full bg-[#14060e] border-3 border-white shadow-[3px_3px_0px_#fff] p-2 flex items-center justify-between gap-2 overflow-hidden">
+                    <div className="flex-1 min-w-0 flex flex-col justify-center">
+                      <div className="flex items-center gap-1.5 text-xs font-black uppercase truncate">
+                        <span className={`w-2.5 h-2.5 shrink-0 ${isMyTurn ? 'bg-amber-400 animate-ping' : 'bg-neutral-500'}`} />
+                        <span className="truncate text-white">
+                          {isMyTurn ? '👉 YOUR TURN TO MOVE' : "PARTNER'S TURN"}
+                        </span>
+                      </div>
+                      <div className="text-[10px] text-rose-300 font-mono mt-0.5 truncate">
+                        {isInCheck ? '⚠️ King in Check!' : `Move ${activeMatch.turnCount} · Petals: ${mySeat?.petals || 0}/3 🌹`}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1 shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => setIsSummonModalOpen(true)}
+                        disabled={!isMyTurn || (mySeat?.petals || 0) < 3 || (mySeat?.summonsUsed || 0) >= 2 || isInCheck}
+                        className={`min-h-[44px] px-2.5 text-[10px] font-black uppercase border-2 border-white transition-all ${
+                          (mySeat?.petals || 0) < 3 || !isMyTurn || isInCheck
+                            ? 'opacity-40 cursor-not-allowed bg-neutral-900 text-neutral-500'
+                            : 'cursor-pointer bg-rose-600 hover:bg-rose-500 text-white shadow-[2px_2px_0px_#fff]'
+                        }`}
+                      >
+                        SUMMON (3🌹)
+                      </button>
                     </div>
                   </div>
                 )}
+              </div>
+            </div>
 
-                <div className="flex flex-col sm:flex-row gap-2 w-full">
+            {/* Right Sidebar: My Status, Petals & Summoning (Desktop) */}
+            <div className="hidden md:flex flex-col gap-4 overflow-y-auto pr-1">
+              <div className="brutal-card p-4 flex flex-col gap-3 border-3 border-white shadow-[4px_4px_0px_#fff]">
+                <div className="flex items-center justify-between border-b-2 border-neutral-800 pb-2">
+                  <span className="text-xs font-black uppercase text-neutral-400">
+                    You ({mySeat?.role === 'boyfriend' ? '👑 Boyfriend' : '👸 Girlfriend'})
+                  </span>
+                  <span className="text-xs font-black text-amber-400 uppercase">{effectiveMyColor}</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-amber-400 text-black border-2 border-white flex items-center justify-center font-black shadow-[2px_2px_0px_#fff]">
+                    {user.displayName?.slice(0, 2).toUpperCase() || 'YOU'}
+                  </div>
+                  <div>
+                    <div className="font-black text-sm text-white">{user.displayName || 'You'}</div>
+                    <div className="text-xs text-neutral-400 font-mono">
+                      {isInCheck ? '⚠️ KING IN CHECK!' : isMyTurn ? '👉 YOUR MOVE' : 'WAITING FOR PARTNER'}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Petal Meter & Summon Action */}
+                <div className="flex items-center justify-between pt-2.5 border-t-2 border-neutral-800">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[11px] font-black uppercase text-neutral-300">Petals:</span>
+                    <div className="flex gap-1.5">
+                      {[1, 2, 3].map((p) => (
+                        <span
+                          key={p}
+                          className={`text-base transition-opacity ${
+                            (mySeat?.petals || 0) >= p ? 'opacity-100 drop-shadow-[0_0_8px_#f43f5e]' : 'opacity-20'
+                          }`}
+                        >
+                          🌹
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+
                   <button
-                    onClick={() => {
-                      if (displayRoseCards.length > 0) {
-                        setSelectedRoseCard(displayRoseCards[0]);
-                      }
-                      setIsRoseTrophyRoomOpen(true);
-                    }}
-                    className="flex-1 py-3 px-4 bg-amber-400 hover:bg-amber-300 text-black font-black text-xs uppercase border-2 border-black shadow-[2px_2px_0px_#000] cursor-pointer flex items-center justify-center gap-1.5"
+                    onClick={() => setIsSummonModalOpen(true)}
+                    disabled={!isMyTurn || (mySeat?.petals || 0) < 3 || (mySeat?.summonsUsed || 0) >= 2 || isInCheck}
+                    title={isInCheck ? 'Cannot summon while King is in check! Escape check first.' : undefined}
+                    className={`px-3 py-1.5 text-xs font-black uppercase transition-all ${
+                      (mySeat?.petals || 0) < 3 || !isMyTurn || isInCheck
+                        ? 'opacity-40 cursor-not-allowed bg-neutral-900 border-2 border-neutral-700 text-neutral-500'
+                        : 'cursor-pointer brutal-button-rose text-white'
+                    }`}
                   >
-                    <Trophy className="w-4 h-4 text-black" />
-                    Session Trophy Room
-                  </button>
-                  <button
-                    onClick={() => {
-                      if (isBotMatch) {
-                        setIsBotMatch(false);
-                        setBotMatch(null);
-                      } else {
-                        socketClearMatch();
-                      }
-                    }}
-                    className="flex-1 brutal-button-primary py-3 px-4 text-xs font-black uppercase tracking-wider cursor-pointer"
-                  >
-                    Return to Lobby
+                    {isInCheck ? '⚠️ Check Active' : (mySeat?.petals || 0) < 3 ? 'Summon (3 🌹)' : '⚡ Summon (3 🌹)'}
                   </button>
                 </div>
               </div>
-            )}
+
+              {/* Active Piece Inspector */}
+              <div className="brutal-card p-4 flex flex-col gap-3 border-3 border-white shadow-[4px_4px_0px_#fff]">
+                <div className="flex items-center justify-between border-b-2 border-neutral-800 pb-2">
+                  <span className="text-xs font-black uppercase text-amber-400 flex items-center gap-1.5">
+                    <Sparkles className="w-3.5 h-3.5" /> Piece Inspector
+                  </span>
+                  <span className="text-[10px] font-mono text-neutral-400">Activity</span>
+                </div>
+
+                {(() => {
+                  const targetPiece = (selectedSquare && activeMatch.board[selectedSquare.y][selectedSquare.x]) 
+                    || (activeMatch.lastMove ? activeMatch.lastMove.piece : null);
+                  
+                  const isSelectedByMe = selectedSquare && activeMatch.board[selectedSquare.y][selectedSquare.x]?.color === effectiveMyColor;
+                  const isLastMoveMine = activeMatch.lastMove && activeMatch.lastMove.piece.color === effectiveMyColor;
+
+                  const isMine = isSelectedByMe || (activeMatch.lastMove && !selectedSquare && isLastMoveMine);
+
+                  const opponentRole = opponentSeat?.role || (effectiveMyColor === 'white' ? 'girlfriend' : 'boyfriend');
+                  const opponentName = opponentSeat?.displayName || (opponentRole === 'boyfriend' ? 'Boyfriend Bot 👑' : 'Girlfriend Bot 👸');
+
+                  if (!targetPiece) {
+                    return (
+                      <div className="py-6 text-center text-neutral-500 text-xs font-mono">
+                        Click any piece on the board to inspect.
+                      </div>
+                    );
+                  }
+
+                  const pieceName = PIECE_DISPLAY_NAMES[targetPiece.type] || targetPiece.type.toUpperCase();
+                  let actionMsg = '';
+                  if (isMine) {
+                    actionMsg = `You are moving the ${pieceName}`;
+                  } else {
+                    const roleLabel = opponentRole === 'boyfriend' ? 'boyfriend' : 'girlfriend';
+                    actionMsg = `Your ${roleLabel} (${opponentName}) is moving the ${pieceName}`;
+                  }
+
+                  return (
+                    <div className="flex flex-col items-center gap-3 py-2">
+                      <div className="w-20 h-20 sm:w-24 sm:h-24 bg-neutral-950 border-3 border-amber-400 p-2 flex items-center justify-center shadow-[4px_4px_0px_#fbbf24]">
+                        <ChessPiece type={targetPiece.type} color={targetPiece.color} className="w-full h-full" />
+                      </div>
+                      <div className="text-center">
+                        <div className="font-black text-sm uppercase text-white">{pieceName}</div>
+                        <div className="text-xs text-amber-300 font-mono mt-1 font-bold leading-relaxed">
+                          {actionMsg}!
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
+
+              {/* Game Over Banner */}
+              {activeMatch.status === 'completed' && (
+                <div className="brutal-card p-6 border-3 border-amber-400 text-center flex flex-col gap-4 shadow-[6px_6px_0px_#fbbf24]">
+                  <Trophy className="w-10 h-10 text-amber-400 mx-auto animate-bounce" />
+                  <div>
+                    <h3 className="text-lg font-black uppercase">
+                      {activeMatch.winner === 'draw' ? 'Match Drawn in Harmony!' : `${activeMatch.winner} Triumphs!`}
+                    </h3>
+                    <p className="text-xs text-neutral-400 mt-1 font-mono">{activeMatch.winReason}</p>
+                  </div>
+
+                  {earnedRoseCards.length > 0 && (
+                    <div className="w-full bg-[#1e0712] border-2 border-rose-400 p-3 text-left my-1">
+                      <div className="text-[11px] font-black uppercase text-rose-300 mb-2 flex items-center gap-1">
+                        <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+                        Earned Rose Badges (Click badge to inspect & download)
+                      </div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        {displayRoseCards.map((card) => (
+                          <div
+                            key={card.id}
+                            onClick={() => {
+                              setSelectedRoseCard(card);
+                              setIsRoseTrophyRoomOpen(true);
+                            }}
+                            className="p-2 bg-black/80 hover:bg-black border-2 border-rose-400 cursor-pointer flex items-center gap-2 shadow-[2px_2px_0px_#000] hover:scale-105 transition-all"
+                          >
+                            <span className="text-xl">{card.motifSymbol}</span>
+                            <div>
+                              <div className="font-extrabold text-xs text-white uppercase">{card.title}</div>
+                              <div className="text-[10px] text-rose-300 font-mono">Rating: {card.predictedRating}</div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="flex flex-col sm:flex-row gap-2 w-full">
+                    <button
+                      onClick={() => {
+                        if (displayRoseCards.length > 0) {
+                          setSelectedRoseCard(displayRoseCards[0]);
+                        }
+                        setIsRoseTrophyRoomOpen(true);
+                      }}
+                      className="flex-1 py-3 px-4 bg-amber-400 hover:bg-amber-300 text-black font-black text-xs uppercase border-2 border-black shadow-[2px_2px_0px_#000] cursor-pointer flex items-center justify-center gap-1.5"
+                    >
+                      <Trophy className="w-4 h-4 text-black" />
+                      Session Trophy Room
+                    </button>
+                    <button
+                      onClick={() => {
+                        if (isBotMatch) {
+                          setIsBotMatch(false);
+                          setBotMatch(null);
+                        } else {
+                          socketClearMatch();
+                        }
+                      }}
+                      className="flex-1 brutal-button-primary py-3 px-4 text-xs font-black uppercase tracking-wider cursor-pointer"
+                    >
+                      Return to Lobby
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </main>
+
+          {/* MOBILE 50dvh SLIDE-UP LOVE CHAT SHEET */}
+          {isMobileChatOpen && (
+            <div
+              onClick={() => setIsMobileChatOpen(false)}
+              aria-hidden="true"
+              className="md:hidden fixed inset-0 bottom-[calc(52px+env(safe-area-inset-bottom))] z-30 bg-black/60 transition-opacity"
+            />
+          )}
+
+          <div
+            role="dialog"
+            aria-label="Love Chat and Reactions"
+            className={`md:hidden fixed left-0 right-0 bottom-[calc(52px+env(safe-area-inset-bottom))] z-40 max-h-[50dvh] flex flex-col bg-[#0c0308] border-t-3 border-x-3 border-white shadow-[0_-4px_0px_#fff] transition-[transform,opacity] duration-200 motion-reduce:transition-none ${
+              isMobileChatOpen
+                ? 'translate-y-0 opacity-100 pointer-events-auto'
+                : 'translate-y-full opacity-0 pointer-events-none'
+            }`}
+          >
+            {/* Sheet Header */}
+            <div className="shrink-0 p-2 border-b-2 border-white flex items-center justify-between bg-[#150720]">
+              <span className="text-xs font-black uppercase text-rose-300 flex items-center gap-1.5">
+                <Heart className="w-3.5 h-3.5 text-rose-400 fill-rose-500" />
+                Whispers of Love ({chatMessages.length})
+              </span>
+              <button
+                type="button"
+                onClick={() => setIsMobileChatOpen(false)}
+                className="min-h-[40px] px-2.5 border-2 border-white bg-black text-white text-xs font-black uppercase cursor-pointer"
+              >
+                Close
+              </button>
+            </div>
+
+            {/* Quick Reactions Chips */}
+            <div className="p-2 border-b border-rose-500/30 flex items-center gap-1.5 overflow-x-auto shrink-0 bg-[#0c0308]">
+              {['❤️ Love you', '🌹 Good move!', '😉 Cute!', '🙈 Oops!', '👑 Queen power!', '🧋 Boba date?'].map((chip) => (
+                <button
+                  key={chip}
+                  type="button"
+                  onClick={() => {
+                    setChatInputText(chip);
+                  }}
+                  className="px-2.5 py-1 text-xs bg-rose-950/80 border border-rose-400 text-rose-200 shrink-0 cursor-pointer"
+                >
+                  {chip}
+                </button>
+              ))}
+            </div>
+
+            {/* Quick Reaction Emojis */}
+            <div className="p-2 border-b border-rose-500/30 flex items-center gap-2 overflow-x-auto shrink-0 bg-[#12050c]">
+              {['❤️', '🌹', '✨', '💍', '🥰', '😉', '💖', '👑', '🥺', '💅', '🧋', '⚔️'].map((emo) => (
+                <button
+                  key={emo}
+                  type="button"
+                  onClick={() => handleSendReaction(emo)}
+                  className="text-lg p-1 hover:scale-125 transition-transform shrink-0 cursor-pointer"
+                >
+                  {emo}
+                </button>
+              ))}
+            </div>
+
+            {/* Messages List */}
+            <div className="flex-1 min-h-0 overflow-y-auto p-2.5 flex flex-col gap-2 font-mono text-xs">
+              {chatMessages.length === 0 ? (
+                <div className="text-[11px] text-rose-300/60 italic text-center my-auto">
+                  Say something sweet or playful to your partner...
+                </div>
+              ) : (
+                chatMessages.map((msg) => {
+                  const isMe = msg.senderUserId === (user?.id || 'usr_human');
+                  return (
+                    <div
+                      key={msg.id}
+                      className={`flex flex-col p-2 border-2 ${
+                        isMe
+                          ? 'bg-[#220916] border-rose-400 text-rose-100 ml-3'
+                          : 'bg-[#150720] border-fuchsia-400 text-fuchsia-100 mr-3'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between gap-1 mb-0.5">
+                        <span className={`text-[10px] font-black uppercase ${isMe ? 'text-rose-300' : 'text-fuchsia-300'}`}>
+                          {msg.senderDisplayName}
+                        </span>
+                        <span className="text-[9px] text-neutral-400">
+                          {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                      </div>
+                      <span className="text-white text-xs break-words">{msg.text}</span>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+
+            {/* Chat Form */}
+            <form onSubmit={handleSendChat} className="p-2 border-t-2 border-white flex gap-1.5 bg-[#150720] shrink-0">
+              <input
+                type="text"
+                placeholder="Type a message..."
+                value={chatInputText}
+                onChange={(e) => setChatInputText(e.target.value)}
+                className="flex-1 bg-black border-2 border-white px-2 py-1.5 text-xs text-white placeholder-rose-300/40 focus:outline-none"
+              />
+              <button
+                type="submit"
+                disabled={!chatInputText.trim()}
+                className="px-3 py-1.5 bg-rose-500 text-white disabled:opacity-40 text-xs font-black uppercase cursor-pointer border-2 border-white"
+              >
+                <Send className="w-3.5 h-3.5" />
+              </button>
+            </form>
           </div>
-        </div>
+
+          {/* TIER 4: MOBILE BOTTOM NAVIGATION BAR (52px + safe-area-inset-bottom) */}
+          <nav
+            role="navigation"
+            aria-label="Match actions"
+            className="md:hidden shrink-0 w-full bg-[#0c0308] border-t-3 border-white px-1.5 pt-1 pb-[calc(4px+env(safe-area-inset-bottom))] z-40 flex items-center gap-1"
+          >
+            <button
+              type="button"
+              onClick={() => setIsSummonModalOpen(true)}
+              disabled={!isMyTurn || (mySeat?.petals || 0) < 3 || (mySeat?.summonsUsed || 0) >= 2 || isInCheck}
+              className={`flex-1 min-w-[44px] min-h-[44px] px-1.5 border-2 border-white flex flex-col items-center justify-center ${
+                (mySeat?.petals || 0) >= 3 && isMyTurn && !isInCheck
+                  ? 'bg-rose-600 text-white cursor-pointer shadow-[2px_2px_0px_#fff]'
+                  : 'bg-neutral-900 text-neutral-500 cursor-not-allowed'
+              }`}
+            >
+              <Zap className="w-4 h-4 shrink-0" />
+              <span className="text-[10px] font-black uppercase leading-none mt-0.5 whitespace-nowrap">
+                SUMMON ({mySeat?.petals || 0}/3)
+              </span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setIsMobileChatOpen(!isMobileChatOpen);
+              }}
+              className={`flex-1 min-w-[44px] min-h-[44px] px-1.5 border-2 border-white flex flex-col items-center justify-center cursor-pointer ${
+                isMobileChatOpen ? 'bg-amber-400 text-black' : 'bg-neutral-900 text-white'
+              }`}
+            >
+              <Heart className="w-4 h-4 shrink-0 text-rose-400 fill-rose-500" />
+              <span className="text-[10px] font-black uppercase leading-none mt-0.5 whitespace-nowrap">
+                CHAT ({chatMessages.length})
+              </span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                handleSendReaction('🌹');
+              }}
+              className="flex-1 min-w-[44px] min-h-[44px] px-1.5 border-2 border-white bg-neutral-900 text-white flex flex-col items-center justify-center cursor-pointer"
+            >
+              <span className="text-sm leading-none">🌹</span>
+              <span className="text-[10px] font-black uppercase leading-none mt-0.5 whitespace-nowrap">
+                BLESSING
+              </span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setShowConcedeConfirm(true)}
+              className="flex-1 min-w-[44px] min-h-[44px] px-1.5 border-2 border-white bg-red-700 hover:bg-red-600 text-white flex flex-col items-center justify-center cursor-pointer"
+            >
+              <Flag className="w-4 h-4 shrink-0" />
+              <span className="text-[10px] font-black uppercase leading-none mt-0.5 whitespace-nowrap">
+                CONCEDE
+              </span>
+            </button>
+          </nav>
+        </>
       )}
 
       {/* ==================== 3. ROMANTIC RULEBOOK MODAL (PROPER BRUTALISM) ==================== */}

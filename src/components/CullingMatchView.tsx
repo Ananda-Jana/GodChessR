@@ -108,6 +108,7 @@ export const CullingMatchView: React.FC<CullingMatchViewProps> = ({
 
   // Mobile active tab bottom sheet
   const [mobileTab, setMobileTab] = useState<MobileActiveTab>(null);
+  const [inspectorSubTab, setInspectorSubTab] = useState<'stats' | 'lore' | 'buffs'>('stats');
 
   // Ability pop-up notifications stack
   const [abilityPopups, setAbilityPopups] = useState<AbilityPopup[]>([]);
@@ -117,6 +118,40 @@ export const CullingMatchView: React.FC<CullingMatchViewProps> = ({
   const mobileMoveLogEndRef = useRef<HTMLDivElement | null>(null);
   const botTimerRef = useRef<NodeJS.Timeout | null>(null);
   const toastTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const boardStageRef = useRef<HTMLElement | null>(null);
+  const [boardDimension, setBoardDimension] = useState<number>(() => {
+    if (typeof window === 'undefined') return 520;
+    if (window.innerWidth >= 1024) {
+      const sidebars = window.innerWidth >= 1280 ? 640 : 576;
+      const availW = Math.min(window.innerWidth, 1640) - sidebars - 48;
+      const availH = window.innerHeight - 64;
+      return Math.max(240, Math.floor(Math.min(availW, availH, 1200)));
+    }
+    return Math.max(240, Math.floor(Math.min(window.innerWidth - 16, window.innerHeight - 160, 540)));
+  });
+
+  useEffect(() => {
+    const el = boardStageRef.current;
+    if (!el) return;
+
+    const updateBoardSize = (width: number, height: number) => {
+      const available = Math.floor(Math.min(width - 8, height - 8));
+      if (available > 120) {
+        setBoardDimension(Math.min(available, 1200));
+      }
+    };
+
+    const rect = el.getBoundingClientRect();
+    updateBoardSize(rect.width, rect.height);
+
+    const observer = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        updateBoardSize(entry.contentRect.width, entry.contentRect.height);
+      }
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [isRulesOpen]);
 
   const { observeMoveAction, finalizeMatch, latestMatchCards } = usePredictor();
   const [earnedCullingCards, setEarnedCullingCards] = useState<AchievementCard[]>([]);
@@ -524,7 +559,7 @@ export const CullingMatchView: React.FC<CullingMatchViewProps> = ({
       className={`w-screen bg-neutral-950 text-white flex flex-col font-sans relative ${
         isRulesOpen
           ? 'min-h-[100dvh] overflow-y-auto touch-auto select-text'
-          : 'h-[100dvh] max-h-[100dvh] overflow-x-hidden overflow-y-hidden lg:h-auto lg:min-h-screen lg:overflow-y-auto touch-manipulation lg:touch-auto select-none lg:select-auto'
+          : 'h-[100dvh] max-h-[100dvh] overflow-hidden touch-manipulation lg:touch-auto select-none lg:select-auto'
       }`}
     >
       {/* Inspected piece toast banner */}
@@ -766,10 +801,10 @@ export const CullingMatchView: React.FC<CullingMatchViewProps> = ({
         />
       </div>
 
-      {/* MAIN VIEWPORT: ROCK-SOLID BOARD (Fixed Center on Mobile, Scrollable on Desktop) */}
-      <main className="flex-1 w-full max-w-[1700px] mx-auto p-1 lg:p-3 flex flex-row items-center lg:items-start justify-between gap-4 overflow-hidden lg:overflow-y-auto relative">
+      {/* MAIN VIEWPORT: ROCK-SOLID BOARD (Fitted Square Center Stage) */}
+      <main className="flex-1 min-h-0 w-full max-w-[1640px] mx-auto px-1 pt-1 pb-[60px] lg:px-3 lg:py-2 flex flex-row items-center lg:items-stretch justify-between gap-3 overflow-hidden relative">
         {/* DESKTOP-ONLY LEFT SIDEBAR: Predictor, Logs, Abilities & Roster */}
-        <aside className="hidden lg:flex w-72 xl:w-80 flex-col gap-2 shrink-0 h-full overflow-hidden">
+        <aside className="hidden lg:flex w-72 xl:w-80 flex-col gap-2 shrink-0 h-full min-h-0 overflow-hidden">
           {/* Universal Live Skill Predictor Panel */}
           <PredictorPanel
             metrics={extractCullingMetrics(match, userColor)}
@@ -876,27 +911,39 @@ export const CullingMatchView: React.FC<CullingMatchViewProps> = ({
           </div>
         </aside>
 
-        {/* CENTER COLUMN: FULLY IMMOBILE ROCK-SOLID BOARD */}
-        <section className="flex-1 flex flex-col items-center justify-center h-full max-h-full overflow-hidden shrink-0 touch-manipulation">
-          <CullingBoard
-            match={match}
-            myColor={userColor}
-            isInteractive={match.status === 'active' && match.turn === userColor && !isBotThinking}
-            onMove={handleMove}
-            flipped={flipped}
-            onPieceClick={(piece) => {
-              setSelectedPieceData({
-                type: piece.type as CullingPieceType,
-                color: piece.color as CullingPieceColor,
-                pos: piece.pos,
-              });
-              handleInspectPiece(piece.type, piece.color as CullingPieceColor);
+        {/* CENTER COLUMN: FULLY IMMOBILE ROCK-SOLID SQUARE BOARD */}
+        <section
+          ref={boardStageRef}
+          className="flex-1 min-w-0 min-h-0 h-full flex items-center justify-center overflow-hidden relative touch-manipulation"
+        >
+          <div
+            style={{
+              width: `${boardDimension}px`,
+              height: `${boardDimension}px`,
             }}
-          />
+            className="relative flex items-center justify-center shrink-0 aspect-square"
+          >
+            <CullingBoard
+              match={match}
+              myColor={userColor}
+              isInteractive={match.status === 'active' && match.turn === userColor && !isBotThinking}
+              onMove={handleMove}
+              flipped={flipped}
+              maxDimension={boardDimension}
+              onPieceClick={(piece) => {
+                setSelectedPieceData({
+                  type: piece.type as CullingPieceType,
+                  color: piece.color as CullingPieceColor,
+                  pos: piece.pos,
+                });
+                handleInspectPiece(piece.type, piece.color as CullingPieceColor);
+              }}
+            />
+          </div>
         </section>
 
         {/* DESKTOP-ONLY RIGHT SIDEBAR: Active Piece Inspector + Valid Moves + SAN History */}
-        <aside className="hidden lg:flex w-72 xl:w-80 flex-col gap-2 shrink-0 h-full overflow-hidden">
+        <aside className="hidden lg:flex w-72 xl:w-80 flex-col gap-2 shrink-0 h-full min-h-0 overflow-hidden">
           {/* Active Piece Inspector (Big Box, similar to Rose Paradise) */}
           <div className="bg-[#0f172a] p-4 border-2 border-white/20 shadow-[4px_4px_0px_#000] flex flex-col shrink-0">
             <div className="flex items-center justify-between border-b-2 border-white/10 pb-2 mb-3">
@@ -1109,77 +1156,154 @@ export const CullingMatchView: React.FC<CullingMatchViewProps> = ({
               </div>
             )}
 
-            {/* 3. Inspector Tab */}
+            {/* 3. Mobile Inspector Tab (Full-Width Single-Column Tabbed Card Drawer) */}
             {mobileTab === 'inspector' && (
-              <div className="grid grid-cols-2 gap-2">
-                {/* Last Move */}
-                <div className="bg-[#161d2b] border border-neutral-700 p-2 flex flex-col items-center text-center">
-                  <span className="text-[9px] font-black uppercase text-neutral-400 mb-1">
-                    Opponent Last Move
-                  </span>
-                  {lastMovedPiece ? (
-                    <>
-                      <div className="w-12 h-12 bg-white border border-black p-1 mb-1">
-                        <CullingPieceComponent type={lastMovedPiece.type} color={lastMovedPiece.color} />
-                      </div>
-                      <div className="text-[11px] font-black uppercase text-amber-400 truncate w-full">
-                        {CULLING_ROSTER[lastMovedPiece.type]?.name}
-                      </div>
-                      <div className="text-[9px] text-neutral-400">
-                        {match.lastMove ? `→ ${posToCullingSquare(match.lastMove.to)}` : ''}
-                      </div>
-                    </>
-                  ) : (
-                    <div className="py-4 text-[10px] text-neutral-500">None</div>
-                  )}
+              <div className="flex flex-col gap-2.5">
+                {/* Inspector Sub-Tabs */}
+                <div className="flex items-center gap-1 bg-[#161d2b] p-1 border border-neutral-700">
+                  <button
+                    type="button"
+                    onClick={() => setInspectorSubTab('stats')}
+                    className={`flex-1 py-1.5 text-[10px] font-black uppercase transition-all ${
+                      inspectorSubTab === 'stats'
+                        ? 'bg-amber-400 text-black shadow-[1px_1px_0px_#000]'
+                        : 'text-neutral-400 hover:text-white'
+                    }`}
+                  >
+                    Piece Stats
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setInspectorSubTab('lore')}
+                    className={`flex-1 py-1.5 text-[10px] font-black uppercase transition-all ${
+                      inspectorSubTab === 'lore'
+                        ? 'bg-amber-400 text-black shadow-[1px_1px_0px_#000]'
+                        : 'text-neutral-400 hover:text-white'
+                    }`}
+                  >
+                    Technique Lore
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setInspectorSubTab('buffs')}
+                    className={`flex-1 py-1.5 text-[10px] font-black uppercase transition-all ${
+                      inspectorSubTab === 'buffs'
+                        ? 'bg-amber-400 text-black shadow-[1px_1px_0px_#000]'
+                        : 'text-neutral-400 hover:text-white'
+                    }`}
+                  >
+                    Buffs &amp; Domain
+                  </button>
                 </div>
 
-                {/* Selected Piece */}
-                <div className="bg-[#161d2b] border border-neutral-700 p-2 flex flex-col items-center text-center">
-                  <span className="text-[9px] font-black uppercase text-neutral-400 mb-1">
-                    Selected Piece
-                  </span>
-                  {selectedPieceData ? (
-                    <>
-                      <div className="w-12 h-12 bg-neutral-950 border border-amber-400 p-1 mb-1">
-                        <CullingPieceComponent
-                          type={selectedPieceData.type}
-                          color={selectedPieceData.color}
-                        />
-                      </div>
-                      <div className="text-[11px] font-black uppercase text-amber-400 truncate w-full">
-                        {CULLING_ROSTER[selectedPieceData.type]?.name}
-                      </div>
-                      <div className="text-[9px] text-neutral-400">
-                        {selectedLegalMoves.length} valid moves
-                      </div>
-                    </>
-                  ) : (
-                    <div className="py-4 text-[10px] text-neutral-500">Tap a piece</div>
-                  )}
-                </div>
+                {/* Sub-Tab 1: Piece Stats */}
+                {inspectorSubTab === 'stats' && (
+                  <div className="flex flex-col gap-2 bg-[#161d2b] border border-neutral-700 p-3">
+                    {selectedPieceData ? (
+                      <>
+                        <div className="flex items-center gap-3">
+                          <div className="w-14 h-14 bg-neutral-950 border-2 border-amber-400 p-1 flex items-center justify-center shrink-0 shadow-[2px_2px_0px_#f59e0b]">
+                            <CullingPieceComponent
+                              type={selectedPieceData.type}
+                              color={selectedPieceData.color}
+                            />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <span className="text-sm font-black uppercase text-amber-400 block truncate">
+                              {CULLING_ROSTER[selectedPieceData.type]?.name || selectedPieceData.type}
+                            </span>
+                            <span className="text-xs text-neutral-300 font-bold uppercase block truncate">
+                              {CULLING_ROSTER[selectedPieceData.type]?.role || selectedPieceData.color}
+                            </span>
+                            <span className="text-[10px] font-mono text-neutral-400 block">
+                              Team: {selectedPieceData.color.toUpperCase()} · Pos: {selectedPieceData.pos ? posToCullingSquare(selectedPieceData.pos) : 'Unknown'}
+                            </span>
+                          </div>
+                        </div>
 
-                {/* Legal Moves List Full Width */}
-                {selectedPieceData && (
-                  <div className="col-span-2 bg-[#161d2b] border border-neutral-700 p-2">
-                    <div className="text-[10px] font-black uppercase text-amber-400 mb-1">
-                      Legal Moves for {CULLING_ROSTER[selectedPieceData.type]?.name}
-                    </div>
-                    {selectedLegalMoves.length === 0 ? (
-                      <div className="text-[10px] text-neutral-400">No legal moves available</div>
-                    ) : (
-                      <div className="flex flex-wrap gap-1">
-                        {selectedLegalMoves.map((m, idx) => (
-                          <span
-                            key={`mob-move-${idx}`}
-                            className="px-2 py-0.5 bg-neutral-900 border border-neutral-600 font-mono text-[10px] font-bold text-amber-300"
-                          >
-                            {posToCullingSquare(m.to)}
-                            {m.actionType && m.actionType !== 'move' && ` (${m.actionType})`}
+                        <div className="pt-2 border-t border-neutral-700">
+                          <span className="text-[10px] font-black uppercase text-amber-400 block mb-1">
+                            Legal Destinations ({selectedLegalMoves.length})
                           </span>
-                        ))}
+                          {selectedLegalMoves.length === 0 ? (
+                            <span className="text-[11px] text-neutral-400 font-mono block">
+                              {match.turn !== userColor ? 'Not your turn' : 'No legal destinations from this square'}
+                            </span>
+                          ) : (
+                            <div className="flex flex-wrap gap-1.5">
+                              {selectedLegalMoves.map((m, idx) => (
+                                <span
+                                  key={`mob-move-${idx}`}
+                                  className="px-2 py-1 bg-neutral-900 border border-neutral-600 font-mono text-xs font-bold text-amber-300"
+                                >
+                                  {posToCullingSquare(m.to)}
+                                  {m.actionType && m.actionType !== 'move' && ` (${m.actionType})`}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </>
+                    ) : lastMovedPiece ? (
+                      <div className="flex items-center gap-3">
+                        <div className="w-14 h-14 bg-neutral-950 border-2 border-white/60 p-1 flex items-center justify-center shrink-0">
+                          <CullingPieceComponent type={lastMovedPiece.type} color={lastMovedPiece.color} />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <span className="text-xs font-black uppercase text-neutral-400 block">
+                            Opponent's Last Move
+                          </span>
+                          <span className="text-sm font-black uppercase text-white block truncate">
+                            {CULLING_ROSTER[lastMovedPiece.type]?.name}
+                          </span>
+                          <span className="text-[11px] font-mono text-amber-400 block">
+                            {match.lastMove ? `Moved to ${posToCullingSquare(match.lastMove.to)}` : ''}
+                          </span>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="py-6 text-center text-neutral-400 font-mono text-xs">
+                        Tap any piece on the board to inspect full stats and legal moves
                       </div>
                     )}
+                  </div>
+                )}
+
+                {/* Sub-Tab 2: Technique Lore */}
+                {inspectorSubTab === 'lore' && (
+                  <div className="bg-[#161d2b] border border-neutral-700 p-3 space-y-2">
+                    {selectedPieceData ? (
+                      <div>
+                        <span className="text-xs font-black uppercase text-amber-400 block">
+                          {CULLING_ROSTER[selectedPieceData.type]?.name}: Innate Technique
+                        </span>
+                        <p className="text-[11px] font-mono text-neutral-300 mt-1 leading-relaxed">
+                          {CULLING_ROSTER[selectedPieceData.type]?.role}. Armed with unique 500 CE movement vectors. When Cursed Energy surges, specialized techniques unlock devastating tactical line-of-sight strikes.
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="py-4 text-center text-neutral-400 font-mono text-xs">
+                        Tap a sorcerer to read their cursed lore and innate technique profile
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Sub-Tab 3: Buffs & Domain */}
+                {inspectorSubTab === 'buffs' && (
+                  <div className="bg-[#161d2b] border border-neutral-700 p-3 space-y-2 text-xs font-mono">
+                    <div className="flex items-center justify-between border-b border-neutral-700 pb-1.5">
+                      <span className="text-neutral-400 uppercase font-black text-[10px]">Cursed Energy Level:</span>
+                      <span className="text-amber-400 font-black">120 / 150 CE</span>
+                    </div>
+                    <div className="flex items-center justify-between border-b border-neutral-700 pb-1.5">
+                      <span className="text-neutral-400 uppercase font-black text-[10px]">Colony Rule Change:</span>
+                      <span className="text-purple-400 font-black">{match.history.length * 5} / 100 Points</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-neutral-400 uppercase font-black text-[10px]">Domain Barrier:</span>
+                      <span className="text-emerald-400 font-black">Normal Geometry Active</span>
+                    </div>
                   </div>
                 )}
               </div>
@@ -1286,7 +1410,10 @@ export const CullingMatchView: React.FC<CullingMatchViewProps> = ({
         onClose={() => setIsCullingTrophyRoomOpen(false)}
         initialSelectedCard={selectedCullingCard}
       />
-      <LiveAnnouncer message={announcement} />
+      <LiveAnnouncer
+        message={announcement}
+        type={Boolean(match.inCheck || match.status === 'completed') ? 'assertive' : 'polite'}
+      />
     </div>
   );
 };
