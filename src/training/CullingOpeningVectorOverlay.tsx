@@ -94,6 +94,10 @@ export const CullingOpeningVectorOverlay: React.FC<CullingOpeningVectorOverlayPr
 
         return (
           <g key={`arrow_${idx}_${arrow.from.x}_${arrow.from.y}`}>
+            <title>
+              {isCrimson ? 'Recommended move' : 'Tactical threat'} vector from square ({arrow.from.x}, {arrow.from.y}) to ({arrow.to.x}, {arrow.to.y})
+              {arrow.label ? ` step ${arrow.label}` : ''}
+            </title>
             {/* Outer Glow Line */}
             <line
               x1={start.cx}

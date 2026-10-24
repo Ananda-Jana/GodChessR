@@ -738,23 +738,23 @@ export const PracticeBoard: React.FC<PracticeBoardProps> = ({
           <div className="flex items-center gap-1.5">
             <button
               onClick={handleResetBoard}
-              className="px-2.5 py-1.5 bg-neutral-200 dark:bg-neutral-800 hover:bg-neutral-300 text-black dark:text-white font-black text-xs uppercase border-2 border-black dark:border-white shadow-[2px_2px_0px_#000] dark:shadow-[2px_2px_0px_#fff] flex items-center gap-1 cursor-pointer"
+              className="px-2.5 py-1.5 bg-neutral-200 dark:bg-neutral-800 hover:bg-neutral-300 text-black dark:text-white font-black text-xs uppercase border-2 border-black dark:border-white shadow-[2px_2px_0px_#000] dark:shadow-[2px_2px_0px_#fff] flex items-center gap-1.5 cursor-pointer active:translate-x-0.5 active:translate-y-0.5"
               title="Reset position"
             >
               <RotateCcw className="w-3.5 h-3.5" />
-              Reset
+              <span>Reset</span>
             </button>
             <button
               onClick={handleUndoMove}
               disabled={mode !== 'culling' && moveHistory.length === 0}
-              className="px-2.5 py-1.5 bg-neutral-200 dark:bg-neutral-800 disabled:opacity-40 text-black dark:text-white font-black text-xs uppercase border-2 border-black dark:border-white shadow-[2px_2px_0px_#000] dark:shadow-[2px_2px_0px_#fff] cursor-pointer"
-              title="Undo move"
+              className="px-2.5 py-1.5 bg-neutral-200 dark:bg-neutral-800 disabled:opacity-40 text-black dark:text-white font-black text-xs uppercase border-2 border-black dark:border-white shadow-[2px_2px_0px_#000] dark:shadow-[2px_2px_0px_#fff] cursor-pointer active:translate-x-0.5 active:translate-y-0.5"
+              title="Undo last move"
             >
               Undo
             </button>
             <button
               onClick={() => setIsFlipped(!isFlipped)}
-              className="px-2.5 py-1.5 bg-neutral-200 dark:bg-neutral-800 hover:bg-neutral-300 text-black dark:text-white font-black text-xs uppercase border-2 border-black dark:border-white shadow-[2px_2px_0px_#000] dark:shadow-[2px_2px_0px_#fff] cursor-pointer"
+              className="px-2.5 py-1.5 bg-neutral-200 dark:bg-neutral-800 hover:bg-neutral-300 text-black dark:text-white font-black text-xs uppercase border-2 border-black dark:border-white shadow-[2px_2px_0px_#000] dark:shadow-[2px_2px_0px_#fff] cursor-pointer active:translate-x-0.5 active:translate-y-0.5"
               title="Flip board perspective"
             >
               Flip

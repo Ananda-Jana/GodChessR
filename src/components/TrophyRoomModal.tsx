@@ -1,16 +1,14 @@
-/**
- * TrophyRoomModal - Brutalist 1:1 Square Achievement Gallery
- */
-
 import React, { useState, useRef, useEffect } from 'react';
 import { usePredictor } from '../predictor/PredictorContext';
 import { drawAchievementCard, downloadCardAsPng } from '../predictor/canvasCardRenderer';
 import type { AchievementCard, CardRarity, GameModeKey } from '../predictor/types';
 import { ChessPiece as ClassicPiece } from './ChessPiece';
 import { CullingPiece as CullingPieceComponent } from './CullingPiece';
-import { Trophy, Download, X, Filter, Sparkles, RefreshCw } from 'lucide-react';
+import { Trophy, Download, X, Filter, Sparkles, RefreshCw, Lock, Unlock, ChevronRight } from 'lucide-react';
 import type { PieceColor, PieceType } from '../types/game';
 import type { CullingPieceType, CullingPieceColor } from '../types/cullingGame';
+import { useModalFocus } from '../utils/useModalFocus';
+import { CARD_DEFINITIONS } from '../predictor/cardDefs';
 
 interface TrophyRoomModalProps {
   isOpen: boolean;
@@ -24,6 +22,9 @@ export const TrophyRoomModal: React.FC<TrophyRoomModalProps> = ({
   initialSelectedCard = null,
 }) => {
   const { state, clearPredictorSession } = usePredictor();
+  
+  const modalRef = useModalFocus(isOpen, onClose, true);
+
   const [selectedCard, setSelectedCard] = useState<AchievementCard | null>(initialSelectedCard);
   const [filterMode, setFilterMode] = useState<GameModeKey | 'all'>('all');
   const [filterRarity, setFilterRarity] = useState<CardRarity | 'all'>('all');
@@ -70,208 +71,324 @@ export const TrophyRoomModal: React.FC<TrophyRoomModalProps> = ({
 
   if (!isOpen) return null;
 
-  const filteredCards = state.earnedCards.filter((card) => {
-    if (filterMode !== 'all' && card.mode !== filterMode) return false;
-    if (filterRarity !== 'all' && card.rarity !== filterRarity) return false;
+  // Merge definitions with earned state to show full collection
+  const allTrophyData = CARD_DEFINITIONS.map(def => {
+    // Find all earned instances of this definition
+    const instances = state.earnedCards.filter(c => c.id.startsWith(def.id));
+    const isUnlocked = instances.length > 0;
+    // Use the most recent earned instance for the preview if unlocked
+    const earnedInstance = isUnlocked ? instances[0] : null;
+
+    return {
+      ...def,
+      isUnlocked,
+      earnedInstance,
+      instances,
+      // If earned, use the latest rating
+      predictedRating: earnedInstance?.predictedRating || null
+    };
+  });
+
+  const filteredTrophies = allTrophyData.filter((t) => {
+    if (filterMode !== 'all' && t.mode !== filterMode) return false;
+    if (filterRarity !== 'all' && t.rarity !== filterRarity) return false;
     return true;
   });
 
-  const renderBadgePiece = (card: AchievementCard) => {
-    const pType = card.pieceType || 'king';
-    const pColor = card.pieceColor || 'white';
+  const unlockedCount = allTrophyData.filter(t => t.isUnlocked).length;
+  const totalCount = allTrophyData.length;
 
-    if (card.mode === 'culling' && pType.startsWith('culling_')) {
-      return (
-        <div className="w-10 h-10 flex items-center justify-center p-0.5 bg-neutral-900 border border-slate-700">
-          <CullingPieceComponent
-            type={pType as CullingPieceType}
-            color={pColor as CullingPieceColor}
-          />
-        </div>
-      );
-    }
+  const renderBadgePiece = (trophy: typeof allTrophyData[0]) => {
+    const pType = trophy.pieceType || 'king';
+    const pColor = trophy.pieceColor || 'white';
+    const isLocked = !trophy.isUnlocked;
+
+    const content = trophy.mode === 'culling' && pType.startsWith('culling_') ? (
+      <CullingPieceComponent
+        type={pType as CullingPieceType}
+        color={pColor as CullingPieceColor}
+      />
+    ) : (
+      <ClassicPiece
+        type={pType as PieceType}
+        color={pColor as PieceColor}
+        className="w-full h-full"
+      />
+    );
 
     return (
-      <div className="w-10 h-10 flex items-center justify-center p-0.5 bg-neutral-900 border border-slate-700">
-        <ClassicPiece
-          type={pType as PieceType}
-          color={pColor as PieceColor}
-          className="w-full h-full"
-        />
+      <div className={`w-14 h-14 flex items-center justify-center p-1 bg-neutral-900 border-3 transition-all ${isLocked ? 'border-slate-800 grayscale opacity-30 group-hover:opacity-50' : 'border-amber-400 shadow-[3px_3px_0px_#000]'}`}>
+        {content}
       </div>
     );
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-black/85 backdrop-blur-md animate-fadeIn">
-      <div className="relative w-full max-w-5xl bg-[#0a0d14] border-4 border-black dark:border-white text-slate-100 shadow-[8px_8px_0px_#000000] dark:shadow-[8px_8px_0px_#ffffff] max-h-[92vh] flex flex-col overflow-hidden">
-        {/* Header */}
-        <div className="flex items-center justify-between px-5 py-3 bg-neutral-900 border-b-3 border-black dark:border-white">
+    <div
+      className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center bg-black/95 backdrop-blur-sm animate-in fade-in duration-200"
+      onClick={onClose}
+    >
+      <div
+        ref={modalRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="trophy-modal-title"
+        className="relative w-full sm:max-w-6xl h-[100dvh] sm:h-[90vh] bg-[#0a0d14] border-t-4 sm:border-4 border-white text-slate-100 sm:shadow-[12px_12px_0px_#000000] flex flex-col overflow-hidden animate-in slide-in-from-bottom-full sm:slide-in-from-bottom-0 sm:zoom-in-95 duration-300"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Fixed Header: Modern Brutalist Navigation */}
+        <header className="flex items-center justify-between px-4 py-3 bg-black border-b-4 border-white shrink-0 z-30">
           <div className="flex items-center gap-3">
-            <Trophy className="w-6 h-6 text-amber-400" />
-            <div>
-              <h2 className="text-lg font-extrabold uppercase tracking-tight text-amber-300">
-                Session Trophy Room
+            <div className="w-12 h-12 bg-amber-400 border-2 border-black flex items-center justify-center shadow-[3px_3px_0px_#fff] shrink-0">
+              <Trophy className="w-7 h-7 text-black" />
+            </div>
+            <div className="min-w-0">
+              <h2 id="trophy-modal-title" className="text-base sm:text-xl font-black uppercase tracking-tighter text-white leading-none mb-1 truncate">
+                Trophy Sanctuary
               </h2>
-              <p className="text-xs text-slate-400 font-mono">
-                Predicted Rating: <span className="text-amber-400 font-bold">{state.currentRating}</span> · {state.earnedCards.length} Badges Collected
-              </p>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-black text-amber-400 bg-amber-950/40 px-2 py-0.5 border border-amber-400/30 tracking-widest whitespace-nowrap">
+                  {unlockedCount} / {totalCount} UNLOCKED
+                </span>
+                <span className="hidden sm:inline text-[11px] font-bold text-slate-500 uppercase tracking-widest">
+                  Total Collection Progress: {Math.round((unlockedCount / totalCount) * 100)}%
+                </span>
+              </div>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          
+          <div className="flex items-center gap-2 shrink-0">
             <button
               onClick={() => {
-                if (window.confirm('Reset session predictor rating and clear collected badges?')) {
+                if (window.confirm('WIPE ALL PROGRESS? This will erase all badges and ratings permanently.')) {
                   clearPredictorSession();
                   setSelectedCard(null);
                 }
               }}
-              className="p-2 text-xs font-bold uppercase text-slate-400 hover:text-rose-400 border border-slate-800 hover:border-rose-500/40 transition-colors"
-              title="Reset Session Data"
+              className="w-11 h-11 flex items-center justify-center text-slate-500 hover:text-rose-500 border-2 border-slate-900 hover:border-rose-900 transition-all active:scale-90"
+              title="Factory Reset Collection"
+              aria-label="Reset collection progress"
             >
-              <RefreshCw className="w-4 h-4" />
+              <RefreshCw className="w-5 h-5" />
             </button>
             <button
               onClick={onClose}
-              className="p-2 text-slate-400 hover:text-white border border-slate-800 hover:border-slate-600 transition-colors cursor-pointer"
+              className="w-11 h-11 flex items-center justify-center bg-white text-black border-2 border-black hover:bg-amber-400 transition-all cursor-pointer active:scale-90"
+              aria-label="Close Trophy Sanctuary"
             >
-              <X className="w-5 h-5" />
+              <X className="w-7 h-7 stroke-[3]" />
             </button>
           </div>
-        </div>
+        </header>
 
-        {/* Filters */}
-        <div className="flex flex-wrap items-center justify-between gap-2 px-5 py-2.5 bg-slate-950 border-b-2 border-slate-800 text-xs">
-          <div className="flex items-center gap-2">
-            <Filter className="w-3.5 h-3.5 text-slate-400" />
-            <span className="font-bold text-slate-400 uppercase">Mode:</span>
-            <div className="flex items-center gap-1">
-              {(['all', 'standard', 'culling', 'rose', 'crafted'] as const).map((m) => (
-                <button
-                  key={m}
-                  onClick={() => setFilterMode(m)}
-                  className={`px-2 py-0.5 font-extrabold uppercase text-[11px] transition-colors cursor-pointer ${
-                    filterMode === m
-                      ? 'bg-amber-400 text-black border border-black'
-                      : 'bg-slate-900 text-slate-300 border border-slate-800 hover:bg-slate-800'
-                  }`}
-                >
-                  {m === 'all' ? 'All' : m}
-                </button>
-              ))}
+        {/* Scrollable Body: Single Column Stacking on Mobile */}
+        <div className="flex-1 flex flex-col overflow-y-auto overscroll-contain bg-[#0a0d14] scroll-smooth pb-[env(safe-area-inset-bottom,24px)]">
+          
+          {/* Navigation Bar: Category Tabs */}
+          <nav className="sticky top-0 bg-slate-950/90 backdrop-blur-md border-b-2 border-white/10 z-20 shrink-0 shadow-xl" role="tablist">
+            <div className="flex overflow-x-auto scrollbar-none px-4 py-3 gap-3">
+              {(['all', 'standard', 'culling', 'rose', 'crafted'] as const).map((m) => {
+                const isActive = filterMode === m;
+                return (
+                  <button
+                    key={m}
+                    role="tab"
+                    aria-selected={isActive}
+                    onClick={() => setFilterMode(m)}
+                    className={`h-12 px-5 flex-shrink-0 flex items-center gap-2 font-black uppercase text-xs border-2 transition-all active:scale-95 ${
+                      isActive
+                        ? 'bg-amber-400 text-black border-black shadow-[4px_4px_0px_#fff] -translate-y-0.5'
+                        : 'bg-slate-900/50 text-slate-500 border-slate-800 hover:text-slate-300'
+                    }`}
+                  >
+                    <span>{m === 'all' ? 'All Realms' : m === 'standard' ? 'Classic' : m}</span>
+                  </button>
+                );
+              })}
             </div>
-          </div>
+          </nav>
 
-          <div className="flex items-center gap-2">
-            <span className="font-bold text-slate-400 uppercase">Rarity:</span>
-            <div className="flex items-center gap-1">
-              {(['all', 'Legendary', 'Epic', 'Rare', 'Common'] as const).map((r) => (
-                <button
-                  key={r}
-                  onClick={() => setFilterRarity(r)}
-                  className={`px-2 py-0.5 font-extrabold uppercase text-[11px] transition-colors cursor-pointer ${
-                    filterRarity === r
-                      ? 'bg-amber-400 text-black border border-black'
-                      : 'bg-slate-900 text-slate-300 border border-slate-800 hover:bg-slate-800'
-                  }`}
-                >
-                  {r}
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
+          <div className="flex flex-col lg:flex-row flex-1 relative">
+            
+            {/* Left/Detail Column: Persistent Sticky on Desktop, Top of Scroll on Mobile */}
+            <aside className="lg:w-[38%] xl:w-[32%] lg:sticky lg:top-14 h-fit bg-black/60 border-b-2 lg:border-b-0 lg:border-r-4 border-white/10 p-5 sm:p-8 flex flex-col items-center shrink-0 z-10">
+              {selectedCard ? (
+                <div className="w-full max-w-[340px] animate-in slide-in-from-top-4 duration-300">
+                  {/* Badge Preview Frame */}
+                  <div className="relative border-4 border-white shadow-[10px_10px_0px_#fbbf24] bg-black aspect-square w-full mb-8 group overflow-hidden">
+                    <canvas
+                      ref={canvasRef}
+                      width={600}
+                      height={600}
+                      className="w-full h-full block object-contain"
+                    />
+                    {!allTrophyData.find(t => t.id === selectedCard.id.split('_')[0])?.isUnlocked && (
+                       <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px] flex items-center justify-center">
+                          <div className="bg-black/80 border-2 border-slate-700 px-4 py-2 flex items-center gap-2 shadow-2xl">
+                             <Lock className="w-4 h-4 text-slate-500" />
+                             <span className="text-xs font-black text-slate-500 uppercase tracking-widest">Seal Locked</span>
+                          </div>
+                       </div>
+                    )}
+                    <div className="absolute bottom-2 left-2 px-2 py-1 bg-black/80 border border-white/20 text-xs font-black text-slate-400 uppercase">
+                      Serial: {selectedCard.id.slice(-8)}
+                    </div>
+                  </div>
 
-        {/* Split View */}
-        <div className="flex-1 grid grid-cols-1 md:grid-cols-12 overflow-hidden">
-          {/* Left/Top: 1:1 Square Canvas Card Preview */}
-          <div className="md:col-span-5 p-5 bg-slate-950 border-b md:border-b-0 md:border-r-2 border-slate-800 flex flex-col items-center justify-center overflow-y-auto">
-            {selectedCard ? (
-              <div className="flex flex-col items-center gap-3 w-full max-w-[320px]">
-                {/* 1:1 Square Canvas Frame */}
-                <div className="relative border-3 border-amber-400 shadow-[6px_6px_0px_#000000] rounded-none overflow-hidden bg-black aspect-square w-full">
-                  <canvas
-                    ref={canvasRef}
-                    width={600}
-                    height={600}
-                    className="w-full h-full block object-contain"
-                  />
+                  <div className="space-y-4">
+                    <div className="bg-slate-900 border-2 border-white p-5 shadow-[6px_6px_0px_#000] relative">
+                      <div className="absolute -top-3 left-4 bg-amber-400 text-black px-2 py-0.5 text-xs font-black uppercase border border-black">
+                        Badge Codex
+                      </div>
+                      <h3 className="text-2xl font-black uppercase text-white mb-1 leading-tight tracking-tighter">
+                        {selectedCard.title}
+                      </h3>
+                      <div className="flex items-center gap-2 mb-4">
+                        <span className={`text-xs font-black px-2 py-0.5 border border-white/20 ${
+                          selectedCard.rarity === 'Legendary' ? 'text-amber-400' : 
+                          selectedCard.rarity === 'Epic' ? 'text-purple-400' : 'text-slate-400'
+                        }`}>
+                          {selectedCard.rarity.toUpperCase()}
+                        </span>
+                        <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">
+                          {selectedCard.mode} Realm
+                        </span>
+                      </div>
+                      <p className="text-sm font-medium text-slate-200 leading-relaxed italic border-l-4 border-amber-400 pl-4 py-1">
+                        &ldquo;{selectedCard.description}&rdquo;
+                      </p>
+                    </div>
+
+                    <button
+                      onClick={() => downloadCardAsPng(selectedCard)}
+                      disabled={!allTrophyData.find(t => t.id === selectedCard.id.split('_')[0])?.isUnlocked}
+                      className="w-full h-14 bg-amber-400 hover:bg-amber-300 disabled:bg-slate-800 disabled:text-slate-600 disabled:border-slate-700 disabled:shadow-none text-black font-black text-xs sm:text-sm uppercase tracking-tighter border-3 border-black shadow-[6px_6px_0px_#fff] flex items-center justify-center gap-3 cursor-pointer transition-all active:translate-x-1 active:translate-y-1"
+                    >
+                      <Download className="w-5 h-5 stroke-[3]" />
+                      <span>Download Identity Badge</span>
+                    </button>
+                  </div>
                 </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-20 text-slate-600 text-center">
+                  <div className="w-20 h-20 bg-slate-900 border-2 border-slate-800 flex items-center justify-center mb-6 shadow-inner">
+                    <Sparkles className="w-10 h-10 opacity-20" />
+                  </div>
+                  <p className="font-black text-xs uppercase tracking-[0.2em] animate-pulse">Select an Achievement</p>
+                </div>
+              )}
+            </aside>
 
-                {/* Download PNG Action */}
-                <button
-                  onClick={() => downloadCardAsPng(selectedCard)}
-                  className="w-full py-2.5 bg-amber-400 hover:bg-amber-300 text-black font-extrabold text-xs uppercase tracking-wider border-2 border-black shadow-[3px_3px_0px_#000000] flex items-center justify-center gap-2 cursor-pointer transition-all active:translate-x-0.5 active:translate-y-0.5"
-                >
-                  <Download className="w-4 h-4" /> Download Square Badge PNG
-                </button>
-              </div>
-            ) : (
-              <div className="text-center text-slate-500 p-8">
-                <Sparkles className="w-10 h-10 mx-auto mb-2 opacity-40" />
-                <p className="font-semibold text-xs uppercase">Select a badge to preview</p>
-              </div>
-            )}
-          </div>
-
-          {/* Right/Bottom: 1:1 Badge Snapshots Grid */}
-          <div className="md:col-span-7 p-5 overflow-y-auto max-h-[60vh] md:max-h-none">
-            {filteredCards.length === 0 ? (
-              <div className="text-center py-16 text-slate-500">
-                <Trophy className="w-10 h-10 mx-auto mb-2 opacity-30" />
-                <p className="font-bold uppercase text-xs text-slate-400">No badges match filter</p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                {filteredCards.map((card) => {
-                  const isSelected = selectedCard?.id === card.id;
+            {/* Right Column: Trophy Grid */}
+            <main className="flex-1 p-4 sm:p-8 bg-[#0a0d14]">
+              {/* Sub-Filters: Rarity Horizontal Strip */}
+              <div className="flex items-center gap-2 overflow-x-auto scrollbar-none pb-4 mb-6">
+                <span className="text-xs font-black text-slate-500 uppercase tracking-widest mr-2 shrink-0">Filter by Tier:</span>
+                {(['all', 'Legendary', 'Epic', 'Rare', 'Common'] as const).map((r) => {
+                  const isActive = filterRarity === r;
                   return (
-                    <div
-                      key={card.id}
-                      onClick={() => setSelectedCard(card)}
-                      className={`p-3 bg-slate-900 border-2 cursor-pointer transition-all aspect-square flex flex-col justify-between ${
-                        isSelected
-                          ? 'border-amber-400 bg-slate-800 shadow-[4px_4px_0px_#fbbf24] -translate-y-0.5'
-                          : 'border-slate-800 hover:border-slate-600 hover:bg-slate-850 shadow-[3px_3px_0px_#000000]'
+                    <button
+                      key={r}
+                      onClick={() => setFilterRarity(r)}
+                      className={`px-4 py-2 font-black uppercase text-xs border-2 transition-all active:scale-90 shrink-0 ${
+                        isActive
+                          ? 'bg-white text-black border-black shadow-[3px_3px_0px_#fbbf24]'
+                          : 'bg-slate-900 text-slate-500 border-slate-800 hover:border-slate-700'
                       }`}
                     >
-                      <div className="flex items-center justify-between">
-                        <span className="text-[9px] font-extrabold uppercase text-slate-400 truncate">
-                          {card.mode}
-                        </span>
-                        <span
-                          className={`text-[8px] font-extrabold uppercase px-1 py-0.2 border ${
-                            card.rarity === 'Legendary'
-                              ? 'bg-amber-950 text-amber-300 border-amber-500'
-                              : card.rarity === 'Epic'
-                              ? 'bg-purple-950 text-purple-300 border-purple-500'
-                              : card.rarity === 'Rare'
-                              ? 'bg-blue-950 text-blue-300 border-blue-500'
-                              : 'bg-slate-800 text-slate-300 border-slate-600'
-                          }`}
-                        >
-                          {card.rarity}
-                        </span>
-                      </div>
-
-                      {/* Center Piece Motif */}
-                      <div className="flex items-center justify-center my-1">
-                        {renderBadgePiece(card)}
-                      </div>
-
-                      <div>
-                        <h4 className="font-extrabold text-[11px] text-white uppercase truncate text-center">
-                          {card.title}
-                        </h4>
-                        <div className="text-[9px] font-mono text-amber-400 text-center">
-                          R: {card.predictedRating}
-                        </div>
-                      </div>
-                    </div>
+                      {r}
+                    </button>
                   );
                 })}
               </div>
-            )}
+
+              {filteredTrophies.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-32 text-slate-700 text-center border-4 border-dashed border-slate-900">
+                  <Filter className="w-12 h-12 mb-4 opacity-10" />
+                  <h4 className="font-black uppercase text-sm tracking-widest">No Matches in Sanctuary</h4>
+                  <button onClick={() => {setFilterMode('all'); setFilterRarity('all');}} className="mt-4 px-4 py-2 bg-slate-900 border border-slate-800 text-[10px] font-bold text-amber-500 uppercase hover:bg-slate-800 transition-colors">Reset Realm Filters</button>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
+                  {filteredTrophies.map((trophy) => {
+                    const isSelected = selectedCard?.id.startsWith(trophy.id);
+                    const isLocked = !trophy.isUnlocked;
+                    
+                    return (
+                      <div
+                        key={trophy.id}
+                        onClick={() => {
+                          if (trophy.isUnlocked && trophy.earnedInstance) {
+                            setSelectedCard(trophy.earnedInstance);
+                          } else {
+                            // Construct preview-only card for locked state
+                            setSelectedCard({
+                              ...trophy,
+                              id: `${trophy.id}_locked`,
+                              predictedRating: 0,
+                              userId: 'guest',
+                              earnedAt: Date.now(),
+                              stats: {} as any
+                            } as any);
+                          }
+                        }}
+                        className={`group relative p-4 border-3 transition-all flex flex-col justify-between aspect-[4/5] overflow-hidden cursor-pointer ${
+                          isSelected
+                            ? 'bg-amber-400 border-black shadow-[6px_6px_0px_#fff] -translate-y-1 z-10'
+                            : 'bg-slate-900/40 border-slate-800 hover:border-slate-600 shadow-[4px_4px_0px_#000]'
+                        }`}
+                        title={isLocked ? `Locked: ${trophy.description}` : trophy.title}
+                      >
+                        {/* Status Indicators */}
+                        <div className="flex items-center justify-between mb-4">
+                          <span className={`text-[10px] font-black uppercase px-2 py-0.5 border-2 ${
+                            isSelected ? 'bg-black text-amber-400 border-black' : 
+                            trophy.rarity === 'Legendary' ? 'bg-amber-950 text-amber-400 border-amber-800' :
+                            trophy.rarity === 'Epic' ? 'bg-purple-950 text-purple-400 border-purple-800' :
+                            'bg-slate-800 text-slate-400 border-slate-700'
+                          }`}>
+                            {trophy.rarity}
+                          </span>
+                          
+                          {isLocked ? (
+                            <Lock className="w-3.5 h-3.5 text-slate-700" />
+                          ) : (
+                            <div className={`w-2.5 h-2.5 rounded-full border-2 ${isSelected ? 'bg-black border-black' : 'bg-emerald-500 border-emerald-900'} shadow-[0_0_8px_rgba(16,185,129,0.4)]`} />
+                          )}
+                        </div>
+
+                        {/* Visual Icon */}
+                        <div className="flex items-center justify-center my-4 group-hover:scale-110 transition-transform duration-300">
+                          {renderBadgePiece(trophy)}
+                        </div>
+
+                        {/* Title & Stats */}
+                        <div className="mt-auto">
+                          <h4 className={`font-black text-[11px] sm:text-xs uppercase leading-tight line-clamp-2 mb-2 ${isSelected ? 'text-black' : isLocked ? 'text-slate-600' : 'text-white'}`}>
+                            {trophy.title}
+                          </h4>
+                          <div className="flex items-center justify-between pt-2 border-t border-white/5">
+                            <span className={`text-[11px] font-black uppercase tracking-tighter ${isSelected ? 'text-black/60' : isLocked ? 'text-slate-700' : 'text-slate-500'}`}>
+                              {isLocked ? 'STATUS: LOCKED' : 'RANK ACQUIRED'}
+                            </span>
+                            {trophy.predictedRating && !isLocked && (
+                              <div className={`px-1.5 py-0.5 rounded-sm text-xs font-mono font-black ${isSelected ? 'bg-black/10 text-black' : 'bg-amber-500/10 text-amber-500'}`}>
+                                R:{trophy.predictedRating}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Locked Cross-hatch Overlay */}
+                        {isLocked && (
+                          <div className="absolute inset-0 pointer-events-none opacity-[0.03] bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:4px_4px]" />
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </main>
           </div>
         </div>
       </div>

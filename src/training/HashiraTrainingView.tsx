@@ -28,6 +28,7 @@ import {
   BookOpen,
   CheckCircle2,
   ChevronDown,
+  ChevronUp,
   Flame,
   Layers,
   RotateCcw,
@@ -53,6 +54,7 @@ export const HashiraTrainingView: React.FC<HashiraTrainingViewProps> = ({ onBack
   const [isMobileTrainerCollapsed, setIsMobileTrainerCollapsed] = useState(false);
   const [isRulebookOpen, setIsRulebookOpen] = useState(false);
   const [isCullingRulesOpen, setIsCullingRulesOpen] = useState(false);
+  const [flashSuccess, setFlashSuccess] = useState(false);
 
   // Timer ref for reversible blunder feedback
   const promptRestoreTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -62,6 +64,7 @@ export const HashiraTrainingView: React.FC<HashiraTrainingViewProps> = ({ onBack
     setIsMobileDojoOpen(false);
     setIsMobileKatasOpen(false);
   };
+
 
   // Dynamic Stage Dimension Observer for 100% visible, non-overflowing board
   const stageRef = useRef<HTMLDivElement>(null);
@@ -128,6 +131,34 @@ export const HashiraTrainingView: React.FC<HashiraTrainingViewProps> = ({ onBack
   const [activeLessonIndex, setActiveLessonIndex] = useState(0);
   const activeLesson: DojoLesson | undefined = currentLessons[activeLessonIndex] || currentLessons[0];
   const [activeStepIndex, setActiveStepIndex] = useState(0);
+
+  // Lesson transition declaration banner state
+  const [lessonDeclaration, setLessonDeclaration] = useState<{
+    visible: boolean;
+    title: string;
+    index: number;
+  } | null>(null);
+
+  const prevLessonIdRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (activeLesson && prevLessonIdRef.current !== null && prevLessonIdRef.current !== activeLesson.id) {
+      setLessonDeclaration({
+        visible: true,
+        title: activeLesson.title,
+        index: activeLessonIndex + 1,
+      });
+
+      const timer = setTimeout(() => {
+        setLessonDeclaration((prev) => (prev ? { ...prev, visible: false } : null));
+      }, 1800);
+
+      return () => clearTimeout(timer);
+    }
+    if (activeLesson) {
+      prevLessonIdRef.current = activeLesson.id;
+    }
+  }, [activeLesson?.id, activeLesson?.title, activeLessonIndex]);
 
   // Sensei Mentor Expression & Dialogue State
   const [mentorExpression, setMentorExpression] = useState<MentorExpression>('stern');
@@ -295,6 +326,10 @@ export const HashiraTrainingView: React.FC<HashiraTrainingViewProps> = ({ onBack
       const prompt = currentStep?.mentorPrompt || activeLesson.mentorPrompt;
       setMentorExpression('stern');
       setMentorMessage(prompt);
+      
+      // Trigger success flash for mentor border
+      setFlashSuccess(true);
+      setTimeout(() => setFlashSuccess(false), 1000);
     }
   }, [activeLesson]);
 
@@ -325,7 +360,24 @@ export const HashiraTrainingView: React.FC<HashiraTrainingViewProps> = ({ onBack
   }
 
   return (
-    <div className="h-[100dvh] w-full bg-[#070709] text-white flex flex-col font-sans select-none antialiased overflow-hidden">
+    <div className="h-[100dvh] w-full bg-[#070709] text-white flex flex-col font-sans select-none antialiased overflow-hidden relative">
+      {/* Lesson Declaration Banner */}
+      {lessonDeclaration && lessonDeclaration.visible && (
+        <div className="fixed top-12 left-1/2 -translate-x-1/2 z-[60] pointer-events-none transition-all duration-300 animate-in fade-in slide-in-from-top-3">
+          <div className="bg-gradient-to-r from-neutral-900 via-black to-neutral-900 border-2 border-amber-400 shadow-[0_0_20px_rgba(245,158,11,0.6)] px-3.5 py-1.5 rounded-none flex items-center gap-2 max-w-[92vw]">
+            <Flame className="w-4 h-4 text-amber-400 fill-amber-500 animate-bounce shrink-0" />
+            <div className="flex items-center gap-2 truncate">
+              <span className="text-[10px] font-mono font-black text-amber-300 uppercase tracking-wide shrink-0 bg-neutral-800 px-1.5 py-0.5 border border-amber-400/80">
+                KATA {lessonDeclaration.index}
+              </span>
+              <span className="text-xs font-black text-white uppercase truncate tracking-tight">
+                {lessonDeclaration.title}
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* 1. Top Navigation Stripe (Mobile: single 44px fixed stripe) */}
       <header className="bg-black border-b-2 border-amber-400 px-2.5 py-1.5 h-11 shrink-0 flex items-center justify-between shadow-[0_4px_12px_rgba(0,0,0,0.8)] z-30">
         <div className="flex items-center gap-2">
@@ -413,7 +465,9 @@ export const HashiraTrainingView: React.FC<HashiraTrainingViewProps> = ({ onBack
               setIsMobileKatasOpen(false);
               sounds.playMove();
             }}
-            className={`px-2 py-1 border text-[10px] sm:text-[11px] font-black uppercase flex items-center gap-1 cursor-pointer transition-colors z-40 ${
+            aria-expanded={isMobileRankOpen}
+            aria-haspopup="true"
+            className={`px-2 py-1 border text-[10px] sm:text-[11px] font-black uppercase flex items-center gap-1 cursor-pointer transition-colors z-40 active:scale-95 ${
               isMobileRankOpen
                 ? 'bg-amber-400 text-black border-black shadow-[1px_1px_0px_#000]'
                 : 'bg-neutral-900 border-neutral-700 text-amber-400'
@@ -421,7 +475,7 @@ export const HashiraTrainingView: React.FC<HashiraTrainingViewProps> = ({ onBack
           >
             <span className="font-serif">{currentRankInfo.kanji}</span>
             <span className="truncate max-w-[60px] sm:max-w-[76px]">{currentRankInfo.name}</span>
-            <ChevronDown className="w-2.5 h-2.5 shrink-0" />
+            {isMobileRankOpen ? <ChevronUp className="w-2.5 h-2.5 shrink-0" /> : <ChevronDown className="w-2.5 h-2.5 shrink-0" />}
           </button>
 
           {/* 2. Dojo Mode Selector Trigger */}
@@ -432,7 +486,9 @@ export const HashiraTrainingView: React.FC<HashiraTrainingViewProps> = ({ onBack
               setIsMobileKatasOpen(false);
               sounds.playMove();
             }}
-            className={`px-2 py-1 border text-[10px] sm:text-[11px] font-black uppercase flex items-center gap-1 cursor-pointer transition-colors z-40 ${
+            aria-expanded={isMobileDojoOpen}
+            aria-haspopup="true"
+            className={`px-2 py-1 border text-[10px] sm:text-[11px] font-black uppercase flex items-center gap-1 cursor-pointer transition-colors z-40 active:scale-95 ${
               isMobileDojoOpen
                 ? 'bg-amber-400 text-black border-black shadow-[1px_1px_0px_#000]'
                 : 'bg-neutral-900 border-neutral-700 text-amber-400'
@@ -442,7 +498,7 @@ export const HashiraTrainingView: React.FC<HashiraTrainingViewProps> = ({ onBack
             <span className="truncate max-w-[62px] sm:max-w-[78px]">
               {dojoTabs.find((t) => t.id === activeTool)?.label.replace(' Dojo', '')}
             </span>
-            <ChevronDown className="w-2.5 h-2.5 shrink-0" />
+            {isMobileDojoOpen ? <ChevronUp className="w-2.5 h-2.5 shrink-0" /> : <ChevronDown className="w-2.5 h-2.5 shrink-0" />}
           </button>
 
           {/* Small Square Rulebook Opening Button next to Dojo Selector */}
@@ -470,7 +526,9 @@ export const HashiraTrainingView: React.FC<HashiraTrainingViewProps> = ({ onBack
                 setIsMobileDojoOpen(false);
                 sounds.playMove();
               }}
-              className={`px-2 py-1 border text-[10px] sm:text-[11px] font-black uppercase flex items-center gap-1 cursor-pointer transition-colors z-40 ${
+              aria-expanded={isMobileKatasOpen}
+              aria-haspopup="true"
+              className={`px-2 py-1 border text-[10px] sm:text-[11px] font-black uppercase flex items-center gap-1 cursor-pointer transition-colors z-40 active:scale-95 ${
                 isMobileKatasOpen
                   ? 'bg-amber-400 text-black border-black shadow-[1px_1px_0px_#000]'
                   : 'bg-neutral-900 border-neutral-700 text-neutral-200'
@@ -478,7 +536,7 @@ export const HashiraTrainingView: React.FC<HashiraTrainingViewProps> = ({ onBack
             >
               <Layers className="w-3 h-3 text-amber-500 shrink-0" />
               <span>{activeLessonIndex + 1}/{currentLessons.length}</span>
-              <ChevronDown className="w-2.5 h-2.5 shrink-0" />
+              {isMobileKatasOpen ? <ChevronUp className="w-2.5 h-2.5 shrink-0" /> : <ChevronDown className="w-2.5 h-2.5 shrink-0" />}
             </button>
           ) : (
             <button
@@ -663,6 +721,7 @@ export const HashiraTrainingView: React.FC<HashiraTrainingViewProps> = ({ onBack
             kanji={currentRankInfo.kanji}
             trainerId={selectedTrainerId}
             layout="compact"
+            flashSuccess={flashSuccess}
           />
         )}
       </div>
@@ -685,6 +744,7 @@ export const HashiraTrainingView: React.FC<HashiraTrainingViewProps> = ({ onBack
             kanji={currentRankInfo.kanji}
             trainerId={selectedTrainerId}
             layout="vertical"
+            flashSuccess={flashSuccess}
           />
 
           <div className="mt-3 p-2.5 bg-neutral-900 border border-neutral-800 text-xs">

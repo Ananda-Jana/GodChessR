@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { X, BookOpen, Crown, Dices, Sparkles, Clock, Swords, Bot, Users, Layers, Shield } from 'lucide-react';
 import { MatchState } from '../types/game';
+import { useModalFocus } from '../utils/useModalFocus';
 
 export interface RulesModalProps {
   isOpen: boolean;
@@ -17,6 +18,8 @@ export const RulesModal: React.FC<RulesModalProps> = ({
   activeMatch,
   isBotMatch,
 }) => {
+  const modalRef = useModalFocus(isOpen, onClose, true);
+
   // Determine if opened inside an active match
   const isInMatch = Boolean(activeMatch);
   const matchIsBot = Boolean(
@@ -71,19 +74,29 @@ export const RulesModal: React.FC<RulesModalProps> = ({
   const isBotView = currentView === 'bot_standard' || currentView === 'bot_crafted';
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-none">
-      <div className="bg-white dark:bg-[#0a0a0c] border-4 border-black dark:border-white max-w-2xl w-full max-h-[90dvh] [max-height:90vh] flex flex-col shadow-[8px_8px_0px_#000000] dark:shadow-[8px_8px_0px_#ffffff] text-black dark:text-white">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-none animate-in fade-in duration-150"
+      onClick={onClose}
+    >
+      <div
+        ref={modalRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="rules-modal-title"
+        className="bg-white dark:bg-[#0a0a0c] border-4 border-black dark:border-white max-w-2xl w-full max-h-[90dvh] [max-height:90vh] flex flex-col shadow-[8px_8px_0px_#000000] dark:shadow-[8px_8px_0px_#ffffff] text-black dark:text-white animate-in slide-in-from-bottom-4 sm:slide-in-from-bottom-0 sm:zoom-in-95 duration-150"
+        onClick={(e) => e.stopPropagation()}
+      >
         
         {/* Header */}
-        <div className="px-4 sm:px-5 py-3 border-b-3 border-black dark:border-white flex items-center justify-between bg-neutral-100 dark:bg-[#141416] shrink-0">
+        <div className="px-4 sm:px-5 py-3 border-b-3 border-black dark:border-white flex items-center justify-between bg-black text-white shrink-0">
           <div className="flex items-center gap-2.5">
             <BookOpen className="w-5 h-5 text-amber-500" />
             <div>
-              <h3 className="text-sm sm:text-base font-black uppercase tracking-tight flex items-center gap-2">
+              <h3 id="rules-modal-title" className="text-sm sm:text-base font-black uppercase tracking-tight flex items-center gap-2">
                 Dice Chess Official Rulebook
               </h3>
               {isInMatch && (
-                <span className="text-[10px] font-mono uppercase text-amber-600 dark:text-amber-400 font-bold block">
+                <span className="text-[10px] font-mono uppercase text-amber-400 font-bold block">
                   Active Match Rules ({matchIsBot ? (matchGameMode === 'crafted' ? 'Bot Crafted' : 'Bot Standard') : 'Multiplayer'})
                 </span>
               )}
@@ -91,10 +104,10 @@ export const RulesModal: React.FC<RulesModalProps> = ({
           </div>
           <button
             onClick={onClose}
-            className="p-1 border-2 border-black dark:border-white hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black transition-colors cursor-pointer"
+            className="w-11 h-11 flex items-center justify-center border-2 border-white hover:bg-white hover:text-black transition-colors cursor-pointer focus-visible:ring-4 focus-visible:ring-amber-400 outline-none"
             aria-label="Close"
           >
-            <X className="w-4 h-4" />
+            <X className="w-5 h-5" />
           </button>
         </div>
 

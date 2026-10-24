@@ -17,6 +17,7 @@ interface PredictorPanelProps {
 
 export const PredictorPanel: React.FC<PredictorPanelProps> = ({ metrics }) => {
   const { state } = usePredictor();
+  const [isExpanded, setIsExpanded] = React.useState(false);
 
   const rating = state.currentRating;
   const activeStats = state.activeMatchStats;
@@ -29,24 +30,50 @@ export const PredictorPanel: React.FC<PredictorPanelProps> = ({ metrics }) => {
 
   return (
     <>
-      {/* MOBILE ONLY: Ultra-Compact 1-Line Fixed Top Badge */}
-      <div className="md:hidden flex items-center justify-between px-3 py-1.5 bg-[#0f172a] border-2 border-slate-700 text-slate-100 font-mono text-xs shadow-md select-none shrink-0 w-full">
-        <div className="flex items-center gap-1.5">
-          <Zap className="w-3.5 h-3.5 text-amber-400" />
-          <span className="font-extrabold text-amber-300">{rating}</span>
-          <span className={`text-[10px] font-bold ${lastDelta >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
-            ({lastDelta >= 0 ? `+${lastDelta}` : lastDelta})
-          </span>
-          {provisional && (
-            <span className="text-[9px] bg-slate-800 text-slate-400 px-1 py-0.2 border border-slate-700">
-              Prov
+      {/* MOBILE ONLY: Ultra-Compact 1-Line Fixed Top Badge with Expandable Details */}
+      <div className="md:hidden w-full flex flex-col shrink-0">
+        <button
+          onClick={() => setIsExpanded(!isExpanded)}
+          className="flex items-center justify-between px-3 py-2 bg-[#0f172a] border-2 border-slate-700 text-slate-100 font-mono text-xs shadow-md select-none w-full cursor-pointer active:bg-slate-800"
+        >
+          <div className="flex items-center gap-1.5">
+            <Zap className={`w-3.5 h-3.5 transition-transform ${isExpanded ? 'rotate-12 scale-110' : ''} text-amber-400`} />
+            <span className="font-extrabold text-amber-300">{rating}</span>
+            <span className={`text-[10px] font-bold ${lastDelta >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+              ({lastDelta >= 0 ? `+${lastDelta}` : lastDelta})
             </span>
-          )}
-        </div>
-        <div className="flex items-center gap-2.5 text-[11px] text-slate-300 font-semibold">
-          <span>Qual: <strong className="text-emerald-400">{lastQuality}%</strong></span>
-          <span>Caps: <strong className="text-cyan-400">{metrics.capturesMade}</strong></span>
-        </div>
+            {provisional && (
+              <span className="text-[9px] bg-slate-800 text-slate-400 px-1 py-0.2 border border-slate-700">
+                Prov
+              </span>
+            )}
+          </div>
+          <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-tight text-slate-400">
+            {isExpanded ? 'Hide Stats' : 'Show Stats'}
+            <Zap className={`w-3 h-3 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+          </div>
+        </button>
+
+        {isExpanded && (
+          <div className="grid grid-cols-2 gap-1 px-3 py-2 bg-slate-900 border-x-2 border-b-2 border-slate-700 text-[10px] animate-in slide-in-from-top-2 duration-200">
+            <div className="flex justify-between border-b border-slate-800 pb-1">
+              <span className="text-slate-400">QUALITY</span>
+              <span className="text-emerald-400 font-black">{lastQuality}%</span>
+            </div>
+            <div className="flex justify-between border-b border-slate-800 pb-1">
+              <span className="text-slate-400">CAPTURES</span>
+              <span className="text-cyan-400 font-black">{metrics.capturesMade}</span>
+            </div>
+            <div className="flex justify-between border-b border-slate-800 pb-1">
+              <span className="text-slate-400">CHECKS DEF</span>
+              <span className="text-emerald-300 font-black">{metrics.checksDefendedCount}</span>
+            </div>
+            <div className="flex justify-between border-b border-slate-800 pb-1">
+              <span className="text-slate-400">SPECIAL</span>
+              <span className="text-amber-400 font-black">{metrics.specialActionsCount}</span>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* DESKTOP ONLY: Strictly Fixed Height 148px Container (Zero Layout Shift) */}

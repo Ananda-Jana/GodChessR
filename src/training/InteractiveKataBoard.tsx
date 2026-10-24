@@ -27,7 +27,7 @@ import {
 import { ChessPiece } from '../components/ChessPiece';
 import { CullingBoard } from '../components/CullingBoard';
 import { sounds } from '../utils/audio';
-import { CheckCircle2, AlertTriangle, Sparkles, ArrowRight } from 'lucide-react';
+import { CheckCircle2, AlertTriangle, Sparkles, ArrowRight, Check } from 'lucide-react';
 
 interface CompletedStepModalData {
   stepNumber: number;
@@ -594,24 +594,26 @@ export const InteractiveKataBoard: React.FC<InteractiveKataBoardProps> = ({
           {isFinished ? '✓ Mastered' : 'Active Kata'}
         </span>
       </div>
-
       {/* Post-Step Tactical Breakdown Modal Popup */}
       {pendingModalData && (
         <div
-          className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-150"
+          className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-200"
           role="dialog"
           aria-modal="true"
         >
           <div
             className={`relative max-w-md w-full bg-[#0d0d12] border-3 ${
               isGatoru
-                ? 'border-sky-400 shadow-[6px_6px_0px_#0284c7]'
-                : 'border-amber-400 shadow-[6px_6px_0px_#d97706]'
-            } p-4 sm:p-5 flex flex-col gap-3 select-text`}
+                ? 'border-sky-400 shadow-[0_0_30px_rgba(56,189,248,0.4)]'
+                : 'border-amber-400 shadow-[0_0_30px_rgba(245,158,11,0.4)]'
+            } p-4 sm:p-5 flex flex-col gap-3 select-text animate-in zoom-in-95 duration-200`}
           >
             {/* Modal Header */}
             <div className="flex items-center justify-between border-b border-neutral-700 pb-2">
               <div className="flex items-center gap-2">
+                <div className={`w-6 h-6 rounded-full flex items-center justify-center ${isGatoru ? 'bg-sky-400' : 'bg-amber-400'} text-black`}>
+                  <Check className="w-4 h-4 stroke-[4]" />
+                </div>
                 <span
                   className={`px-2 py-0.5 text-[10px] font-black uppercase border ${
                     isGatoru
@@ -619,7 +621,7 @@ export const InteractiveKataBoard: React.FC<InteractiveKataBoardProps> = ({
                       : 'bg-amber-400 text-black border-black'
                   }`}
                 >
-                  Step {pendingModalData.stepNumber} of {pendingModalData.totalSteps}
+                  Step {pendingModalData.stepNumber} of {pendingModalData.totalSteps} DONE
                 </span>
                 <span className="text-[11px] font-black uppercase tracking-wider text-neutral-300">
                   {pendingModalData.isFinal ? 'Decisive Victory' : 'Tactical Mastery'}

@@ -3,6 +3,7 @@ import { Bot, Sparkles, X, Swords, Sun, Moon, Palette } from 'lucide-react';
 import { PieceColor, PieceTheme } from '../types/game';
 import { useTheme } from '../context/ThemeContext';
 import { ChessPiece } from './ChessPiece';
+import { useModalFocus } from '../utils/useModalFocus';
 
 interface BotMatchModalProps {
   isOpen: boolean;
@@ -26,6 +27,9 @@ export const BotMatchModal: React.FC<BotMatchModalProps> = ({
   onStartBotMatch,
 }) => {
   const { theme, setTheme } = useTheme();
+  
+  const modalRef = useModalFocus(isOpen, onClose, true);
+
   const [playerColor, setPlayerColor] = useState<PieceColor>('white');
   const [difficulty, setDifficulty] = useState<'grandmaster' | 'master'>('grandmaster');
   const [timeControl, setTimeControl] = useState<120 | 300>(300); // 5 mins default
@@ -45,39 +49,38 @@ export const BotMatchModal: React.FC<BotMatchModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-none">
-      <div className="bg-white dark:bg-[#0a0a0c] border-4 border-black dark:border-white max-w-md w-full max-h-[90dvh] [max-height:90vh] shadow-[8px_8px_0px_#000000] dark:shadow-[8px_8px_0px_#ffffff] text-black dark:text-white flex flex-col overflow-hidden">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-none animate-in fade-in duration-150"
+      onClick={onClose}
+    >
+      <div
+        ref={modalRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="bot-match-modal-title"
+        className="bg-white dark:bg-[#0a0a0c] border-4 border-black dark:border-white max-w-md w-full max-h-[90dvh] [max-height:90vh] shadow-[8px_8px_0px_#000000] dark:shadow-[8px_8px_0px_#ffffff] text-black dark:text-white flex flex-col overflow-hidden animate-in slide-in-from-bottom-4 sm:slide-in-from-bottom-0 sm:zoom-in-95 duration-150"
+        onClick={(e) => e.stopPropagation()}
+      >
         
         {/* Sticky Top Header with Title and Close Button */}
-        <div className={`p-3 sm:p-4 border-b-3 border-black dark:border-white flex items-center justify-between shrink-0 ${
-          gameMode === 'crafted' ? 'bg-[#0f172a] text-white' : 'bg-neutral-100 dark:bg-[#141416]'
-        }`}>
+        <div className={`p-3 sm:px-4 sm:py-3 border-b-3 border-black dark:border-white flex items-center justify-between shrink-0 bg-black text-white`}>
           <div className="flex items-center gap-2">
-            <div className={`w-8 h-8 border-2 border-black flex items-center justify-center font-black ${
-              gameMode === 'crafted' ? 'bg-amber-400 text-black' : 'bg-amber-400 text-black'
-            }`}>
+            <div className={`w-8 h-8 border-2 border-white flex items-center justify-center font-black bg-amber-400 text-black`}>
               <Bot className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-sm sm:text-base font-black uppercase tracking-tight flex items-center gap-1.5">
+              <h3 id="bot-match-modal-title" className="text-sm sm:text-base font-black uppercase tracking-tight flex items-center gap-1.5">
                 {gameMode === 'crafted' ? 'Play vs Bot (Crafted Pieces)' : 'Play vs Bot'}
                 <Sparkles className="w-4 h-4 text-amber-500" />
               </h3>
-              <p className={`text-[10px] font-bold uppercase ${
-                gameMode === 'crafted' ? 'text-amber-400' : 'text-neutral-600 dark:text-neutral-400'
-              }`}>
-                {gameMode === 'crafted'
-                  ? 'Communists · Priests · Supreme Rook'
-                  : 'Instant play · Top calculation'}
-              </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 border-2 border-black dark:border-white hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black transition-colors cursor-pointer"
+            className="w-11 h-11 flex items-center justify-center border-2 border-white hover:bg-white hover:text-black transition-colors cursor-pointer focus-visible:ring-4 focus-visible:ring-amber-400 outline-none"
             aria-label="Close"
           >
-            <X className="w-4 h-4" />
+            <X className="w-5 h-5" />
           </button>
         </div>
 

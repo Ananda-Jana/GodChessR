@@ -240,21 +240,28 @@ export const CullingBoard: React.FC<CullingBoardProps> = ({
                   <div className="absolute inset-0 border-2 border-amber-400 rounded-sm z-20 pointer-events-none animate-pulse shadow-[0_0_8px_#f59e0b]" />
                 )}
 
-                {/* Legal Move Indicators */}
+                {/* Legal Move Indicators (Enlarged for high visibility) */}
                 {legalMove && (
                   <div
                     className={`absolute z-30 pointer-events-none flex items-center justify-center ${
                       legalMove.actionType === 'shoot' || legalMove.actionType === 'pierce_shoot'
-                        ? 'w-full h-full border-2 sm:border-3 border-red-500 bg-red-500/25 rounded-full animate-pulse shadow-[0_0_10px_#ef4444]'
+                        ? 'w-full h-full border-3 sm:border-4 border-red-600 bg-red-600/30 rounded-full animate-pulse shadow-[0_0_12px_#ef4444]'
                         : legalMove.actionType === 'teleport'
                         ? 'w-full h-full border-2 border-amber-400 bg-amber-400/25 shadow-[0_0_10px_#f59e0b]'
                         : legalMove.actionType === 'swap'
                         ? 'w-full h-full border-2 border-purple-400 bg-purple-400/25 shadow-[0_0_10px_#a855f7]'
                         : piece
-                        ? 'w-full h-full border-2 sm:border-3 border-amber-400 rounded-full bg-amber-400/25 shadow-[0_0_10px_#f59e0b]'
-                        : 'w-2.5 h-2.5 sm:w-3.5 sm:h-3.5 bg-amber-400 rounded-full shadow-[0_0_8px_#f59e0b]'
+                        ? 'w-full h-full border-3 sm:border-4 border-amber-500 rounded-full bg-amber-500/30 shadow-[0_0_12px_rgba(245,158,11,0.5)]'
+                        : 'w-[38%] h-[38%] bg-amber-400 border-2 border-black/40 rounded-full shadow-[0_0_8px_#f59e0b]'
                     }`}
-                  />
+                  >
+                    {piece && (
+                      <div className="absolute inset-0 border-2 border-white/30 rounded-full" />
+                    )}
+                    {!piece && (
+                      <div className="w-full h-full border border-white/20 rounded-full" />
+                    )}
+                  </div>
                 )}
               </div>
             );

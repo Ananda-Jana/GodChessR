@@ -429,7 +429,9 @@ export const CullingOpeningDojo: React.FC<CullingOpeningDojoProps> = ({ onBackTo
               setActiveMobileDropdown((prev) => (prev === 'lessons' ? 'none' : 'lessons'));
               sounds.playSelect();
             }}
-            className={`h-8 px-2 border text-[11px] font-black uppercase flex items-center gap-1 active:scale-95 transition-transform ${
+            aria-expanded={activeMobileDropdown === 'lessons'}
+            aria-haspopup="true"
+            className={`h-8 px-2 border text-[11px] font-black uppercase flex items-center gap-1 active:scale-95 transition-transform touch-manipulation ${
               activeMobileDropdown === 'lessons'
                 ? 'bg-red-600 text-white border-white'
                 : 'bg-neutral-900 text-red-300 border-red-900'
@@ -437,7 +439,7 @@ export const CullingOpeningDojo: React.FC<CullingOpeningDojoProps> = ({ onBackTo
           >
             <BookOpen className="w-3 h-3 text-red-400" />
             <span className="max-w-[70px] truncate">L{activeLessonIndex + 1}</span>
-            <ChevronDown className="w-3 h-3" />
+            {activeMobileDropdown === 'lessons' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
           </button>
 
           {/* Tools Menu Toggle */}
@@ -446,7 +448,9 @@ export const CullingOpeningDojo: React.FC<CullingOpeningDojoProps> = ({ onBackTo
               setActiveMobileDropdown((prev) => (prev === 'tools' ? 'none' : 'tools'));
               sounds.playSelect();
             }}
-            className={`h-8 px-2 border text-[11px] font-black uppercase flex items-center gap-1 active:scale-95 transition-transform ${
+            aria-expanded={activeMobileDropdown === 'tools'}
+            aria-haspopup="true"
+            className={`h-8 px-2 border text-[11px] font-black uppercase flex items-center gap-1 active:scale-95 transition-transform touch-manipulation ${
               activeMobileDropdown === 'tools'
                 ? 'bg-red-600 text-white border-white'
                 : 'bg-neutral-900 text-neutral-300 border-neutral-800'
@@ -454,7 +458,7 @@ export const CullingOpeningDojo: React.FC<CullingOpeningDojoProps> = ({ onBackTo
           >
             <Layers className="w-3 h-3 text-amber-400" />
             <span>Tools</span>
-            <ChevronDown className="w-3 h-3" />
+            {activeMobileDropdown === 'tools' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
           </button>
 
           {/* Rules Dropdown Toggle */}
@@ -463,14 +467,16 @@ export const CullingOpeningDojo: React.FC<CullingOpeningDojoProps> = ({ onBackTo
               setActiveMobileDropdown((prev) => (prev === 'rules' ? 'none' : 'rules'));
               sounds.playSelect();
             }}
-            className={`h-8 px-2 border text-[11px] font-black uppercase flex items-center gap-1 active:scale-95 transition-transform ${
+            aria-expanded={activeMobileDropdown === 'rules'}
+            aria-haspopup="true"
+            className={`h-8 px-2 border text-[11px] font-black uppercase flex items-center gap-1 active:scale-95 transition-transform touch-manipulation ${
               activeMobileDropdown === 'rules'
                 ? 'bg-red-600 text-white border-white'
                 : 'bg-neutral-900 text-neutral-300 border-neutral-800'
             }`}
           >
             <HelpCircle className="w-3.5 h-3.5 text-neutral-400" />
-            <ChevronDown className="w-3 h-3" />
+            {activeMobileDropdown === 'rules' ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
           </button>
 
           {/* Modernistic Animated Next Lesson Button */}
@@ -480,15 +486,16 @@ export const CullingOpeningDojo: React.FC<CullingOpeningDojoProps> = ({ onBackTo
               setActiveLessonIndex((prev) => (prev + 1) % filteredLessons.length);
               setActiveMobileDropdown('none');
             }}
+            aria-label="Next lesson"
             title={`Jump to Next Lesson (L${((activeLessonIndex + 1) % filteredLessons.length) + 1})`}
-            className="relative h-8 px-2 bg-gradient-to-r from-red-950 via-red-600 to-amber-600 border border-amber-400/90 text-white font-black text-[10px] uppercase flex items-center gap-1 shrink-0 active:scale-90 transition-all duration-300 shadow-[0_0_10px_rgba(245,158,11,0.5)] group overflow-hidden rounded-sm"
+            className="relative h-11 px-2 bg-gradient-to-r from-red-950 via-red-600 to-amber-600 border border-amber-400/90 text-white font-black text-[10px] uppercase flex items-center gap-1 shrink-0 active:scale-90 hover:scale-105 transition-all duration-300 shadow-[0_0_10px_rgba(245,158,11,0.5)] group overflow-hidden rounded-sm"
           >
             {/* Shimmer line transition */}
             <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
             {/* Glowing ring pulse */}
             <span className="absolute -inset-0.5 bg-gradient-to-r from-red-500 to-amber-500 rounded-sm opacity-60 group-hover:opacity-100 blur-[2px] transition duration-300 -z-10 animate-pulse" />
             
-            <SkipForward className="w-3.5 h-3.5 text-amber-200 animate-bounce" style={{ animationDuration: '2.5s' }} />
+            <SkipForward className="w-3.5 h-3.5 text-amber-200 group-hover:translate-x-0.5 transition-transform" />
             <span className="font-mono text-[9px] font-bold tracking-tight text-amber-100">L{((activeLessonIndex + 1) % filteredLessons.length) + 1}</span>
           </button>
         </div>
@@ -503,7 +510,12 @@ export const CullingOpeningDojo: React.FC<CullingOpeningDojoProps> = ({ onBackTo
       {/* MOBILE DROPDOWN OVERLAYS (md:hidden) */}
       {/* ========================================================================= */}
       {activeMobileDropdown !== 'none' && (
-        <div className="md:hidden fixed top-11 inset-x-0 bottom-0 bg-black/85 backdrop-blur-md z-50 flex flex-col p-3 animate-in fade-in">
+        <div 
+          className="md:hidden fixed top-11 inset-x-0 bottom-0 bg-black/85 backdrop-blur-md z-50 flex flex-col p-3 animate-in fade-in"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setActiveMobileDropdown('none');
+          }}
+        >
           {/* Lessons Dropdown */}
           {activeMobileDropdown === 'lessons' && (
             <div className="bg-[#0e0a0e] border-2 border-red-600 p-3 rounded-none shadow-[0_4px_24px_rgba(220,38,38,0.5)] flex flex-col max-h-[80vh] overflow-hidden">
@@ -777,7 +789,7 @@ export const CullingOpeningDojo: React.FC<CullingOpeningDojoProps> = ({ onBackTo
       {/* ========================================================================= */}
       <div className="flex-1 flex flex-col md:flex-row overflow-hidden relative pb-12 md:pb-0">
         {/* DESKTOP LEFT PANEL: Curriculum Navigation (hidden on mobile) */}
-        <aside className="hidden md:flex w-72 lg:w-80 border-r-2 border-red-950 bg-[#0c090c] p-2.5 flex-col shrink-0 overflow-y-auto">
+        <aside className="hidden md:flex w-72 lg:w-80 border-r-4 border-red-950 bg-[#0c090c] p-2.5 flex-col shrink-0 overflow-y-auto">
           {/* Main Curriculum Tabs */}
           <div className="mb-2">
             <span className="text-[9px] font-black uppercase tracking-wider text-red-400 block mb-1">
@@ -1096,15 +1108,17 @@ export const CullingOpeningDojo: React.FC<CullingOpeningDojoProps> = ({ onBackTo
                           </span>
                         )}
                       </div>
-                      <p className="text-[10px] font-medium text-neutral-200 leading-tight truncate">
-                        {showMobileHint && currentStep?.hint
-                          ? `💡 Hint: ${currentStep.hint}`
-                          : isFreePractice
-                          ? 'Free Sandbox mode active. Move any piece.'
-                          : currentStep
-                          ? currentStep.tukunaInstruction
-                          : 'Lesson Complete! Select next lesson.'}
-                      </p>
+                      <div className="max-h-[52px] overflow-y-auto pr-1">
+                        <p className="text-[10px] font-medium text-neutral-200 leading-tight">
+                          {showMobileHint && currentStep?.hint
+                            ? `💡 Hint: ${currentStep.hint}`
+                            : isFreePractice
+                            ? 'Free Sandbox mode active. Move any piece.'
+                            : currentStep
+                            ? currentStep.tukunaInstruction
+                            : 'Lesson Complete! Select next lesson.'}
+                        </p>
+                      </div>
                     </div>
                   </div>
 
@@ -1112,13 +1126,13 @@ export const CullingOpeningDojo: React.FC<CullingOpeningDojoProps> = ({ onBackTo
                   {!isFreePractice && currentStep?.hint && (
                     <button
                       onClick={() => setShowMobileHint(!showMobileHint)}
-                      className={`px-1.5 py-1 text-[9px] font-black uppercase border shrink-0 flex items-center gap-0.5 ${
+                      className={`min-w-[44px] min-h-[44px] px-3 py-1.5 text-[10px] font-black uppercase border shrink-0 flex items-center justify-center gap-1.5 ${
                         showMobileHint
                           ? 'bg-amber-400 text-black border-black font-bold'
                           : 'bg-neutral-900 text-amber-400 border-amber-900/60'
                       }`}
                     >
-                      <Sparkles className="w-2.5 h-2.5" />
+                      <Sparkles className="w-3 h-3" />
                       <span>{showMobileHint ? 'Close' : 'Hint'}</span>
                     </button>
                   )}
@@ -1129,7 +1143,7 @@ export const CullingOpeningDojo: React.FC<CullingOpeningDojoProps> = ({ onBackTo
         </main>
 
         {/* DESKTOP RIGHT PANEL: Sensei Tukuna Commentary (hidden on mobile) */}
-        <aside className="hidden md:flex w-72 lg:w-80 border-l-2 border-red-950 bg-[#0d0a0d] p-3 flex-col justify-between shrink-0 overflow-y-auto">
+        <aside className="hidden md:flex w-72 lg:w-80 border-l-4 border-red-950 bg-[#0d0a0d] p-3 flex-col justify-between shrink-0 overflow-y-auto">
           <div>
             {/* Sensei Tukuna Banner */}
             <div className="bg-gradient-to-r from-red-950 to-neutral-900 border-2 border-red-600 p-2.5 mb-2.5 flex items-center gap-3 shadow-[0_0_12px_rgba(220,38,38,0.2)]">
@@ -1271,14 +1285,14 @@ export const CullingOpeningDojo: React.FC<CullingOpeningDojoProps> = ({ onBackTo
                 }
               }}
               disabled={currentStepIndex === 0}
-              className="px-2.5 py-1.5 bg-neutral-900 hover:bg-neutral-800 disabled:opacity-40 text-neutral-200 border border-neutral-700 text-xs font-black uppercase flex items-center gap-1 cursor-pointer"
+              className="px-2.5 min-h-[44px] bg-neutral-900 hover:bg-neutral-800 disabled:opacity-40 text-neutral-200 border border-neutral-700 text-xs font-black uppercase flex items-center gap-1 cursor-pointer"
             >
               <ArrowLeft className="w-3.5 h-3.5" /> Prev
             </button>
 
             <button
               onClick={handleSkipStep}
-              className="px-2.5 py-1.5 bg-amber-950/80 hover:bg-amber-900 text-amber-300 border border-amber-600 text-xs font-black uppercase flex items-center gap-1 cursor-pointer"
+              className="px-2.5 min-h-[44px] bg-amber-950/80 hover:bg-amber-900 text-amber-300 border border-amber-600 text-xs font-black uppercase flex items-center gap-1 cursor-pointer"
               title="Skip this step if stuck"
             >
               <SkipForward className="w-3.5 h-3.5 text-amber-400" /> Skip
@@ -1292,7 +1306,7 @@ export const CullingOpeningDojo: React.FC<CullingOpeningDojoProps> = ({ onBackTo
                 }
               }}
               disabled={activeLessonIndex >= filteredLessons.length - 1}
-              className="px-2.5 py-1.5 bg-red-600 hover:bg-red-500 disabled:opacity-40 text-white border border-white text-xs font-black uppercase flex items-center gap-1 cursor-pointer"
+              className="px-2.5 min-h-[44px] bg-red-600 hover:bg-red-500 disabled:opacity-40 text-white border border-white text-xs font-black uppercase flex items-center gap-1 cursor-pointer"
             >
               Next Lesson <ArrowRight className="w-3.5 h-3.5" />
             </button>

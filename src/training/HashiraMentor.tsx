@@ -26,6 +26,7 @@ interface HashiraMentorProps {
   trainerId?: TrainerId;
   layout?: 'vertical' | 'horizontal' | 'compact';
   className?: string;
+  flashSuccess?: boolean;
 }
 
 export const HashiraMentor: React.FC<HashiraMentorProps> = ({
@@ -43,6 +44,7 @@ export const HashiraMentor: React.FC<HashiraMentorProps> = ({
   trainerId = 'thukuna',
   layout = 'vertical',
   className = '',
+  flashSuccess = false,
 }) => {
   const [showHintModal, setShowHintModal] = useState(false);
 
@@ -83,7 +85,7 @@ export const HashiraMentor: React.FC<HashiraMentorProps> = ({
   // When activeHint is active, a glowing blue rectangular popup covers the message until the next move.
   if (layout === 'compact') {
     return (
-      <div className={`bg-[#0c0c0e] border-2 ${isGatoru ? 'border-sky-400/90' : 'border-amber-400/90'} shadow-[2px_2px_0px_#000000] p-2 flex items-center gap-2.5 w-full h-[116px] min-h-[116px] max-h-[120px] shrink-0 overflow-hidden ${className}`}>
+      <div className={`bg-[#0c0c0e] border-2 ${flashSuccess ? 'border-amber-400 animate-[pulse_1s_infinite]' : isGatoru ? 'border-sky-400/90' : 'border-amber-400/90'} shadow-[2px_2px_0px_#000000] p-2 flex items-center gap-2.5 w-full h-[116px] min-h-[116px] max-h-[120px] shrink-0 overflow-hidden transition-all duration-300 ${className}`}>
         {/* Compact Avatar - Strictly fixed small size container */}
         <div className="relative shrink-0 flex items-center">
           <div className={`w-11 h-11 bg-[#18181b] border-2 ${isGatoru ? 'border-sky-400' : 'border-amber-400'} shadow-[1px_1px_0px_#000] overflow-hidden flex items-center justify-center relative shrink-0`}>
@@ -99,7 +101,7 @@ export const HashiraMentor: React.FC<HashiraMentorProps> = ({
         </div>
 
         {/* Dialogue Bubble (Expanded height to fit full message cleanly) */}
-        <div className="flex-1 min-w-0 h-full flex flex-col justify-between bg-neutral-900 border border-neutral-700 px-2.5 py-1.5 relative overflow-hidden">
+        <div className={`flex-1 min-w-0 h-full flex flex-col justify-between ${flashSuccess ? 'bg-amber-950/20 border-amber-500/50' : 'bg-neutral-900 border-neutral-700'} px-2.5 py-1.5 relative overflow-hidden transition-colors duration-300`}>
           <div className="flex items-center justify-between gap-1 mb-1 shrink-0">
             <span className={`font-black text-[10px] uppercase truncate ${isGatoru ? 'text-sky-400' : 'text-amber-400'}`}>
               {trainer.name.toUpperCase()} : {trainer.title.toUpperCase()} · {rankTitle}
@@ -110,7 +112,7 @@ export const HashiraMentor: React.FC<HashiraMentorProps> = ({
           </div>
 
           <div className="flex-1 min-h-0 overflow-y-auto pr-0.5 flex items-center">
-            <p className="text-[11px] sm:text-xs font-bold text-neutral-100 leading-snug select-text font-sans">
+            <p className={`text-[11px] sm:text-xs font-bold ${flashSuccess ? 'text-amber-100' : 'text-neutral-100'} leading-snug select-text font-sans`}>
               &ldquo;{message}&rdquo;
             </p>
           </div>

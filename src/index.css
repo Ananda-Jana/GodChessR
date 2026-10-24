@@ -81,6 +81,12 @@ html.dark {
   background-color: var(--bg-card);
   border: 3px solid var(--border);
   box-shadow: 5px 5px 0px var(--shadow);
+  transition: transform 0.075s, box-shadow 0.075s;
+}
+
+.brutal-card:active:not(:disabled) {
+  transform: translate(2px, 2px);
+  box-shadow: 2px 2px 0px var(--shadow);
 }
 
 .brutal-btn-primary {
@@ -90,8 +96,9 @@ html.dark {
   box-shadow: 4px 4px 0px var(--shadow);
   font-weight: 800;
   text-transform: uppercase;
-  transition: transform 0.04s, box-shadow 0.04s;
+  transition: transform 0.075s, box-shadow 0.075s;
   cursor: pointer;
+  outline: none;
 }
 
 .brutal-btn-primary:hover:not(:disabled) {
@@ -111,13 +118,111 @@ html.dark {
   box-shadow: 4px 4px 0px var(--shadow);
   font-weight: 800;
   text-transform: uppercase;
+  transition: transform 0.075s, box-shadow 0.075s;
   cursor: pointer;
+  outline: none;
 }
 
 .brutal-btn-secondary:hover:not(:disabled) {
   background-color: var(--text);
   color: var(--bg);
   box-shadow: 6px 6px 0px var(--shadow);
+}
+
+.brutal-btn-secondary:active:not(:disabled) {
+  transform: translate(2px, 2px);
+  box-shadow: 2px 2px 0px var(--shadow);
+}
+
+.brutal-btn-danger {
+  background-color: #ef4444;
+  color: #ffffff;
+  border: 3px solid var(--border);
+  box-shadow: 4px 4px 0px var(--shadow);
+  font-weight: 800;
+  text-transform: uppercase;
+  transition: transform 0.075s, box-shadow 0.075s;
+  cursor: pointer;
+  outline: none;
+}
+
+.brutal-btn-danger:hover:not(:disabled) {
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0px var(--shadow);
+}
+
+.brutal-btn-danger:active:not(:disabled) {
+  transform: translate(2px, 2px);
+  box-shadow: 2px 2px 0px var(--shadow);
+}
+
+.brutal-btn-ghost {
+  background-color: transparent;
+  color: var(--text);
+  border: 3px solid var(--border);
+  font-weight: 800;
+  text-transform: uppercase;
+  transition: transform 0.075s, box-shadow 0.075s;
+  cursor: pointer;
+  outline: none;
+}
+
+.brutal-btn-ghost:hover:not(:disabled) {
+  background-color: rgba(255, 255, 255, 0.1);
+  box-shadow: 4px 4px 0px var(--shadow);
+}
+
+.brutal-btn-ghost:active:not(:disabled) {
+  transform: translate(2px, 2px);
+  box-shadow: 2px 2px 0px var(--shadow);
+}
+
+.brutal-input {
+  background-color: var(--bg-panel);
+  color: var(--text);
+  border: 3px solid var(--border);
+  padding: 0.5rem 1rem;
+  font-weight: 600;
+  outline: none;
+  transition: transform 0.075s, box-shadow 0.075s;
+}
+
+.brutal-input:focus {
+  box-shadow: 4px 4px 0px var(--accent);
+  transform: translate(-2px, -2px);
+}
+
+.brutal-input:active {
+  transform: translate(2px, 2px);
+  box-shadow: 2px 2px 0px var(--accent);
+}
+
+/* Global Focus & Accessibility */
+:focus-visible {
+  outline: 4px solid var(--accent) !important;
+  outline-offset: 2px !important;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* Reduced Motion Support */
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 /* Custom Scrollbars */

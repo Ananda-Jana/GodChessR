@@ -60,6 +60,7 @@ export const ChessBoard: React.FC<ChessBoardProps> = ({
 }) => {
   const { theme } = useTheme();
   const [selectedPos, setSelectedPos] = useState<Position | null>(null);
+  const [focusedPos, setFocusedPos] = useState<Position>({ x: 0, y: 0 });
 
   // Derive selected piece and its display name from current selection
   const selectedPiece = selectedPos ? board[selectedPos.y]?.[selectedPos.x] : null;
@@ -71,6 +72,15 @@ export const ChessBoard: React.FC<ChessBoardProps> = ({
       setSelectedPos(null);
     }
   }, [turn, myColor, isInteractive]);
+
+  // Sync focused position with selected position or last move
+  useEffect(() => {
+    if (selectedPos) {
+      setFocusedPos(selectedPos);
+    } else if (lastMove) {
+      setFocusedPos(lastMove.to);
+    }
+  }, [selectedPos, lastMove]);
 
   // Compute eligible pieces for current roll, normal chess (diceActive=false), or check escape
   const isDiceActive = diceActive ?? true;
@@ -101,6 +111,7 @@ export const ChessBoard: React.FC<ChessBoardProps> = ({
     : [];
 
   const handleSquareClick = (x: number, y: number) => {
+    setFocusedPos({ x, y });
     if (craftingPlacementMode) {
       const isValid = craftCandidateSquares.some((p) => p.x === x && p.y === y);
       if (isValid && onSelectCraftSquare) {
@@ -131,6 +142,40 @@ export const ChessBoard: React.FC<ChessBoardProps> = ({
       }
     } else {
       setSelectedPos(null);
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent, x: number, y: number) => {
+    let nextX = x;
+    let nextY = y;
+
+    switch (e.key) {
+      case 'ArrowUp':
+        nextY = flipped ? Math.min(boardHeight - 1, y + 1) : Math.max(0, y - 1);
+        break;
+      case 'ArrowDown':
+        nextY = flipped ? Math.max(0, y - 1) : Math.min(boardHeight - 1, y + 1);
+        break;
+      case 'ArrowLeft':
+        nextX = flipped ? Math.min(boardWidth - 1, x + 1) : Math.max(0, x - 1);
+        break;
+      case 'ArrowRight':
+        nextX = flipped ? Math.max(0, x - 1) : Math.min(boardWidth - 1, x + 1);
+        break;
+      case 'Enter':
+      case ' ':
+        e.preventDefault();
+        handleSquareClick(x, y);
+        return;
+      default:
+        return;
+    }
+
+    if (nextX !== x || nextY !== y) {
+      e.preventDefault();
+      setFocusedPos({ x: nextX, y: nextY });
+      const nextBtn = document.querySelector(`[data-pos="${nextX},${nextY}"]`) as HTMLButtonElement;
+      nextBtn?.focus();
     }
   };
 
@@ -227,13 +272,18 @@ export const ChessBoard: React.FC<ChessBoardProps> = ({
                 ? isLight ? 'text-slate-400' : 'text-slate-500'
                 : isLight ? 'text-slate-400' : 'text-slate-500';
 
+              const isFocused = focusedPos.x === x && focusedPos.y === y;
+
               return (
                 <button
                   key={`${x}-${y}`}
+                  data-pos={`${x},${y}`}
                   onClick={() => handleSquareClick(x, y)}
+                  onKeyDown={(e) => handleKeyDown(e, x, y)}
+                  tabIndex={isFocused ? 0 : -1}
                   className={`relative flex items-center justify-center p-0.5 sm:p-1 ${
                     isCraftAttacked ? 'cursor-not-allowed' : 'cursor-pointer'
-                  } ${squareBg} focus:outline-none`}
+                  } ${squareBg} focus:outline-none focus-visible:ring-4 focus-visible:ring-amber-500 focus-visible:z-50`}
                   title={
                     isCheckmateGrid
                       ? 'Checkmate grid'
@@ -290,14 +340,18 @@ export const ChessBoard: React.FC<ChessBoardProps> = ({
                     </div>
                   )}
 
-                  {/* Soft round dot legal move destination indicator */}
+                  {/* Enlarged dot legal move destination indicator (40-45% of square) */}
                   {showMoveSuggestions && isTargetMove && !isCaptureTarget && (
-                    <div className="absolute w-3 h-3 sm:w-3.5 sm:h-3.5 bg-amber-400/90 rounded-full soft-move-dot shadow-sm pointer-events-none" />
+                    <div className="absolute w-[42%] h-[42%] bg-amber-400 border-2 border-black/40 rounded-full soft-move-dot shadow-sm pointer-events-none flex items-center justify-center">
+                      <div className="w-full h-full border border-white/30 rounded-full" />
+                    </div>
                   )}
 
-                  {/* Soft circular capture target indicator */}
+                  {/* High-contrast ring capture target indicator (Shape differentiation) */}
                   {showMoveSuggestions && isCaptureTarget && (
-                    <div className="absolute inset-1 rounded-full border-2 border-red-500/80 bg-red-500/20 soft-move-dot pointer-events-none" />
+                    <div className="absolute inset-2 rounded-full border-4 border-red-500 bg-red-500/20 shadow-[0_0_8px_rgba(239,68,68,0.4)] pointer-events-none flex items-center justify-center">
+                      <div className="absolute inset-0 border-2 border-black/20 rounded-full" />
+                    </div>
                   )}
                 </button>
               );

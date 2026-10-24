@@ -1604,3 +1604,107 @@ The implementation is integrated into the existing application and is designed t
 ---
 
 *(MugenChessX is an open-source intellectual property created by ANANDA JANA. Designed for strategy enthusiasts who demand both deep tactical rigor and electrifying volatility.)*
+
+## UI Update 1/4: Foundation (2026-10-23)
+
+### Files Changed:
+- `src/index.css`: Added foundational brutalist utilities, global focus rings, and reduced motion support.
+- `src/App.tsx`: Updated the top-level loading state to a brutalist spinner box.
+- `src/components/LiveAnnouncer.tsx`: Created a reusable ARIA live region component (currently unused).
+- `src/components/MatchView.tsx`: Improved header button touch targets (44px) and removed inconsistent rounded corners.
+- `src/training/CullingOpeningDojo.tsx`: Improved the Hint button touch target (44px).
+- `src/training/TheoryLibraryView.tsx`: Improved category pill touch targets (44px).
+
+### Items Implemented:
+- **A. Brutalist Utilities**: Added `.brutal-btn-danger`, `.brutal-btn-ghost`, and `.brutal-input`. Enhanced `.brutal-btn-primary`, `.brutal-btn-secondary`, and `.brutal-card` with 75ms active pressed states and 4px amber focus rings.
+- **B. Global Focus**: Applied a global `:focus-visible` outline for all interactive elements to ensure high-visibility keyboard navigation without shifting layout.
+- **C. Reduced Motion**: Implemented `@media (prefers-reduced-motion: reduce)` to suppress non-essential animations (pulse, spin, transitions) while maintaining functional state changes.
+- **D. Accessibility Utilities**: Added `.sr-only` utility and the `<LiveAnnouncer>` pattern for future screen-reader specific feedback.
+- **E. Loading State**: Replaced the previous pulse-based "Connecting to Dice Chess..." screen with a brutalist spinner box (white border, amber-400 fill, spin animation) and appropriate `role="status"`.
+- **F. Border Radius Audit**: Confirmed the global `border-radius: 0px !important` rule is active. Fixed an inconsistency in `MatchView.tsx` where a warning banner used `rounded-xl`.
+- **G. Touch Targets**: Audited and fixed header buttons (Exit, Theme, Rules, Resign) in `MatchView`, the Hint toggle in `CullingOpeningDojo`, and Category filters in `TheoryLibraryView`. All now meet the 44px minimum touch target requirement via a combination of `min-size` and padding.
+
+### Inconsistencies Found:
+- `CullingOpeningDojo.tsx` uses `rounded-sm` for some special character-themed overlays (Lesson Declaration, Sensei Commentary). These were left as-is as they may be part of a specific character aesthetic, though they deviate from the global sharp-corner rule.
+- `DiceRoller.tsx` uses `rounded-full` for dice dots, which is an intentional exception for geometric primitives.
+
+### Safety Metrics:
+- **TSC / Build / Tests**: All passed successfully (`npx tsc --noEmit`, `npm run build`, `npm run test:training`).
+- **Home Screen Integrity**: Verified zero changes to `Dashboard.tsx` and related excluded files.
+- **Bundle Size Delta**: Near zero (purely CSS and minor markup additions).
+- **Verdict**: This update stayed strictly lightweight and did not touch any game logic or training state machines.
+
+## UI Update 2/4: Modals and Overlays (2026-10-23)
+
+### Files Changed:
+- `src/utils/useModalFocus.ts`: Created a new custom hook (38 lines) for focus trapping, scroll locking, and Escape key handling.
+- `src/components/RulesModal.tsx`: Added focus trap, backdrop dismissal, standardized header, and scale-in motion.
+- `src/components/CullingRulesModal.tsx`: Added focus trap, backdrop dismissal, and slide-up motion.
+- `src/components/CraftingModal.tsx`: Added focus trap, `max-h-[90dvh]` constraint, sticky footer, and slide-up motion.
+- `src/components/ExpansionModal.tsx`: Added focus trap, `max-h-[90dvh]` constraint, and slide-up motion.
+- `src/components/BotMatchModal.tsx`: Added focus trap, backdrop dismissal, standardized header, and scale-in motion.
+- `src/components/TrophyRoomModal.tsx`: Added focus trap, backdrop dismissal, standardized header, and scale-in motion.
+- `src/components/PopupAd.tsx`: Added focus trap, backdrop dismissal, and scale-in motion.
+- `src/components/ChallengeModal.tsx`: Transformed from a side-card into a compact top banner. Added timer logic, progress bar, and `aria-live` announcement.
+- `src/components/AuthModal.tsx`: Added ARIA attributes and improved tab button heights (h-11) for better touch targets.
+- `src/components/MatchView.tsx`: Enhanced the inline Resign confirmation overlay with ARIA attributes, focus trap, and motion.
+- `src/components/CullingTheoryView.tsx`: Standardized the header back button to 44px.
+
+### Backdrop-Dismiss Decisions:
+- **YES (Dismissible)**: `RulesModal`, `CullingRulesModal`, `BotMatchModal`, `TrophyRoomModal`, `PopupAd`. These are informational or non-destructive; closing them via backdrop or Escape is a convenient, safe pattern.
+- **NO (Non-dismissible)**: `CraftingModal`, `ExpansionModal`, `AuthModal`, `MatchView` (Resign). These represent destructive actions (canceling a one-time perk), mandatory setup flows, or critical match state confirmations where accidental closure must be prevented.
+
+### Items Skipped:
+- `PrinceRulesCard`: Already implemented as an inline informational card within `MatchView`; no modal behavior or overlay adjustments required.
+
+### Safety Metrics:
+- **TSC / Build / Tests**: All checks passed successfully (`npx tsc --noEmit`, `npm run build`, `npm run test:training`).
+- **Bundle Size Delta**: ~1KB increase (due to `useModalFocus` hook and additional ARIA/Tailwind classes).
+- **Verdict**: The update remained strictly lightweight, using only native ARIA and Tailwind utilities for motion. No game logic or excluded dashboard components were modified.
+
+## Development Log: UI/UX & Accessibility Audit (October 2026)
+
+### Phase 1/4: Foundation & Brutalist Styles (Completed)
+- Added global `.brutal-btn-*`, `.brutal-card`, and `.brutal-input` utilities in `index.css`.
+- Implemented high-contrast `focus-visible` rings and accessibility-first `:focus-visible` outlines.
+- Added `prefers-reduced-motion` support to global transitions.
+- Integrated `<LiveAnnouncer />` for persistent ARIA-live messaging.
+
+### Phase 2/4: Accessible & Thumb-Friendly Modals (Completed)
+- Standardized modal headers and close buttons (minimum 44px touch targets).
+- Implemented `useModalFocus` hook for robust focus trapping and Restoration.
+- Added Escape key and backdrop dismissal for informational modals.
+- Optimized mobile overflow with max-height constraints and sticky action footers.
+
+### Phase 3/4: In-Game Readability & Interaction (Completed)
+- **Board Keyboard Navigation**: Implemented roving tabindex and arrow-key navigation in `ChessBoard.tsx` and `CullingBoard.tsx`.
+- **High-Contrast Indicators**: Enlarged legal move dots (42% of square) and introduced shape differentiation (rings) for capture targets.
+- **ARIA Announcements**: Integrated live turn, check, and game-result announcements across all match modes.
+- **HUD Optimization**: Added material difference badges and compressed mobile turn indicators.
+- **Dice Enhancement**: Added piece-type text labels and 3D-style roll animations (respecting reduced motion).
+- **Tactical Feedback**: Implemented a screen-shake effect on piece captures (standard modes).
+- **Mobile Real-Estate**: Made the `PredictorPanel` collapsible on mobile to prioritize board visibility.
+
+## UI Update: Trophy Room Mobile (2026-10-23)
+
+### Problem List & Audit
+1.  **Nested Scroll Traps**: Hardcoded `max-h-[60vh]` on the grid container created double scrollbars on small screens, making navigation frustrating.
+2.  **Filter Clutter**: The filter bar was too dense, wrapping into multiple rows on 320px screens and consuming primary viewport real estate.
+3.  **Collection Purpose**: The view only showed earned badges, making it feel like a session log rather than a collection goal-post. There was no way to see what was still locked.
+4.  **Reachability**: The close button was in the far top-right corner, difficult to reach on modern tall aspect-ratio phones.
+5.  **Brutalist Inconsistency**: Some borders and shadows didn't align with the "thick white border" modern brutalist theme established in other areas.
+6.  **Responsive Stacking**: The 1:1 preview pushed the collection grid entirely off-screen on mobile, requiring excessive scrolling.
+
+### Improvements & Fixes
+- **Full-Height Sheet Architecture**: The modal now occupies `100dvh` on mobile with a fixed top app bar for clear navigation and "one-thumb" reachability for close/reset actions.
+- **Unified Scroll Experience**: Body is now the single scroll container with `overscroll-behavior: contain`, eliminating nested traps.
+- **Collection Progress System**: Integrated `CARD_DEFINITIONS` to show the full potential collection. Locked trophies are displayed with grayscale icons, "SEAL LOCKED" overlays, and cross-hatch textures to encourage exploration.
+- **Horizontal Category Tabs**: Replaced wrapping chips with a horizontally scrollable tab list for Realms (Game Modes), following mobile design patterns for high-density navigation.
+- **Visual Feedback**: Added a stat summary in the header ("12 / 40 UNLOCKED") and a progress percentage to provide immediate context of collection status.
+- **Touch Target Hardening**: Ensured all interactive elements (tabs, filters, cards, and buttons) maintain at least 44px targets with clear active/pressed states.
+- **Accessibility**: Added `role="tablist"`, `aria-selected`, and descriptive `aria-label` tags to all icon-only buttons. Focus is correctly trapped and returned using established hooks.
+
+### Verdict
+The update stays lightweight by using only Tailwind utilities and standard React patterns. No new libraries were added. Zero game logic or data persistence rules were modified; the changes are strictly presentational.
+
+**Logic Touched**: No.

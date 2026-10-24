@@ -157,10 +157,10 @@ export const DiceRoller: React.FC<DiceRollerProps> = ({
       </div>
 
       <div className="flex items-center gap-4 dark:bg-[#141416] bg-neutral-100 p-3 border-2 dark:border-white border-black">
-        {/* Flat Brutalist dice face */}
+        {/* Flat Brutalist dice face with 3D-style roll */}
         <div
-          className={`w-12 h-12 bg-white border-3 border-black flex items-center justify-center shrink-0 shadow-[2px_2px_0px_#000] transition-transform duration-200 ${
-            isRolling ? 'rotate-90 scale-105' : 'rotate-0 scale-100'
+          className={`w-12 h-12 bg-white border-3 border-black flex items-center justify-center shrink-0 shadow-[2px_2px_0px_#000] transition-transform duration-300 motion-reduce:transition-none ${
+            isRolling ? 'rotate-180 scale-110 -translate-y-1 shadow-[4px_4px_0px_#000]' : 'rotate-0 scale-100 translate-y-0'
           }`}
         >
           {renderDots(currentVal)}
@@ -169,11 +169,14 @@ export const DiceRoller: React.FC<DiceRollerProps> = ({
         <div className="flex flex-col flex-1 min-w-0">
           {hasRolled && dice ? (
             <>
-              <div className="flex items-baseline gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <span className="text-xl font-black font-mono dark:text-white text-black tabular-nums">
-                  ROLLED {dice.rolledValue}
+                  {dice.rolledValue}
                 </span>
-                <span className="text-xs bg-amber-400 text-black px-1 border border-black font-black uppercase">
+                <span className="text-[10px] bg-black text-white dark:bg-white dark:text-black px-1.5 py-0.5 font-black uppercase border border-black dark:border-white">
+                  {dice.category === 'inexpensive' ? 'KNIGHT/BISHOP/PAWN' : 'ROOK/QUEEN/KING/PRINCE/PAWN'}
+                </span>
+                <span className="text-[10px] bg-amber-400 text-black px-1.5 py-0.5 border border-black font-black uppercase">
                   {dice.category === 'inexpensive' ? 'Inexpensive' : 'Expensive'}
                 </span>
               </div>

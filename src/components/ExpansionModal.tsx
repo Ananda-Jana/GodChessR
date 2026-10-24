@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { ExpansionSide, PieceColor } from '../types/game';
 import { useTheme } from '../context/ThemeContext';
 import { Maximize2, ArrowUp, ArrowDown, ArrowLeft, ArrowRight, Clock } from 'lucide-react';
+import { useModalFocus } from '../utils/useModalFocus';
 
 interface ExpansionModalProps {
   playerColor: PieceColor;
@@ -20,6 +21,9 @@ export const ExpansionModal: React.FC<ExpansionModalProps> = ({
 }) => {
   const { theme } = useTheme();
   const isThemeLight = theme === 'light';
+  
+  // Mandatory choice, no backdrop/escape dismiss
+  const modalRef = useModalFocus(true, () => {}, false);
 
   const [timeLeft, setTimeLeft] = useState<number>(() =>
     Math.max(0, Math.ceil((expiresAt - Date.now()) / 1000))
@@ -76,16 +80,20 @@ export const ExpansionModal: React.FC<ExpansionModalProps> = ({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-150">
       <div
-        className="w-full max-w-lg p-5 sm:p-6 border-4 transition-colors bg-black border-white shadow-[8px_8px_0px_#ffffff] text-white"
+        ref={modalRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="expansion-modal-title"
+        className="w-full max-w-lg border-4 transition-colors bg-black border-white shadow-[8px_8px_0px_#ffffff] text-white max-h-[90dvh] flex flex-col animate-in slide-in-from-bottom-4 sm:slide-in-from-bottom-0 sm:zoom-in-95 duration-150"
       >
-        {/* Header with Title and 15s Timer */}
-        <div className="flex items-center justify-between gap-3 border-b-2 border-current pb-3 mb-4">
+        {/* Header */}
+        <div className="flex items-center justify-between gap-3 border-b-2 border-white p-4 sm:p-6 shrink-0 bg-black">
           <div className="flex items-center gap-2.5">
             <div className="p-1.5 bg-amber-500 border border-black text-black">
               <Maximize2 className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-lg sm:text-xl font-black uppercase tracking-wider">
+              <h2 id="expansion-modal-title" className="text-lg sm:text-xl font-black uppercase tracking-wider">
                 Board Expansion
               </h2>
               <p className="text-xs text-amber-500 font-bold uppercase tracking-wider">
@@ -101,44 +109,49 @@ export const ExpansionModal: React.FC<ExpansionModalProps> = ({
           </div>
         </div>
 
-        <p className="text-xs sm:text-sm font-semibold mb-4 leading-relaxed opacity-90">
-          You lost your 7th piece! Choose any side to permanently expand the battlefield by one row or column. Clocks are paused.
-        </p>
+        <div className="flex-1 overflow-y-auto p-5 sm:p-6">
+          <p className="text-xs sm:text-sm font-semibold mb-4 leading-relaxed opacity-90">
+            You lost your 7th piece! Choose any side to permanently expand the battlefield by one row or column. Clocks are paused.
+          </p>
 
-        {/* 4 Choices */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
-          {options.map((opt) => (
-            <button
-              key={opt.side}
-              onClick={() => onExpand(opt.side)}
-              className={`flex flex-col text-left p-3 border-2 transition-all cursor-pointer group hover:scale-[1.02] active:scale-[0.98] ${
-                opt.isDefault
-                  ? 'border-amber-400 bg-amber-400/10 hover:bg-amber-400/20'
-                  : isThemeLight
-                  ? 'border-black hover:bg-neutral-100'
-                  : 'border-white hover:bg-zinc-900'
-              }`}
-            >
-              <div className="flex items-center justify-between w-full mb-1">
-                <span className="font-black text-sm uppercase flex items-center gap-1.5">
-                  <span className="text-amber-500">{opt.icon}</span>
-                  {opt.label}
-                </span>
-                {opt.isDefault && (
-                  <span className="text-[10px] font-black uppercase px-1.5 py-0.5 bg-amber-500 text-black">
-                    Auto-Pick
+          {/* 4 Choices */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+            {options.map((opt) => (
+              <button
+                key={opt.side}
+                onClick={() => onExpand(opt.side)}
+                className={`flex flex-col text-left p-3 border-2 transition-all cursor-pointer group hover:scale-[1.02] active:scale-[0.98] focus-visible:ring-4 focus-visible:ring-amber-400 outline-none ${
+                  opt.isDefault
+                    ? 'border-amber-400 bg-amber-400/10 hover:bg-amber-400/20'
+                    : isThemeLight
+                    ? 'border-black hover:bg-neutral-100'
+                    : 'border-white hover:bg-zinc-900'
+                }`}
+              >
+                <div className="flex items-center justify-between w-full mb-1">
+                  <span className="font-black text-sm uppercase flex items-center gap-1.5">
+                    <span className="text-amber-500">{opt.icon}</span>
+                    {opt.label}
                   </span>
-                )}
-              </div>
-              <span className="text-xs opacity-75 font-mono leading-tight">
-                {opt.desc}
-              </span>
-            </button>
-          ))}
+                  {opt.isDefault && (
+                    <span className="text-[10px] font-black uppercase px-1.5 py-0.5 bg-amber-500 text-black">
+                      Auto-Pick
+                    </span>
+                  )}
+                </div>
+                <span className="text-xs opacity-75 font-mono leading-tight">
+                  {opt.desc}
+                </span>
+              </button>
+            ))}
+          </div>
         </div>
 
-        <div className="text-[11px] font-mono text-center opacity-60">
-          Clocks resume immediately upon selection. Auto-picks in {timeLeft}s.
+        {/* Footer */}
+        <div className="p-4 border-t-2 border-white bg-black shrink-0">
+          <div className="text-[11px] font-mono text-center opacity-60">
+            Clocks resume immediately upon selection. Auto-picks in {timeLeft}s.
+          </div>
         </div>
       </div>
     </div>

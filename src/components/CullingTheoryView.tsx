@@ -557,15 +557,14 @@ export const CullingTheoryView: React.FC<CullingTheoryViewProps> = ({ onBack }) 
 
   return (
     <div className="min-h-screen w-full bg-white dark:bg-[#0a0e14] text-black dark:text-white flex flex-col font-sans select-text touch-pan-y overflow-y-auto">
-      {/* Top Header Bar */}
-      <header className="px-4 sm:px-6 py-3 border-b-3 border-black dark:border-white bg-white dark:bg-[#0f172a] sticky top-0 z-40 flex items-center justify-between">
+      <header className="px-4 sm:px-6 py-3 border-b-3 border-black dark:border-white bg-black text-white sticky top-0 z-40 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <button
             onClick={onBack}
-            className="flex items-center gap-2 px-3 py-1.5 bg-white dark:bg-[#1e293b] hover:bg-neutral-100 dark:hover:bg-slate-700 border-2 border-black dark:border-white shadow-[2px_2px_0px_#000] dark:shadow-[2px_2px_0px_#fff] text-xs font-black uppercase cursor-pointer active:translate-x-0.5 active:translate-y-0.5"
+            className="w-11 h-11 flex items-center justify-center bg-white dark:bg-[#1e293b] hover:bg-neutral-100 dark:hover:bg-slate-700 border-2 border-black dark:border-white shadow-[2px_2px_0px_#fff] text-xs font-black uppercase cursor-pointer focus-visible:ring-4 focus-visible:ring-amber-400 outline-none"
+            aria-label="Back to Lobby"
           >
-            <ArrowLeft className="w-4 h-4" />
-            <span>Back to Lobby</span>
+            <ArrowLeft className="w-5 h-5" />
           </button>
 
           <div className="flex items-center gap-2">

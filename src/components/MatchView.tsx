@@ -46,6 +46,7 @@ import { extractStandardMetrics, observeStandardMove } from '../predictor/adapte
 import { downloadCardAsPng } from '../predictor/canvasCardRenderer';
 import { TrophyRoomModal } from './TrophyRoomModal';
 import type { AchievementCard } from '../predictor/types';
+import { LiveAnnouncer } from './LiveAnnouncer';
 
 const ExpansionModal = React.lazy(() => import('./ExpansionModal'));
 const CraftingModal = React.lazy(() => import('./CraftingModal'));
@@ -114,6 +115,7 @@ export const MatchView: React.FC<MatchViewProps> = ({
   const feedContainersRef = useRef<(HTMLDivElement | null)[]>([]);
   const lastProcessedMoveIndexRef = useRef<number>(0);
   const currentMatchIdRef = useRef<string>(activeMatch?.id || '');
+  const moveHistoryContainerRef = useRef<HTMLDivElement | null>(0 as any);
 
   const registerFeedContainer = useCallback((el: HTMLDivElement | null) => {
     if (el) {
@@ -132,6 +134,49 @@ export const MatchView: React.FC<MatchViewProps> = ({
   const opponent = isWhite ? activeMatch.blackPlayer : activeMatch.whitePlayer;
   const isMyTurn = activeMatch.turn === myColor;
   const isGameOver = activeMatch.status === 'completed';
+
+  const [shouldShake, setShouldShake] = useState(false);
+  const totalCapturesCount = (activeMatch.capturedByWhite?.length || 0) + (activeMatch.capturedByBlack?.length || 0);
+  const prevCapturesCountRef = useRef(totalCapturesCount);
+
+  // Trigger board shake on capture (standard only, respects reduced motion via CSS)
+  useEffect(() => {
+    // Note: MatchView is only used for standard/crafted modes. Culling has its own view.
+    if (totalCapturesCount > prevCapturesCountRef.current) {
+      setShouldShake(true);
+      const timer = setTimeout(() => setShouldShake(false), 500);
+      prevCapturesCountRef.current = totalCapturesCount;
+      return () => clearTimeout(timer);
+    }
+    prevCapturesCountRef.current = totalCapturesCount;
+  }, [totalCapturesCount]);
+
+  // ARIA Live Announcements
+  const [announcement, setAnnouncement] = useState('');
+  const lastTurnRef = useRef(activeMatch.turn);
+  const lastInCheckRef = useRef(activeMatch.inCheck);
+
+  useEffect(() => {
+    if (isGameOver && activeMatch.result) {
+      const winner = activeMatch.result.winner;
+      const reason = activeMatch.result.reason.replace(/_/g, ' ');
+      setAnnouncement(`Game over. ${winner === 'draw' ? 'It is a draw' : `${winner} wins`} by ${reason}.`);
+      return;
+    }
+
+    if (activeMatch.turn !== lastTurnRef.current) {
+      const turnLabel = activeMatch.turn === 'white' ? "White's turn" : "Black's turn";
+      setAnnouncement(turnLabel);
+      lastTurnRef.current = activeMatch.turn;
+    }
+
+    if (activeMatch.inCheck && activeMatch.inCheck !== lastInCheckRef.current) {
+      setAnnouncement(prev => `Check! ${prev}`);
+      lastInCheckRef.current = activeMatch.inCheck;
+    } else if (!activeMatch.inCheck) {
+      lastInCheckRef.current = null;
+    }
+  }, [activeMatch.turn, activeMatch.inCheck, isGameOver, activeMatch.result]);
 
   const isCheckmate = activeMatch.result?.reason === 'checkmate';
   const defeatedColor =
@@ -253,6 +298,13 @@ export const MatchView: React.FC<MatchViewProps> = ({
     }
   }, [activeMatch?.id, activeMatch?.moveHistory, myColor, isBotMatch]);
 
+  // Auto-scroll the main history log
+  useEffect(() => {
+    if (moveHistoryContainerRef.current) {
+      moveHistoryContainerRef.current.scrollTop = moveHistoryContainerRef.current.scrollHeight;
+    }
+  }, [activeMatch?.moveHistory.length]);
+
   // Instant snap-to-bottom auto-scroll on new messages
   // Pre-fill last 3 slots with placeholders when fewer than 3 moves have occurred
   const renderedMoveItems = useMemo(() => {
@@ -296,7 +348,7 @@ export const MatchView: React.FC<MatchViewProps> = ({
     >
       <div className="flex items-center justify-between pb-1.5 border-b border-black/15 dark:border-white/15">
         <h4 className="text-[10px] font-black uppercase tracking-wider text-neutral-800 dark:text-neutral-200 font-mono flex items-center gap-1.5">
-          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse border border-black inline-block" />
+          <span className="w-2 h-2 bg-emerald-500 animate-pulse border border-black inline-block" />
           Live Move Log
           {isBotMatch && (
             <span className="text-[9px] px-1 py-0.5 bg-amber-400 text-black font-black uppercase border border-black leading-none">
@@ -470,6 +522,9 @@ export const MatchView: React.FC<MatchViewProps> = ({
   const humanPieceLead = myPiecesCount - opponentPiecesCount;
   const hasBotPieceAdvantage = isBotMatch ? humanPieceLead >= 3 : hasMajorPieceAdvantage;
 
+  const whiteMaterialDiff = whitePiecesCount - blackPiecesCount;
+  const blackMaterialDiff = blackPiecesCount - whitePiecesCount;
+
   return (
     <div className="min-h-screen bg-white dark:bg-black text-black dark:text-white flex flex-col font-sans">
       {/* Top Header HUD */}
@@ -477,7 +532,7 @@ export const MatchView: React.FC<MatchViewProps> = ({
         <div className="flex items-center gap-3">
           <button
             onClick={onExit}
-            className="p-1.5 border-2 border-black dark:border-white bg-neutral-100 dark:bg-neutral-900 hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black transition-colors cursor-pointer"
+            className="w-11 h-11 flex items-center justify-center border-2 border-black dark:border-white bg-neutral-100 dark:bg-neutral-900 hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black transition-colors cursor-pointer"
             title="Return to Dashboard"
           >
             <ArrowLeft className="w-5 h-5" />
@@ -488,7 +543,14 @@ export const MatchView: React.FC<MatchViewProps> = ({
               <AvatarDisplay avatarId={opponent.avatarId} size="sm" />
             </div>
             <div>
-              <span className="text-xs font-black uppercase block">vs {opponent.displayName}</span>
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs font-black uppercase block">vs {opponent.displayName}</span>
+                <span className={`text-[10px] font-mono px-1 py-0.5 border border-black dark:border-white leading-none ${
+                  (isWhite ? blackMaterialDiff : whiteMaterialDiff) >= 0 ? 'bg-emerald-500 text-black' : 'bg-rose-500 text-white'
+                }`}>
+                  {(isWhite ? blackMaterialDiff : whiteMaterialDiff) >= 0 ? '+' : ''}{isWhite ? blackMaterialDiff : whiteMaterialDiff}
+                </span>
+              </div>
               <span className="text-[10px] font-mono text-neutral-500 uppercase">
                 {isWhite ? 'White' : 'Black'}
               </span>
@@ -536,6 +598,10 @@ export const MatchView: React.FC<MatchViewProps> = ({
                   ? 'Bot Thinking...'
                   : `${activeMatch.turn === 'white' ? 'White' : 'Black'}’s Turn`}
               </span>
+              {/* Ultra-compressed mobile turn indicator */}
+              <span className="sm:hidden text-[10px]">
+                {isMyTurn ? 'YOU' : 'THEM'}
+              </span>
             </div>
           ) : (
             <span className="px-3 py-1 border-2 border-black dark:border-white text-xs font-black uppercase bg-purple-500 text-white">
@@ -565,7 +631,7 @@ export const MatchView: React.FC<MatchViewProps> = ({
           {/* Theme Toggle Button */}
           <button
             onClick={toggleTheme}
-            className="p-1.5 sm:px-2.5 sm:py-1.5 border-2 border-black dark:border-white bg-neutral-100 dark:bg-neutral-900 hover:bg-amber-400 dark:hover:bg-amber-400 hover:text-black dark:hover:text-black text-xs font-black uppercase flex items-center gap-1.5 cursor-pointer shadow-[2px_2px_0px_var(--shadow)]"
+            className="min-w-[44px] min-h-[44px] px-2.5 flex items-center justify-center border-2 border-black dark:border-white bg-neutral-100 dark:bg-neutral-900 hover:bg-amber-400 dark:hover:bg-amber-400 hover:text-black dark:hover:text-black text-xs font-black uppercase gap-1.5 cursor-pointer shadow-[2px_2px_0px_var(--shadow)]"
             title={`Switch to ${theme === 'dark' ? 'Light' : 'Dark'} Board`}
           >
             {theme === 'dark' ? (
@@ -578,7 +644,7 @@ export const MatchView: React.FC<MatchViewProps> = ({
 
           <button
             onClick={onOpenRules}
-            className="p-1.5 sm:px-2.5 sm:py-1.5 border-2 border-black dark:border-white bg-neutral-100 dark:bg-neutral-900 hover:bg-amber-400 dark:hover:bg-amber-400 hover:text-black dark:hover:text-black text-xs font-black uppercase flex items-center gap-1.5 cursor-pointer shadow-[2px_2px_0px_var(--shadow)]"
+            className="min-w-[44px] min-h-[44px] px-2.5 flex items-center justify-center border-2 border-black dark:border-white bg-neutral-100 dark:bg-neutral-900 hover:bg-amber-400 dark:hover:bg-amber-400 hover:text-black dark:hover:text-black text-xs font-black uppercase gap-1.5 cursor-pointer shadow-[2px_2px_0px_var(--shadow)]"
           >
             <BookOpen className="w-4 h-4 text-amber-500" />
             <span className="hidden sm:inline">Rules</span>
@@ -587,7 +653,7 @@ export const MatchView: React.FC<MatchViewProps> = ({
           {!isGameOver && (
             <button
               onClick={() => setShowResignConfirm(true)}
-              className="p-1.5 sm:px-2.5 sm:py-1.5 border-2 border-black dark:border-white bg-red-600 hover:bg-red-500 text-white text-xs font-black uppercase flex items-center gap-1.5 cursor-pointer shadow-[2px_2px_0px_var(--shadow)]"
+              className="min-w-[44px] min-h-[44px] px-2.5 flex items-center justify-center border-2 border-black dark:border-white bg-red-600 hover:bg-red-500 text-white text-xs font-black uppercase gap-1.5 cursor-pointer shadow-[2px_2px_0px_var(--shadow)]"
             >
               <Flag className="w-4 h-4" />
               <span className="hidden sm:inline">Resign</span>
@@ -761,7 +827,10 @@ export const MatchView: React.FC<MatchViewProps> = ({
               <History className="w-4 h-4 text-amber-500" />
               History ({activeMatch.moveHistory.length})
             </h4>
-            <div className="overflow-y-auto flex-1 divide-y divide-black/20 dark:divide-white/20 text-xs font-mono pr-1">
+            <div 
+              ref={moveHistoryContainerRef}
+              className="overflow-y-auto flex-1 divide-y divide-black/20 dark:divide-white/20 text-xs font-mono pr-1"
+            >
               {activeMatch.moveHistory.map((m, idx) => (
                 <div key={idx} className="py-1 flex items-center justify-between">
                   <span className="text-neutral-500 w-6">#{idx + 1}</span>
@@ -781,7 +850,31 @@ export const MatchView: React.FC<MatchViewProps> = ({
         </div>
 
         {/* Center Column: The 8x8 Chessboard */}
-        <div className="col-span-1 md:col-span-7 lg:col-span-5 flex flex-col items-center gap-4">
+        <div className={`col-span-1 md:col-span-7 lg:col-span-5 flex flex-col items-center gap-4 ${shouldShake ? 'animate-shake' : ''}`}>
+          <style>{`
+            @keyframes shake {
+              0% { transform: translate(1px, 1px) rotate(0deg); }
+              10% { transform: translate(-1px, -2px) rotate(-1deg); }
+              20% { transform: translate(-3px, 0px) rotate(1deg); }
+              30% { transform: translate(3px, 2px) rotate(0deg); }
+              40% { transform: translate(1px, -1px) rotate(1deg); }
+              50% { transform: translate(-1px, 2px) rotate(-1deg); }
+              60% { transform: translate(-3px, 1px) rotate(0deg); }
+              70% { transform: translate(3px, 1px) rotate(-1deg); }
+              80% { transform: translate(-1px, -1px) rotate(1deg); }
+              90% { transform: translate(1px, 2px) rotate(0deg); }
+              100% { transform: translate(1px, -2px) rotate(-1deg); }
+            }
+            .animate-shake {
+              animation: shake 0.5s;
+              animation-iteration-count: 1;
+            }
+            @media (prefers-reduced-motion: reduce) {
+              .animate-shake {
+                animation: none;
+              }
+            }
+          `}</style>
           {/* Mobile 3-Message Live Move Log Feed (Always visible above the board on mobile screens) */}
           <div className="md:hidden w-full">
             {renderLiveMoveFeed()}
@@ -817,14 +910,14 @@ export const MatchView: React.FC<MatchViewProps> = ({
 
           {/* PART B: Locked Crafting Warning Banner directly above board */}
           {activeMatch.craftingAllowed !== false && activeMatch.craftingLocked?.[myColor] && !isGameOver && (
-            <div className="w-full bg-amber-500/15 dark:bg-amber-400/10 border-2 border-amber-500/60 rounded-xl p-3 flex items-center justify-between gap-3 text-amber-900 dark:text-amber-200 animate-in fade-in duration-200 shadow-sm">
+            <div className="w-full bg-amber-500/15 dark:bg-amber-400/10 border-2 border-amber-500/60 p-3 flex items-center justify-between gap-3 text-amber-900 dark:text-amber-200 animate-in fade-in duration-200 shadow-sm">
               <div className="flex items-center gap-2.5">
                 <span className="text-base select-none">⚡</span>
                 <span className="text-xs sm:text-sm font-bold tracking-tight">
                   Craft ready: resolve the check first
                 </span>
               </div>
-              <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-amber-500/20 text-amber-800 dark:text-amber-300">
+              <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 bg-amber-500/20 text-amber-800 dark:text-amber-300">
                 Check Active
               </span>
             </div>
@@ -1056,9 +1149,14 @@ export const MatchView: React.FC<MatchViewProps> = ({
 
       {/* Resign Confirmation Modal */}
       {showResignConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-none">
-          <div className="bg-white dark:bg-[#0a0a0c] border-4 border-black dark:border-white p-6 max-w-sm w-full shadow-[8px_8px_0px_#000000] dark:shadow-[8px_8px_0px_#ffffff] text-black dark:text-white flex flex-col gap-4">
-            <h3 className="text-base font-black uppercase text-red-600 dark:text-red-400 flex items-center gap-2">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-none animate-in fade-in duration-150">
+          <div 
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="resign-modal-title"
+            className="bg-white dark:bg-[#0a0a0c] border-4 border-black dark:border-white p-6 max-w-sm w-full shadow-[8px_8px_0px_#000000] dark:shadow-[8px_8px_0px_#ffffff] text-black dark:text-white flex flex-col gap-4 animate-in slide-in-from-bottom-4 sm:slide-in-from-bottom-0 sm:zoom-in-95 duration-150"
+          >
+            <h3 id="resign-modal-title" className="text-base font-black uppercase text-red-600 dark:text-red-400 flex items-center gap-2">
               <Flag className="w-5 h-5" />
               Resign Game?
             </h3>
@@ -1068,13 +1166,13 @@ export const MatchView: React.FC<MatchViewProps> = ({
             <div className="flex items-center gap-2 mt-2">
               <button
                 onClick={handleConfirmResign}
-                className="flex-1 py-2.5 px-3 bg-red-600 hover:bg-red-500 font-black text-xs uppercase text-white border-2 border-black shadow-[2px_2px_0px_#000] cursor-pointer"
+                className="flex-1 min-h-[44px] px-3 bg-red-600 hover:bg-red-500 font-black text-xs uppercase text-white border-2 border-black shadow-[2px_2px_0px_#000] cursor-pointer focus-visible:ring-4 focus-visible:ring-amber-400 outline-none active:translate-x-0.5 active:translate-y-0.5"
               >
                 Yes, Resign
               </button>
               <button
                 onClick={() => setShowResignConfirm(false)}
-                className="py-2.5 px-4 bg-neutral-200 dark:bg-neutral-800 font-black text-xs uppercase border-2 border-black dark:border-white cursor-pointer"
+                className="flex-1 min-h-[44px] px-4 bg-neutral-200 dark:bg-neutral-800 font-black text-xs uppercase border-2 border-black dark:border-white cursor-pointer focus-visible:ring-4 focus-visible:ring-amber-400 outline-none active:translate-x-0.5 active:translate-y-0.5"
               >
                 Cancel
               </button>
@@ -1130,6 +1228,7 @@ export const MatchView: React.FC<MatchViewProps> = ({
         onClose={() => setIsMatchTrophyRoomOpen(false)}
         initialSelectedCard={selectedTrophyCard}
       />
+      <LiveAnnouncer message={announcement} />
     </div>
   );
 };

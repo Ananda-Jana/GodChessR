@@ -464,11 +464,12 @@ function AppContent() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-[#0a0e14] flex flex-col items-center justify-center text-slate-100 gap-3">
-        <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 animate-pulse">
-          <Crown className="w-5 h-5" />
+      <div className="min-h-screen bg-black flex flex-col items-center justify-center gap-6" role="status">
+        <div className="w-12 h-12 border-4 border-white bg-amber-400 animate-spin shadow-[4px_4px_0px_#ffffff]"></div>
+        <div className="flex flex-col items-center gap-2">
+          <span className="text-sm font-black uppercase tracking-widest text-white">Initialising Domain</span>
+          <span className="sr-only">Loading Dice Chess...</span>
         </div>
-        <span className="text-xs text-slate-400 font-medium">Connecting to Dice Chess...</span>
       </div>
     );
   }

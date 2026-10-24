@@ -48,6 +48,7 @@ import { extractCullingMetrics, observeCullingMove } from '../predictor/adapters
 import { downloadCardAsPng } from '../predictor/canvasCardRenderer';
 import { TrophyRoomModal } from './TrophyRoomModal';
 import type { AchievementCard } from '../predictor/types';
+import { LiveAnnouncer } from './LiveAnnouncer';
 
 interface CullingMatchViewProps {
   initialMatch: CullingMatchState;
@@ -162,6 +163,33 @@ export const CullingMatchView: React.FC<CullingMatchViewProps> = ({
       sounds.playGameOver();
     }
   }, [match.status]);
+
+  // ARIA Live Announcements
+  const [announcement, setAnnouncement] = useState('');
+  const lastTurnRef = useRef(match.turn);
+  const lastInCheckRef = useRef(match.inCheck);
+
+  useEffect(() => {
+    if (match.status === 'completed' && match.winner !== undefined) {
+      const winner = match.winner;
+      const reason = match.winReason || 'Game Finished';
+      setAnnouncement(`Game over. ${winner === null ? 'It is a draw' : `${winner} wins`}. ${reason}.`);
+      return;
+    }
+
+    if (match.turn !== lastTurnRef.current) {
+      const turnLabel = match.turn === 'white' ? "White's turn" : "Black's turn";
+      setAnnouncement(turnLabel);
+      lastTurnRef.current = match.turn;
+    }
+
+    if (match.inCheck && match.inCheck !== lastInCheckRef.current) {
+      setAnnouncement(prev => `Check! ${prev}`);
+      lastInCheckRef.current = match.inCheck;
+    } else if (!match.inCheck) {
+      lastInCheckRef.current = null;
+    }
+  }, [match.turn, match.inCheck, match.status, match.winner, match.winReason]);
 
   // Audio warning on check
   useEffect(() => {
@@ -1258,6 +1286,7 @@ export const CullingMatchView: React.FC<CullingMatchViewProps> = ({
         onClose={() => setIsCullingTrophyRoomOpen(false)}
         initialSelectedCard={selectedCullingCard}
       />
+      <LiveAnnouncer message={announcement} />
     </div>
   );
 };
