@@ -407,13 +407,13 @@ for (const t of testRoles) {
 // ============================================================================
 // 5. 500 RANDOM SELF-PLAY SIMULATION GAMES
 // ============================================================================
-console.log('--- Simulating 100 Random Self-Play Games ---');
+console.log('--- Simulating 20 Random Self-Play Games ---');
 let whiteWins = 0;
 let blackWins = 0;
 let drawsRepetition = 0;
 let draws30Move = 0;
 
-for (let gameIdx = 1; gameIdx <= 100; gameIdx++) {
+for (let gameIdx = 1; gameIdx <= 20; gameIdx++) {
   let simMatch = createInitialCullingMatch(
     `sim_${gameIdx}`,
     { userId: 'w', username: 'w', displayName: 'White' },

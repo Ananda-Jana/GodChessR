@@ -1796,9 +1796,9 @@ export const CULLING_OPENING_LESSONS: CullingOpeningLesson[] = [
         actionType: 'move',
         notation: 'D2 → D3 (Clear D-file)',
         tukunaInstruction:
-          'Push D2 pawn to D3 to clear Nanami’s path.',
+          'Push D2 pawn to D3 to clear Nanami’s runway.',
         tacticalBreakdown:
-          'Opening the D-file allows Nanami to project his Ratio Field into the center.',
+          'Opening the D-file allows Warden Nanami to project his Ratio Field into the center.',
         hint: 'Push D2 pawn to D3.',
         vectorArrows: [
           { from: { x: 4, y: 2 }, to: { x: 4, y: 3 }, color: 'crimson', label: '1', style: 'solid' },
@@ -1834,7 +1834,7 @@ export const CULLING_OPENING_LESSONS: CullingOpeningLesson[] = [
         from: { x: 4, y: 3 }, // D3 Pawn
         to: { x: 4, y: 4 },   // D4
         actionType: 'move',
-        notation: 'D3 → D4 (Central Runway Push)',
+        notation: 'D3 → D4 (Central Clearance Push)',
         tukunaInstruction:
           'Push D3 pawn to D4 to clear the D3 square for Warden Nanami.',
         tacticalBreakdown:
@@ -1871,17 +1871,17 @@ export const CULLING_OPENING_LESSONS: CullingOpeningLesson[] = [
       },
       {
         stepNumber: 5,
-        from: { x: 4, y: 3 }, // Nanami D3
-        to: { x: 4, y: 5 },   // D5 (Slide 2 squares to D5!)
+        from: { x: 4, y: 4 }, // D4 Pawn
+        to: { x: 4, y: 5 },   // D5
         actionType: 'move',
-        notation: 'Nanami D3 → D5 (Ratio Clamping)',
+        notation: 'D4 → D5 (Pawn Runway Advance)',
         tukunaInstruction:
-          'Slide Nanami 2 squares to D5 directly adjacent to Kurourushi on E5!',
+          'Push D4 pawn forward to D5 to prepare clearing the D-file.',
         tacticalBreakdown:
-          'Nanami on D5 restricts Kurourushi on E5 to 1-step maximum movement under Ratio Field suppression.',
-        hint: 'Slide Nanami to D5.',
+          'Advancing D4 pawn to D5 opens up the D4 square for Nanami.',
+        hint: 'Push D4 pawn to D5.',
         vectorArrows: [
-          { from: { x: 4, y: 3 }, to: { x: 4, y: 5 }, color: 'crimson', label: '5', style: 'solid' },
+          { from: { x: 4, y: 4 }, to: { x: 4, y: 5 }, color: 'crimson', label: '5', style: 'solid' },
         ],
         opponentResponse: {
           from: { x: 2, y: 7 }, // Black Pawn B7
@@ -1891,17 +1891,17 @@ export const CULLING_OPENING_LESSONS: CullingOpeningLesson[] = [
       },
       {
         stepNumber: 6,
-        from: { x: 3, y: 2 }, // Pawn C2
-        to: { x: 3, y: 3 },   // C3
+        from: { x: 4, y: 5 }, // D5 Pawn
+        to: { x: 4, y: 6 },   // D6
         actionType: 'move',
-        notation: 'C2 → C3 (Flank Base)',
+        notation: 'D5 → D6 (Full File Opening)',
         tukunaInstruction:
-          'Push C2 pawn to C3.',
+          'Push D5 pawn forward to D6 to clear D5 for Nanami.',
         tacticalBreakdown:
-          'C3 secures C4 and anchors Nanami’s left flank.',
-        hint: 'Push C2 pawn to C3.',
+          'Clearing D5 opens the D-file straight to D5, adjacent to Kurourushi on E5.',
+        hint: 'Push D5 pawn to D6.',
         vectorArrows: [
-          { from: { x: 3, y: 2 }, to: { x: 3, y: 3 }, color: 'crimson', label: '6', style: 'solid' },
+          { from: { x: 4, y: 5 }, to: { x: 4, y: 6 }, color: 'crimson', label: '6', style: 'solid' },
         ],
         opponentResponse: {
           from: { x: 2, y: 8 }, // Kenjaku B8
@@ -1911,17 +1911,17 @@ export const CULLING_OPENING_LESSONS: CullingOpeningLesson[] = [
       },
       {
         stepNumber: 7,
-        from: { x: 5, y: 2 }, // Pawn E2
-        to: { x: 5, y: 3 },   // E3
+        from: { x: 4, y: 3 }, // Nanami D3
+        to: { x: 4, y: 5 },   // D5
         actionType: 'move',
-        notation: 'E2 → E3 (Anchor Wall)',
+        notation: 'Nanami D3 → D5 (Ratio Clamping)',
         tukunaInstruction:
-          'Push E2 pawn to E3.',
+          'Slide Nanami 2 squares to D5 directly adjacent to Kurourushi on E5!',
         tacticalBreakdown:
-          'Anchoring E3 completes the central pawn wall behind Nanami.',
-        hint: 'Push E2 pawn to E3.',
+          'Nanami on D5 restricts Kurourushi on E5 to 1-step maximum movement under Ratio Field suppression.',
+        hint: 'Move Nanami to D5.',
         vectorArrows: [
-          { from: { x: 5, y: 2 }, to: { x: 5, y: 3 }, color: 'crimson', label: '7', style: 'solid' },
+          { from: { x: 4, y: 3 }, to: { x: 4, y: 5 }, color: 'crimson', label: '7', style: 'solid' },
         ],
         opponentResponse: {
           from: { x: 3, y: 8 }, // Uraume C8
@@ -2099,10 +2099,11 @@ export const CULLING_OPENING_LESSONS: CullingOpeningLesson[] = [
           { from: { x: 4, y: 3 }, to: { x: 4, y: 4 }, color: 'crimson', label: '7', style: 'solid' },
         ],
         opponentResponse: {
-          from: { x: 5, y: 7 }, // Black Pawn E7
-          to: { x: 5, y: 6 },   // E6
-          commentary: 'Black advances E7 pawn to E6.',
+          from: { x: 2, y: 7 }, // Black Pawn B7
+          to: { x: 2, y: 6 },   // B6
+          commentary: 'Black advances B7 pawn to B6.',
         },
+
       },
       {
         stepNumber: 8,
@@ -2254,10 +2255,11 @@ export const CULLING_OPENING_LESSONS: CullingOpeningLesson[] = [
           { from: { x: 4, y: 2 }, to: { x: 4, y: 3 }, color: 'crimson', label: '6', style: 'solid' },
         ],
         opponentResponse: {
-          from: { x: 4, y: 7 }, // Black Pawn D7
-          to: { x: 4, y: 6 },   // D6
-          commentary: 'Black pushes D7 pawn to D6.',
+          from: { x: 5, y: 7 }, // Black Pawn E7
+          to: { x: 5, y: 6 },   // E6
+          commentary: 'Black pushes E7 pawn to E6.',
         },
+
       },
       {
         stepNumber: 7,
@@ -2277,16 +2279,16 @@ export const CULLING_OPENING_LESSONS: CullingOpeningLesson[] = [
       {
         stepNumber: 8,
         from: { x: 6, y: 6 }, // Hakari F6
-        to: { x: 6, y: 5 },   // Jackpot safe step to empty unattacked F5 square!
+        to: { x: 7, y: 5 },   // Jackpot safe step to empty unattacked G5 square!
         actionType: 'move',
-        notation: 'Hakari F6 → F5 (Jackpot Safe Step Positioning!)',
+        notation: 'Hakari F6 → G5 (Jackpot Safe Step Positioning!)',
         tukunaInstruction:
-          'Execute Hakari’s Jackpot bonus step to relocate onto the empty F5 square!',
+          'Execute Hakari’s Jackpot bonus step to relocate onto the unattacked G5 square!',
         tacticalBreakdown:
-          'Hakari’s Jackpot bonus step provides a free non-capturing move to F5, forking Black’s E6 and G6 squares!',
-        hint: 'Execute Jackpot safe step to F5 with Hakari.',
+          'Hakari’s Jackpot bonus step provides a free non-capturing move to G5, maintaining total tempo!',
+        hint: 'Execute Jackpot safe step to G5 with Hakari.',
         vectorArrows: [
-          { from: { x: 6, y: 6 }, to: { x: 6, y: 5 }, color: 'crimson', label: '8 🎰', style: 'solid' },
+          { from: { x: 6, y: 6 }, to: { x: 7, y: 5 }, color: 'crimson', label: '8 🎰', style: 'solid' },
         ],
       },
     ],
@@ -2392,22 +2394,23 @@ export const CULLING_OPENING_LESSONS: CullingOpeningLesson[] = [
       {
         stepNumber: 5,
         from: { x: 1, y: 5 }, // Maki A5
-        to: { x: 1, y: 6 },   // A6 (Advance 1 square to A6!)
+        to: { x: 2, y: 5 },   // B5 (Flank Position Shift)
         actionType: 'move',
-        notation: 'Maki A5 → A6 (Flank Infiltration)',
+        notation: 'Maki A5 → B5 (Flank Infiltration)',
         tukunaInstruction:
-          'Advance Maki forward to A6 along the western colony corridor.',
+          'Shift Maki diagonally to B5 along the western colony corridor.',
         tacticalBreakdown:
-          'Maki on A6 prepares a direct strike on Black’s back rank.',
-        hint: 'Move Maki to A6.',
+          'Maki on B5 prepares a 2-square orthogonal leap to B7 to capture Kenjaku.',
+        hint: 'Move Maki to B5.',
         vectorArrows: [
-          { from: { x: 1, y: 5 }, to: { x: 1, y: 6 }, color: 'crimson', label: '5', style: 'solid' },
+          { from: { x: 1, y: 5 }, to: { x: 2, y: 5 }, color: 'crimson', label: '5', style: 'solid' },
         ],
         opponentResponse: {
-          from: { x: 3, y: 7 }, // Black Pawn C7
-          to: { x: 3, y: 6 },   // C6
-          commentary: 'Black advances C7 pawn to C6.',
+          from: { x: 6, y: 7 }, // Black Pawn F7
+          to: { x: 6, y: 6 },   // F6
+          commentary: 'Black advances F7 pawn to F6.',
         },
+
       },
       {
         stepNumber: 6,
@@ -2424,24 +2427,24 @@ export const CULLING_OPENING_LESSONS: CullingOpeningLesson[] = [
           { from: { x: 3, y: 2 }, to: { x: 3, y: 3 }, color: 'crimson', label: '6', style: 'solid' },
         ],
         opponentResponse: {
-          from: { x: 6, y: 7 }, // Black Pawn F7
-          to: { x: 6, y: 6 },   // F6
-          commentary: 'Black pushes F7 pawn to F6.',
+          from: { x: 7, y: 7 }, // Black Pawn G7
+          to: { x: 7, y: 6 },   // G6
+          commentary: 'Black advances G7 pawn to G6.',
         },
       },
       {
         stepNumber: 7,
         from: { x: 2, y: 1 }, // Hakari B1
-        to: { x: 1, y: 3 },   // A3 (Follow Maki into extension!)
+        to: { x: 1, y: 2 },   // A2 (1-step diagonal Rusher move into left arm!)
         actionType: 'move',
-        notation: 'Hakari B1 → A3 (Dual Corridor Entry)',
+        notation: 'Hakari B1 → A2 (Left Corridor Entry)',
         tukunaInstruction:
-          'Move Hakari to A3 to support Maki.',
+          'Move Hakari to A2 to support Maki.',
         tacticalBreakdown:
-          'Hakari on A3 secures the corridor behind Maki.',
-        hint: 'Move Hakari to A3.',
+          'Hakari on A2 secures the corridor behind Maki.',
+        hint: 'Move Hakari to A2.',
         vectorArrows: [
-          { from: { x: 2, y: 1 }, to: { x: 1, y: 3 }, color: 'crimson', label: '7', style: 'solid' },
+          { from: { x: 2, y: 1 }, to: { x: 1, y: 2 }, color: 'crimson', label: '7', style: 'solid' },
         ],
         opponentResponse: {
           from: { x: 3, y: 8 }, // Uraume C8
@@ -2451,17 +2454,17 @@ export const CULLING_OPENING_LESSONS: CullingOpeningLesson[] = [
       },
       {
         stepNumber: 8,
-        from: { x: 1, y: 7 }, // Maki A7
-        to: { x: 2, y: 7 },   // Capture Kenjaku on B7!
+        from: { x: 2, y: 5 }, // Maki B5
+        to: { x: 2, y: 7 },   // Move Maki to B7!
         actionType: 'move',
-        notation: 'Maki A7 × B7 (Skirmisher Infiltration Strike - Check!)',
+        notation: 'Maki B5 → B7 (Skirmisher Infiltration Strike - Check!)',
         tukunaInstruction:
-          'Strike inward with Maki from A7 to capture Kenjaku on B7!',
+          'Hop Maki 2 squares up from B5 to capture Kenjaku on B7!',
         tacticalBreakdown:
           'Maki captures Kenjaku on B7, delivering direct mortal check on Sovereign Sukuna at A8!',
         hint: 'Capture Kenjaku on B7 with Maki.',
         vectorArrows: [
-          { from: { x: 1, y: 7 }, to: { x: 2, y: 7 }, color: 'crimson', label: '8 ⚔️', style: 'solid' },
+          { from: { x: 2, y: 5 }, to: { x: 2, y: 7 }, color: 'crimson', label: '8 ⚔️', style: 'solid' },
         ],
       },
     ],
@@ -2652,11 +2655,11 @@ export const CULLING_OPENING_LESSONS: CullingOpeningLesson[] = [
     playerColor: 'white',
     initialBoard: createInitialCullingBoard(),
     tukunaGreeting:
-      'The culmination of all Culling Game mastery is checkmating Sovereign Sukuna. Systematically constrict his 8 escape squares and deliver checkmate.',
+      'The culmination of all Culling Game mastery is checkmating Sovereign Sukuna. Systematically constrict his escape squares and deliver checkmate.',
     completionMessage:
       'CHECKMATE! Sovereign Sukuna has been completely enclosed and defeated. Culling Game Dojo Mastered!',
     patternHighlights: [
-      { x: 8, y: 1 }, { x: 6, y: 3 }, { x: 4, y: 5 }, { x: 3, y: 6 }, { x: 2, y: 7 }, { x: 1, y: 8 },
+      { x: 8, y: 1 }, { x: 6, y: 3 }, { x: 3, y: 1 }, { x: 1, y: 5 }, { x: 1, y: 7 }, { x: 2, y: 8 },
     ],
     steps: [
       {
@@ -2681,17 +2684,17 @@ export const CULLING_OPENING_LESSONS: CullingOpeningLesson[] = [
       },
       {
         stepNumber: 2,
-        from: { x: 6, y: 3 }, // Gojo F3
-        to: { x: 5, y: 4 },   // E4
+        from: { x: 3, y: 1 }, // Maki C1
+        to: { x: 3, y: 3 },   // C3 (Heavenly Leap over C2)
         actionType: 'move',
-        notation: 'Gojo F3 → E4 (Sovereign Incursion)',
+        notation: 'Maki C1 → C3 (Flank Flurry)',
         tukunaInstruction:
-          'Advance Gojo diagonally to E4.',
+          'Hop Maki over C2 pawn onto C3.',
         tacticalBreakdown:
-          'Gojo on E4 commands the main diagonal towards Sukuna on A8.',
-        hint: 'Move Gojo to E4.',
+          'Maki’s 2-square leap opens up the western attack corridor.',
+        hint: 'Hop Maki to C3.',
         vectorArrows: [
-          { from: { x: 6, y: 3 }, to: { x: 5, y: 4 }, color: 'crimson', label: '2', style: 'solid' },
+          { from: { x: 3, y: 1 }, to: { x: 3, y: 3 }, color: 'crimson', label: '2', style: 'solid' },
         ],
         opponentResponse: {
           from: { x: 4, y: 7 }, // Black Pawn D7
@@ -2701,17 +2704,17 @@ export const CULLING_OPENING_LESSONS: CullingOpeningLesson[] = [
       },
       {
         stepNumber: 3,
-        from: { x: 5, y: 4 }, // Gojo E4
-        to: { x: 4, y: 5 },   // D5
+        from: { x: 3, y: 3 }, // Maki C3
+        to: { x: 1, y: 3 },   // A3 (Heavenly Leap left)
         actionType: 'move',
-        notation: 'Gojo E4 → D5 (Ring Constriction)',
+        notation: 'Maki C3 → A3 (Colony Extension Entry)',
         tukunaInstruction:
-          'Advance Gojo diagonally to D5.',
+          'Hop Maki 2 squares left to A3 into the western corridor.',
         tacticalBreakdown:
-          'Gojo on D5 cuts off Sukuna’s central escape diagonals.',
-        hint: 'Move Gojo to D5.',
+          'Entering the A-column bypasses Black’s central pawns.',
+        hint: 'Hop Maki to A3.',
         vectorArrows: [
-          { from: { x: 5, y: 4 }, to: { x: 4, y: 5 }, color: 'crimson', label: '3', style: 'solid' },
+          { from: { x: 3, y: 3 }, to: { x: 1, y: 3 }, color: 'crimson', label: '3', style: 'solid' },
         ],
         opponentResponse: {
           from: { x: 3, y: 7 }, // Black Pawn C7
@@ -2721,77 +2724,37 @@ export const CULLING_OPENING_LESSONS: CullingOpeningLesson[] = [
       },
       {
         stepNumber: 4,
-        from: { x: 4, y: 5 }, // Gojo D5
-        to: { x: 3, y: 6 },   // C6 (Capture C6 pawn!)
+        from: { x: 1, y: 3 }, // Maki A3
+        to: { x: 1, y: 5 },   // A5
         actionType: 'move',
-        notation: 'Gojo D5 × C6 (Ring Breakthrough)',
+        notation: 'Maki A3 → A5 (Corridor Incursion)',
         tukunaInstruction:
-          'Capture Black’s C6 pawn with Gojo on C6.',
+          'Advance Maki 2 squares up the A-column to A5.',
         tacticalBreakdown:
-          'Gojo breaks through C6, threatening Kenjaku on B7.',
-        hint: 'Capture C6 pawn with Gojo.',
+          'Maki on A5 prepares a 2-square orthogonal leap to A7 to check Sukuna.',
+        hint: 'Move Maki to A5.',
         vectorArrows: [
-          { from: { x: 4, y: 5 }, to: { x: 3, y: 6 }, color: 'crimson', label: '4', style: 'solid' },
+          { from: { x: 1, y: 3 }, to: { x: 1, y: 5 }, color: 'crimson', label: '4', style: 'solid' },
         ],
         opponentResponse: {
           from: { x: 2, y: 8 }, // Kenjaku B8
           to: { x: 2, y: 7 },   // B7
-          commentary: 'Kenjaku desperately steps to B7 to shield Sukuna.',
+          commentary: 'Kenjaku mobilizes to B7, clearing B8 for Sukuna.',
         },
       },
       {
         stepNumber: 5,
-        from: { x: 3, y: 6 }, // Gojo C6
-        to: { x: 2, y: 7 },   // Capture Kenjaku on B7!
+        from: { x: 1, y: 5 }, // Maki A5
+        to: { x: 2, y: 5 },   // B5
         actionType: 'move',
-        notation: 'Gojo C6 × B7 (Guard Elimination - Check!)',
+        notation: 'Maki A5 → B5 (Flank Infiltration)',
         tukunaInstruction:
-          'Capture Kenjaku on B7 with Gojo!',
+          'Shift Maki diagonally to B5 along the western corridor.',
         tacticalBreakdown:
-          'Gojo eliminates Sukuna’s last defender on B7, delivering direct check!',
-        hint: 'Capture Kenjaku on B7 with Gojo.',
+          'Maki on B5 prepares a forward push into the western sector.',
+        hint: 'Move Maki to B5.',
         vectorArrows: [
-          { from: { x: 3, y: 6 }, to: { x: 2, y: 7 }, color: 'crimson', label: '5 ⚔️', style: 'solid' },
-        ],
-        opponentResponse: {
-          from: { x: 1, y: 8 }, // Sovereign Sukuna at A8
-          to: { x: 2, y: 8 },   // B8 (Sukuna escapes check to B8!)
-          commentary: 'Sukuna escapes to B8 under heavy pressure!',
-        },
-      },
-      {
-        stepNumber: 6,
-        from: { x: 3, y: 1 }, // Maki C1
-        to: { x: 3, y: 3 },   // C3 (Leap over C2)
-        actionType: 'move',
-        notation: 'Maki C1 → C3 (Flank Reinforcement)',
-        tukunaInstruction:
-          'Hop Maki to C3 to join the checkmate net.',
-        tacticalBreakdown:
-          'Maki seizes C3 to cover the escape squares on the B-column.',
-        hint: 'Hop Maki to C3.',
-        vectorArrows: [
-          { from: { x: 3, y: 1 }, to: { x: 3, y: 3 }, color: 'crimson', label: '6', style: 'solid' },
-        ],
-        opponentResponse: {
-          from: { x: 3, y: 8 }, // Uraume C8
-          to: { x: 3, y: 7 },   // C7
-          commentary: 'Uraume advances to C7.',
-        },
-      },
-      {
-        stepNumber: 7,
-        from: { x: 3, y: 3 }, // Maki C3
-        to: { x: 1, y: 3 },   // A3 (Leap left into A-column)
-        actionType: 'move',
-        notation: 'Maki C3 → A3 (Cutoff Leap)',
-        tukunaInstruction:
-          'Hop Maki 2 squares left to A3 to seal the western corridor.',
-        tacticalBreakdown:
-          'Maki on A3 cuts off Sukuna’s escape down the A-column.',
-        hint: 'Hop Maki to A3.',
-        vectorArrows: [
-          { from: { x: 3, y: 3 }, to: { x: 1, y: 3 }, color: 'crimson', label: '7', style: 'solid' },
+          { from: { x: 1, y: 5 }, to: { x: 2, y: 5 }, color: 'crimson', label: '5', style: 'solid' },
         ],
         opponentResponse: {
           from: { x: 5, y: 7 }, // Black Pawn E7
@@ -2800,18 +2763,58 @@ export const CULLING_OPENING_LESSONS: CullingOpeningLesson[] = [
         },
       },
       {
-        stepNumber: 8,
-        from: { x: 2, y: 7 }, // Gojo at B7
-        to: { x: 2, y: 8 },   // Capture Sukuna on B8! CHECKMATE!
+        stepNumber: 6,
+        from: { x: 6, y: 3 }, // Gojo F3
+        to: { x: 5, y: 4 },   // E4
         actionType: 'move',
-        notation: 'Gojo B7 × B8 (Hollow Purple - SOVEREIGN CHECKMATE!)',
+        notation: 'Gojo F3 → E4 (Sovereign Ring Constriction)',
         tukunaInstruction:
-          'Deliver the final blow with Gojo from B7 to capture Sukuna on B8!',
+          'Advance Gojo diagonally to E4 to tighten the checkmate ring.',
         tacticalBreakdown:
-          'Gojo captures Sukuna on B8! Sovereign Checkmate! You have mastered the Culling Game Dojo!',
-        hint: 'Capture Sukuna on B8 with Gojo for Checkmate.',
+          'Gojo on E4 commands the central diagonal to trap Sukuna.',
+        hint: 'Move Gojo to E4.',
         vectorArrows: [
-          { from: { x: 2, y: 7 }, to: { x: 2, y: 8 }, color: 'crimson', label: '8 🏆', style: 'solid' },
+          { from: { x: 6, y: 3 }, to: { x: 5, y: 4 }, color: 'crimson', label: '6', style: 'solid' },
+        ],
+        opponentResponse: {
+          from: { x: 6, y: 7 }, // Black Pawn F7
+          to: { x: 6, y: 6 },   // F6
+          commentary: 'Black advances F7 pawn to F6.',
+        },
+      },
+      {
+        stepNumber: 7,
+        from: { x: 2, y: 5 }, // Maki B5
+        to: { x: 2, y: 6 },   // Capture Black Pawn B6 on B6!
+        actionType: 'move',
+        notation: 'Maki B5 × B6 (Pawn Clearance)',
+        tukunaInstruction:
+          'Capture Black’s B6 pawn with Maki on B6!',
+        tacticalBreakdown:
+          'Maki clears B6, positioning directly behind Kenjaku on B7.',
+        hint: 'Capture B6 pawn with Maki.',
+        vectorArrows: [
+          { from: { x: 2, y: 5 }, to: { x: 2, y: 6 }, color: 'crimson', label: '7 ⚔️', style: 'solid' },
+        ],
+        opponentResponse: {
+          from: { x: 3, y: 8 }, // Uraume C8
+          to: { x: 3, y: 7 },   // C7
+          commentary: 'Uraume advances to C7.',
+        },
+      },
+      {
+        stepNumber: 8,
+        from: { x: 2, y: 6 }, // Maki B6
+        to: { x: 2, y: 7 },   // Capture Kenjaku on B7 - Check!
+        actionType: 'move',
+        notation: 'Maki B6 × B7 (Skirmisher Slice - Sovereign Check!)',
+        tukunaInstruction:
+          'Deliver the final blow with Maki from B6 to capture Kenjaku on B7!',
+        tacticalBreakdown:
+          'Maki captures Kenjaku on B7, delivering Sovereign Checkmate! You have mastered the Culling Game Dojo!',
+        hint: 'Capture Kenjaku on B7 with Maki for Checkmate.',
+        vectorArrows: [
+          { from: { x: 2, y: 6 }, to: { x: 2, y: 7 }, color: 'crimson', label: '8 🏆', style: 'solid' },
         ],
       },
     ],

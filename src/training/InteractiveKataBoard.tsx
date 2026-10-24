@@ -107,6 +107,16 @@ export const InteractiveKataBoard: React.FC<InteractiveKataBoardProps> = ({
 
   // Reset state ONLY when lesson.id or resetSignal triggers
   useEffect(() => {
+    if (typeof process !== 'undefined' && process.env?.NODE_ENV === 'development') {
+      import('./validateLessons').then(({ validateDojoKataLesson }) => {
+        const valFailures: any[] = [];
+        validateDojoKataLesson(lesson, valFailures);
+        if (valFailures.length > 0) {
+          console.error(`[HASHIRA DEV VALIDATION WARNING] Lesson "${lesson.id}" (${lesson.title}) validation issues:`, valFailures);
+        }
+      }).catch(() => {});
+    }
+
     if (lesson.initialBoard) {
       setBoard(cloneBoard(lesson.initialBoard));
     }

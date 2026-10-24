@@ -75,6 +75,7 @@ export interface KataStep {
   mentorCommentary?: string;
   mentorPrompt?: string;
   cullingActionType?: CullingSpecialAction;
+  acceptedMoves?: Array<{ from: Position; to: Position }>;
 }
 
 export interface DojoLesson {
@@ -150,6 +151,7 @@ export interface CullingOpeningStep {
   hint: string;
   vectorArrows: CullingVectorArrow[];
   patternHighlights?: CullingPos[]; // Strategic red square highlights
+  acceptedMoves?: Array<{ from: CullingPos; to: CullingPos }>;
   opponentResponse?: {
     from: CullingPos;
     to: CullingPos;

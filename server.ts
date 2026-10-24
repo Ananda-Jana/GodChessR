@@ -17,7 +17,7 @@ import { initWebSocketServer } from './server/socket.ts';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const isProd = fs.existsSync(path.resolve(__dirname, 'dist'));
+const isProd = process.env.NODE_ENV === 'production' || (process.env.NODE_ENV !== 'development' && fs.existsSync(path.resolve(__dirname, 'dist')));
 const PORT = (() => {
   if (process.env.NGINX_PORT && process.env.PORT === process.env.NGINX_PORT) {
     return process.env.DEFAULT_APP_PORT ? parseInt(process.env.DEFAULT_APP_PORT, 10) : 3000;

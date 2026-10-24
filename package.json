@@ -4,13 +4,14 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "tsx server.ts",
+    "dev": "NODE_ENV=development tsx server.ts",
     "build": "rm -rf dist && vite build",
-    "start": "node server.ts",
+    "start": "NODE_ENV=production node server.ts",
     "preview": "vite preview",
     "clean": "rm -rf dist server.js",
     "lint": "tsc --noEmit",
-    "test": "npx tsx test/engine.test.ts && npx tsx test/bot.test.ts && npx tsx test/integration.test.ts && npx tsx test/culling.test.ts && npx tsx test/cullingOpening.test.ts && npx tsx test/rose/rose.test.ts"
+    "test": "npx tsx test/engine.test.ts && npx tsx test/bot.test.ts && npx tsx test/integration.test.ts && npx tsx test/culling.test.ts && npx tsx test/cullingOpening.test.ts && npx tsx test/rose/rose.test.ts",
+    "test:training": "npx tsx src/training/validateLessons.ts && npx tsx test/cullingOpening.test.ts && npx tsx test/training/hashira.test.ts"
   },
   "dependencies": {
     "@google/genai": "^2.4.0",

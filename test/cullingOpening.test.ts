@@ -9,40 +9,52 @@ import {
   getLegalMovesForSquare,
 } from '../src/game/cullingEngine.js';
 
+let totalAssertions = 0;
+let passedAssertions = 0;
+let failedAssertions = 0;
+const lessonResults: Array<{ id: string; title: string; stepsTotal: number; stepsPassed: number; status: 'PASSED' | 'FAILED'; error?: string }> = [];
+
 function assert(condition: boolean, msg: string) {
+  totalAssertions++;
   if (!condition) {
+    failedAssertions++;
     throw new Error(`TEST FAILED: ${msg}`);
   }
+  passedAssertions++;
   console.log(`✓ ${msg}`);
 }
 
 console.log('=== RUNNING CULLING GAME OPENING & MID-GAME DOJO TESTS ===');
 
 // Test 1: Curriculum lesson count and composition
-assert(
-  CULLING_OPENING_LESSONS.length === 16,
-  `Curriculum contains exactly 16 lessons (found ${CULLING_OPENING_LESSONS.length})`
-);
-
-const openingLessons = CULLING_OPENING_LESSONS.filter(
-  (l) => !l.curriculumType || l.curriculumType === 'opening'
-);
-const midgameLessons = CULLING_OPENING_LESSONS.filter((l) => l.curriculumType === 'midgame');
-
-assert(openingLessons.length === 8, 'Opening curriculum contains 8 lessons');
-assert(midgameLessons.length === 8, 'Mid-Game curriculum contains 8 lessons');
-
-// Assert every lesson has at least 8 sequential steps
-CULLING_OPENING_LESSONS.forEach((lesson) => {
+try {
   assert(
-    lesson.steps.length >= 8,
-    `Lesson "${lesson.title}" (${lesson.id}) has at least 8 sequential steps (actual: ${lesson.steps.length})`
+    CULLING_OPENING_LESSONS.length === 16,
+    `Curriculum contains exactly 16 lessons (found ${CULLING_OPENING_LESSONS.length})`
   );
-  assert(
-    Boolean(lesson.namedStrategy),
-    `Lesson "${lesson.title}" (${lesson.id}) has a named strategy ("${lesson.namedStrategy}")`
+
+  const openingLessons = CULLING_OPENING_LESSONS.filter(
+    (l) => !l.curriculumType || l.curriculumType === 'opening'
   );
-});
+  const midgameLessons = CULLING_OPENING_LESSONS.filter((l) => l.curriculumType === 'midgame');
+
+  assert(openingLessons.length === 8, 'Opening curriculum contains 8 lessons');
+  assert(midgameLessons.length === 8, 'Mid-Game curriculum contains 8 lessons');
+
+  // Assert every lesson has at least 8 sequential steps
+  CULLING_OPENING_LESSONS.forEach((lesson) => {
+    assert(
+      lesson.steps.length >= 8,
+      `Lesson "${lesson.title}" (${lesson.id}) has at least 8 sequential steps (actual: ${lesson.steps.length})`
+    );
+    assert(
+      Boolean(lesson.namedStrategy),
+      `Lesson "${lesson.title}" (${lesson.id}) has a named strategy ("${lesson.namedStrategy}")`
+    );
+  });
+} catch (err: any) {
+  console.error(`❌ Curriculum structure test failed: ${err.message}`);
+}
 
 // Test 2: Step-by-step authoritative move legality for ALL 16 lessons
 CULLING_OPENING_LESSONS.forEach((lesson, index) => {
@@ -59,6 +71,9 @@ CULLING_OPENING_LESSONS.forEach((lesson, index) => {
   if (lesson.initialBoard) {
     match.board = lesson.initialBoard;
   }
+
+  let stepsPassed = 0;
+  let lessonError: string | undefined = undefined;
 
   try {
     lesson.steps.forEach((step, stepIdx) => {
@@ -96,10 +111,31 @@ CULLING_OPENING_LESSONS.forEach((lesson, index) => {
         );
         match = oppRes.state;
       }
+
+      stepsPassed++;
     });
   } catch (err: any) {
+    lessonError = err.message;
     console.error(`❌ FAILED LESSON ${index + 1} (${lesson.id}): ${err.message}`);
   }
+
+  lessonResults.push({
+    id: lesson.id,
+    title: lesson.title,
+    stepsTotal: lesson.steps.length,
+    stepsPassed,
+    status: lessonError ? 'FAILED' : 'PASSED',
+    error: lessonError,
+  });
 });
 
-console.log('\n=== ALL 16 CULLING GAME DOJO LESSONS PASSED 100% AUTHORITATIVE VALIDATION! ===');
+console.log('\n=== CULLING OPENING DOJO TEST SUMMARY ===');
+console.table(lessonResults);
+console.log(`Assertions: Total=${totalAssertions}, Passed=${passedAssertions}, Failed=${failedAssertions}`);
+
+if (failedAssertions > 0 || lessonResults.some((l) => l.status === 'FAILED')) {
+  console.error('\n❌ CULLING OPENING DOJO TEST SUITE FAILED!');
+  process.exit(1);
+} else {
+  console.log('\n✅ ALL CULLING OPENING DOJO LESSONS PASSED!');
+}
