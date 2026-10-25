@@ -259,6 +259,28 @@ export function destroyRoom(roomId: string) {
   }
 }
 
+export function destroyRoomByHostWs(ws: WebSocket): boolean {
+  for (const [roomId, room] of rooms.entries()) {
+    if (room.hostWs === ws && room.match.status === 'waiting_guest') {
+      destroyRoom(roomId);
+      return true;
+    }
+  }
+  return false;
+}
+
+export function destroyRoomByHostUserId(userId: string): boolean {
+  const activeRoomId = userActiveRoom.get(userId);
+  if (activeRoomId) {
+    const room = rooms.get(activeRoomId);
+    if (room && room.match.status === 'waiting_guest') {
+      destroyRoom(activeRoomId);
+      return true;
+    }
+  }
+  return false;
+}
+
 // Sweeper: expire waiting rooms older than 15 minutes or completed rooms older than 5 minutes
 const sweeper = setInterval(() => {
   const now = Date.now();

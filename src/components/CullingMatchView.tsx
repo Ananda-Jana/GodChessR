@@ -560,8 +560,8 @@ export const CullingMatchView: React.FC<CullingMatchViewProps> = ({
   return (
     <div
       className={`w-screen bg-neutral-950 text-white flex flex-col font-sans relative ${
-        isRulesOpen
-          ? 'min-h-[100dvh] overflow-y-auto touch-auto select-text'
+        isRulesOpen || match.status === 'completed'
+          ? 'min-h-[100dvh] h-auto overflow-y-auto touch-auto select-text'
           : 'h-[100dvh] max-h-[100dvh] overflow-hidden touch-manipulation lg:touch-auto select-none lg:select-auto'
       }`}
     >
@@ -592,10 +592,10 @@ export const CullingMatchView: React.FC<CullingMatchViewProps> = ({
         </div>
       )}
 
-      {/* Prominent Red Game-Over Modal */}
+      {/* Prominent Red Game-Over Modal (Fully scrollable on desktop and mobile) */}
       {showGameOverModal && match.status === 'completed' && (
-        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-red-600 text-white border-4 border-white shadow-[8px_8px_0px_#000] p-6 max-w-md w-full relative">
+        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+          <div className="bg-red-600 text-white border-4 border-white shadow-[8px_8px_0px_#000] p-4 sm:p-6 max-w-md w-full relative max-h-[calc(100dvh-2rem)] overflow-y-auto my-auto">
             <button
               onClick={() => setShowGameOverModal(false)}
               className="absolute top-3 right-3 p-1 text-white hover:bg-red-700 border-2 border-white cursor-pointer"
@@ -805,7 +805,9 @@ export const CullingMatchView: React.FC<CullingMatchViewProps> = ({
       </div>
 
       {/* MAIN VIEWPORT: ROCK-SOLID BOARD (Fitted Square Center Stage) */}
-      <main className="flex-1 min-h-0 w-full max-w-[1640px] mx-auto px-0 pt-0 pb-[60px] md:px-1 md:pt-1 lg:px-3 lg:py-2 flex flex-row items-center lg:items-stretch justify-between gap-0 lg:gap-3 overflow-hidden relative">
+      <main className={`flex-1 min-h-0 w-full max-w-[1640px] mx-auto px-0 pt-0 pb-[60px] md:px-1 md:pt-1 lg:px-3 lg:py-2 flex flex-row items-center lg:items-stretch justify-between gap-0 lg:gap-3 relative ${
+        match.status === 'completed' ? 'overflow-y-auto' : 'overflow-hidden'
+      }`}>
         {/* DESKTOP-ONLY LEFT SIDEBAR: Predictor, Logs, Abilities & Roster */}
         <aside className="hidden lg:flex w-72 xl:w-80 flex-col gap-2 shrink-0 h-full min-h-0 overflow-hidden">
           {/* Universal Live Skill Predictor Panel */}
@@ -917,7 +919,9 @@ export const CullingMatchView: React.FC<CullingMatchViewProps> = ({
         {/* CENTER COLUMN: FULLY IMMOBILE ROCK-SOLID SQUARE BOARD */}
         <section
           ref={boardStageRef}
-          className="flex-1 min-w-0 min-h-0 h-full flex items-center justify-center overflow-hidden relative touch-manipulation"
+          className={`flex-1 min-w-0 min-h-0 h-full flex items-center justify-center relative touch-manipulation ${
+            match.status === 'completed' ? 'overflow-y-auto py-4' : 'overflow-hidden'
+          }`}
         >
           <div
             style={{

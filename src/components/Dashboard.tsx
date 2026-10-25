@@ -38,7 +38,11 @@ import { SecretPlayerConfig } from '../secret/types';
 import { MultiplayerChallengeModal } from './MultiplayerChallengeModal';
 import { GamepadSkull } from './GamepadSkull';
 import { OctoSkull } from './OctoSkull';
+import { CyberSkull } from './CyberSkull';
 import { AboutGameModal } from './AboutGameModal';
+import { EsEntryCard } from '../endlessSpring/EsEntryCard';
+
+const EsRoot = React.lazy(() => import('../endlessSpring/EsRoot'));
 
 interface DashboardProps {
   onOpenRules: () => void;
@@ -89,6 +93,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
   const [isCullingOpen, setIsCullingOpen] = useState(false);
   const [isSecretArenaOpen, setIsSecretArenaOpen] = useState(false);
   const [isAboutOpen, setIsAboutOpen] = useState(false);
+  const [isEndlessSpringOpen, setIsEndlessSpringOpen] = useState(false);
   const [challengeModalTarget, setChallengeModalTarget] = useState<{ id: string; name: string } | null>(null);
 
   // Mobile navigation & bottom sheet states
@@ -211,9 +216,21 @@ export const Dashboard: React.FC<DashboardProps> = ({
   const pastMatches = activeMatches.filter((m) => m.status === 'completed');
 
   return (
-    <div className="min-h-screen bg-white dark:bg-black text-black dark:text-white flex flex-col font-sans">
+    <div className="min-h-screen bg-white dark:bg-black text-black dark:text-white flex flex-col font-sans relative">
+      {/* Fixed Background Image (Home Screen Only) */}
+      <div
+        aria-hidden="true"
+        className="fixed inset-0 z-0 bg-cover bg-center bg-no-repeat pointer-events-none"
+        style={{
+          backgroundImage: "url('/assets/aistudio/image_1fd5a868.png')",
+        }}
+      >
+        {/* Darkened overlay for readability */}
+        <div className="absolute inset-0 bg-black/65 backdrop-brightness-75" />
+      </div>
+
       {/* Slim Mobile Top Bar (md:hidden, sticky, h-12, glassmorphic) */}
-      <header className="md:hidden flex items-center justify-between px-2.5 sm:px-3 h-12 sticky top-0 z-40 bg-zinc-950/95 supports-[backdrop-filter]:bg-zinc-950/75 supports-[backdrop-filter]:backdrop-blur-xl border-b border-white/10 text-white">
+      <header className="md:hidden flex items-center justify-between px-2.5 sm:px-3 h-12 sticky top-0 z-40 bg-zinc-950/95 supports-[backdrop-filter]:bg-zinc-950/75 supports-[backdrop-filter]:backdrop-blur-xl border-b border-white/10 text-white relative">
         {/* Mobile Brand Button (Text-only, triggers About modal) */}
         <button
           type="button"
@@ -267,7 +284,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
       </header>
 
       {/* Desktop Dark Glass Top Bar (hidden md:flex) */}
-      <header className="hidden md:flex items-center justify-between gap-3 sm:gap-6 px-4 sm:px-6 py-3.5 border-b border-white/10 bg-zinc-950/95 supports-[backdrop-filter]:bg-zinc-950/65 supports-[backdrop-filter]:backdrop-blur-xl supports-[backdrop-filter]:backdrop-saturate-150 shadow-lg text-white sticky top-0 z-40">
+      <header className="hidden md:flex items-center justify-between gap-3 sm:gap-6 px-4 sm:px-6 py-3.5 border-b border-white/10 bg-zinc-950/95 supports-[backdrop-filter]:bg-zinc-950/65 supports-[backdrop-filter]:backdrop-blur-xl supports-[backdrop-filter]:backdrop-saturate-150 shadow-lg text-white sticky top-0 z-40 relative">
         {/* Brand Lockup Button (OctoSkull + Name, triggers About modal) */}
         <button
           type="button"
@@ -353,7 +370,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
       </header>
 
       {/* Main Content Area */}
-      <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 flex flex-col lg:grid lg:grid-cols-12 gap-6 pb-24 md:pb-6">
+      <main className="relative z-10 flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 flex flex-col lg:grid lg:grid-cols-12 gap-6 pb-24 md:pb-6">
         {/* Mobile Top Training Buttons Bar */}
         <div className="lg:hidden order-1 col-span-1 flex items-center justify-center gap-2 w-full mb-1">
           <button
@@ -721,23 +738,143 @@ export const Dashboard: React.FC<DashboardProps> = ({
             </button>
           </div>
 
-          {/* Instant Grandmaster Bot Challenge Card */}
-          <div className="bg-amber-400 text-black border-4 border-black p-4 sm:p-5 shadow-[6px_6px_0px_#000000] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-3.5">
-              <div className="w-12 h-12 bg-black border-2 border-black flex items-center justify-center text-amber-400 shrink-0">
-                <Bot className="w-7 h-7" />
+          {/* Instant Grandmaster Bot Challenge Card (Animated Fire Effect) */}
+          <div className="bot-fire-card text-black border-4 border-black p-4 sm:p-5 shadow-[6px_6px_0px_#000000] flex flex-col sm:flex-row sm:items-center justify-between gap-4 relative overflow-hidden transition-all duration-200">
+            <style>{`
+              @keyframes fireFlow {
+                0% { background-position: 0% 50%; }
+                50% { background-position: 100% 50%; }
+                100% { background-position: 0% 50%; }
+              }
+
+              @keyframes flameRise {
+                0% { transform: translateY(20%) scaleY(0.95) scaleX(0.98); opacity: 0.6; }
+                25% { transform: translateY(-12%) scaleY(1.15) scaleX(1.05) translateX(-6px); opacity: 0.9; }
+                50% { transform: translateY(8%) scaleY(0.9) scaleX(0.95) translateX(5px); opacity: 0.65; }
+                75% { transform: translateY(-16%) scaleY(1.2) scaleX(0.92) translateX(-3px); opacity: 0.95; }
+                100% { transform: translateY(20%) scaleY(0.95) scaleX(0.98); opacity: 0.6; }
+              }
+
+              @keyframes emberFloat {
+                0% { transform: translateY(30px) translateX(0) scale(1); opacity: 0; }
+                20% { opacity: 0.95; }
+                80% { opacity: 0.7; }
+                100% { transform: translateY(-90px) translateX(14px) scale(0.2); opacity: 0; }
+              }
+
+              @keyframes heatPulse {
+                0%, 100% { box-shadow: 6px 6px 0px #000000, 0 0 16px rgba(249,115,22,0.5); }
+                50% { box-shadow: 6px 6px 0px #000000, 0 0 32px rgba(253,224,71,0.85), inset 0 0 24px rgba(234,88,12,0.4); }
+              }
+
+              @keyframes edgeFlicker {
+                0%, 100% { opacity: 0.4; }
+                12% { opacity: 0.9; }
+                27% { opacity: 0.35; }
+                41% { opacity: 0.95; }
+                63% { opacity: 0.5; }
+                80% { opacity: 0.85; }
+              }
+
+              .bot-fire-card {
+                animation: heatPulse 2.5s infinite ease-in-out;
+                will-change: box-shadow;
+              }
+
+              .bot-fire-bg {
+                background: linear-gradient(115deg, #dc2626 0%, #ea580c 25%, #f97316 50%, #f59e0b 75%, #fde047 100%);
+                background-size: 300% 300%;
+                animation: fireFlow 6.5s ease-in-out infinite;
+                will-change: background-position;
+              }
+
+              .bot-fire-edge {
+                box-shadow: inset 0 3px 12px rgba(255, 255, 255, 0.6), inset 0 -3px 12px rgba(220, 38, 38, 0.8);
+                animation: edgeFlicker 1.8s infinite linear;
+                will-change: opacity;
+              }
+
+              .bot-flame-blob-1 {
+                background: radial-gradient(circle, rgba(253,224,71,0.85) 0%, rgba(249,115,22,0.6) 50%, transparent 80%);
+                filter: blur(14px);
+                mix-blend-mode: overlay;
+                animation: flameRise 3.2s infinite ease-in-out;
+                will-change: transform, opacity;
+              }
+
+              .bot-flame-blob-2 {
+                background: radial-gradient(circle, rgba(255,255,255,0.9) 0%, rgba(251,146,60,0.7) 45%, transparent 75%);
+                filter: blur(16px);
+                mix-blend-mode: screen;
+                animation: flameRise 4.5s infinite ease-in-out 0.6s;
+                will-change: transform, opacity;
+              }
+
+              .bot-flame-blob-3 {
+                background: radial-gradient(circle, rgba(253,224,71,0.8) 0%, rgba(234,88,12,0.65) 55%, transparent 80%);
+                filter: blur(14px);
+                mix-blend-mode: overlay;
+                animation: flameRise 5.2s infinite ease-in-out 1.2s;
+                will-change: transform, opacity;
+              }
+
+              .bot-ember-1 { animation: emberFloat 2.8s infinite ease-out 0.1s; will-change: transform, opacity; }
+              .bot-ember-2 { animation: emberFloat 3.6s infinite ease-out 0.7s; will-change: transform, opacity; }
+              .bot-ember-3 { animation: emberFloat 2.4s infinite ease-out 1.3s; will-change: transform, opacity; }
+              .bot-ember-4 { animation: emberFloat 4.1s infinite ease-out 0.4s; will-change: transform, opacity; }
+              .bot-ember-5 { animation: emberFloat 3.1s infinite ease-out 1.8s; will-change: transform, opacity; }
+              .bot-ember-6 { animation: emberFloat 2.6s infinite ease-out 0.9s; will-change: transform, opacity; }
+
+              @media (prefers-reduced-motion: reduce) {
+                .bot-fire-card {
+                  animation: none !important;
+                }
+                .bot-fire-bg {
+                  background: linear-gradient(115deg, #ea580c, #f59e0b, #fde047) !important;
+                  animation: none !important;
+                }
+                .bot-flame-blob-1, .bot-flame-blob-2, .bot-flame-blob-3,
+                .bot-ember-1, .bot-ember-2, .bot-ember-3, .bot-ember-4, .bot-ember-5, .bot-ember-6,
+                .bot-fire-edge {
+                  animation: none !important;
+                  display: none !important;
+                }
+              }
+            `}</style>
+
+            {/* Fire Effect Background Container (z-0) */}
+            <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none select-none">
+              <div className="absolute inset-0 bot-fire-bg" />
+              <div className="absolute inset-0 bot-fire-edge" />
+              <div className="absolute -bottom-8 left-[10%] w-48 h-36 rounded-full bot-flame-blob-1" />
+              <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 w-64 h-40 rounded-full bot-flame-blob-2" />
+              <div className="absolute -bottom-8 right-[10%] w-52 h-36 rounded-full bot-flame-blob-3" />
+
+              <div className="absolute bottom-1 left-[12%] w-1.5 h-1.5 rounded-full bg-amber-200 bot-ember-1" />
+              <div className="absolute bottom-2 left-[28%] w-1 h-1 rounded-full bg-yellow-300 bot-ember-2" />
+              <div className="absolute bottom-1 left-[45%] w-2 h-2 rounded-full bg-orange-300 bot-ember-3" />
+              <div className="absolute bottom-2 left-[62%] w-1.5 h-1.5 rounded-full bg-amber-300 bot-ember-4" />
+              <div className="absolute bottom-1 left-[78%] w-1 h-1 rounded-full bg-yellow-200 bot-ember-5" />
+              <div className="absolute bottom-2 left-[90%] w-2 h-2 rounded-full bg-orange-400 bot-ember-6" />
+            </div>
+
+            {/* Card Content & Text (z-10) */}
+            <div className="flex items-center gap-3.5 relative z-10 drop-shadow-[0_1px_2px_rgba(0,0,0,0.4)]">
+              <div className="w-12 h-12 bg-black border-2 border-black flex items-center justify-center text-amber-400 shrink-0 shadow-[2px_2px_0px_#000]">
+                <CyberSkull size={28} className="w-7 h-7 text-amber-400" />
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <h3 className="text-sm sm:text-base font-black uppercase">Play vs Grandmaster Bot</h3>
-                  <span className="text-[10px] px-1.5 py-0.5 bg-black text-amber-400 font-black uppercase">
+                  <h3 className="text-sm sm:text-base font-black uppercase text-black">Play vs Grandmaster Bot</h3>
+                  <span className="text-[10px] px-1.5 py-0.5 bg-black text-amber-400 font-black uppercase shadow-sm">
                     Instant
                   </span>
                 </div>
               </div>
             </div>
 
-            <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+            {/* Inner Action Buttons (z-10) */}
+            <div className="flex flex-wrap items-center gap-2.5 shrink-0 relative z-10">
               <button
                 type="button"
                 onClick={onOpenClassicBotModal || onOpenBotModal}
@@ -790,6 +927,9 @@ export const Dashboard: React.FC<DashboardProps> = ({
               ⚔️ Culling Mode
             </button>
           </div>
+
+          {/* Endless Spring Story Mode Card (Immediately After Culling Game Mode) */}
+          <EsEntryCard onOpen={() => setIsEndlessSpringOpen(true)} />
 
           {/* Secret Players Arena Launcher Card (Immediately After Culling Game Mode) */}
           <div 
@@ -1474,6 +1614,12 @@ export const Dashboard: React.FC<DashboardProps> = ({
         isOpen={isAboutOpen}
         onClose={() => setIsAboutOpen(false)}
       />
+
+      {isEndlessSpringOpen && (
+        <React.Suspense fallback={<div className="fixed inset-0 z-50 bg-black flex items-center justify-center text-amber-300 font-mono text-sm">Loading Endless Spring...</div>}>
+          <EsRoot onExit={() => setIsEndlessSpringOpen(false)} />
+        </React.Suspense>
+      )}
     </div>
   );
 };

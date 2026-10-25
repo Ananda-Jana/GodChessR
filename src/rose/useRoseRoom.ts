@@ -22,6 +22,7 @@ export function useRoseRoom() {
   const [isWaitingForPartner, setIsWaitingForPartner] = useState(false);
   const [isCreatingChallenge, setIsCreatingChallenge] = useState(false);
   const [isJoiningChallenge, setIsJoiningChallenge] = useState(false);
+  const [joiningCode, setJoiningCode] = useState<string | null>(null);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pendingMove, setPendingMove] = useState(false);
@@ -72,6 +73,7 @@ export function useRoseRoom() {
           case 'rose:match_started':
             setStatusMessage('Partner joined! Launching romantic duel...');
             setIsJoiningChallenge(false);
+            setJoiningCode(null);
             setIsCreatingChallenge(false);
             setIsWaitingForPartner(false);
             setHostedCode(null);
@@ -116,6 +118,7 @@ export function useRoseRoom() {
             setIsWaitingForPartner(false);
             setIsCreatingChallenge(false);
             setIsJoiningChallenge(false);
+            setJoiningCode(null);
             setStatusMessage(null);
             setHostedCode(null);
             break;
@@ -124,6 +127,7 @@ export function useRoseRoom() {
             setError(data.message || 'Operation failed');
             setIsCreatingChallenge(false);
             setIsJoiningChallenge(false);
+            setJoiningCode(null);
             setStatusMessage(null);
             setPendingMove(false);
             break;
@@ -151,12 +155,14 @@ export function useRoseRoom() {
       wsRef.current = null;
       setIsCreatingChallenge(false);
       setIsJoiningChallenge(false);
+      setJoiningCode(null);
       reconnectTimeoutRef.current = setTimeout(connect, 3000);
     };
 
     ws.onerror = () => {
       setIsCreatingChallenge(false);
       setIsJoiningChallenge(false);
+      setJoiningCode(null);
       ws.close();
     };
   }, [token]);
@@ -202,12 +208,17 @@ export function useRoseRoom() {
       setError('Please enter a room code.');
       return;
     }
+    if (hostedCode && (cleanCode === hostedCode || cleanCode === hostedCode.replace(/[\s-]/g, ''))) {
+      setError('You cannot join your own room code.');
+      return;
+    }
     setError(null);
     if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
-      setError('Connecting to game server...');
+      setError('Disconnected from server. Reconnecting...');
       return;
     }
     setIsJoiningChallenge(true);
+    setJoiningCode(cleanCode);
     setStatusMessage('Connecting to room...');
     send({
       type: 'rose:join_challenge',
@@ -217,7 +228,7 @@ export function useRoseRoom() {
       avatarId: user?.avatarId,
       token,
     });
-  }, [send, user, token]);
+  }, [send, hostedCode, user, token]);
 
   const cancelRoom = useCallback(() => {
     if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN && hostedCode) {
@@ -231,6 +242,7 @@ export function useRoseRoom() {
     }
     setIsCreatingChallenge(false);
     setIsJoiningChallenge(false);
+    setJoiningCode(null);
     setIsWaitingForPartner(false);
     setStatusMessage(null);
     setHostedCode(null);
@@ -296,6 +308,7 @@ export function useRoseRoom() {
     setIsWaitingForPartner(false);
     setIsCreatingChallenge(false);
     setIsJoiningChallenge(false);
+    setJoiningCode(null);
     setStatusMessage(null);
     setError(null);
     setChatMessages([]);
@@ -311,6 +324,7 @@ export function useRoseRoom() {
     isWaitingForPartner,
     isCreatingChallenge,
     isJoiningChallenge,
+    joiningCode,
     statusMessage,
     error,
     setError,

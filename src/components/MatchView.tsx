@@ -678,7 +678,7 @@ const MatchViewContent: React.FC<MatchViewContentProps> = ({
   );
 
   return (
-    <div className="h-[100dvh] max-h-[100dvh] overflow-hidden bg-white dark:bg-black text-black dark:text-white flex flex-col font-sans">
+    <div className={`${isGameOver ? 'min-h-[100dvh] h-auto overflow-y-auto' : 'h-[100dvh] max-h-[100dvh] overflow-hidden'} bg-white dark:bg-black text-black dark:text-white flex flex-col font-sans`}>
       <style>{`
         @keyframes shake {
           0% { transform: translate(1px, 1px) rotate(0deg); }
@@ -843,7 +843,11 @@ const MatchViewContent: React.FC<MatchViewContentProps> = ({
       </header>
 
       {/* MAIN WORKSPACE: Fixed 3-zone column on mobile (<768px), 3-col grid on desktop (>=768px) */}
-      <main className="flex-1 min-h-0 w-full mx-auto flex flex-col md:grid md:grid-cols-[1fr_320px] lg:grid-cols-[300px_1fr_320px] h-[calc(100dvh-48px)] md:h-[calc(100dvh-56px)] gap-0 md:gap-6 p-0 md:p-6 overflow-hidden max-w-[1600px]">
+      <main className={`flex-1 min-h-0 w-full mx-auto flex flex-col md:grid md:grid-cols-[1fr_320px] lg:grid-cols-[300px_1fr_320px] ${
+        isGameOver
+          ? 'min-h-[calc(100dvh-48px)] md:min-h-[calc(100dvh-56px)] h-auto overflow-y-auto'
+          : 'h-[calc(100dvh-48px)] md:h-[calc(100dvh-56px)] overflow-hidden'
+      } gap-0 md:gap-6 p-0 md:p-6 max-w-[1600px]`}>
         {/* Desktop Left Column (300px on lg:) */}
         <div className="hidden lg:flex flex-col gap-4 overflow-y-auto pr-1">
           <div className="bg-white dark:bg-[#0a0a0c] border-3 border-black dark:border-white p-4 shadow-[4px_4px_0px_#000000] dark:shadow-[4px_4px_0px_#ffffff] space-y-3">
@@ -1058,7 +1062,9 @@ const MatchViewContent: React.FC<MatchViewContentProps> = ({
 
         {/* ZONE 2 (Mobile Middle) & Center Column (Desktop) */}
         <div
-          className="flex-1 min-h-0 w-full flex flex-col items-center justify-center relative overflow-hidden px-0 py-0 md:p-0"
+          className={`flex-1 min-h-0 w-full flex flex-col items-center relative px-0 py-0 md:p-0 ${
+            isGameOver ? 'overflow-y-auto justify-start py-2' : 'overflow-hidden justify-center'
+          }`}
         >
           {/* Tablet (768px - 1023px) compact status card */}
           {activeMatch.gameMode !== 'classic' && (
@@ -1136,7 +1142,7 @@ const MatchViewContent: React.FC<MatchViewContentProps> = ({
           {/* Desktop Game Over Banner (Overlay on mobile so board never moves or resizes) */}
           {isGameOver && activeMatch.result && showEndGameNotice && (
             <div
-              className={`hidden md:flex w-full p-4 border-4 border-black dark:border-white shadow-[6px_6px_0px_#000000] dark:shadow-[6px_6px_0px_#ffffff] flex-col gap-2.5 ${
+              className={`hidden md:flex w-full p-4 border-4 border-black dark:border-white shadow-[6px_6px_0px_#000000] dark:shadow-[6px_6px_0px_#ffffff] flex-col gap-2.5 max-h-[85dvh] overflow-y-auto shrink-0 mb-3 ${
                 isPlayerDefeated
                   ? 'bg-red-600 text-white'
                   : activeMatch.result.winner === 'draw'
@@ -1279,7 +1285,7 @@ const MatchViewContent: React.FC<MatchViewContentProps> = ({
             <div
               role="region"
               aria-label="Match result"
-              className={`absolute bottom-2 left-2 right-2 z-30 p-3 border-3 border-black dark:border-white shadow-[4px_4px_0px_#000000] dark:shadow-[4px_4px_0px_#ffffff] flex flex-col gap-2 ${
+              className={`absolute bottom-2 left-2 right-2 z-30 p-3 border-3 border-black dark:border-white shadow-[4px_4px_0px_#000000] dark:shadow-[4px_4px_0px_#ffffff] flex flex-col gap-2 max-h-[80dvh] overflow-y-auto ${
                 isPlayerDefeated
                   ? 'bg-red-600 text-white'
                   : activeMatch.result.winner === 'draw'

@@ -1,0 +1,558 @@
+=====================================================================
+PROJECT: "ENDLESS SPRING" STORY MODE (new, fully isolated game mode)
+=====================================================================
+
+GOAL
+Add a new single-player story game mode based on the novel "Endless
+Spring: Part One - Mind Opens" by Ananda Jana. It contains FIVE separate
+games. Each game covers a block of story chapters, is playable on its own
+(no unlock order, no progress locks), and lasts about 15 minutes. The
+games use story-themed boards, story-character pieces and story-specific
+rules. They are NOT standard chess.
+
+THE MOST IMPORTANT RULE: TOTAL ISOLATION
+Existing game logic must never be affected. Follow all of these:
+
+1. Create ONE new folder: src/endlessSpring/. Every file for this mode
+   lives there (plus tests, see below).
+2. Every new file name AND every exported identifier uses the prefix Es
+   (components, functions, types) or ES_ (constants). Before creating any
+   file, search the whole project (find / grep -ril) to confirm the name
+   does not already exist. No name may match any file or export anywhere
+   else in the project.
+3. localStorage keys all start with "endless_spring_". No other keys.
+4. Do NOT import from, or modify, any existing game code: engine.ts,
+   bot.ts, cullingEngine.ts, cullingBot.ts, craftables.ts, roseRules.ts,
+   socket or auth contexts, training files, or any existing component
+   except as stated in rule 5. Do NOT use sockets, fetch/network calls, the
+   database, ratings, or user stats. Allowed imports: React, lucide-react,
+   and files inside src/endlessSpring/.
+5. The ONLY edit outside src/endlessSpring/ is in Dashboard.tsx:
+   - one lazy import: const EsRoot = React.lazy(() => import(...));
+   - one useState(boolean) to open and close the mode;
+   - the entry card (see ENTRY BUTTON);
+   - rendering <EsRoot onExit={...} /> inside <Suspense> as a full-screen
+     overlay (fixed inset-0, high z-index) ONLY when open.
+   Do not touch App.tsx, routing, global CSS, the Tailwind config, or any
+   other card. The overlay approach means the mode needs no router change.
+6. Do not edit src/components/ChessPiece.tsx or any ChessPiece*.tsx file.
+   The piece renderer is COPIED (see PIECES AND ART).
+7. Copy anything reusable (for example the modal focus-trap hook) into
+   src/endlessSpring/ under an Es-prefixed name. Never import the original.
+8. No new npm dependencies. Tailwind utility classes only. Any keyframes go
+   in a <style> tag inside an Es component, with class and keyframe names
+   starting "es-". Respect prefers-reduced-motion.
+9. Final report: list of new files, the exact lines changed in
+   Dashboard.tsx, and proof that no other file changed (git diff --stat).
+
+ENTRY BUTTON (Dashboard.tsx)
+- Add a card directly AFTER the Culling Game card, in the same list and
+  same order on mobile and desktop. Copy the Culling card's classes so it
+  matches the existing look. Do not change any other card.
+- Title: "ENDLESS SPRING". Subtitle: "Story mode - 5 games, ~15 min each".
+- Use a lucide-react icon (for example BookOpen). It opens the overlay.
+- Put the card markup in src/endlessSpring/EsEntryCard.tsx and import it.
+  Only the import and one usage line change in Dashboard.tsx.
+
+FILES TO CREATE (all in src/endlessSpring/)
+EsTypes.ts          shared types
+EsConfig.ts         ES_SCRIBBLE_HUB_URL (placeholder "https://www.scribblehub.com/",
+                    with a TODO comment so the owner replaces it with the story
+                    URL), game metadata, save keys
+EsRules.ts          pure movement, capture and turn rules (no React)
+EsGameData.ts       boards, rosters, tiles, event schedules, story texts
+EsEvents.ts         scheduled and scripted events per game
+EsBotBrain.ts       deterministic opponent AI
+EsSaveStore.ts      save and load, versioned
+EsModalFocus.ts     copy of the focus-trap and Escape hook
+EsPieceRenderer.tsx COPY of ChessPiece.tsx, renamed, plus story pieces
+EsBoardView.tsx     board renderer (fits any shape, keyboard accessible)
+EsBoardDecor.tsx    themed side art and tile textures (inline SVG only)
+EsStoryModal.tsx    pre-game story script modal
+EsEndModal.tsx      result modal
+EsRulesSheet.tsx    in-game rules and piece legend
+EsHud.tsx           objective, round counter, next-event indicator, narrator line
+EsSelectScreen.tsx  the 5-card chooser
+EsGameScreen.tsx    play screen
+EsRoot.tsx          overlay root (select -> story modal -> game -> end)
+EsEntryCard.tsx     dashboard card
+test/esRules.test.ts, test/esSolvability.test.ts  (see TESTS)
+
+SCREENS AND FLOW (EsRoot)
+1. Select screen: 5 cards. Each shows the game number, title, arc name,
+   "Chapters X-Y", "about 15 min", a spoiler line ("Contains events from
+   chapters X-Y"), a Read on Scribble Hub link (target="_blank"
+   rel="noopener noreferrer", using ES_SCRIBBLE_HUB_URL), and a Play button.
+   If a save exists for that game, show Continue and Start Over buttons
+   instead of Play. Nothing is locked. Exit button top-left. This screen may
+   scroll.
+2. Story modal (new games only): dark glass, centered, with the title, arc
+   name, chapter range and the story script (see STORY TEXTS) and a Begin
+   button. Glass recipe: backdrop bg-black/70; panel bg-zinc-950/95
+   supports-[backdrop-filter]:bg-zinc-950/65
+   supports-[backdrop-filter]:backdrop-blur-xl border border-white/10.
+   Escape or X goes back to the select screen. Focus trapped and restored.
+3. Game screen. The page must not scroll during play. Layout is
+   top bar (title, round counter, Rules button, Exit), HUD line (objective
+   plus "next event in N rounds"), board fitted to the free space with a
+   ResizeObserver (width and height), and a bottom bar with Undo-free
+   controls: Rules, Restart game, and phase-specific action buttons
+   (Imagine, Lift, and so on). Controls are at least 44px tall. Must work at
+   320x568, 360x640, 390x844, 430x932 and on desktop.
+4. End modal: outcome title, 2-3 lines of ending text, the Scribble Hub
+   link, Replay and Back to Select buttons.
+Exit asks for confirmation if the game is in progress. The game state is
+saved after every half-move, so closing the tab never loses a game.
+
+SAVE RULES (EsSaveStore)
+Key: endless_spring_save_v1_g1 ... g5. Value: JSON containing version 1,
+the full game state (board, pieces, round, phase, flags, cooldowns, seed)
+and a timestamp. If the version is unknown or the JSON is invalid, ignore
+the save silently. Saving never throws. After load, if it is the opponent's
+turn, run the bot.
+
+=====================================================================
+COMMON RULES ENGINE (apply to ALL five games)
+=====================================================================
+COORDINATES. Each board is a grid. x = column, 0 at the left. y = row, 0
+at the BOTTOM. Boards in EsGameData are written as arrays of strings with
+the TOP row first. '.' = playable, '#' = void. Side A is the player and
+starts at the bottom. Side B is the opponent. Neutral pieces belong to
+neither side.
+
+TURNS. A "round" = A's turn followed by B's turn. A always moves first. In
+a turn the player moves exactly ONE piece, or uses one special action when
+that game allows it. No passing. If a side has no legal move its turn is
+skipped. (Game 4 gives B a double move, see there.)
+
+MOVING AND CAPTURING. A piece moves to a legal target square. If an enemy
+piece stands there, it is captured and removed. You can never land on a
+friendly piece, a void square, or a neutral token. Sliding pieces stop at
+the first piece or void on the path (a capture is allowed on an enemy
+blocker; the ray cannot continue). Jumping pieces ignore pieces and voids
+in between but the landing square must be playable. Pieces marked "no
+capture" simply cannot move onto enemy-occupied squares.
+
+END-OF-ROUND EVENTS. After B's turn, apply that game's events for the
+round number, in the order listed in the game data. Then check the
+objectives. The same order always applies, so results are predictable.
+
+OBJECTIVE CHECK ORDER. After every move: (1) A's win condition, (2) A's
+loss condition, (3) round limit. If A's win and loss happen at the same
+moment, A loses.
+
+NO CHECK RULE. There is no check or checkmate in this mode. Royal pieces
+are lost only when captured.
+
+INFORMATION. Everything is visible to the player, except Game 5's hidden
+loyalties. Every scheduled event is shown in the HUD in advance ("Water
+rises in 2 rounds"). Nothing is random during play. Randomness exists only
+in Game 5's start (a stored seed).
+
+THE OPPONENT AI (EsBotBrain)
+- Deterministic alpha-beta search, depth 2, 300ms budget, fallback to depth
+  1. Same position gives the same move every time.
+- Evaluation: material (values in EsGameData) plus game-specific terms
+  listed under each game. Tie-break: lowest piece id, then lowest target y,
+  then lowest target x.
+- Scripted pieces (Crowd flow, Scarecrow flee, Watcher, Torchbearer,
+  Yjkstra timing) are moved by EsEvents, not by the search.
+- The AI is meant to be beatable. All strengths are constants in
+  EsGameData.
+
+PIECE MOVEMENT TABLE (exact, same everywhere)
+Directions: O4 = the 4 orthogonal directions, D4 = the 4 diagonals,
+8 = all 8.
+- dreamer (AJ): 1 step in 8. Captures. 
+- keeper (Sunanda): 1 step in 8. Captures. (Opponent version of dreamer.)
+- guide (AJX): slides up to 3 squares in O4, OR 1 step in D4. Captures.
+- footman: 1 step in O4. Captures.
+- shade: knight jump (offsets +-1,+-2 and +-2,+-1). Captures.
+- wind: slides up to 3 squares in D4. Captures.
+- beam: slides up to 4 squares in O4. Captures.
+- scarecrow: 1 step in O4. NO capture. (Royal piece in Game 1.)
+- echo: 1 step in O4. No capture. Cannot be captured (see Game 2).
+- angel: slides up to 3 in D4. Captures. Has one special (Game 2).
+- investigator: slides up to 2 in O4. NO capture. Special (Game 2).
+- observer: 1 step in O4. Captures.
+- boat: 1 step in O4. NO capture. Fragile, see Game 3.
+- guest: 1 step in O4. Captures.
+- undertow: 1 step in 8. Captures.
+- rescuer: slides up to 4 in O4. Captures. Special Lift (Game 3).
+- banded: 1 step in 8. Captures.
+- crowd (token): neutral, never captured by A, moved by flow (Game 4).
+- torchbearer: 1 step in O4. Cannot be captured. Special (Game 4).
+- kin: neutral hidden piece (Game 5).
+- watcher: 1 step in O4. Captures. Cannot be captured.
+- yjkstra: slides up to 2 in 8. Captures. Acts on odd rounds only.
+Piece values (for evaluation and tie-breaks): footman 1, shade 3, wind 3,
+beam 4, guide 4, keeper 2, dreamer 2, observer 1, banded 1, guest 1,
+undertow 2, rescuer 4, angel 3, others 0.
+
+=====================================================================
+GAME 1 - LIGHT AND SHADOW KINGDOM (Chapters 1-6, arc: Commemoration-Fractures)
+=====================================================================
+Board: 8 columns x 8 rows, all playable. Round limit 30.
+Sides: A = Shadow Kingdom (AJ). B = Light Kingdom (Sunanda).
+Pieces per side (8). Side A (y=0 and y=1): shade (1,0), wind (2,0),
+scarecrow (3,0), dreamer (4,0), beam (5,0), footmen (2,1), (3,1), (4,1).
+Side B is the 180-degree mirror (x -> 7-x, y -> 7-y), using keeper instead
+of dreamer.
+
+SHADOW LINE. A variable S starts at 4. Columns x < S are SHADOW, columns
+x >= S are LIGHT. At the end of round 4, S becomes 3. At the end of round
+8, S becomes 2. S never changes again. This represents noon shrinking the
+shadow.
+
+HIDDEN RULE. A piece standing on a shadow square can be captured only by a
+capturing piece whose origin square is within 1 square (Chebyshev
+distance 1) of the target. Shade, wind and beam cannot capture a hidden
+piece from afar. This applies equally to both sides. Show the shadow as a
+dark translucent band over columns x < S; animate S changes (200ms).
+
+PHASES AND EVENTS.
+- Phase 1, rounds 1-10 "Morning": only the shadow line rule.
+- Round 5 end: the Shrine of Ryoshin appears on the first EMPTY square from
+  this list: (3,3), (4,4), (3,4), (4,3). A piece that ENDS its move on the
+  shrine removes it and gives its owner a Blessing: at the start of that
+  side's next turn they make two moves in a row with two DIFFERENT pieces.
+  Only one Blessing exists per game.
+- Phase 2, rounds 11-20 "Storm": beam and wind slide at most 2 squares
+  (instead of 4 and 3). Show a grey storm tint.
+- Phase 3, rounds 21-30 "The Fire": at the end of round 20+k (k = 0..9) the
+  square FIRE[k] gets "smoke"; at the end of the next round it becomes
+  "fire". FIRE = [(3,3),(4,4),(3,4),(4,3),(2,3),(5,4),(2,4),(5,3),(3,2),(4,5)].
+  Smoke squares are still enterable. Fire squares are void for all pieces,
+  and any piece standing on a square when it turns to fire is destroyed.
+
+WIN: capture the enemy scarecrow, or an enemy scarecrow is destroyed by fire.
+LOSS: your scarecrow is captured or burned.
+AT THE ROUND LIMIT (end of round 30, after events): compare the total piece
+values of the surviving pieces. Higher wins. Equal is a "Dusk Draw"
+ending (counts as story complete).
+AI evaluation extras: +3 for each own piece on a shadow square, -8 if the
+own scarecrow is on a light square with an enemy beam or wind in line,
++20 for adjacency to the Shrine when it exists.
+
+=====================================================================
+GAME 2 - THE INVESTIGATOR (Chapters 7-12, arc: Commemoration-Fractures)
+=====================================================================
+Board: 9 columns x 5 rows (top row first):
+  y4: #...#...#
+  y3: ##.###.##
+  y2: .........
+  y1: ##.###.##
+  y0: #...#...#
+Round limit 30. Tiles: NOTEBOOK (2,0), SLIP (6,4), EXIT (8,2).
+Side A: dreamer AJ (4,2), footmen (3,2) and (5,2).
+Side B: investigator (7,2), observers (6,0) and (2,4).
+
+ITEMS. When AJ ENDS a move on the Notebook or Slip tile, that item is
+collected and the tile becomes normal. The EXIT tile is a normal tile
+until AJ holds BOTH items: then AJ ending its move on EXIT wins. Other
+pieces cannot collect items.
+
+QUESTIONING. At the end of every B turn: (a) every echo within 1 square of
+the investigator is destroyed; (b) if the investigator is within 1 square
+of AJ, AJ gets one Question (maximum one per round). THREE Questions = LOSS.
+
+IMAGINE (A's special action, use INSTEAD of moving). Place one echo on any
+empty playable non-tile square within 2 squares of AJ. Cooldown: 3 rounds
+between uses (first use is available in round 1). Maximum 3 echoes at once.
+Echoes cannot be captured. An echo that survives to the END of the phase
+in which it was made becomes a REAL footman (it can then capture and be
+captured). In Phase 3, an echo becomes real at the end of the round it was
+placed. Echoes block movement for all pieces.
+
+THE ANGEL. At the start of round 11 an angel (side A) appears on (4,2), or
+the first empty square among (3,2), (5,2), (4,1)... use the order (4,2),
+(3,2), (5,2), (2,2), (6,2). Intercept (once per game): when B captures any
+A piece within 3 squares of the angel (including the angel), the player
+may CANCEL that capture; the capturing piece goes back to its origin and
+B's turn ends. Show a confirm button "Intercept?" before the capture is
+final.
+
+PHASES: 1 = rounds 1-10 "The Classroom"; 2 = rounds 11-20 "The Clearing"
+(angel exists); 3 = rounds 21-30 "A World of My Own" (echoes real at once).
+WIN: AJ ends a move on EXIT holding both items.
+LOSS: AJ captured, 3 Questions, or round limit reached.
+AI evaluation extras: the investigator moves toward AJ; observers move
+toward items' rooms and toward AJ; -50 if AJ holds both items.
+
+=====================================================================
+GAME 3 - NO WAY BACK (Chapters 13-17, arc: The Anomalies Arc)
+=====================================================================
+Three stages on three different boards. At each stage change, the rosters
+are RESET to the stage's fixed roster (only the boat's survival matters,
+nothing else carries over). Round limit per stage: 10, 9, 8. Saved state
+includes the stage number.
+The BOAT (paper boat, a piece) is the thing to protect in all stages. LOSS
+in any stage: the boat is captured, sinks, or the stage round limit is
+reached. WIN: the boat reaches the stage's PASSAGE (2 adjacent squares); in
+stage 3 that wins the game.
+
+STAGE 1 "The Beachside Hotel": 5x5 board, all playable, WRAP-AROUND (a
+torus): a move that leaves one edge continues from the opposite edge.
+Sliders wrap but cannot pass through their own starting square. Knights
+wrap. Side A: boat (2,0), shade (1,0), wind (3,0). Side B: guests at (0,2)
+and (4,2). PASSAGE squares: (2,2) and (3,2). The passage can be entered only
+when "loops" >= 2. Each time the boat itself crosses an edge by wrapping,
+loops +1 (shown in the HUD "Loops 1/2"). 
+
+STAGE 2 "The Ruins": 7x7 board (top row first):
+  y6: .......
+  y5: .#...#.
+  y4: .......
+  y3: ..#.#..
+  y2: .......
+  y1: .#...#.
+  y0: .......
+Side A: boat (3,0), rescuer (2,0), wind (4,0). Side B: undertows at (1,4)
+and (5,4). PASSAGE: (3,6) and (4,6).
+Water: at the end of round r (r = 3..9) row y = r-3 floods. A flooded
+square limits any piece standing on it to moves of distance 1 (Chebyshev),
+for every piece. If the boat is on a flooded row at the end of a round
+(after water rises), it SINKS (loss).
+LIFT (rescuer's special action, instead of moving): swap places with the
+boat if they share a row or column, the distance is at most 3 squares and
+the squares between are empty. Cooldown 3 rounds.
+
+STAGE 3 "The Gate of the Fair": 8x6 board (top row first):
+  y5: ........
+  y4: ..#..#..
+  y3: ........
+  y2: .#....#.
+  y1: ........
+  y0: ........
+Side A: boat (3,0), dreamer AJ (4,0), shade (2,0). Side B: guests at (1,3)
+and (6,3). At the END of round 1, every EMPTY square in row y=0 becomes
+void (the gate vanishes behind you); occupied row-0 squares become void as
+soon as they are vacated. At the end of rounds 3 and 6 a new guest appears
+on (0,5) then (7,5) (or the nearest empty square by ascending y then x).
+PASSAGE (winning squares): (3,5) and (4,5).
+AI evaluation extras: +10 for each step a guest gets closer (Chebyshev) to
+the boat; heavy bonus for threatening the boat.
+
+=====================================================================
+GAME 4 - THE FAIR AND THE HOTEL (Chapters 18-24, arc: The Anomalies Arc)
+=====================================================================
+Three acts. Rosters reset at each act. Save state includes the act.
+DOUBLE MOVE: in Act 1 only, B moves up to TWO different banded pieces per
+turn (one step each). Show this in the HUD ("The signal is answered: they
+move twice").
+
+ACT 1 "Death Procession" (rounds 1-14). Board 9x9 with a stage block of
+void squares at x=3..5, y=7..8. Side A: dreamer AJ (4,6), guide AJX (3,6).
+Side B: banded at (1,8), (7,8), (0,6), (8,6).
+CROWD: 12 neutral tokens start at (1,5),(3,5),(5,5),(7,5),(0,4),(2,4),
+(6,4),(8,4),(1,3),(4,3),(7,3),(3,2). Tokens block movement for everyone and
+are never captured by A. At the end of every round each token moves 1 step
+along its row's flow: rows with even y flow EAST, rows with odd y flow
+WEST. If the target is off the board, it wraps to the other edge of that
+row. If the target square is void, occupied by a piece or token, the token
+stays. Process east-flowing tokens from highest x to lowest, west-flowing
+from lowest x to highest.
+SHIELD: B's banded may capture a token ONLY if no A piece is within 1
+square (Chebyshev) of that token. A captured token is a casualty.
+PART THE CROWD (guide AJX's special action, instead of moving): swap places
+with an adjacent token (8 directions).
+REINFORCEMENTS: at the end of rounds 4, 8 and 12, two new banded appear on
+(0,8) and (8,8) (or the nearest empty square by ascending distance, then
+ascending y, then x).
+WIN (Act 1): AJ ends a move on any square of row y=0. LOSS: AJ captured, or
+round 14 ends without escape.
+Ending text variant by tokens alive at the end: 8 or more "Mercy", 4-7
+"The Cost", 3 or fewer "Silence". It changes the text only.
+
+ACT 2 "Homedoing" (rounds 1-12; a calm, enemy-free puzzle). Board 7x7 (top
+row first):
+  y6: .......
+  y5: .#...#.
+  y4: .......
+  y3: ...#...
+  y2: .......
+  y1: .#...#.
+  y0: .......
+Side A: dreamer AJ (3,0), guide AJX (0,0). Neutral scarecrow (3,6): at the
+end of every round, it moves 1 step in O4 to an empty playable neighbour
+that MAXIMISES its Chebyshev distance to AJ (tie: maximise Manhattan
+distance; tie: lowest y, then lowest x). If none exists it stays. WIN: AJ or
+AJX moves onto the scarecrow's square ("found"). LOSS: round 12 ends.
+
+ACT 3 "Burning Conscience" (rounds 1-8). Board 5 columns x 7 rows (top row
+first):
+  y6: ..R..
+  y5: .....
+  y4: .....
+  y3: .#.#.
+  y2: .....
+  y1: .....
+  y0: .....
+R is the RED DOOR at (2,6) (a normal playable square). Side A: dreamer AJ
+(2,0), guide AJX (1,0). Neutral torchbearer at (2,5), cannot be captured.
+At the end of every round, the torchbearer moves 1 step in O4 along the
+shortest path (ties: lowest y, then lowest x) toward AJ, and does not
+move onto a piece. STILLNESS: if after its move the torchbearer is next to
+an A piece in O4, that piece cannot be moved on A's next turn. WIN: AJ ends
+a move on the Red Door. LOSS: round 8 ends. 
+Game 4 total rounds up to 34.
+
+=====================================================================
+GAME 5 - STATE ONE (Chapters 25-29, arc: State One Arc)
+=====================================================================
+Three phases. Allies revealed in phase 1 (max 3) carry into phases 2 and 3.
+AJ must survive all phases; AJ captured = LOSS.
+
+PHASE 1 "Total Mistrust" (rounds 1-10). Board 7x7, all playable except
+(3,3) void. AJ at (3,0). Six KIN pieces (neutral) at (1,2),(5,2),(0,4),
+(6,4),(2,5),(4,5). At game start, a seeded shuffle (mulberry32, seed saved
+in the save) decides which 3 are ALLIES and which 3 are ENEMIES. The
+player does not see this. REVEAL: when any piece ends a move next to a kin
+in O4, the kin is revealed. An ally becomes an A footman. An enemy becomes
+a B banded and cannot act in the round it was revealed. B has no other
+pieces; if B has no banded, its turn is skipped. Phase ends at the end of
+round 10, or one round after all six are revealed. Any kin never revealed
+vanishes.
+
+PHASE 2 "Archive Library" (rounds 1-14). Board 9x7 (top row first):
+  y6: .........
+  y5: .##.#.##.
+  y4: .........
+  y3: .#.###.#.
+  y2: .........
+  y1: .##.#.##.
+  y0: .........
+AJ at (0,0); carried allies (up to 3) start at (0,1),(1,0),(0,2) (skipping
+any occupied or void square, first empty by listed order). PAPERS on (2,6),
+(6,6), (4,4), (2,2), (6,2). The STAIR is (8,6). Watcher starts on (8,6),
+moves 1 step in O4 every SECOND round (at the end of rounds 2,4,6,...)
+along the shortest path (BFS, ties: lowest y, then lowest x) to AJ, may not
+enter a square occupied by another piece EXCEPT it captures A pieces by
+moving onto them. It cannot be captured. WIN: AJ holds all 5 papers (a paper
+is collected when AJ ends a move on it) and ends a move on the Stair.
+LOSS: AJ captured or round 14 ends.
+
+PHASE 3 "Reckoning" (rounds 1-8). Board 5x5, all playable. AJ (2,0); carried
+allies on (1,0),(3,0),(2,1) in that order. Yjkstra (B) at (2,4). Yjkstra
+moves only on ODD rounds (1,3,5,7) and passes on even rounds ("his
+stillness"); his move is chosen by the AI, slide 1-2 in 8 directions,
+captures. AJ and allies may capture Yjkstra (alternate ending
+"Defiance"). WIN: AJ alive at the end of round 8. In that case play the
+end sequence: a third door appears and the screen reads "END OF PART ONE"
+with the Scribble Hub link. LOSS: AJ captured ("The held breath breaks").
+
+=====================================================================
+PIECES AND ART (EsPieceRenderer.tsx)
+=====================================================================
+1. COPY src/components/ChessPiece.tsx to src/endlessSpring/EsPieceRenderer.tsx.
+   Rename every exported component, type and constant with the Es prefix.
+   Keep the original file byte-for-byte unchanged and do not import it.
+2. Inside the new file, add story pieces as inline SVG (viewBox 0 0 48 48,
+   angular shapes, thick 2px strokes, max 6 shapes per piece, fill with CSS
+   variables: --es-a-fill / --es-b-fill / --es-neutral-fill so one drawing
+   serves every team; A = warm ivory-amber, B = charcoal-crimson, neutral =
+   grey-green). Each SVG has role="img" and an aria-label with the piece
+   name. Required pieces and silhouettes:
+   - dreamer (AJ): hooded figure with a small paper boat in the pocket.
+   - keeper (Sunanda): child figure holding a sun disc.
+   - guide (AJX): tall figure with a long coat collar and a lantern-eye.
+   - footman: small round-headed child.
+   - shade: horse-head silhouette made of shadow stripes.
+   - wind: diamond with three curved gust lines.
+   - beam: tall rectangle with a ray crown.
+   - scarecrow: cross-shaped post with a straw hat and tilted head.
+   - echo: dashed-outline footman (stroke-dasharray) at 60% opacity.
+   - angel: figure with two wing triangles.
+   - investigator: grinning mouthless helmet with hatch lines.
+   - observer: single eye in a square badge.
+   - boat: folded paper boat.
+   - guest: faceless suit figure with a key.
+   - undertow: wave crest with a hook.
+   - rescuer: white-shirt figure with open arms.
+   - banded: figure with a red arm band (use a red rectangle band).
+   - crowd: round head cluster of three circles.
+   - torchbearer: figure holding a flame, flat body.
+   - kin: question-mark mask (reveals as footman or banded on flip).
+   - watcher: tall shadow with two pale eyes.
+   - yjkstra: hooded blade carrier, dark hand drawn as a filled shape.
+   Add a short caption shown in the Rules sheet for each piece with its
+   exact movement from the PIECE MOVEMENT TABLE and a tiny 5x5 move diagram.
+
+BOARDS AND THEMES (EsBoardView.tsx and EsBoardDecor.tsx)
+- Cells are square, with 2px borders. Void cells draw nothing (or decor).
+- Per game palette: G1 sandy earth (#c9a66b / #b58f55) with a dark shadow
+  overlay; G2 grey corridor (#6b7280 / #596070) with pale door marks; G3
+  teal hotel, wet-sand ruins, dusk-orange fair; G4 dusk-rose fair, green
+  garden, deep-red hotel; G5 spring gold (#d9a441) and crimson (#b3261e),
+  library browns.
+- Side decor in inline SVG only: G1 eucalyptus trees on the left and a
+  four-storey block on the right; G2 window rows; G3 palm silhouettes,
+  rubber trees, fair lights; G4 stalls and bunting, garden hedges, hotel
+  wallpaper; G5 endless blossom petals (static, no heavy animation).
+- Overlays: shadow band (G1), smoke and fire squares, flooded rows (blue
+  tint and wave lines), crowd flow arrows at the row start, loop counter.
+- Legal moves: dots at 42% of the cell; capture targets use a ring.
+  Keyboard: roving tabindex and arrow keys, Enter to select, Escape to
+  deselect. Show the selected piece's legal squares.
+- Everything must remain readable at 320px width.
+
+=====================================================================
+STORY TEXTS (editable data in EsGameData; keep each script to 4 sentences)
+=====================================================================
+G1 intro: "A schoolyard split by a creeping line of shadow. You hold the
+dark half of the kingdom, and Sunanda holds the light. Hold your scarecrow
+until dusk." Win: "The shadow held until the bell." Loss: "The light
+reached the scarecrow."
+G2 intro: "A Saturday school with no one in it, and a helmet that grins
+without a mouth. Carry the notebook and the hotel slip to the way out, and
+do not let him ask too much." Win: "You walked out holding what you were
+meant to keep." Loss: "He asked, and you answered too much."
+G3 intro: "A hotel by the sea that repeats itself, water that rises where it
+should not, and a fair gate that is gone when you look back. Keep the
+paper boat afloat." Win: "The boat sailed on." Loss: "The boat was lost
+again."
+G4 intro: "The fair has turned. Find the gap with AJX, then the quiet of
+home, then the red door." Win: "You left, but part of you did not."
+Loss: "The crowd closed over you."
+G5 intro: "Spring that refuses to end, a home that feels too perfect, and
+papers you were not meant to read. Trust no one until they are revealed."
+Win: "END OF PART ONE" screen. Loss: "The held breath breaks."
+(The story text is a draft. Make it all data so the owner can edit it
+without touching logic.)
+
+=====================================================================
+TESTS (mandatory)
+=====================================================================
+1. test/esRules.test.ts: deterministic unit tests for every piece's
+   movement (blocked, capture, edge, void, wrap-around), the shadow
+   capture rule, flood limits, crowd flow order, Scarecrow flee, torchbearer
+   stillness, loop counting, Imagine cooldown and Angel intercept.
+2. test/esSolvability.test.ts: for EACH game and phase, include a scripted
+   reference line of A moves, or a bounded search of depth up to the round
+   limit with the real bot, that proves the objective is reachable. If any
+   phase is not solvable, adjust ONLY these knobs and document the change:
+   the bot depth, the number or position of enemy pieces, the round limit,
+   or the slide range of yjkstra.
+3. A test that confirms none of the existing files changed except
+   Dashboard.tsx (git diff --name-only check script is acceptable).
+4. Run the existing test suite and the TypeScript and build checks; all
+   must pass unchanged.
+
+=====================================================================
+ACCEPTANCE CHECKLIST
+=====================================================================
+- The entry card appears right after the Culling card and opens the mode.
+- Five games on the select screen, no locks, each with a Scribble Hub link
+  and a spoiler line, Continue and Start Over when a save exists.
+- Each game: story modal first, correct board and rosters, exact piece
+  movement as in the table, scripted events at the stated rounds, HUD shows
+  the next event, ending modal with the right text.
+- No existing gameplay file, test, route or global style changed. The
+  Dashboard.tsx diff contains only the import, one state, the card and the
+  overlay render.
+- No sockets, network calls, ratings or database access in the new folder.
+- Mobile: no page scroll during play; board fully visible at 320x568,
+  360x640, 390x844 and 430x932; controls at least 44px.
+- Keyboard and screen reader: board navigable, modals trap focus and close
+  with Escape, every icon button has an aria-label.
+- Report the exact files created and lines changed.

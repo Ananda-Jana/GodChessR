@@ -609,7 +609,7 @@ export const PracticeBoard: React.FC<PracticeBoardProps> = ({
             ref={resultRef}
             className={`mt-3 w-full bg-[#0a0a0f] border-2 ${
               isGatoru ? 'border-sky-400' : 'border-amber-400'
-            } p-4 text-left z-20 animate-fade-in shadow-[4px_4px_0px_#000]`}
+            } p-4 text-left z-20 animate-fade-in shadow-[4px_4px_0px_#000] max-h-[85dvh] overflow-y-auto`}
           >
             <div className="flex items-center justify-between border-b border-neutral-700 pb-2 mb-3">
               <div className="flex items-center gap-2">

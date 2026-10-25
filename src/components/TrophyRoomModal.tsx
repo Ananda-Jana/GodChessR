@@ -144,7 +144,7 @@ export const TrophyRoomModal: React.FC<TrophyRoomModalProps> = ({
     );
 
     return (
-      <div className={`w-14 h-14 flex items-center justify-center p-1 bg-neutral-900 border-3 transition-all ${isLocked ? 'border-slate-800 grayscale opacity-30 group-hover:opacity-50' : 'border-amber-400 shadow-[3px_3px_0px_#000]'}`}>
+      <div className={`w-14 h-14 flex items-center justify-center p-1 bg-white border-3 transition-all ${isLocked ? 'border-slate-800 grayscale opacity-30 group-hover:opacity-50' : 'border-black shadow-[3px_3px_0px_#000]'}`}>
         {content}
       </div>
     );
@@ -242,7 +242,7 @@ export const TrophyRoomModal: React.FC<TrophyRoomModalProps> = ({
               {effectiveSelectedCard ? (
                 <div className="w-full max-w-[340px] animate-in slide-in-from-top-4 duration-300">
                   {/* Badge Preview Frame */}
-                  <div className="relative border-4 border-white shadow-[10px_10px_0px_#fbbf24] bg-black aspect-square w-full mb-8 group overflow-hidden">
+                  <div className="relative border-4 border-black shadow-[10px_10px_0px_#f5a623] bg-[#f5a623] aspect-square w-full mb-8 group overflow-hidden rounded-md">
                     <canvas
                       ref={canvasRef}
                       width={600}
@@ -250,14 +250,14 @@ export const TrophyRoomModal: React.FC<TrophyRoomModalProps> = ({
                       className="w-full h-full block object-contain"
                     />
                     {!isSelectedCardUnlocked && (
-                      <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px] flex items-center justify-center">
-                        <div className="bg-black/80 border-2 border-slate-700 px-4 py-2 flex items-center gap-2 shadow-2xl">
-                          <Lock className="w-4 h-4 text-slate-500" />
-                          <span className="text-xs font-black text-slate-500 uppercase tracking-widest">Seal Locked</span>
+                      <div className="absolute inset-0 bg-black/60 backdrop-blur-[2px] flex items-center justify-center">
+                        <div className="bg-black/90 border-2 border-amber-400 px-4 py-2 flex items-center gap-2 shadow-2xl">
+                          <Lock className="w-4 h-4 text-amber-400" />
+                          <span className="text-xs font-black text-amber-400 uppercase tracking-widest">Seal Locked</span>
                         </div>
                       </div>
                     )}
-                    <div className="absolute bottom-2 left-2 px-2 py-1 bg-black/80 border border-white/20 text-xs font-black text-slate-400 uppercase">
+                    <div className="absolute bottom-2 left-2 px-2 py-1 bg-black/90 border border-amber-400 text-xs font-black text-amber-400 uppercase">
                       {isSelectedCardUnlocked
                         ? `Serial: ${effectiveSelectedCard.id.slice(-8)}`
                         : 'Status: Locked'}
@@ -265,25 +265,22 @@ export const TrophyRoomModal: React.FC<TrophyRoomModalProps> = ({
                   </div>
 
                   <div className="space-y-4">
-                    <div className="bg-slate-900 border-2 border-white p-5 shadow-[6px_6px_0px_#000] relative">
-                      <div className="absolute -top-3 left-4 bg-amber-400 text-black px-2 py-0.5 text-xs font-black uppercase border border-black">
+                    <div className="bg-amber-400 text-black border-3 border-black p-5 shadow-[6px_6px_0px_#fff] relative">
+                      <div className="absolute -top-3 left-4 bg-black text-amber-400 px-2 py-0.5 text-xs font-black uppercase border border-amber-400">
                         Badge Codex
                       </div>
-                      <h3 className="text-2xl font-black uppercase text-white mb-1 leading-tight tracking-tighter">
+                      <h3 className="text-2xl font-black uppercase text-black mb-1 leading-tight tracking-tighter">
                         {effectiveSelectedCard.title}
                       </h3>
                       <div className="flex items-center gap-2 mb-4">
-                        <span className={`text-xs font-black px-2 py-0.5 border border-white/20 ${
-                          effectiveSelectedCard.rarity === 'Legendary' ? 'text-amber-400' : 
-                          effectiveSelectedCard.rarity === 'Epic' ? 'text-purple-400' : 'text-slate-400'
-                        }`}>
+                        <span className="text-xs font-black px-2 py-0.5 bg-black text-amber-400 border border-black">
                           {effectiveSelectedCard.rarity.toUpperCase()}
                         </span>
-                        <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">
+                        <span className="text-xs font-black text-black/80 uppercase tracking-widest">
                           {effectiveSelectedCard.mode} Realm
                         </span>
                       </div>
-                      <p className="text-sm font-medium text-slate-200 leading-relaxed italic border-l-4 border-amber-400 pl-4 py-1">
+                      <p className="text-sm font-bold text-black leading-relaxed italic border-l-4 border-black pl-4 py-1">
                         &ldquo;{effectiveSelectedCard.description}&rdquo;
                       </p>
                     </div>
@@ -298,7 +295,7 @@ export const TrophyRoomModal: React.FC<TrophyRoomModalProps> = ({
                       className="w-full h-14 bg-amber-400 hover:bg-amber-300 disabled:bg-slate-800 disabled:text-slate-600 disabled:border-slate-700 disabled:shadow-none text-black font-black text-xs sm:text-sm uppercase tracking-tighter border-3 border-black shadow-[6px_6px_0px_#fff] flex items-center justify-center gap-3 cursor-pointer disabled:cursor-not-allowed transition-all active:translate-x-1 active:translate-y-1"
                     >
                       <Download className="w-5 h-5 stroke-[3]" />
-                      <span>Download Identity Badge</span>
+                      <span>Download Identity Badge (PNG)</span>
                     </button>
                   </div>
                 </div>
@@ -369,8 +366,8 @@ export const TrophyRoomModal: React.FC<TrophyRoomModalProps> = ({
                         }}
                         className={`group relative p-4 border-3 transition-all flex flex-col justify-between aspect-[4/5] overflow-hidden cursor-pointer ${
                           isSelected
-                            ? 'bg-amber-400 border-black shadow-[6px_6px_0px_#fff] -translate-y-1 z-10'
-                            : 'bg-slate-900/40 border-slate-800 hover:border-slate-600 shadow-[4px_4px_0px_#000]'
+                            ? 'bg-amber-400 text-black border-black shadow-[6px_6px_0px_#fff] -translate-y-1 z-10'
+                            : 'bg-amber-500/10 text-white border-amber-500/40 hover:border-amber-400 shadow-[4px_4px_0px_#000]'
                         }`}
                         title={isLocked ? `Locked: ${trophy.description}` : trophy.title}
                       >
@@ -386,7 +383,7 @@ export const TrophyRoomModal: React.FC<TrophyRoomModalProps> = ({
                           </span>
                           
                           {isLocked ? (
-                            <Lock className="w-3.5 h-3.5 text-slate-700" />
+                            <Lock className="w-3.5 h-3.5 text-slate-600" />
                           ) : (
                             <div className={`w-2.5 h-2.5 rounded-full border-2 ${isSelected ? 'bg-black border-black' : 'bg-emerald-500 border-emerald-900'} shadow-[0_0_8px_rgba(16,185,129,0.4)]`} />
                           )}
@@ -399,15 +396,15 @@ export const TrophyRoomModal: React.FC<TrophyRoomModalProps> = ({
 
                         {/* Title & Stats */}
                         <div className="mt-auto">
-                          <h4 className={`font-black text-[11px] sm:text-xs uppercase leading-tight line-clamp-2 mb-2 ${isSelected ? 'text-black' : isLocked ? 'text-slate-600' : 'text-white'}`}>
+                          <h4 className={`font-black text-[11px] sm:text-xs uppercase leading-tight line-clamp-2 mb-2 ${isSelected ? 'text-black' : isLocked ? 'text-slate-500' : 'text-amber-300'}`}>
                             {trophy.title}
                           </h4>
-                          <div className="flex items-center justify-between pt-2 border-t border-white/5">
-                            <span className={`text-[11px] font-black uppercase tracking-tighter ${isSelected ? 'text-black/60' : isLocked ? 'text-slate-700' : 'text-slate-500'}`}>
+                          <div className="flex items-center justify-between pt-2 border-t border-black/20 dark:border-white/10">
+                            <span className={`text-[11px] font-black uppercase tracking-tighter ${isSelected ? 'text-black/70' : isLocked ? 'text-slate-600' : 'text-slate-400'}`}>
                               {isLocked ? 'STATUS: LOCKED' : 'RANK ACQUIRED'}
                             </span>
                             {trophy.predictedRating && !isLocked && (
-                              <div className={`px-1.5 py-0.5 rounded-sm text-xs font-mono font-black ${isSelected ? 'bg-black/10 text-black' : 'bg-amber-500/10 text-amber-500'}`}>
+                              <div className={`px-1.5 py-0.5 rounded-sm text-xs font-mono font-black ${isSelected ? 'bg-black text-amber-400' : 'bg-amber-400 text-black'}`}>
                                 R:{trophy.predictedRating}
                               </div>
                             )}
@@ -416,7 +413,7 @@ export const TrophyRoomModal: React.FC<TrophyRoomModalProps> = ({
 
                         {/* Locked Cross-hatch Overlay */}
                         {isLocked && (
-                          <div className="absolute inset-0 pointer-events-none opacity-[0.03] bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:4px_4px]" />
+                          <div className="absolute inset-0 pointer-events-none opacity-[0.05] bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:4px_4px]" />
                         )}
                       </div>
                     );

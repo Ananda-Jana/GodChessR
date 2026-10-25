@@ -1,5 +1,6 @@
 /**
  * Dynamic 1:1 Square Canvas 2D Achievement Card Generator & PNG Exporter (600x600)
+ * Redesigned in Warm Golden Yellow + High-Contrast Black & White Graphic Art Style
  */
 
 import type { AchievementCard } from './types';
@@ -8,186 +9,115 @@ const CARD_SIZE = 600;
 
 /**
  * Draws a 1:1 square mode-specific achievement card onto Canvas 2D context.
+ * Aesthetic: Warm Golden Yellow background, high-contrast B&W artwork, sharp black typography.
  */
 export function drawAchievementCard(
   ctx: CanvasRenderingContext2D,
   card: AchievementCard
 ): void {
-  const mode = card.mode;
-
   // Clear canvas
   ctx.clearRect(0, 0, CARD_SIZE, CARD_SIZE);
 
-  // 1. Background Fill according to Game Mode
-  if (mode === 'culling') {
-    // Dark Anime Brutalist Charcoal & Crimson
-    const bgGrad = ctx.createRadialGradient(300, 300, 30, 300, 300, 380);
-    bgGrad.addColorStop(0, '#1E1B2E');
-    bgGrad.addColorStop(0.6, '#0F0E17');
-    bgGrad.addColorStop(1, '#050508');
-    ctx.fillStyle = bgGrad;
-    ctx.fillRect(0, 0, CARD_SIZE, CARD_SIZE);
+  // 1. Warm Golden Yellow Background Fill (Matching Reference Image)
+  ctx.fillStyle = '#F5A623';
+  ctx.fillRect(0, 0, CARD_SIZE, CARD_SIZE);
 
-    // Red aura glow
-    const redGlow = ctx.createRadialGradient(300, 240, 10, 300, 240, 200);
-    redGlow.addColorStop(0, 'rgba(220, 38, 38, 0.3)');
-    redGlow.addColorStop(1, 'rgba(0, 0, 0, 0)');
-    ctx.fillStyle = redGlow;
-    ctx.fillRect(0, 0, CARD_SIZE, CARD_SIZE);
-  } else if (mode === 'rose') {
-    // Romantic Crimson & Blush Pink
-    const bgGrad = ctx.createLinearGradient(0, 0, CARD_SIZE, CARD_SIZE);
-    bgGrad.addColorStop(0, '#4C0519');
-    bgGrad.addColorStop(0.5, '#881337');
-    bgGrad.addColorStop(1, '#2E0616');
-    ctx.fillStyle = bgGrad;
-    ctx.fillRect(0, 0, CARD_SIZE, CARD_SIZE);
+  // 2. Brutalist Outer Black Framing Border
+  ctx.strokeStyle = '#000000';
+  ctx.lineWidth = 8;
+  ctx.strokeRect(16, 16, CARD_SIZE - 32, CARD_SIZE - 32);
 
-    const roseGlow = ctx.createRadialGradient(300, 240, 10, 300, 240, 220);
-    roseGlow.addColorStop(0, 'rgba(251, 113, 133, 0.35)');
-    roseGlow.addColorStop(1, 'rgba(0, 0, 0, 0)');
-    ctx.fillStyle = roseGlow;
-    ctx.fillRect(0, 0, CARD_SIZE, CARD_SIZE);
-  } else if (mode === 'crafted') {
-    // Cyber Steel & Neon Cyan
-    const bgGrad = ctx.createLinearGradient(0, 0, CARD_SIZE, CARD_SIZE);
-    bgGrad.addColorStop(0, '#020617');
-    bgGrad.addColorStop(0.5, '#0F172A');
-    bgGrad.addColorStop(1, '#020617');
-    ctx.fillStyle = bgGrad;
-    ctx.fillRect(0, 0, CARD_SIZE, CARD_SIZE);
-
-    const cyanGlow = ctx.createRadialGradient(300, 240, 10, 300, 240, 200);
-    cyanGlow.addColorStop(0, 'rgba(6, 182, 212, 0.25)');
-    cyanGlow.addColorStop(1, 'rgba(0, 0, 0, 0)');
-    ctx.fillStyle = cyanGlow;
-    ctx.fillRect(0, 0, CARD_SIZE, CARD_SIZE);
-  } else {
-    // Standard Royal Obsidian & Gold
-    const bgGrad = ctx.createRadialGradient(300, 300, 30, 300, 300, 380);
-    bgGrad.addColorStop(0, '#1E293B');
-    bgGrad.addColorStop(0.6, '#0F172A');
-    bgGrad.addColorStop(1, '#020617');
-    ctx.fillStyle = bgGrad;
-    ctx.fillRect(0, 0, CARD_SIZE, CARD_SIZE);
-
-    const goldGlow = ctx.createRadialGradient(300, 240, 10, 300, 240, 200);
-    goldGlow.addColorStop(0, 'rgba(234, 179, 8, 0.25)');
-    goldGlow.addColorStop(1, 'rgba(0, 0, 0, 0)');
-    ctx.fillStyle = goldGlow;
-    ctx.fillRect(0, 0, CARD_SIZE, CARD_SIZE);
-  }
-
-  // 2. Brutalist Outer Double-Border
-  const borderColor = card.accentColor || '#EAB308';
-  ctx.strokeStyle = borderColor;
-  ctx.lineWidth = 10;
-  ctx.strokeRect(20, 20, CARD_SIZE - 40, CARD_SIZE - 40);
-
-  ctx.strokeStyle = '#FFFFFF';
-  ctx.lineWidth = 2.5;
-  ctx.strokeRect(30, 30, CARD_SIZE - 60, CARD_SIZE - 60);
-
-  // 3. Header: Origin Label & Rarity Badge
-  const modeLabel = (card.modeLabel || `EARNED IN: ${(card.mode || 'standard').toUpperCase()} CHESS`).toUpperCase();
-  ctx.fillStyle = '#94A3B8';
-  ctx.font = '800 13px "Plus Jakarta Sans", sans-serif';
-  ctx.textAlign = 'left';
-  ctx.fillText(modeLabel, 45, 60);
-
-  const rarity = card.rarity || 'Common';
-  let rarityBg = '#374151';
-  if (rarity === 'Legendary') rarityBg = '#B45309';
-  if (rarity === 'Epic') rarityBg = '#6B21A8';
-  if (rarity === 'Rare') rarityBg = '#1E40AF';
-
-  ctx.fillStyle = rarityBg;
-  ctx.fillRect(CARD_SIZE - 165, 42, 120, 26);
-  ctx.strokeStyle = '#FFFFFF';
   ctx.lineWidth = 2;
-  ctx.strokeRect(CARD_SIZE - 165, 42, 120, 26);
+  ctx.strokeRect(24, 24, CARD_SIZE - 48, CARD_SIZE - 48);
 
+  // 3. Top-Left Header: Title & Subtitle/Mode in Solid Black
+  const titleText = (card.title || 'ACHIEVEMENT BADGE').toUpperCase();
+  ctx.fillStyle = '#000000';
+  ctx.font = '900 24px "Plus Jakarta Sans", sans-serif';
+  ctx.textAlign = 'left';
+  ctx.fillText(titleText, 42, 60);
+
+  const modeLabel = (card.modeLabel || `${(card.mode || 'standard').toUpperCase()} CHESS`).toUpperCase();
+  const rarityLabel = (card.rarity || 'Common').toUpperCase();
+  ctx.font = '700 13px "Plus Jakarta Sans", sans-serif';
+  ctx.fillText(`${modeLabel}  ·  ${rarityLabel}`, 42, 82);
+
+  // 4. Vertical Right Edge Text (Rotated 90 degrees)
+  ctx.save();
+  ctx.translate(CARD_SIZE - 36, 120);
+  ctx.rotate(Math.PI / 2);
+  ctx.fillStyle = '#000000';
+  ctx.font = '800 11px "Plus Jakarta Sans", sans-serif';
+  ctx.textAlign = 'left';
+  ctx.fillText(`MUGENCHESSX · VERIFIED ACHIEVER · ID:${(card.id || '000').slice(0, 10).toUpperCase()}`, 0, 0);
+  ctx.restore();
+
+  // 5. Central High-Contrast Black & White Illustration Box
+  const boxX = 170;
+  const boxY = 105;
+  const boxW = 260;
+  const boxH = 260;
+
+  // Solid White Canvas for Character / Piece Illustration
   ctx.fillStyle = '#FFFFFF';
+  ctx.fillRect(boxX, boxY, boxW, boxH);
+  ctx.strokeStyle = '#000000';
+  ctx.lineWidth = 5;
+  ctx.strokeRect(boxX, boxY, boxW, boxH);
+
+  // Inner Offset Frame
+  ctx.lineWidth = 1.5;
+  ctx.strokeRect(boxX + 6, boxY + 6, boxW - 12, boxH - 12);
+
+  // Draw High-Contrast Black & White Vector Motif Artwork
+  const motif = card.motifSymbol || '♔';
+  ctx.fillStyle = '#000000';
+  ctx.font = '120px "Plus Jakarta Sans", sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText(motif, CARD_SIZE / 2, boxY + 170);
+
+  // Crisp White Accent Highlights inside black motif box
+  ctx.fillStyle = '#FFFFFF';
+  ctx.fillRect(boxX + 20, boxY + boxH - 28, boxW - 40, 4);
+
+  // 6. Rating Callout Banner Box (White Box with Bold Black Border on Yellow)
+  ctx.fillStyle = '#FFFFFF';
+  ctx.fillRect(42, 385, 516, 62);
+  ctx.strokeStyle = '#000000';
+  ctx.lineWidth = 4;
+  ctx.strokeRect(42, 385, 516, 62);
+
+  ctx.fillStyle = '#000000';
   ctx.font = '800 11px "Plus Jakarta Sans", sans-serif';
   ctx.textAlign = 'center';
-  ctx.fillText(rarity.toUpperCase(), CARD_SIZE - 105, 59);
-
-  // 4. Central Piece Motif Square Box (180x180 at X=210, Y=90)
-  const boxX = 210;
-  const boxY = 90;
-  const boxDim = 180;
-
-  ctx.fillStyle = 'rgba(0, 0, 0, 0.65)';
-  ctx.fillRect(boxX, boxY, boxDim, boxDim);
-  ctx.strokeStyle = borderColor;
-  ctx.lineWidth = 4;
-  ctx.strokeRect(boxX, boxY, boxDim, boxDim);
-
-  ctx.strokeStyle = '#FFFFFF';
-  ctx.lineWidth = 1.5;
-  ctx.strokeRect(boxX + 6, boxY + 6, boxDim - 12, boxDim - 12);
-
-  // Draw piece symbol / icon in center box
-  const motif = card.motifSymbol || '♔';
-  ctx.fillStyle = '#FFFFFF';
-  ctx.font = '84px "Plus Jakarta Sans", sans-serif';
-  ctx.textAlign = 'center';
-  ctx.fillText(motif, CARD_SIZE / 2, boxY + 120);
-
-  // 5. Card Title
-  const title = (card.title || 'ACHIEVEMENT BADGE').toUpperCase();
-  ctx.fillStyle = '#FFFFFF';
-  ctx.font = '800 28px "Plus Jakarta Sans", sans-serif';
-  ctx.textAlign = 'center';
-  ctx.fillText(title, CARD_SIZE / 2, 312);
-
-  // Divider Line
-  ctx.strokeStyle = borderColor;
-  ctx.lineWidth = 3;
-  ctx.beginPath();
-  ctx.moveTo(100, 330);
-  ctx.lineTo(500, 330);
-  ctx.stroke();
-
-  // 6. Rating Callout Banner Box
-  ctx.fillStyle = 'rgba(15, 23, 42, 0.9)';
-  ctx.fillRect(45, 350, 510, 68);
-  ctx.strokeStyle = borderColor;
-  ctx.lineWidth = 2.5;
-  ctx.strokeRect(45, 350, 510, 68);
-
-  ctx.fillStyle = '#94A3B8';
-  ctx.font = '700 12px "Plus Jakarta Sans", sans-serif';
-  ctx.fillText('PREDICTED PERFORMANCE RATING', CARD_SIZE / 2, 372);
+  ctx.fillText('PREDICTED PERFORMANCE RATING', CARD_SIZE / 2, 404);
 
   const predictedRating = card.predictedRating ?? 500;
   const delta = card.ratingDelta ?? 0;
   const deltaSign = delta >= 0 ? `+${delta}` : `${delta}`;
-  ctx.fillStyle = '#F8FAFC';
-  ctx.font = '800 28px "Plus Jakarta Sans", sans-serif';
-  ctx.fillText(`${predictedRating}  (${deltaSign})`, CARD_SIZE / 2, 404);
+  ctx.font = '900 26px "Plus Jakarta Sans", sans-serif';
+  ctx.fillText(`${predictedRating}  (${deltaSign} ELO)`, CARD_SIZE / 2, 434);
 
-  // 7. Highlight & Description Area
-  ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
-  ctx.fillRect(45, 430, 510, 105);
-  ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
-  ctx.lineWidth = 1.5;
-  ctx.strokeRect(45, 430, 510, 105);
+  // 7. Highlight & Description Container
+  ctx.fillStyle = '#FFFFFF';
+  ctx.fillRect(42, 460, 516, 90);
+  ctx.strokeStyle = '#000000';
+  ctx.lineWidth = 3;
+  ctx.strokeRect(42, 460, 516, 90);
 
-  const highlight = card.highlight || `Rating: ${predictedRating}`;
-  ctx.fillStyle = borderColor;
-  ctx.font = '800 14px "Plus Jakarta Sans", sans-serif';
-  ctx.fillText(highlight, CARD_SIZE / 2, 456);
+  const highlight = (card.highlight || `Rating: ${predictedRating}`).toUpperCase();
+  ctx.fillStyle = '#000000';
+  ctx.font = '900 13px "Plus Jakarta Sans", sans-serif';
+  ctx.fillText(highlight, CARD_SIZE / 2, 482);
 
   const description = card.description || 'Verified tactical achievement badge.';
-  ctx.fillStyle = '#CBD5E1';
-  ctx.font = '500 13px "DM Sans", sans-serif';
-  drawWrappedText(ctx, description, CARD_SIZE / 2, 482, 480, 20);
+  ctx.font = '600 12px "Plus Jakarta Sans", sans-serif';
+  drawWrappedText(ctx, description, CARD_SIZE / 2, 504, 480, 18);
 
-  // 8. Footer Tagline
-  ctx.fillStyle = '#64748B';
-  ctx.font = '700 10px "Plus Jakarta Sans", sans-serif';
-  ctx.fillText('MUGENCHESSX · 1:1 SQUARE ACHIEVEMENT BADGE', CARD_SIZE / 2, 562);
+  // 8. Footer Brand Tagline
+  ctx.fillStyle = '#000000';
+  ctx.font = '800 10px "Plus Jakarta Sans", sans-serif';
+  ctx.fillText('MUGENCHESSX OFFICIAL REWARD DECK · 1:1 SQUARE BADGE', CARD_SIZE / 2, 568);
 }
 
 /**

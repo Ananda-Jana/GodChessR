@@ -412,7 +412,7 @@ export const SecretMatchView: React.FC<SecretMatchViewProps> = ({
 
           {/* Game Result Card */}
           {match.status === 'completed' && (
-            <div className="w-full mt-3 p-4 bg-amber-400 text-black border-4 border-black shadow-[6px_6px_0px_#000] flex flex-col items-center gap-3 animate-in zoom-in-95 duration-200">
+            <div className="w-full mt-3 p-4 bg-amber-400 text-black border-4 border-black shadow-[6px_6px_0px_#000] flex flex-col items-center gap-3 animate-in zoom-in-95 duration-200 max-h-[85dvh] overflow-y-auto">
               <div className="flex items-center gap-2">
                 <Trophy className="w-6 h-6 text-black" />
                 <h3 className="text-base font-black uppercase">

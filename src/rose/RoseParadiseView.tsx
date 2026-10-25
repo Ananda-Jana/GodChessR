@@ -103,6 +103,7 @@ export const RoseParadiseView: React.FC<RoseParadiseViewProps> = ({ onBack }) =>
     hostedCode,
     isCreatingChallenge,
     isJoiningChallenge,
+    joiningCode,
     statusMessage,
     error: socketError,
     setError: setSocketError,
@@ -699,7 +700,7 @@ export const RoseParadiseView: React.FC<RoseParadiseViewProps> = ({ onBack }) =>
     : ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
 
   return (
-    <div className={`rose-theme ${activeMatch ? 'h-[100dvh] max-h-[100dvh] overflow-hidden md:px-4 md:py-2' : 'min-h-screen md:p-6'} flex flex-col p-1 sm:p-3 select-none bg-black text-white font-mono`}>
+    <div className={`rose-theme ${activeMatch && activeMatch.status !== 'completed' ? 'h-[100dvh] max-h-[100dvh] overflow-hidden md:px-4 md:py-2' : 'min-h-screen overflow-y-auto md:p-6'} flex flex-col p-1 sm:p-3 select-none bg-black text-white font-mono`}>
       {/* Floating Live Reactions */}
       {reactions.map((r) => (
         <div
@@ -977,7 +978,7 @@ export const RoseParadiseView: React.FC<RoseParadiseViewProps> = ({ onBack }) =>
                           maxLength={12}
                           onChange={(e) => setJoinCodeInput(e.target.value.toUpperCase())}
                           onKeyDown={(e) => {
-                            if (e.key === 'Enter' && joinCodeInput.trim()) {
+                            if (e.key === 'Enter' && joinCodeInput.trim() && !isJoiningChallenge) {
                               joinRoom(joinCodeInput.trim());
                             }
                           }}
@@ -986,12 +987,12 @@ export const RoseParadiseView: React.FC<RoseParadiseViewProps> = ({ onBack }) =>
                         <button
                           type="button"
                           onClick={() => {
-                            if (joinCodeInput.trim()) joinRoom(joinCodeInput.trim());
+                            if (joinCodeInput.trim() && !isJoiningChallenge) joinRoom(joinCodeInput.trim());
                           }}
                           disabled={isJoiningChallenge || !joinCodeInput.trim()}
-                          className="px-3 py-1.5 bg-white hover:bg-neutral-200 disabled:opacity-50 text-black font-black text-xs uppercase border-2 border-white shadow-[2px_2px_0px_#fff] flex items-center gap-1 cursor-pointer"
+                          className="px-3 py-1.5 bg-white hover:bg-neutral-200 disabled:opacity-50 text-black font-black text-xs uppercase border-2 border-white shadow-[2px_2px_0px_#fff] flex items-center gap-1 cursor-pointer active:translate-x-0.5 active:translate-y-0.5"
                         >
-                          {isJoiningChallenge ? (
+                          {isJoiningChallenge && (!joiningCode || joiningCode === joinCodeInput.trim().toUpperCase()) ? (
                             <Loader2 className="w-3.5 h-3.5 animate-spin" />
                           ) : (
                             <KeyRound className="w-3.5 h-3.5" />
@@ -1015,29 +1016,39 @@ export const RoseParadiseView: React.FC<RoseParadiseViewProps> = ({ onBack }) =>
                             No open rooms right now. Create one above!
                           </div>
                         ) : (
-                          publicRooms.map((room) => (
-                            <div
-                              key={room.code}
-                              className="p-2.5 bg-neutral-950 border border-neutral-700 flex items-center justify-between text-xs"
-                            >
-                              <div>
-                                <div className="font-black text-white truncate max-w-[150px]">
-                                  {room.hostDisplayName}
-                                </div>
-                                <div className="text-[10px] text-neutral-400 font-mono">
-                                  Role: {room.hostRole === 'boyfriend' ? '👑 Boyfriend' : '👸 Girlfriend'} • Code: {room.code}
-                                </div>
-                              </div>
-                              <button
-                                type="button"
-                                onClick={() => joinRoom(room.code)}
-                                disabled={isJoiningChallenge}
-                                className="px-3 py-1 bg-amber-400 hover:bg-amber-300 text-black font-black text-[10px] uppercase border border-white cursor-pointer shadow-[1px_1px_0px_#fff]"
+                          publicRooms.map((room) => {
+                            const isThisJoining = isJoiningChallenge && (joiningCode === room.code || joiningCode === room.code.replace(/[\s-]/g, ''));
+                            return (
+                              <div
+                                key={room.code}
+                                className="p-2.5 bg-neutral-950 border border-neutral-700 flex items-center justify-between text-xs"
                               >
-                                Join
-                              </button>
-                            </div>
-                          ))
+                                <div>
+                                  <div className="font-black text-white truncate max-w-[150px]">
+                                    {room.hostDisplayName}
+                                  </div>
+                                  <div className="text-[10px] text-neutral-400 font-mono">
+                                    Role: {room.hostRole === 'boyfriend' ? '👑 Boyfriend' : '👸 Girlfriend'} • Code: {room.code}
+                                  </div>
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={() => joinRoom(room.code)}
+                                  disabled={isJoiningChallenge}
+                                  className="px-3 py-1 bg-amber-400 hover:bg-amber-300 disabled:opacity-75 text-black font-black text-[10px] uppercase border border-white cursor-pointer shadow-[1px_1px_0px_#fff] flex items-center gap-1"
+                                >
+                                  {isThisJoining ? (
+                                    <>
+                                      <Loader2 className="w-3 h-3 animate-spin" />
+                                      <span>Joining...</span>
+                                    </>
+                                  ) : (
+                                    <span>Join</span>
+                                  )}
+                                </button>
+                              </div>
+                            );
+                          })
                         )}
                       </div>
                     </div>
@@ -1109,7 +1120,11 @@ export const RoseParadiseView: React.FC<RoseParadiseViewProps> = ({ onBack }) =>
       {/* ==================== 2. ACTIVE MATCH VIEW (PROPER BRUTALISM) ==================== */}
       {activeMatch && (
         <>
-          <main className="flex-1 min-h-0 w-full mx-auto flex flex-col md:grid md:grid-rows-[minmax(0,1fr)] md:grid-cols-[minmax(0,1fr)_300px] lg:grid-cols-[280px_minmax(0,1fr)_300px] h-[calc(100dvh-48px)] md:h-auto gap-4 md:gap-4 lg:gap-5 p-1 md:px-3 md:py-1 overflow-hidden max-w-[1600px]">
+          <main className={`flex-1 min-h-0 w-full mx-auto flex flex-col md:grid md:grid-rows-[minmax(0,1fr)] md:grid-cols-[minmax(0,1fr)_300px] lg:grid-cols-[280px_minmax(0,1fr)_300px] ${
+            activeMatch.status === 'completed'
+              ? 'min-h-[calc(100dvh-48px)] h-auto overflow-y-auto'
+              : 'h-[calc(100dvh-48px)] md:h-auto overflow-hidden'
+          } gap-4 md:gap-4 lg:gap-5 p-1 md:px-3 md:py-1 max-w-[1600px]`}>
             {/* Left Sidebar (Desktop Only): Predictor, Partner Info & In-Game Love Chat Box */}
             <div className="hidden lg:flex lg:min-h-0 flex-col gap-4 overflow-y-auto pr-1">
               {/* Live Skill Predictor Panel */}
@@ -1269,7 +1284,9 @@ export const RoseParadiseView: React.FC<RoseParadiseViewProps> = ({ onBack }) =>
             </div>
 
             {/* Center: Brutalist Chess Board (Tier 2 & Desktop Center) */}
-            <div className="flex-1 min-h-0 w-full flex flex-col items-center justify-center relative overflow-hidden px-0 py-1 md:px-2 md:pt-1 md:pb-3">
+            <div className={`flex-1 min-h-0 w-full flex flex-col items-center relative px-0 py-1 md:px-2 md:pt-1 md:pb-3 ${
+              activeMatch.status === 'completed' ? 'overflow-y-auto justify-start' : 'overflow-hidden justify-center'
+            }`}>
               {/* Turn Banner - Desktop / Tablet */}
               <div className={`hidden md:flex shrink-0 w-full ${summoningUnit ? 'md:w-[min(calc(100dvh-260px),calc(100%-24px),760px)]' : 'md:w-[min(calc(100dvh-208px),calc(100%-24px),760px)]'} px-4 py-2 border-3 border-white shadow-[4px_4px_0px_#fff] items-center justify-between text-xs font-black uppercase mb-2 ${isMyTurn ? 'bg-amber-400 text-black' : 'bg-black text-white'}`}>
                 <div className="flex items-center gap-2">
@@ -1602,7 +1619,7 @@ export const RoseParadiseView: React.FC<RoseParadiseViewProps> = ({ onBack }) =>
 
               {/* Game Over Banner */}
               {activeMatch.status === 'completed' && (
-                <div className="brutal-card p-6 border-3 border-amber-400 text-center flex flex-col gap-4 shadow-[6px_6px_0px_#fbbf24]">
+                <div className="brutal-card p-6 border-3 border-amber-400 text-center flex flex-col gap-4 shadow-[6px_6px_0px_#fbbf24] max-h-[85dvh] overflow-y-auto my-2">
                   <Trophy className="w-10 h-10 text-amber-400 mx-auto animate-bounce" />
                   <div>
                     <h3 className="text-lg font-black uppercase">

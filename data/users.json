@@ -4,180 +4,15 @@
     "username": "alice",
     "displayName": "Alice Champion",
     "avatarId": "avatar_queen",
-    "passwordHash": "ae00e84c7625da809c5c27990a4be5c6fe70534df214c15ee884ae662f1adea7ee8829f624eae6fe2b4cbb22ebadb390678ad801d2006e0b4cd06b98d29937e2",
-    "salt": "47361956b4c92b7fe173c24dcac5ddf4",
+    "passwordHash": "86ce11fa4e8998437d39fef78b8d9a2167df98e583096053dc5edf53eab7c248b37da1bd64e12c6044475c4c78b322728bfadb86f00d6dfc1a6c38ad2c4a8c42",
+    "salt": "e9eb96f3bb64911a491d3fd7911f53dd",
     "stats": {
       "wins": 0,
       "losses": 0,
       "draws": 0,
       "totalGames": 0
     },
-    "createdAt": 1792910944216
-  },
-  {
-    "id": "usr_bob_test",
-    "username": "bob",
-    "displayName": "Bob Tactician",
-    "avatarId": "avatar_prince",
-    "passwordHash": "235e7d85ce62ab036deea65b5246febca3e0533ed4f23edd25bf109d8d65306a6fbf80946244c4284b870a7827282e5524441eab5c764842b7324105cbedae74",
-    "salt": "c83374ffc111d6efa204bcda9186a9f6",
-    "stats": {
-      "wins": 0,
-      "losses": 0,
-      "draws": 0,
-      "totalGames": 0
-    },
-    "createdAt": 1792910944217
-  },
-  {
-    "id": "usr_1792559437357_rbvrw",
-    "username": "fxghsdftg",
-    "displayName": "riga",
-    "avatarId": "avatar_bishop",
-    "passwordHash": "299417352873078026703375ce80ad8f1672e3c296c37bd18f7affd63030f96ffc0e293c567748f9b443084e23d77d559ce85762859f66c9aa138ca63868c513",
-    "salt": "007c193229aa9c7a685c1fac24de4eaf",
-    "stats": {
-      "wins": 0,
-      "losses": 0,
-      "draws": 0,
-      "totalGames": 0
-    },
-    "createdAt": 1792559437359
-  },
-  {
-    "id": "usr_eve_1792771855072_87l3",
-    "username": "eve_1792771855072_kn94",
-    "displayName": "eve",
-    "avatarId": "avatar_prince",
-    "passwordHash": "4d8b7b060ddd2083e41b87ea205dcbac7899ce73e63f2cc10873d4c85b9df232acf5aa51f5e28541d3e37c9332b22ca7cda31a2486ae1b8b5d383c566d7bccde",
-    "salt": "34aee2c2b6a675c4d262687faafcfd4d",
-    "stats": {
-      "wins": 0,
-      "losses": 0,
-      "draws": 0,
-      "totalGames": 0
-    },
-    "createdAt": 1792771855072
-  },
-  {
-    "id": "usr_alice_1792844450549_80i6",
-    "username": "alice_1792844450549_4szn",
-    "displayName": "alice",
-    "avatarId": "avatar_prince",
-    "passwordHash": "45168589efd31c336e99ddde63847a286d2f45fd2d631006d050a18bc9c291249d72f6627c747d89684f919d03b6cb259fbcb1fcdb8f7ca2381d0ca629a9fd70",
-    "salt": "a5359c651293bee9aa67d587572b8693",
-    "stats": {
-      "wins": 1,
-      "losses": 0,
-      "draws": 0,
-      "totalGames": 1
-    },
-    "createdAt": 1792844450549
-  },
-  {
-    "id": "usr_bob_1792844450551_xj5h",
-    "username": "bob_1792844450551_gnjk",
-    "displayName": "bob",
-    "avatarId": "avatar_prince",
-    "passwordHash": "aa18c0cddd8ab618da2e6fd16db30a862c848cde39dd8cba803f3a3f69b3308a9138cb41fe3ec8c83b5151ff5a69733f91b84f9c1c09eda79f66a9c6754eb57c",
-    "salt": "919bd2ee9d276041bdcac9496bd84bf5",
-    "stats": {
-      "wins": 0,
-      "losses": 1,
-      "draws": 0,
-      "totalGames": 1
-    },
-    "createdAt": 1792844450551
-  },
-  {
-    "id": "usr_eve_1792844450552_jref",
-    "username": "eve_1792844450552_budc",
-    "displayName": "eve",
-    "avatarId": "avatar_prince",
-    "passwordHash": "12222a7b66b7accb7c5524e4b6e21043243d289ee2e9375ae4086a09965a620721a8cf42e9ccdba63f41920f30c776a7cf6ae832ca03fe147aeeeb3de15e76dd",
-    "salt": "8921e6ae162bc769d3174367f811b883",
-    "stats": {
-      "wins": 0,
-      "losses": 0,
-      "draws": 0,
-      "totalGames": 0
-    },
-    "createdAt": 1792844450552
-  },
-  {
-    "id": "usr_alice_1792844601917_axxv",
-    "username": "alice_1792844601917_rkg7",
-    "displayName": "alice",
-    "avatarId": "avatar_prince",
-    "passwordHash": "bf778a3ea1b82e7945843cae84e8884c419f8bae078d6edc2d2fdd83c9268a6112c9d0bd7b5b60db76e94108056f4698926168c3c0e0ceb8810a3ef8ff97ec36",
-    "salt": "99f5baf892fec0bd42270b96e5d345df",
-    "stats": {
-      "wins": 1,
-      "losses": 0,
-      "draws": 0,
-      "totalGames": 1
-    },
-    "createdAt": 1792844601917
-  },
-  {
-    "id": "usr_bob_1792844601919_8xh9",
-    "username": "bob_1792844601919_403d",
-    "displayName": "bob",
-    "avatarId": "avatar_prince",
-    "passwordHash": "0df8590d4c161edf16301d73c8060d367afbc9b2586f707e28deafa65924c02c140bf94075e1b9a4951d144cb60f6940363a18bc56318f87e162a32fa6c3c311",
-    "salt": "ce6d07088252953311ea668afa14550f",
-    "stats": {
-      "wins": 0,
-      "losses": 1,
-      "draws": 0,
-      "totalGames": 1
-    },
-    "createdAt": 1792844601919
-  },
-  {
-    "id": "usr_eve_1792844601920_t95a",
-    "username": "eve_1792844601920_41zw",
-    "displayName": "eve",
-    "avatarId": "avatar_prince",
-    "passwordHash": "7c56466aee8e1758fc84b528d53e7091b78809b15eefd9c8ef9d8483af90be90be09a489b6b180ff1d7293063eb3818f7d56699f24fdd673b28510223694f7ec",
-    "salt": "4839908744b6b9d9555cb6227300b436",
-    "stats": {
-      "wins": 0,
-      "losses": 0,
-      "draws": 0,
-      "totalGames": 0
-    },
-    "createdAt": 1792844601920
-  },
-  {
-    "id": "usr_alice_1792844797027_3eqy",
-    "username": "alice_1792844797027_e5ey",
-    "displayName": "alice",
-    "avatarId": "avatar_prince",
-    "passwordHash": "334bf2c6f532216ed32b22c036377061bdd318d2c68c8083aeca5d77e406e649b1cb1149bb5ecee63378ad41c170234d80ff27d13c31dc627c43a2a0e361608b",
-    "salt": "f4d053657b0a736626973e41bf1741e0",
-    "stats": {
-      "wins": 1,
-      "losses": 0,
-      "draws": 0,
-      "totalGames": 1
-    },
-    "createdAt": 1792844797027
-  },
-  {
-    "id": "usr_bob_1792844797028_s5d7",
-    "username": "bob_1792844797028_8jor",
-    "displayName": "bob",
-    "avatarId": "avatar_prince",
-    "passwordHash": "994bdff5e162c037d7d922544f1c63b6df202a5581bc1f7bd42a83579e83ab812d58acefc5553eecf2c721483fdc4b33bf11f1af7795dc41a640c971de7a9a7a",
-    "salt": "62df1f1df4e965a24dc5bf3f04a899df",
-    "stats": {
-      "wins": 0,
-      "losses": 1,
-      "draws": 0,
-      "totalGames": 1
-    },
-    "createdAt": 1792844797028
+    "createdAt": 1792925496402
   },
   {
     "id": "usr_eve_1792844797030_5733",
@@ -193,5 +28,35 @@
       "totalGames": 0
     },
     "createdAt": 1792844797030
+  },
+  {
+    "id": "usr_1792919149450_qu69w",
+    "username": "sdfsfsdf",
+    "displayName": "sdfsfsdf",
+    "avatarId": "avatar_prince",
+    "passwordHash": "f2ff0095570be27857c6329e5842b70d5416291717a5775812bdfa7d0516d767b9a6eed695b292c3c849f609c455a9ef52052cd3fe7040a6e59546e38d2683a6",
+    "salt": "4942903abc8d07b40bb67bf9947847a1",
+    "stats": {
+      "wins": 0,
+      "losses": 0,
+      "draws": 0,
+      "totalGames": 0
+    },
+    "createdAt": 1792919149452
+  },
+  {
+    "id": "usr_bob_test",
+    "username": "bob",
+    "displayName": "Bob Tactician",
+    "avatarId": "avatar_prince",
+    "passwordHash": "1d2571455fb4b27660eaf16a8459b90e4f4abf6aa30eb2a0c20cdda97c3da22724bb2bf9444719f1601e1c59650ef34a6575c807f7554baeecb4e74f478308f2",
+    "salt": "ebb6fe49bd677b0ca5683366eb3e253e",
+    "stats": {
+      "wins": 0,
+      "losses": 0,
+      "draws": 0,
+      "totalGames": 0
+    },
+    "createdAt": 1792925496404
   }
 ]

@@ -8,6 +8,8 @@ import {
   getPublicRoseRooms,
   getUserActiveRoomId,
   destroyRoom,
+  destroyRoomByHostWs,
+  destroyRoomByHostUserId,
   type RoseRoom,
 } from './roseRooms.ts';
 import { applyRoseMove, applyRoseSummon, getSeatByUserId } from '../../src/rose/roseRules.ts';
@@ -82,6 +84,12 @@ export function registerRoseSocket(wss: WebSocketServer) {
       // Remove from matchmaking queue if waiting
       const qIdx = matchmakingQueue.findIndex((q) => q.ws === ws);
       if (qIdx !== -1) matchmakingQueue.splice(qIdx, 1);
+
+      // Clean up any direct challenges hosted by this ws (exactly like Culling Game)
+      const hadHosted = destroyRoomByHostWs(ws);
+      if (hadHosted) {
+        broadcastPublicRoseRooms();
+      }
 
       if (ws.roseRoomId) {
         const room = getRoomById(ws.roseRoomId);
@@ -232,6 +240,11 @@ export function registerRoseSocket(wss: WebSocketServer) {
         case 'rose:create':
         case 'rose:create_room': {
           const chosenRole: RoseRole = (role === 'girlfriend' || data.preferredSide === 'black') ? 'girlfriend' : 'boyfriend';
+
+          // Clean up any existing waiting room hosted by this user or socket (matching Culling Game)
+          destroyRoomByHostWs(ws);
+          if (user.userId) destroyRoomByHostUserId(user.userId);
+
           // Untimed couples chess by default (timeControl = 0)
           const room = createRoseRoom(
             user.userId,
@@ -323,6 +336,8 @@ export function registerRoseSocket(wss: WebSocketServer) {
             destroyRoom(rId);
             ws.roseRoomId = undefined;
           }
+          destroyRoomByHostWs(ws);
+          if (user.userId) destroyRoomByHostUserId(user.userId);
           ws.send(JSON.stringify({ type: 'rose:challenge_cancelled' }));
           ws.send(JSON.stringify({ type: 'rose:cancelled' }));
           broadcastPublicRoseRooms();
