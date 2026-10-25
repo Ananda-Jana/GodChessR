@@ -160,9 +160,10 @@ export interface MatchState {
     expiresAt: number;
     selectedPiece?: PieceType;
   } | null;
-  gameMode?: 'standard' | 'crafted';
+  gameMode?: 'standard' | 'crafted' | 'classic';
   // Mid-game crafting rule: true = allowed (default), false = avoid crafting (normal chess flow without mid-game piece summons)
   craftingAllowed?: boolean;
+  expansionDisabled?: boolean;
   pieceTheme?: PieceTheme;
 }
 
@@ -199,9 +200,11 @@ export interface Challenge {
     avatarId: string;
   };
   status: ChallengeStatus;
+  gameMode?: 'standard' | 'crafted' | 'classic';
   timeControl: 120 | 300; // 2 minutes or 5 minutes
   moveSuggestions?: 'included' | 'excluded';
   craftingAllowed?: boolean;
+  expansionDisabled?: boolean;
   pieceTheme?: PieceTheme;
   matchId?: string;
   createdAt: number;

@@ -77,6 +77,7 @@ interface DiceRollerProps {
   isBotThinking?: boolean;
   isGameOver?: boolean;
   availablePieceTypes?: PieceType[];
+  gameMode?: 'standard' | 'crafted' | 'classic';
 }
 
 export const DiceRoller: React.FC<DiceRollerProps> = ({
@@ -94,6 +95,7 @@ export const DiceRoller: React.FC<DiceRollerProps> = ({
   isBotThinking = false,
   isGameOver = false,
   availablePieceTypes,
+  gameMode,
 }) => {
   const [isRolling, setIsRolling] = useState(false);
   const [secondsElapsed, setSecondsElapsed] = useState(0);
@@ -240,6 +242,8 @@ export const DiceRoller: React.FC<DiceRollerProps> = ({
       ? `BOT THINKING (${turnColorLabel}'S TURN)`
       : `WAITING FOR OPPONENT (${turnColorLabel}'S TURN)`;
 
+    const isClassic = gameMode === 'classic';
+
     if (variant === 'stage') {
       return (
         <div
@@ -252,7 +256,7 @@ export const DiceRoller: React.FC<DiceRollerProps> = ({
           </div>
           <div className="flex-1 min-w-0 flex flex-col justify-center gap-0.5">
             <span className="text-xs font-black uppercase tracking-tight text-black dark:text-white truncate">
-              NORMAL CHESS - dice phase over
+              {isClassic ? 'TRADITIONAL CHESS (NO PRINCE)' : 'NORMAL CHESS - dice phase over'}
             </span>
             <div className="flex items-center gap-1.5 text-[11px] font-mono font-black uppercase text-amber-600 dark:text-amber-400 truncate">
               <span
@@ -266,7 +270,9 @@ export const DiceRoller: React.FC<DiceRollerProps> = ({
               <span className="truncate">{turnSummary}</span>
             </div>
             <span className="text-[10px] font-mono font-bold text-neutral-600 dark:text-neutral-400 uppercase truncate">
-              3+ captures reached · All legal moves active
+              {isClassic
+                ? 'Standard FIDE rules · Pure deterministic moves'
+                : '3+ captures reached · All legal moves active'}
             </span>
           </div>
         </div>
@@ -282,10 +288,10 @@ export const DiceRoller: React.FC<DiceRollerProps> = ({
         <div className="flex items-center justify-between gap-2">
           <span className="text-xs font-black uppercase tracking-wider text-black dark:text-white flex items-center gap-1.5">
             <Sparkles className="w-4 h-4 text-amber-500 shrink-0" aria-hidden="true" />
-            NORMAL CHESS - dice phase over
+            {isClassic ? 'TRADITIONAL CHESS (NO PRINCE)' : 'NORMAL CHESS - dice phase over'}
           </span>
           <span className="text-[10px] font-mono font-black uppercase text-amber-600 dark:text-amber-400">
-            3+ CAPTURES
+            {isClassic ? 'NO DICE' : '3+ CAPTURES'}
           </span>
         </div>
 
@@ -304,7 +310,9 @@ export const DiceRoller: React.FC<DiceRollerProps> = ({
         </div>
 
         <p className="text-xs font-bold text-neutral-700 dark:text-neutral-300 leading-snug">
-          3 captures reached — dice restrictions are permanently off. Move any legal piece directly.
+          {isClassic
+            ? 'Authentic classical FIDE rules active. No prince piece, no dice rolls, no crafting perks. Move any legal piece directly.'
+            : '3 captures reached — dice restrictions are permanently off. Move any legal piece directly.'}
         </p>
       </div>
     );

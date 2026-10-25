@@ -126,7 +126,8 @@ export const CullingMatchView: React.FC<CullingMatchViewProps> = ({
       const availH = window.innerHeight - 64;
       return Math.max(240, Math.floor(Math.min(availW, availH, 1200)));
     }
-    return Math.max(240, Math.floor(Math.min(window.innerWidth - 16, window.innerHeight - 160, 540)));
+    const isMobile = window.innerWidth < 768;
+    return Math.max(240, Math.floor(Math.min(isMobile ? window.innerWidth : window.innerWidth - 16, window.innerHeight - 140, 540)));
   });
 
   useEffect(() => {
@@ -134,7 +135,10 @@ export const CullingMatchView: React.FC<CullingMatchViewProps> = ({
     if (!el) return;
 
     const updateBoardSize = (width: number, height: number) => {
-      const available = Math.floor(Math.min(width - 8, height - 8));
+      const isMobile = window.innerWidth < 768;
+      const available = isMobile
+        ? Math.floor(Math.min(width, height))
+        : Math.floor(Math.min(width - 8, height - 8));
       if (available > 120) {
         setBoardDimension(Math.min(available, 1200));
       }
@@ -801,7 +805,7 @@ export const CullingMatchView: React.FC<CullingMatchViewProps> = ({
       </div>
 
       {/* MAIN VIEWPORT: ROCK-SOLID BOARD (Fitted Square Center Stage) */}
-      <main className="flex-1 min-h-0 w-full max-w-[1640px] mx-auto px-1 pt-1 pb-[60px] lg:px-3 lg:py-2 flex flex-row items-center lg:items-stretch justify-between gap-3 overflow-hidden relative">
+      <main className="flex-1 min-h-0 w-full max-w-[1640px] mx-auto px-0 pt-0 pb-[60px] md:px-1 md:pt-1 lg:px-3 lg:py-2 flex flex-row items-center lg:items-stretch justify-between gap-0 lg:gap-3 overflow-hidden relative">
         {/* DESKTOP-ONLY LEFT SIDEBAR: Predictor, Logs, Abilities & Roster */}
         <aside className="hidden lg:flex w-72 xl:w-80 flex-col gap-2 shrink-0 h-full min-h-0 overflow-hidden">
           {/* Universal Live Skill Predictor Panel */}

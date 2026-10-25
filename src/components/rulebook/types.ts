@@ -1,4 +1,5 @@
 export type RulebookModeId =
+  | 'classic'
   | 'standard'
   | 'crafted'
   | 'culling'

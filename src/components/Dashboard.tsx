@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useSocket } from '../context/SocketContext';
 import { AvatarDisplay, AVATAR_OPTIONS } from './Avatars';
@@ -20,14 +20,14 @@ import {
   AlertCircle,
   Bot,
   Sparkles,
-  Sun,
-  Moon,
   Palette,
   Flame,
   Lock,
   ShieldCheck,
+  ChevronDown,
+  ChevronUp,
+  Users,
 } from 'lucide-react';
-import { useTheme } from '../context/ThemeContext';
 import { posToNotation } from '../game/engine';
 import { usePredictor } from '../predictor/PredictorContext';
 import { TrophyRoomModal } from './TrophyRoomModal';
@@ -35,10 +35,15 @@ import type { TrainerId } from '../training/types';
 import { TRAINER_PROFILES } from '../training/data';
 import { SecretArenaModal } from '../secret/components/SecretArenaModal';
 import { SecretPlayerConfig } from '../secret/types';
+import { MultiplayerChallengeModal } from './MultiplayerChallengeModal';
+import { GamepadSkull } from './GamepadSkull';
+import { OctoSkull } from './OctoSkull';
+import { AboutGameModal } from './AboutGameModal';
 
 interface DashboardProps {
   onOpenRules: () => void;
   onOpenBotModal: () => void;
+  onOpenClassicBotModal?: () => void;
   onOpenCraftedBotModal?: () => void;
   onOpenCraftTheory: () => void;
   onOpenRose?: () => void;
@@ -51,6 +56,7 @@ interface DashboardProps {
 export const Dashboard: React.FC<DashboardProps> = ({
   onOpenRules,
   onOpenBotModal,
+  onOpenClassicBotModal,
   onOpenCraftedBotModal,
   onOpenCraftTheory,
   onOpenRose,
@@ -60,7 +66,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
   onClearLastGame,
 }) => {
   const { user, token, logout, updateProfile } = useAuth();
-  const { theme, toggleTheme } = useTheme();
   const {
     onlineUserIds,
     sendChallenge,
@@ -83,6 +88,46 @@ export const Dashboard: React.FC<DashboardProps> = ({
   const [sentNotice, setSentNotice] = useState<string | null>(null);
   const [isCullingOpen, setIsCullingOpen] = useState(false);
   const [isSecretArenaOpen, setIsSecretArenaOpen] = useState(false);
+  const [isAboutOpen, setIsAboutOpen] = useState(false);
+  const [challengeModalTarget, setChallengeModalTarget] = useState<{ id: string; name: string } | null>(null);
+
+  // Mobile navigation & bottom sheet states
+  const [isMobileProfileOpen, setIsMobileProfileOpen] = useState(false);
+  const [isHighlightsExpanded, setIsHighlightsExpanded] = useState(false);
+  const [activeBottomTab, setActiveBottomTab] = useState<'play' | 'matches' | 'players' | null>(null);
+
+  const profilePillRef = useRef<HTMLButtonElement | null>(null);
+  const sheetCloseRef = useRef<HTMLButtonElement | null>(null);
+
+  // Keyboard accessibility and focus management for mobile profile sheet
+  useEffect(() => {
+    if (!isMobileProfileOpen) return;
+    const focusTimer = setTimeout(() => {
+      sheetCloseRef.current?.focus();
+    }, 50);
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setIsMobileProfileOpen(false);
+        profilePillRef.current?.focus();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      clearTimeout(focusTimer);
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isMobileProfileOpen]);
+
+  // Smooth scroll helper for mobile bottom navigation (respecting prefers-reduced-motion)
+  const scrollToSection = (id: string, tab: 'play' | 'matches' | 'players') => {
+    setActiveBottomTab(tab);
+    const el = document.getElementById(id);
+    if (el) {
+      const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      el.scrollIntoView({ behavior: prefersReduced ? 'auto' : 'smooth' });
+    }
+  };
 
   // Fetch players on mount or search
   useEffect(() => {
@@ -167,71 +212,127 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
   return (
     <div className="min-h-screen bg-white dark:bg-black text-black dark:text-white flex flex-col font-sans">
-      {/* Brutalist Top Bar */}
-      <header className="flex items-center justify-between gap-3 sm:gap-6 px-4 sm:px-6 py-3.5 border-b-4 border-black dark:border-white bg-white dark:bg-[#0a0a0c] sticky top-0 z-40">
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 bg-amber-400 border-2 border-black flex items-center justify-center text-black font-black shadow-[2px_2px_0px_#000]">
-            <Crown className="w-5 h-5" />
-          </div>
+      {/* Slim Mobile Top Bar (md:hidden, sticky, h-12, glassmorphic) */}
+      <header className="md:hidden flex items-center justify-between px-2.5 sm:px-3 h-12 sticky top-0 z-40 bg-zinc-950/95 supports-[backdrop-filter]:bg-zinc-950/75 supports-[backdrop-filter]:backdrop-blur-xl border-b border-white/10 text-white">
+        {/* Mobile Brand Button (Text-only, triggers About modal) */}
+        <button
+          type="button"
+          onClick={() => setIsAboutOpen(true)}
+          aria-label="About MugenChessX"
+          className="text-sm font-black uppercase tracking-tight text-white whitespace-nowrap cursor-pointer rounded p-1 -m-1 hover:bg-white/5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 shrink-0"
+        >
+          MugenChessX
+        </button>
+
+        <div className="flex items-center gap-1.5 shrink-0">
+          {/* Rules Square Button */}
+          <button
+            type="button"
+            onClick={onOpenRules}
+            aria-label="Open rulebook"
+            title="Rules"
+            className="w-9.5 h-9.5 rounded-xl flex items-center justify-center bg-white/5 hover:bg-white/10 active:bg-white/10 border border-white/10 text-white cursor-pointer transition-all active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 shrink-0"
+          >
+            <BookOpen className="w-4.5 h-4.5 text-amber-400 shrink-0" />
+          </button>
+
+          {/* Red Square GamepadSkull Culling Launcher Button */}
+          <button
+            type="button"
+            onClick={() => setIsCullingOpen(true)}
+            aria-label="Play Culling mode"
+            title="Culling"
+            className="w-9.5 h-9.5 rounded-xl flex items-center justify-center bg-red-600/90 hover:bg-red-500 active:bg-red-500 border border-red-400/40 text-white active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 transition-all cursor-pointer shrink-0"
+          >
+            <GamepadSkull size={22} className="shrink-0" />
+          </button>
+
+          {/* Profile Pill Trigger (Avatar + Live ELO) */}
+          <button
+            ref={profilePillRef}
+            type="button"
+            onClick={() => setIsMobileProfileOpen(true)}
+            aria-label="Open profile and statistics"
+            aria-expanded={isMobileProfileOpen}
+            className="h-9.5 px-2 sm:px-2.5 flex items-center gap-1.5 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 text-white cursor-pointer active:scale-95 transition-all shrink-0"
+          >
+            <div className="w-5.5 h-5.5 rounded-md overflow-hidden border border-amber-400 flex items-center justify-center bg-neutral-900 shrink-0">
+              <AvatarDisplay avatarId={user.avatarId} size="sm" />
+            </div>
+            <span className="font-mono text-xs font-bold text-amber-300 whitespace-nowrap">
+              {predictorState.currentRating} ELO
+            </span>
+          </button>
+        </div>
+      </header>
+
+      {/* Desktop Dark Glass Top Bar (hidden md:flex) */}
+      <header className="hidden md:flex items-center justify-between gap-3 sm:gap-6 px-4 sm:px-6 py-3.5 border-b border-white/10 bg-zinc-950/95 supports-[backdrop-filter]:bg-zinc-950/65 supports-[backdrop-filter]:backdrop-blur-xl supports-[backdrop-filter]:backdrop-saturate-150 shadow-lg text-white sticky top-0 z-40">
+        {/* Brand Lockup Button (OctoSkull + Name, triggers About modal) */}
+        <button
+          type="button"
+          onClick={() => setIsAboutOpen(true)}
+          aria-label="About MugenChessX"
+          className="flex items-center gap-2.5 cursor-pointer rounded-lg p-1 -m-1 hover:bg-white/5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 shrink-0 text-left"
+        >
+          <OctoSkull size={30} className="shrink-0 text-white" />
           <div className="flex flex-col">
-            <span className="text-sm sm:text-base font-black uppercase tracking-tight whitespace-nowrap">
+            <span className="text-sm sm:text-base font-black uppercase tracking-tight text-white whitespace-nowrap">
               MugenChessX
             </span>
-            <span className="text-[9px] sm:text-[10px] font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider whitespace-nowrap">
+            <span className="text-[9px] sm:text-[10px] font-bold text-amber-400 uppercase tracking-wider whitespace-nowrap">
               by ANANDA JANA
             </span>
           </div>
-        </div>
+        </button>
 
         <nav className="hidden md:flex items-center gap-5 text-xs font-black uppercase">
-          <a href="#matches" className="hover:text-amber-500 transition-colors whitespace-nowrap">
+          <a href="#matches" className="text-zinc-100 hover:text-amber-400 transition-colors whitespace-nowrap">
             Active Matches ({ongoingMatches.length})
           </a>
-          <a href="#players" className="hover:text-amber-500 transition-colors whitespace-nowrap">
+          <a href="#players" className="text-zinc-100 hover:text-amber-400 transition-colors whitespace-nowrap">
             Find Players
           </a>
           <button
             onClick={onOpenRules}
-            className="hover:text-amber-500 transition-colors whitespace-nowrap flex items-center gap-1 cursor-pointer font-black"
+            className="text-zinc-100 hover:text-amber-400 transition-colors whitespace-nowrap flex items-center gap-1 cursor-pointer font-black"
           >
-            <BookOpen className="w-4 h-4 text-amber-500" />
+            <BookOpen className="w-4 h-4 text-amber-400" />
             Rules
           </button>
         </nav>
 
         <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-          {/* Per-client Theme Switcher */}
+          {/* Instant Culling Mode Launcher Button (Replacing Theme Switcher) */}
           <button
-            onClick={toggleTheme}
-            className="p-1.5 sm:px-3 sm:py-1.5 border-2 border-black dark:border-white bg-neutral-100 dark:bg-neutral-900 hover:bg-amber-400 dark:hover:bg-amber-400 hover:text-black dark:hover:text-black text-xs font-black uppercase flex items-center gap-1.5 shadow-[2px_2px_0px_var(--shadow)] cursor-pointer"
-            title={`Switch to ${theme === 'dark' ? 'Light' : 'Dark'} Board`}
+            type="button"
+            onClick={() => setIsCullingOpen(true)}
+            aria-label="Play Culling mode"
+            title="Culling Game Mode"
+            className="p-1.5 sm:px-3 sm:py-1.5 bg-red-600/90 hover:bg-red-500 active:bg-red-500 border border-red-400/40 text-white text-xs font-black uppercase flex items-center gap-1.5 rounded-lg cursor-pointer transition-all active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 shrink-0"
           >
-            {theme === 'dark' ? (
-              <Sun className="w-4 h-4 text-amber-400 group-hover:text-black" />
-            ) : (
-              <Moon className="w-4 h-4 text-black" />
-            )}
-            <span className="hidden sm:inline">{theme === 'dark' ? 'Light Board' : 'Dark Board'}</span>
+            <GamepadSkull size={18} className="shrink-0" />
+            <span className="hidden sm:inline">Culling Mode</span>
           </button>
 
           <div className="flex items-center gap-2">
-            <div className="border-2 border-black dark:border-white p-0.5 bg-neutral-100 dark:bg-neutral-900">
+            <div className="border border-white/20 p-0.5 bg-neutral-900 rounded-lg">
               <AvatarDisplay avatarId={user.avatarId} size="sm" />
             </div>
-            <span className="text-xs font-black uppercase hidden sm:inline">
+            <span className="text-xs font-black uppercase text-zinc-100 hidden sm:inline">
               {user.displayName}
             </span>
           </div>
 
           <button
             onClick={() => setIsTrophyRoomOpen(true)}
-            className="px-2.5 py-1.5 text-xs font-black uppercase bg-amber-400 text-black hover:bg-amber-300 border-2 border-black dark:border-white shadow-[2px_2px_0px_var(--shadow)] flex items-center gap-1.5 cursor-pointer"
+            className="px-2.5 py-1.5 text-xs font-black uppercase bg-amber-400 text-black hover:bg-amber-300 border border-amber-300 rounded-lg flex items-center gap-1.5 cursor-pointer transition-colors"
             title="Session Trophy Room"
           >
             <Trophy className="w-3.5 h-3.5 text-black" />
             <span className="hidden sm:inline">Trophy Room</span>
             {predictorState.earnedCards.length > 0 && (
-              <span className="px-1.5 py-0.2 bg-black text-amber-300 text-[10px] font-mono">
+              <span className="px-1.5 py-0.2 bg-black text-amber-300 text-[10px] font-mono rounded">
                 {predictorState.earnedCards.length}
               </span>
             )}
@@ -242,7 +343,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
               clearPredictorSession();
               logout();
             }}
-            className="px-2.5 py-1.5 text-xs font-black uppercase bg-neutral-200 dark:bg-neutral-800 hover:bg-red-500 hover:text-white dark:hover:bg-red-500 border-2 border-black dark:border-white shadow-[2px_2px_0px_var(--shadow)] flex items-center gap-1.5 cursor-pointer"
+            className="px-2.5 py-1.5 text-xs font-black uppercase bg-neutral-800 hover:bg-red-600 hover:text-white border border-white/20 rounded-lg flex items-center gap-1.5 cursor-pointer transition-colors"
             title="Sign out"
           >
             <LogOut className="w-3.5 h-3.5" />
@@ -252,9 +353,9 @@ export const Dashboard: React.FC<DashboardProps> = ({
       </header>
 
       {/* Main Content Area */}
-      <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
+      <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 flex flex-col lg:grid lg:grid-cols-12 gap-6 pb-24 md:pb-6">
         {/* Mobile Top Training Buttons Bar */}
-        <div className="lg:hidden col-span-1 flex items-center justify-center gap-2 w-full mb-1">
+        <div className="lg:hidden order-1 col-span-1 flex items-center justify-center gap-2 w-full mb-1">
           <button
             onClick={() => onOpenHashiraTraining && onOpenHashiraTraining('thukuna')}
             className="flex-1 py-1.5 px-2 bg-gradient-to-r from-amber-900 to-neutral-950 border-2 border-amber-600 text-amber-200 font-black text-[10px] uppercase flex items-center gap-1.5 shadow-[2px_2px_0px_#000] cursor-pointer truncate"
@@ -272,7 +373,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
         </div>
 
         {/* Latest Edition Banner (Mobile) */}
-        <div className="lg:hidden w-full">
+        <div className="lg:hidden order-2 w-full">
           <img
             src="/assets/aistudio/image_8cc24db1.png"
             alt="Latest Edition"
@@ -280,8 +381,30 @@ export const Dashboard: React.FC<DashboardProps> = ({
           />
         </div>
 
+        {/* Mobile Resume Active Match Strip (order-3, md:hidden) */}
+        {ongoingMatches.length > 0 && (
+          <div className="md:hidden order-3 w-full bg-amber-400 text-black border-2 border-black p-3 shadow-[3px_3px_0px_#000] flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 min-w-0">
+              <div className="w-2.5 h-2.5 bg-black rounded-full animate-ping shrink-0" />
+              <div className="truncate">
+                <span className="text-[10px] font-black uppercase block leading-none text-black/80">Active Match</span>
+                <span className="text-xs font-black uppercase truncate block">
+                  vs {ongoingMatches[0].whitePlayer.userId === user.id ? ongoingMatches[0].blackPlayer.displayName : ongoingMatches[0].whitePlayer.displayName}
+                </span>
+              </div>
+            </div>
+            <button
+              onClick={() => joinMatch(ongoingMatches[0].id)}
+              className="px-3 py-1.5 bg-black hover:bg-neutral-900 text-amber-400 font-black text-xs uppercase border border-black shadow-[2px_2px_0px_#000] flex items-center gap-1 shrink-0 cursor-pointer active:scale-95"
+            >
+              <Play className="w-3.5 h-3.5 fill-current" />
+              Resume
+            </button>
+          </div>
+        )}
+
         {/* Left Column: Profile Card & Outgoing Challenges (4 cols) */}
-        <div className="lg:col-span-4 flex flex-col gap-6">
+        <div className="order-5 lg:order-1 lg:col-span-4 flex flex-col gap-6">
           {/* Latest Edition Banner (Desktop) */}
           <div className="hidden lg:block">
             <img
@@ -322,8 +445,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
             </div>
           </div>
 
-          {/* User Profile Card */}
-          <div className="bg-white dark:bg-[#0a0a0c] border-3 border-black dark:border-white p-5 shadow-[5px_5px_0px_#000000] dark:shadow-[5px_5px_0px_#ffffff]">
+          {/* User Profile Card (Desktop only, hidden on mobile) */}
+          <div className="hidden md:block bg-white dark:bg-[#0a0a0c] border-3 border-black dark:border-white p-5 shadow-[5px_5px_0px_#000000] dark:shadow-[5px_5px_0px_#ffffff]">
             <div className="flex items-start justify-between">
               <div className="flex items-center gap-3">
                 <div className="border-2 border-black dark:border-white p-0.5 bg-neutral-100 dark:bg-neutral-900">
@@ -503,35 +626,48 @@ export const Dashboard: React.FC<DashboardProps> = ({
             </div>
           )}
 
-          {/* Quick Rules Summary Card */}
-          <div className="bg-white dark:bg-[#0a0a0c] border-3 border-black dark:border-white p-5 shadow-[5px_5px_0px_#000000] dark:shadow-[5px_5px_0px_#ffffff] text-xs space-y-2.5">
-            <h4 className="font-black uppercase text-amber-600 dark:text-amber-400 flex items-center gap-1.5">
-              <Crown className="w-4 h-4 text-amber-500" />
-              Game Highlights
-            </h4>
-            <p className="leading-relaxed">
-              · <strong>DICE ROLLS (1-6):</strong> Rolls 1-3 move Inexpensive pieces (Knights, Bishops, Pawns); 4-6 move Expensive pieces (Rooks, Queens, Princes, Kings, Pawns).
-            </p>
-            <p className="leading-relaxed">
-              · <strong>FREE PASS FALLBACK:</strong> If no piece in the rolled category can move, all legal moves on the board unlock!
-            </p>
-            <p className="leading-relaxed">
-              · <strong>TWO-PAWN DRAW:</strong> Either player landing 2 pawns on enemy back rank draws immediately.
-            </p>
-            <p className="leading-relaxed text-[11px] text-neutral-600 dark:text-neutral-400">
-              · <strong>TAILORED MODE RULES:</strong> Play vs Bot (Standard), Play vs Bot (Crafted), and Multiplayer feature separate rules and options.
-            </p>
+          {/* Quick Rules Summary Card (Collapsible on Mobile, Fully Open on Desktop) */}
+          <div className="bg-white dark:bg-[#0a0a0c] border-3 border-black dark:border-white p-4 sm:p-5 shadow-[5px_5px_0px_#000000] dark:shadow-[5px_5px_0px_#ffffff] text-xs">
             <button
-              onClick={onOpenRules}
-              className="w-full mt-1 py-2 bg-neutral-200 dark:bg-neutral-800 hover:bg-amber-400 dark:hover:bg-amber-400 hover:text-black dark:hover:text-black border-2 border-black dark:border-white text-xs font-black uppercase transition-colors cursor-pointer shadow-[2px_2px_0px_var(--shadow)]"
+              type="button"
+              onClick={() => setIsHighlightsExpanded(!isHighlightsExpanded)}
+              aria-expanded={isHighlightsExpanded}
+              className="w-full flex items-center justify-between font-black uppercase text-amber-600 dark:text-amber-400 cursor-pointer md:cursor-default"
             >
-              Open Full Rulebook
+              <span className="flex items-center gap-1.5">
+                <Crown className="w-4 h-4 text-amber-500" />
+                Game Highlights
+              </span>
+              <span className="md:hidden p-1 text-neutral-500">
+                {isHighlightsExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+              </span>
             </button>
+
+            <div className={`space-y-2.5 mt-2.5 ${isHighlightsExpanded ? 'block' : 'hidden md:block'}`}>
+              <p className="leading-relaxed">
+                · <strong>DICE ROLLS (1-6):</strong> Rolls 1-3 move Inexpensive pieces (Knights, Bishops, Pawns); 4-6 move Expensive pieces (Rooks, Queens, Princes, Kings, Pawns).
+              </p>
+              <p className="leading-relaxed">
+                · <strong>FREE PASS FALLBACK:</strong> If no piece in the rolled category can move, all legal moves on the board unlock!
+              </p>
+              <p className="leading-relaxed">
+                · <strong>TWO-PAWN DRAW:</strong> Either player landing 2 pawns on enemy back rank draws immediately.
+              </p>
+              <p className="leading-relaxed text-[11px] text-neutral-600 dark:text-neutral-400">
+                · <strong>TAILORED MODE RULES:</strong> Play vs Bot (Standard), Play vs Bot (Crafted), and Multiplayer feature separate rules and options.
+              </p>
+              <button
+                onClick={onOpenRules}
+                className="w-full mt-1 py-2 bg-neutral-200 dark:bg-neutral-800 hover:bg-amber-400 dark:hover:bg-amber-400 hover:text-black dark:hover:text-black border-2 border-black dark:border-white text-xs font-black uppercase transition-colors cursor-pointer shadow-[2px_2px_0px_var(--shadow)]"
+              >
+                Open Full Rulebook
+              </button>
+            </div>
           </div>
         </div>
 
         {/* Right / Center Column: Active Matches & Find Players (8 cols) */}
-        <div className="lg:col-span-8 flex flex-col gap-6">
+        <div className="order-4 lg:order-2 lg:col-span-8 flex flex-col gap-6">
           {/* Notifications / Errors */}
           {matchError && (
             <div className="bg-red-500 text-white border-3 border-black p-3 text-xs font-black uppercase flex items-center justify-between shadow-[3px_3px_0px_#000]">
@@ -551,6 +687,9 @@ export const Dashboard: React.FC<DashboardProps> = ({
               <span>{sentNotice}</span>
             </div>
           )}
+
+          {/* Game Modes List with single #modes anchor */}
+          <div id="modes" className="scroll-mt-16 flex flex-col gap-6">
 
           {/* FEATURE BANNER: CHESS HASHIRA TRAINING */}
           <div className="bg-gradient-to-r from-yellow-950 via-neutral-900 to-black text-white border-4 border-amber-400 p-4 sm:p-5 shadow-[6px_6px_0px_#eab308] flex flex-col sm:flex-row sm:items-center justify-between gap-4 relative overflow-hidden">
@@ -595,19 +734,31 @@ export const Dashboard: React.FC<DashboardProps> = ({
                     Instant
                   </span>
                 </div>
-                <p className="text-xs font-bold text-neutral-900 mt-0.5">
-                  Top-level minimax engine with Prince tactical analysis. Zero matchmaking lag!
-                </p>
               </div>
             </div>
 
-            <button
-              onClick={onOpenBotModal}
-              className="py-3 px-5 bg-black hover:bg-neutral-900 text-amber-400 font-black text-xs sm:text-sm uppercase tracking-wider border-2 border-black shadow-[3px_3px_0px_#000000] flex items-center justify-center gap-2 shrink-0 cursor-pointer"
-            >
-              <Swords className="w-4 h-4" />
-              Play vs Bot
-            </button>
+            <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+              <button
+                type="button"
+                onClick={onOpenClassicBotModal || onOpenBotModal}
+                className="py-2 px-3.5 bg-neutral-900 hover:bg-black text-white font-black text-xs uppercase tracking-wider border-2 border-black shadow-[3px_3px_0px_#000000] flex flex-col items-center justify-center cursor-pointer transition-transform duration-75 active:scale-95"
+                title="Play Traditional Chess (No Prince)"
+              >
+                <span className="leading-tight">Play Normal Chess</span>
+                <span className="text-[9px] font-bold text-amber-300 lowercase tracking-normal leading-tight">
+                  without prince
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={onOpenBotModal}
+                className="py-3 px-5 bg-black hover:bg-neutral-900 text-amber-400 font-black text-xs sm:text-sm uppercase tracking-wider border-2 border-black shadow-[3px_3px_0px_#000000] flex items-center justify-center gap-2 cursor-pointer transition-transform duration-75 active:scale-95"
+              >
+                <Swords className="w-4 h-4" />
+                Play vs Bot
+              </button>
+            </div>
           </div>
 
           {/* Jujutsu Kaisen Culling Game Mode Challenge Card */}
@@ -739,9 +890,10 @@ export const Dashboard: React.FC<DashboardProps> = ({
               Craft Theory
             </button>
           </div>
+          </div>
 
           {/* Active / Ongoing Matches Section */}
-          <section id="matches">
+          <section id="matches" className="scroll-mt-16">
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-sm font-black uppercase tracking-wider flex items-center gap-2">
                 <Play className="w-4 h-4 text-amber-500" />
@@ -811,7 +963,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
           </section>
 
           {/* Find & Challenge Players Section */}
-          <section id="players">
+          <section id="players" className="scroll-mt-16">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
               <h3 className="text-sm font-black uppercase tracking-wider flex items-center gap-2">
                 <Swords className="w-4 h-4 text-amber-500" />
@@ -978,7 +1130,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                         </div>
 
                         <button
-                          onClick={() => handleChallengePlayer(p.id, p.displayName)}
+                          onClick={() => setChallengeModalTarget({ id: p.id, name: p.displayName })}
                           className="py-1.5 px-3 bg-amber-400 hover:bg-amber-300 text-black border-2 border-black text-xs font-black uppercase flex items-center gap-1.5 shadow-[2px_2px_0px_#000] cursor-pointer"
                         >
                           <Swords className="w-3.5 h-3.5" />
@@ -1042,6 +1194,254 @@ export const Dashboard: React.FC<DashboardProps> = ({
         </div>
       </main>
 
+      {/* Fixed Bottom Tab Bar (Mobile only, md:hidden) */}
+      <nav
+        aria-label="Mobile Navigation"
+        className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-zinc-950/95 supports-[backdrop-filter]:bg-zinc-950/80 supports-[backdrop-filter]:backdrop-blur-xl border-t border-white/10 text-white pb-[env(safe-area-inset-bottom)]"
+      >
+        <div className="grid grid-cols-5 h-16 max-w-md mx-auto">
+          {/* Tab 1: Play */}
+          <button
+            type="button"
+            onClick={() => scrollToSection('modes', 'play')}
+            aria-label="Jump to Play Game Modes"
+            className={`min-h-[44px] min-w-[44px] flex flex-col items-center justify-center gap-1 transition-colors cursor-pointer ${
+              activeBottomTab === 'play' ? 'text-amber-400 font-black' : 'text-neutral-400 hover:text-white'
+            }`}
+          >
+            <Swords className="w-5 h-5" />
+            <span className="text-[11px] uppercase tracking-tight">Play</span>
+          </button>
+
+          {/* Tab 2: Matches */}
+          <button
+            type="button"
+            onClick={() => scrollToSection('matches', 'matches')}
+            aria-label="Jump to Active Matches"
+            className={`min-h-[44px] min-w-[44px] flex flex-col items-center justify-center gap-1 transition-colors cursor-pointer relative ${
+              activeBottomTab === 'matches' ? 'text-amber-400 font-black' : 'text-neutral-400 hover:text-white'
+            }`}
+          >
+            <div className="relative">
+              <Play className="w-5 h-5" />
+              {ongoingMatches.length > 0 && (
+                <span className="absolute -top-1.5 -right-2.5 px-1.5 py-0.2 bg-amber-400 text-black text-[9px] font-mono font-black rounded-full leading-tight">
+                  {ongoingMatches.length}
+                </span>
+              )}
+            </div>
+            <span className="text-[11px] uppercase tracking-tight">Matches</span>
+          </button>
+
+          {/* Tab 3: Players */}
+          <button
+            type="button"
+            onClick={() => scrollToSection('players', 'players')}
+            aria-label="Jump to Find Players"
+            className={`min-h-[44px] min-w-[44px] flex flex-col items-center justify-center gap-1 transition-colors cursor-pointer ${
+              activeBottomTab === 'players' ? 'text-amber-400 font-black' : 'text-neutral-400 hover:text-white'
+            }`}
+          >
+            <Users className="w-5 h-5" />
+            <span className="text-[11px] uppercase tracking-tight">Players</span>
+          </button>
+
+          {/* Tab 4: Hashira Dojo */}
+          <button
+            type="button"
+            onClick={() => onOpenHashiraTraining && onOpenHashiraTraining('thukuna')}
+            aria-label="Open Hashira Dojo"
+            className="min-h-[44px] min-w-[44px] flex flex-col items-center justify-center gap-1 text-neutral-400 hover:text-amber-400 transition-colors cursor-pointer"
+          >
+            <Flame className="w-5 h-5 text-amber-500" />
+            <span className="text-[11px] uppercase tracking-tight">Hashira</span>
+          </button>
+
+          {/* Tab 5: Trophy Room */}
+          <button
+            type="button"
+            onClick={() => setIsTrophyRoomOpen(true)}
+            aria-label="Open Trophy Room"
+            className="min-h-[44px] min-w-[44px] flex flex-col items-center justify-center gap-1 text-neutral-400 hover:text-amber-400 transition-colors cursor-pointer relative"
+          >
+            <div className="relative">
+              <Trophy className="w-5 h-5 text-amber-400" />
+              {predictorState.earnedCards.length > 0 && (
+                <span className="absolute -top-1.5 -right-2.5 px-1 py-0.2 bg-amber-400 text-black text-[9px] font-mono font-black rounded-full leading-tight">
+                  {predictorState.earnedCards.length}
+                </span>
+              )}
+            </div>
+            <span className="text-[11px] uppercase tracking-tight">Trophies</span>
+          </button>
+        </div>
+      </nav>
+
+      {/* Mobile Profile Bottom Sheet Drawer (Mobile only, md:hidden) */}
+      {isMobileProfileOpen && (
+        <>
+          {/* Dark Backdrop */}
+          <div
+            className="md:hidden fixed inset-0 z-50 bg-black/75 supports-[backdrop-filter]:backdrop-blur-sm transition-opacity"
+            onClick={() => {
+              setIsMobileProfileOpen(false);
+              profilePillRef.current?.focus();
+            }}
+          />
+
+          {/* Sheet Container */}
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label="Player Profile and Statistics"
+            className="md:hidden fixed inset-x-0 bottom-0 z-50 max-h-[85vh] overflow-y-auto overscroll-contain bg-zinc-950 border-t-2 border-amber-400 rounded-t-3xl shadow-2xl p-5 pb-[calc(1.5rem+env(safe-area-inset-bottom))] text-white animate-in slide-in-from-bottom duration-200"
+          >
+            {/* Grab handle */}
+            <div className="w-12 h-1.5 bg-neutral-700 rounded-full mx-auto mb-4" />
+
+            {/* Profile Drawer Header */}
+            <div className="flex items-start justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <div className="border-2 border-amber-400 p-0.5 bg-neutral-900 rounded-lg">
+                  <AvatarDisplay avatarId={user.avatarId} size="lg" />
+                </div>
+                <div>
+                  <h3 className="text-base font-black uppercase text-white">{user.displayName}</h3>
+                  <p className="text-xs text-neutral-400 font-mono">@{user.username}</p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEditName(user.displayName);
+                    setEditAvatar(user.avatarId);
+                    setIsEditingProfile(!isEditingProfile);
+                  }}
+                  className="text-xs font-black uppercase px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-amber-300 border border-white/10 cursor-pointer min-h-[44px] flex items-center justify-center active:scale-95"
+                >
+                  {isEditingProfile ? 'Cancel' : 'Edit'}
+                </button>
+                <button
+                  ref={sheetCloseRef}
+                  type="button"
+                  onClick={() => {
+                    setIsMobileProfileOpen(false);
+                    profilePillRef.current?.focus();
+                  }}
+                  aria-label="Close Profile"
+                  className="w-11 h-11 flex items-center justify-center rounded-xl bg-white/10 hover:bg-white/20 text-neutral-300 hover:text-white border border-white/10 cursor-pointer active:scale-95"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+
+            {/* Profile Edit Mode Form or Stats Grid */}
+            {isEditingProfile ? (
+              <form onSubmit={handleSaveProfile} className="pt-3 border-t border-white/10 flex flex-col gap-3">
+                <div>
+                  <label className="block text-xs font-black uppercase mb-1 text-neutral-300">Display Name</label>
+                  <input
+                    type="text"
+                    value={editName}
+                    onChange={(e) => setEditName(e.target.value)}
+                    className="w-full px-3 py-2 bg-neutral-900 border border-white/20 rounded-lg text-xs font-bold text-white focus:outline-none focus:border-amber-400"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-black uppercase mb-1.5 text-neutral-300">Avatar</label>
+                  <div className="grid grid-cols-6 gap-1.5">
+                    {AVATAR_OPTIONS.map((av) => (
+                      <button
+                        key={av.id}
+                        type="button"
+                        onClick={() => setEditAvatar(av.id)}
+                        className={`p-1 border rounded-lg flex justify-center cursor-pointer ${
+                          editAvatar === av.id ? 'bg-amber-400 border-amber-300' : 'border-white/10 opacity-60'
+                        }`}
+                      >
+                        <AvatarDisplay avatarId={av.id} size="sm" />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <button
+                  type="submit"
+                  className="mt-2 py-2.5 px-4 bg-amber-400 hover:bg-amber-300 text-black font-black text-xs uppercase rounded-xl border border-black cursor-pointer shadow-md active:scale-98"
+                >
+                  Save Profile
+                </button>
+              </form>
+            ) : (
+              <div className="space-y-3 font-mono">
+                {/* Predicted Skill Rating ELO Badge */}
+                <div className="p-3 bg-amber-400 text-black rounded-xl border border-amber-300 shadow-md flex items-center justify-between">
+                  <div>
+                    <span className="text-[10px] font-black uppercase tracking-wider block text-black/80">Predicted Rating</span>
+                    <span className="text-2xl font-black font-mono leading-none">{predictorState.currentRating} ELO</span>
+                  </div>
+                  <span className="text-[10px] font-black uppercase px-2 py-0.5 bg-black text-amber-300 rounded font-sans">
+                    Live Session
+                  </span>
+                </div>
+
+                {/* Session Wins, Losses, Draws Grid */}
+                <div className="grid grid-cols-3 gap-2 text-center font-mono">
+                  <div className="bg-neutral-900 p-2.5 rounded-xl border border-white/10">
+                    <span className="text-xl font-black text-emerald-400 block">
+                      {(user.stats?.wins || 0) + predictorState.wins}
+                    </span>
+                    <p className="text-[10px] font-black uppercase text-neutral-400 mt-0.5 font-sans">Wins</p>
+                  </div>
+                  <div className="bg-neutral-900 p-2.5 rounded-xl border border-white/10">
+                    <span className="text-xl font-black text-white block">
+                      {(user.stats?.losses || 0) + predictorState.losses}
+                    </span>
+                    <p className="text-[10px] font-black uppercase text-neutral-400 mt-0.5 font-sans">Losses</p>
+                  </div>
+                  <div className="bg-neutral-900 p-2.5 rounded-xl border border-white/10">
+                    <span className="text-xl font-black text-amber-400 block">
+                      {(user.stats?.draws || 0) + predictorState.draws}
+                    </span>
+                    <p className="text-[10px] font-black uppercase text-neutral-400 mt-0.5 font-sans">Draws</p>
+                  </div>
+                </div>
+
+                {/* Quick Trophy Room Launcher */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsMobileProfileOpen(false);
+                    setIsTrophyRoomOpen(true);
+                  }}
+                  className="w-full py-2.5 px-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-amber-300 font-black text-xs uppercase flex items-center justify-center gap-2 cursor-pointer min-h-[44px] active:scale-98 transition-colors font-sans"
+                >
+                  <Trophy className="w-4 h-4 text-amber-400" />
+                  <span>View Session Trophy Room ({predictorState.earnedCards.length})</span>
+                </button>
+
+                {/* Sign Out Button (Separated) */}
+                <div className="pt-3 border-t border-white/10">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      clearPredictorSession();
+                      logout();
+                    }}
+                    className="w-full py-2.5 px-4 bg-red-600/20 hover:bg-red-600 text-red-300 hover:text-white border border-red-500/30 rounded-xl text-xs font-black uppercase flex items-center justify-center gap-2 cursor-pointer transition-colors min-h-[44px] active:scale-98 font-sans"
+                  >
+                    <LogOut className="w-4 h-4" />
+                    <span>Sign Out</span>
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </>
+      )}
+
       <TrophyRoomModal
         isOpen={isTrophyRoomOpen}
         onClose={() => setIsTrophyRoomOpen(false)}
@@ -1054,6 +1454,25 @@ export const Dashboard: React.FC<DashboardProps> = ({
           setIsSecretArenaOpen(false);
           onStartSecretMatch && onStartSecretMatch(bot);
         }}
+      />
+
+      <MultiplayerChallengeModal
+        isOpen={Boolean(challengeModalTarget)}
+        onClose={() => setChallengeModalTarget(null)}
+        targetPlayer={challengeModalTarget}
+        onSendChallenge={(targetUserId, timeControl, moveSuggestions, craftingAllowed, pieceTheme, gameMode, expansionDisabled) => {
+          sendChallenge(targetUserId, timeControl, moveSuggestions, craftingAllowed, pieceTheme, gameMode, expansionDisabled);
+          setSentNotice(
+            `Challenge (${gameMode === 'classic' ? 'Traditional' : gameMode === 'crafted' ? 'Crafted' : 'Mugen'}, ${timeControl === 120 ? '2m' : '5m'}) sent to ${challengeModalTarget?.name}!`
+          );
+          setTimeout(() => setSentNotice(null), 4000);
+          setTimeout(refreshUserData, 500);
+        }}
+      />
+
+      <AboutGameModal
+        isOpen={isAboutOpen}
+        onClose={() => setIsAboutOpen(false)}
       />
     </div>
   );

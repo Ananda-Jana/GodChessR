@@ -1269,7 +1269,7 @@ export const RoseParadiseView: React.FC<RoseParadiseViewProps> = ({ onBack }) =>
             </div>
 
             {/* Center: Brutalist Chess Board (Tier 2 & Desktop Center) */}
-            <div className="flex-1 min-h-0 w-full flex flex-col items-center justify-center relative overflow-hidden px-1 py-1 md:px-2 md:pt-1 md:pb-3">
+            <div className="flex-1 min-h-0 w-full flex flex-col items-center justify-center relative overflow-hidden px-0 py-1 md:px-2 md:pt-1 md:pb-3">
               {/* Turn Banner - Desktop / Tablet */}
               <div className={`hidden md:flex shrink-0 w-full ${summoningUnit ? 'md:w-[min(calc(100dvh-260px),calc(100%-24px),760px)]' : 'md:w-[min(calc(100dvh-208px),calc(100%-24px),760px)]'} px-4 py-2 border-3 border-white shadow-[4px_4px_0px_#fff] items-center justify-between text-xs font-black uppercase mb-2 ${isMyTurn ? 'bg-amber-400 text-black' : 'bg-black text-white'}`}>
                 <div className="flex items-center gap-2">
@@ -1300,18 +1300,18 @@ export const RoseParadiseView: React.FC<RoseParadiseViewProps> = ({ onBack }) =>
 
               {/* Brutalist Board Tray - Sacred Square Container */}
               <div
-                className={`w-[min(calc(100vw-16px),calc(100dvh-224px-env(safe-area-inset-bottom,0px)),520px)] ${summoningUnit ? 'md:w-[min(calc(100dvh-260px),calc(100%-24px),760px)]' : 'md:w-[min(calc(100dvh-208px),calc(100%-24px),760px)]'} aspect-square md:aspect-auto brutal-board-tray p-2 sm:p-3 border-4 border-white shadow-[8px_8px_0px_#fff] flex flex-col items-center justify-center shrink-0`}
+                className={`w-full max-w-[100vw] ${summoningUnit ? 'md:w-[min(calc(100dvh-260px),calc(100%-24px),760px)]' : 'md:w-[min(calc(100dvh-208px),calc(100%-24px),760px)]'} aspect-square md:aspect-auto brutal-board-tray board-edge-mobile p-0 md:p-3 border-0 md:border-4 border-white shadow-none md:shadow-[8px_8px_0px_#fff] flex flex-col items-center justify-center shrink-0`}
                 style={{ backgroundColor: '#e11d48' }}
               >
-                {/* Board Files Top (A - H) */}
-                <div className="w-full grid grid-cols-8 text-center text-[10px] sm:text-xs font-black text-white mb-0.5">
+                {/* Board Files Top (A - H) - Desktop Only */}
+                <div className="hidden md:grid w-full grid-cols-8 text-center text-[10px] sm:text-xs font-black text-white mb-0.5">
                   {fileLabels.map((f) => (
                     <span key={f}>{f}</span>
                   ))}
                 </div>
 
                 {/* 8x8 Board Container with Strict 1:1 Aspect Ratio Squares */}
-                <div className="w-full aspect-square border-3 border-white grid grid-cols-8 grid-rows-8 bg-black/40">
+                <div className="w-full aspect-square board-grid-mobile border-0 md:border-3 border-white grid grid-cols-8 grid-rows-8 bg-black/40">
                   {displayYIndices.map((y) =>
                     displayXIndices.map((x) => {
                       const piece = activeMatch.board[y][x];
@@ -1378,8 +1378,8 @@ export const RoseParadiseView: React.FC<RoseParadiseViewProps> = ({ onBack }) =>
                   )}
                 </div>
 
-                {/* Board Files Bottom (A - H) */}
-                <div className="w-full grid grid-cols-8 text-center text-[10px] sm:text-xs font-black text-white mt-0.5">
+                {/* Board Files Bottom (A - H) - Desktop Only */}
+                <div className="hidden md:grid w-full grid-cols-8 text-center text-[10px] sm:text-xs font-black text-white mt-0.5">
                   {fileLabels.map((f) => (
                     <span key={f}>{f}</span>
                   ))}

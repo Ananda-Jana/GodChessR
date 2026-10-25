@@ -195,9 +195,9 @@ export const ChessBoard: React.FC<ChessBoardProps> = ({
   const isThemeLight = theme === 'light';
 
   return (
-    <div className="flex flex-col items-center select-none w-full max-w-[540px]">
+    <div className="flex flex-col items-center select-none w-full max-w-[100vw] md:max-w-[540px]">
       <div
-        className={`relative w-full p-2 sm:p-2.5 border-4 transition-colors soft-board-tray rounded-2xl shadow-xl ${
+        className={`relative w-full board-edge-mobile p-0 md:p-2 sm:md:p-2.5 border-0 md:border-4 transition-colors soft-board-tray rounded-none md:rounded-2xl shadow-none md:shadow-xl ${
           isThemeLight
             ? 'bg-slate-200/90 border-slate-300'
             : 'bg-[#0f172a] border-slate-700/70'
@@ -206,8 +206,8 @@ export const ChessBoard: React.FC<ChessBoardProps> = ({
       >
         {/* Dynamic Board Grid */}
         <div
-          className={`grid w-full h-full soft-board-grid rounded-xl overflow-hidden ${
-            isThemeLight ? 'border border-slate-300/80' : 'border border-slate-700/60'
+          className={`grid w-full h-full board-grid-mobile soft-board-grid rounded-none md:rounded-xl overflow-hidden ${
+            isThemeLight ? 'border-0 md:border md:border-slate-300/80' : 'border-0 md:border md:border-slate-700/60'
           }`}
           style={{
             gridTemplateColumns: `repeat(${boardWidth}, minmax(0, 1fr))`,

@@ -505,14 +505,14 @@ export const PracticeBoard: React.FC<PracticeBoardProps> = ({
 
         {/* Board View: Either Authentic Culling Cross Board or Standard 8x8 */}
         {mode === 'culling' ? (
-          <div className="relative shrink-0">
+          <div className="relative shrink-0 w-full max-w-[100vw] flex justify-center">
             <CullingBoard
               match={cullingMatch}
               myColor={playerColor as CullingPieceColor}
               isInteractive={!isBotThinking && !matchOutcome}
               onMove={handleCullingMove}
               flipped={isFlipped}
-              maxDimension={maxBoardDimension ? Math.floor(maxBoardDimension - 14) : undefined}
+              maxDimension={maxBoardDimension ? Math.floor(maxBoardDimension) : undefined}
             />
 
             {isBotThinking && (
@@ -526,9 +526,9 @@ export const PracticeBoard: React.FC<PracticeBoardProps> = ({
           /* 8x8 Board Container */
           <div
             style={maxBoardDimension ? { width: `${maxBoardDimension}px`, height: `${maxBoardDimension}px` } : undefined}
-            className="relative border-3 sm:border-4 border-black dark:border-white shadow-[4px_4px_0px_#000000] dark:shadow-[4px_4px_0px_#ffffff] bg-black select-none w-[min(calc(100vw-16px),calc(100dvh-224px),520px)] h-[min(calc(100vw-16px),calc(100dvh-224px),520px)] lg:w-[min(calc(100dvh-140px),calc(100%-48px),760px)] lg:h-[min(calc(100dvh-140px),calc(100%-48px),760px)] aspect-square shrink-0"
+            className="relative board-edge-mobile border-0 md:border-4 border-black dark:border-white shadow-none md:shadow-[4px_4px_0px_#000000] dark:md:shadow-[4px_4px_0px_#ffffff] bg-black select-none w-full max-w-[100vw] md:w-[min(calc(100vw-16px),calc(100dvh-224px),520px)] md:h-[min(calc(100vw-16px),calc(100dvh-224px),520px)] lg:w-[min(calc(100dvh-140px),calc(100%-48px),760px)] lg:h-[min(calc(100dvh-140px),calc(100%-48px),760px)] aspect-square shrink-0"
           >
-            <div className="grid grid-cols-8 grid-rows-8 w-full h-full">
+            <div className="grid grid-cols-8 grid-rows-8 w-full h-full board-grid-mobile">
               {Array.from({ length: 8 }).map((_, rankIdx) => {
                 const y = isFlipped ? rankIdx : 7 - rankIdx;
                 return Array.from({ length: 8 }).map((_, fileIdx) => {

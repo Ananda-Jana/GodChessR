@@ -14,7 +14,9 @@ interface SocketContextType {
     timeControl?: 120 | 300,
     moveSuggestions?: 'included' | 'excluded',
     craftingAllowed?: boolean,
-    pieceTheme?: PieceTheme
+    pieceTheme?: PieceTheme,
+    gameMode?: 'standard' | 'crafted' | 'classic',
+    expansionDisabled?: boolean
   ) => void;
   respondChallenge: (challengeId: string, action: 'accept' | 'decline') => void;
   cancelChallenge: (challengeId: string) => void;
@@ -185,10 +187,12 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     timeControl: 120 | 300 = 300,
     moveSuggestions: 'included' | 'excluded' = 'included',
     craftingAllowed: boolean = true,
-    pieceTheme: PieceTheme = 'classic'
+    pieceTheme: PieceTheme = 'classic',
+    gameMode: 'standard' | 'crafted' | 'classic' = 'standard',
+    expansionDisabled: boolean = false
   ) => {
     setMatchError(null);
-    send({ type: 'challenge:send', targetUserId, timeControl, moveSuggestions, craftingAllowed, pieceTheme });
+    send({ type: 'challenge:send', targetUserId, timeControl, moveSuggestions, craftingAllowed, pieceTheme, gameMode, expansionDisabled });
   };
 
   const respondChallenge = (challengeId: string, action: 'accept' | 'decline') => {

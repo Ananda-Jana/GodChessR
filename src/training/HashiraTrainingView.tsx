@@ -103,10 +103,11 @@ export const HashiraTrainingView: React.FC<HashiraTrainingViewProps> = ({ onBack
   }, [activeTool]);
 
   const maxBoardDimension = useMemo(() => {
-    // Stage height minus margins and the bottom status strip (~32px)
-    const availableHeight = stageDimensions.height - 34;
-    const availableWidth = stageDimensions.width - 12;
-    const dim = Math.floor(Math.min(availableWidth, availableHeight, 460));
+    const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+    // Stage height minus margins and the 48px compact kata status bar (~58px mobile, ~64px desktop)
+    const availableHeight = stageDimensions.height - (isMobile ? 58 : 64);
+    const availableWidth = isMobile ? stageDimensions.width - 8 : stageDimensions.width - 16;
+    const dim = Math.floor(Math.min(availableWidth, availableHeight, isMobile ? 540 : 460));
     return Math.max(220, dim);
   }, [stageDimensions]);
 
@@ -935,7 +936,7 @@ export const HashiraTrainingView: React.FC<HashiraTrainingViewProps> = ({ onBack
         {/* Center Column: Main Fixed Board Stage (Zero Scroll) */}
         <main
           ref={stageRef}
-          className="flex-1 min-h-0 min-w-0 flex flex-col items-center justify-center p-1 sm:p-2 lg:p-4 overflow-hidden relative bg-[#070709]"
+          className="flex-1 min-h-0 min-w-0 flex flex-col items-center justify-center p-0 md:p-2 lg:p-4 overflow-hidden relative bg-[#070709]"
         >
           {activeTool === 'practice' ? (
             <div className="w-full h-full flex flex-col items-center justify-start overflow-y-auto pb-24 scroll-smooth">

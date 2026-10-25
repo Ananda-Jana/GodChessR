@@ -244,7 +244,10 @@ export function initWebSocketServer(server: HttpServer) {
         const timeControl: 120 | 300 = data.timeControl === 120 ? 120 : 300;
         const moveSuggestions: 'included' | 'excluded' =
           data.moveSuggestions === 'excluded' ? 'excluded' : 'included';
-        const craftingAllowed: boolean = data.craftingAllowed !== false;
+        const gameMode: 'standard' | 'crafted' | 'classic' =
+          data.gameMode === 'classic' ? 'classic' : data.gameMode === 'crafted' ? 'crafted' : 'standard';
+        const craftingAllowed: boolean = gameMode === 'classic' ? false : data.craftingAllowed !== false;
+        const expansionDisabled: boolean = Boolean(data.expansionDisabled);
         const pieceTheme: 'classic' | 'retro' = data.pieceTheme === 'retro' ? 'retro' : 'classic';
         const challenge: Challenge = {
           id: challengeId,
@@ -261,9 +264,11 @@ export function initWebSocketServer(server: HttpServer) {
             avatarId: recipient.avatarId,
           },
           status: 'pending',
+          gameMode,
           timeControl,
           moveSuggestions,
           craftingAllowed,
+          expansionDisabled,
           pieceTheme,
           createdAt: Date.now(),
           expiresAt: Date.now() + 5 * 60 * 1000, // 5 minutes expiration
@@ -305,14 +310,16 @@ export function initWebSocketServer(server: HttpServer) {
           db.saveChallenge(challenge);
 
           const duration = challenge.timeControl || 300;
+          const gameMode = challenge.gameMode || 'standard';
           const now = Date.now();
 
-          // Create authoritative initial match with chosen timer (2m or 5m)
+          // Create authoritative initial match with chosen timer (2m or 5m) and gameMode
           const initialMatch: MatchState = {
             id: matchId,
             whitePlayer: challenge.challenger,
             blackPlayer: challenge.challenged,
-            board: createInitialBoard(),
+            board: createInitialBoard(gameMode),
+            gameMode,
             turn: 'white',
             status: 'active',
             dice: null,
@@ -324,10 +331,11 @@ export function initWebSocketServer(server: HttpServer) {
             inCheck: null,
             result: null,
             moveSuggestions: challenge.moveSuggestions || 'included',
-            craftingAllowed: challenge.craftingAllowed !== false,
+            craftingAllowed: gameMode === 'classic' ? false : (challenge.craftingAllowed !== false),
+            expansionDisabled: Boolean(challenge.expansionDisabled),
             pieceTheme: challenge.pieceTheme || 'classic',
             totalCaptures: 0,
-            diceActive: true,
+            diceActive: gameMode === 'classic' ? false : true,
             timeControl: duration,
             whiteTimeRemaining: duration,
             blackTimeRemaining: duration,

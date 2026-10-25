@@ -97,17 +97,17 @@ export const CullingBoard: React.FC<CullingBoardProps> = ({
 
   return (
     <div
-      className={`relative aspect-square p-1 sm:p-2 rounded-xl border-3 sm:border-4 border-black dark:border-white shadow-[4px_4px_0px_#000000] dark:shadow-[4px_4px_0px_#ffffff] select-none touch-manipulation max-w-full max-h-full overflow-hidden shrink-0 flex items-center justify-center ${
+      className={`relative aspect-square board-edge-mobile p-0 md:p-2 rounded-none md:rounded-xl border-0 md:border-4 border-black dark:border-white shadow-none md:shadow-[4px_4px_0px_#000000] dark:md:shadow-[4px_4px_0px_#ffffff] select-none touch-manipulation max-w-full max-h-full overflow-hidden shrink-0 flex items-center justify-center ${
         maxDimension
           ? ''
-          : 'w-[min(calc(100vw-16px),calc(100dvh-200px-env(safe-area-inset-bottom,0px)),540px)] lg:w-[min(calc(100dvh-64px),calc(100vw-680px),1200px)]'
+          : 'w-full md:w-[min(calc(100vw-16px),calc(100dvh-200px-env(safe-area-inset-bottom,0px)),540px)] lg:w-[min(calc(100dvh-64px),calc(100vw-680px),1200px)]'
       }`}
       style={{
         backgroundColor: '#e11d48',
         ...(maxDimension
           ? {
-              width: `${maxDimension + 14}px`,
-              height: `${maxDimension + 14}px`,
+              width: `${maxDimension}px`,
+              height: `${maxDimension}px`,
               maxWidth: '100%',
               maxHeight: '100%',
             }
@@ -116,7 +116,7 @@ export const CullingBoard: React.FC<CullingBoardProps> = ({
     >
       {/* 10x10 Cross-Shaped Board Grid: Rock-Solid Dimensions Anchored to Viewport */}
       <div
-        className="grid grid-cols-10 grid-rows-10 border-2 border-black/40 dark:border-white/20 bg-transparent aspect-square touch-manipulation select-none max-w-full max-h-full w-full h-full"
+        className="grid grid-cols-10 grid-rows-10 board-grid-mobile border-0 md:border-2 border-black/40 dark:border-white/20 bg-transparent aspect-square touch-manipulation select-none max-w-full max-h-full w-full h-full"
         style={maxDimension ? { maxWidth: `${maxDimension}px`, maxHeight: `${maxDimension}px` } : undefined}
       >
         {rowIndices.map((y) =>

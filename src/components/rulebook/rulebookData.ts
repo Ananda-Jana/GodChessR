@@ -2,13 +2,200 @@ import { ModeRulebookData } from './types';
 
 export const RULEBOOK_MODES: ModeRulebookData[] = [
   // ==========================================
-  // 1. STANDARD DICE CHESS (BOT STANDARD)
+  // 1. TRADITIONAL CHESS (STANDARD ORIGINAL CHESS)
+  // ==========================================
+  {
+    id: 'classic',
+    title: 'Traditional Chess (No Prince)',
+    subtitle: 'Authentic Classical Chess (FIDE) — No Prince, No Dice, No Crafting',
+    badge: 'Standard Original Chess',
+    accentColor: 'amber',
+    overview: {
+      objective: 'Checkmate the opponent King using pure classical chess rules. Every move is deterministic with standard turn alternation.',
+      boardGeometry: 'Standard 8×8 grid with 64 squares using algebraic coordinates (a–h, ranks 1–8).',
+      armySize: 'Authentic 16 pieces per side (32 total). Queen on d1/d8, King on e1/e8 beside each other, flanked by Bishops (c, f), Knights (b, g), Rooks (a, h), and 8 Pawns on ranks 2/7. No Prince.',
+      timeControl: '5 minutes standard blitz format without dice roll delays or grace windows.',
+      winConditions: [
+        'Checkmate: Deliver inescapable check to the opponent King.',
+        'Timeout: Opponent runs out of time on their match clock (timed-out player loses directly).',
+        'Resignation: Opponent concedes the match.',
+      ],
+      drawConditions: [
+        'Stalemate: The player whose turn it is has no legal moves and their King is not in check.',
+        'Insufficient Material: Neither player has enough pieces to force checkmate (e.g., King vs King, King + Minor piece vs King).',
+        'Threefold Repetition: The identical board position and turn state occurs three times in the game.',
+        '50-Move Rule: 50 consecutive moves played by both sides without a pawn move or piece capture.',
+      ],
+      keyHighlights: [
+        {
+          title: 'Authentic Classical Alignment',
+          desc: 'Queen stands on her own color (d1 for White, d8 for Black) directly beside the King on e1/e8. No corner princes or custom starting squares.',
+        },
+        {
+          title: 'Pure Deterministic Chess (No Dice)',
+          desc: 'Zero dice rolls or piece tier restrictions. Players freely evaluate and move any legal piece on every turn without delay.',
+        },
+        {
+          title: 'Standard Chess Invariants',
+          desc: 'Mid-game crafting perks, expansion squares, and the 2-pawn end rank draw rule are completely disabled. Authentic chess rules only.',
+        },
+      ],
+    },
+    rules: {
+      sections: [
+        {
+          title: '1. Piece Movement & Royal Setup',
+          content: 'Every piece operates with traditional FIDE movement profiles:',
+          items: [
+            {
+              name: 'King & Queen Center Placement',
+              details: 'White d1=Queen, e1=King; Black d8=Queen, e8=King. The King moves 1 square in any direction. The Queen slides any number of squares along ranks, files, or diagonals.',
+              badge: 'Royal',
+            },
+            {
+              name: 'Rooks, Knights & Bishops',
+              details: 'Rooks occupy corner files a and h. Knights leap in L-shapes on b and g. Bishops slide along diagonals on c and f.',
+            },
+            {
+              name: 'Pawns & Initial Advance',
+              details: 'Pawns start on ranks 2 (White) and 7 (Black). They advance 1 square forward (or 2 squares on their first move), capture 1 square diagonally forward, and promote upon reaching the opposite rank.',
+            },
+          ],
+        },
+        {
+          title: '2. Castling & Special Moves',
+          content: 'Traditional special maneuvers are fully preserved:',
+          items: [
+            {
+              name: 'Kingside & Queenside Castling',
+              details: 'King moves 2 squares towards a corner rook, and the rook hops over to the adjacent square, provided neither piece has moved and transit squares are unattacked.',
+              badge: 'Castling',
+            },
+            {
+              name: 'En Passant',
+              details: 'A pawn moving two squares past an opposing pawn can be captured diagonally as if it had advanced only one square on the immediate following move.',
+              badge: 'En Passant',
+            },
+            {
+              name: 'Pawn Promotion',
+              details: 'Upon reaching the 8th rank, pawns are immediately promoted to a Queen, Rook, Bishop, or Knight.',
+            },
+          ],
+        },
+        {
+          title: '3. Turn Flow & Victory Invariants',
+          content: 'Strictly deterministic turn cycle:',
+          items: [
+            {
+              name: 'White Moves First',
+              details: 'Turns strictly alternate move by move. No dice rolling, no grace delays, and no action pause intervals.',
+            },
+            {
+              name: 'Standard Check & Checkmate',
+              details: 'When in check, the player must immediately eliminate the check by moving the King, capturing the attacker, or blocking the ray.',
+            },
+            {
+              name: 'No Non-Standard Draws',
+              details: 'The 2-pawn end-rank draw target does not apply in this mode. Only classical stalemate, repetition, or 50-move draws are recognized.',
+            },
+          ],
+        },
+      ],
+    },
+    strategy: {
+      tacticalPrinciples: [
+        'Stake out the four central squares (e4, d4, e5, d5) early using pawns and knights.',
+        'Develop minor pieces (knights and bishops) before moving heavy pieces into exposed lines.',
+        'Castle early to secure your King in a fortified corner behind connected pawns.',
+        'Control open files with rooks and coordinate pieces for harmonious king pressure.',
+      ],
+      openings: [
+        {
+          id: 'ruy_lopez_classical',
+          name: 'The Ruy Lopez (Spanish Opening)',
+          tagline: 'The classical cornerstone of chess strategy and piece tension',
+          boardDimensions: { cols: 8, rows: 8 },
+          notationSteps: [
+            '1. e4 (Open King’s pawn)',
+            '2. e5 (Black mirrors center stake)',
+            '3. Nf3 (Attacking e5 pawn)',
+            '4. Nc6 (Defending e5 knight)',
+            '5. Bb5 (Pinning the defender)',
+          ],
+          description:
+            'One of the oldest and most respected openings in chess history. White develops rapidly towards the kingside and applies indirect pressure against Black’s central pawn anchor at e5.',
+          strategicGoals: [
+            'Establish rapid kingside development for swift castling',
+            'Pressure Black’s e5 pawn anchor via the pinned c6 knight',
+            'Prepare a central c3 and d4 expansion pawn center',
+          ],
+          keySquares: ['e4', 'e5', 'f3', 'c6', 'b5', 'd4'],
+          diagramPieces: [
+            { square: 'e4', type: 'pawn', color: 'white' },
+            { square: 'f3', type: 'knight', color: 'white' },
+            { square: 'b5', type: 'bishop', color: 'white' },
+            { square: 'e1', type: 'king', color: 'white' },
+            { square: 'd1', type: 'queen', color: 'white' },
+            { square: 'e5', type: 'pawn', color: 'black' },
+            { square: 'c6', type: 'knight', color: 'black' },
+            { square: 'e8', type: 'king', color: 'black' },
+            { square: 'd8', type: 'queen', color: 'black' },
+          ],
+          focalSquares: [
+            { square: 'b5', variant: 'attack', label: 'Spanish Bishop' },
+            { square: 'c6', variant: 'attack', label: 'Pinned Defender' },
+            { square: 'e4', variant: 'key', label: 'Center Stake' },
+          ],
+        },
+        {
+          id: 'queens_gambit_classical',
+          name: 'Queen’s Gambit',
+          tagline: 'Offering flank pawn sacrifice to conquer the center',
+          boardDimensions: { cols: 8, rows: 8 },
+          notationSteps: [
+            '1. d4 (Queen’s pawn push)',
+            '2. d5 (Black holds center)',
+            '3. c4 (Gambiting the c-pawn for central hegemony)',
+            '4. e6 or c6 (Solidifying Black’s center)',
+            '5. Nc3 (Increasing central pressure)',
+          ],
+          description:
+            'White offers the c4 wing pawn to lure Black’s d5 pawn away from the center. If Black takes with dxc4, White dominates the center with e4.',
+          strategicGoals: [
+            'Divert Black’s central d5 pawn away from the core',
+            'Occupy e4 and build a commanding double pawn center',
+            'Activate the light-squared bishop along the uninhibited diagonal',
+          ],
+          keySquares: ['d4', 'd5', 'c4', 'e4', 'c3'],
+          diagramPieces: [
+            { square: 'd4', type: 'pawn', color: 'white' },
+            { square: 'c4', type: 'pawn', color: 'white' },
+            { square: 'c3', type: 'knight', color: 'white' },
+            { square: 'e1', type: 'king', color: 'white' },
+            { square: 'd1', type: 'queen', color: 'white' },
+            { square: 'd5', type: 'pawn', color: 'black' },
+            { square: 'e6', type: 'pawn', color: 'black' },
+            { square: 'e8', type: 'king', color: 'black' },
+            { square: 'd8', type: 'queen', color: 'black' },
+          ],
+          focalSquares: [
+            { square: 'c4', variant: 'attack', label: 'Gambit Lever' },
+            { square: 'd4', variant: 'key', label: 'Pawn Fortress' },
+            { square: 'd5', variant: 'key', label: 'Center Target' },
+          ],
+        },
+      ],
+    },
+  },
+
+  // ==========================================
+  // 2. STANDARD DICE CHESS (BOT STANDARD)
   // ==========================================
   {
     id: 'standard',
-    title: 'Play vs Bot (Standard)',
+    title: 'Play vs Bot (Mugen Chess)',
     subtitle: '8×8 Tournament Arena with Authoritative Dice Roll & Prince Mechanics',
-    badge: 'Standard Mode',
+    badge: 'Mugen Chess',
     accentColor: 'amber',
     overview: {
       objective: 'Checkmate the opponent King while navigating random dice rolls and defending against Prince leaps.',

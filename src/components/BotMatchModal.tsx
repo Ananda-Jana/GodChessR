@@ -8,13 +8,13 @@ import { useModalFocus } from '../utils/useModalFocus';
 interface BotMatchModalProps {
   isOpen: boolean;
   onClose: () => void;
-  initialGameMode?: 'standard' | 'crafted';
+  initialGameMode?: 'standard' | 'crafted' | 'classic';
   onStartBotMatch: (
     playerColor: PieceColor,
     difficulty: 'grandmaster' | 'master',
     timeControl: 120 | 300,
     moveSuggestions: 'included' | 'excluded',
-    gameMode: 'standard' | 'crafted',
+    gameMode: 'standard' | 'crafted' | 'classic',
     craftingAllowed?: boolean,
     pieceTheme?: PieceTheme
   ) => void;
@@ -34,7 +34,7 @@ export const BotMatchModal: React.FC<BotMatchModalProps> = ({
   const [difficulty, setDifficulty] = useState<'grandmaster' | 'master'>('grandmaster');
   const [timeControl, setTimeControl] = useState<120 | 300>(300); // 5 mins default
   const [moveSuggestions, setMoveSuggestions] = useState<'included' | 'excluded'>('included');
-  const [gameMode, setGameMode] = useState<'standard' | 'crafted'>(initialGameMode);
+  const [gameMode, setGameMode] = useState<'standard' | 'crafted' | 'classic'>(initialGameMode);
   const [craftingAllowed, setCraftingAllowed] = useState<boolean>(true);
   const [pieceTheme, setPieceTheme] = useState<PieceTheme>('classic');
 
@@ -58,7 +58,7 @@ export const BotMatchModal: React.FC<BotMatchModalProps> = ({
         role="dialog"
         aria-modal="true"
         aria-labelledby="bot-match-modal-title"
-        className="bg-white dark:bg-[#0a0a0c] border-4 border-black dark:border-white max-w-md w-full max-h-[90dvh] [max-height:90vh] shadow-[8px_8px_0px_#000000] dark:shadow-[8px_8px_0px_#ffffff] text-black dark:text-white flex flex-col overflow-hidden animate-in slide-in-from-bottom-4 sm:slide-in-from-bottom-0 sm:zoom-in-95 duration-150"
+        className="bg-white dark:bg-[#0a0a0c] border-4 border-black dark:border-white max-w-lg w-full max-h-[90dvh] [max-height:90vh] shadow-[8px_8px_0px_#000000] dark:shadow-[8px_8px_0px_#ffffff] text-black dark:text-white flex flex-col overflow-hidden animate-in slide-in-from-bottom-4 sm:slide-in-from-bottom-0 sm:zoom-in-95 duration-150"
         onClick={(e) => e.stopPropagation()}
       >
         
@@ -70,7 +70,11 @@ export const BotMatchModal: React.FC<BotMatchModalProps> = ({
             </div>
             <div>
               <h3 id="bot-match-modal-title" className="text-sm sm:text-base font-black uppercase tracking-tight flex items-center gap-1.5">
-                {gameMode === 'crafted' ? 'Play vs Bot (Crafted Pieces)' : 'Play vs Bot'}
+                {gameMode === 'classic'
+                  ? 'Play vs Bot (Traditional Chess)'
+                  : gameMode === 'crafted'
+                  ? 'Play vs Bot (Crafted Pieces)'
+                  : 'Play vs Bot (Mugen Chess)'}
                 <Sparkles className="w-4 h-4 text-amber-500" />
               </h3>
             </div>
@@ -84,65 +88,79 @@ export const BotMatchModal: React.FC<BotMatchModalProps> = ({
           </button>
         </div>
 
-        {/* EDIT D: Sticky Top Action Bar so mobile players do not need to scroll */}
+        {/* Sticky Top Action Bar so mobile players do not need to scroll */}
         <div className={`p-3 border-b-3 border-black dark:border-white shrink-0 ${
           gameMode === 'crafted' ? 'bg-[#1e293b]' : 'bg-amber-400'
         }`}>
           <button
-            onClick={() => onStartBotMatch(playerColor, difficulty, timeControl, moveSuggestions, gameMode, craftingAllowed, pieceTheme)}
+            onClick={() => onStartBotMatch(playerColor, difficulty, timeControl, moveSuggestions, gameMode, gameMode === 'classic' ? false : craftingAllowed, pieceTheme)}
             className="w-full py-2.5 px-4 bg-black text-amber-400 hover:bg-neutral-900 border-2 border-black font-black text-xs sm:text-sm uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer shadow-[3px_3px_0px_#000000]"
           >
             <Swords className="w-4 h-4" />
-            Start {gameMode === 'crafted' ? 'Crafted Game' : 'Game'} Now
+            Start {gameMode === 'classic' ? 'Traditional Game' : gameMode === 'crafted' ? 'Crafted Game' : 'Mugen Game'} Now
           </button>
         </div>
 
         {/* Scrollable Form Body */}
         <div className="p-4 overflow-y-auto flex-1 flex flex-col gap-4 text-xs font-bold">
 
-          {/* Game Mode Choice */}
+          {/* Game Mode Choice: 3 Options Ordered (Classic Chess, Mugen Chess, Crafted Pieces) */}
           <div>
             <label className="block text-[11px] font-black uppercase tracking-wider mb-1.5">
               Select Game Mode / Pieces
             </label>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
               <button
                 type="button"
-                onClick={() => setGameMode('standard')}
-                className={`p-2.5 border-2 border-black dark:border-white flex flex-col items-center gap-1 cursor-pointer transition-all ${
-                  gameMode === 'standard'
-                    ? 'bg-amber-400 text-black shadow-[3px_3px_0px_var(--shadow)]'
+                onClick={() => setGameMode('classic')}
+                className={`p-2.5 border-2 border-black dark:border-white flex flex-col items-center justify-center text-center gap-1 cursor-pointer transition-all ${
+                  gameMode === 'classic'
+                    ? 'bg-amber-400 text-black shadow-[3px_3px_0px_var(--shadow)] font-black'
                     : 'bg-neutral-100 dark:bg-neutral-900 text-neutral-800 dark:text-neutral-200'
                 }`}
               >
-                <span className="font-black uppercase text-xs">Standard Dice Chess</span>
-                <span className="text-[10px] text-center font-normal">Queens, Prince, Rooks, Bishops, Knights</span>
+                <span className="font-black uppercase text-xs">Classic Chess</span>
+                <span className="text-[10px] text-center font-normal">No Prince, Zero Dice, FIDE Layout</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setGameMode('standard')}
+                className={`p-2.5 border-2 border-black dark:border-white flex flex-col items-center justify-center text-center gap-1 cursor-pointer transition-all ${
+                  gameMode === 'standard'
+                    ? 'bg-amber-400 text-black shadow-[3px_3px_0px_var(--shadow)] font-black'
+                    : 'bg-neutral-100 dark:bg-neutral-900 text-neutral-800 dark:text-neutral-200'
+                }`}
+              >
+                <span className="font-black uppercase text-xs">Mugen Chess</span>
+                <span className="text-[10px] text-center font-normal">Prince, Dice Phase, 2-Pawn Draw</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => setGameMode('crafted')}
-                className={`p-2.5 border-2 border-black dark:border-white flex flex-col items-center gap-1 cursor-pointer transition-all ${
+                className={`p-2.5 border-2 border-black dark:border-white flex flex-col items-center justify-center text-center gap-1 cursor-pointer transition-all ${
                   gameMode === 'crafted'
-                    ? 'bg-[#0f172a] text-amber-400 border-amber-400 shadow-[3px_3px_0px_var(--shadow)]'
+                    ? 'bg-[#0f172a] text-amber-400 border-amber-400 shadow-[3px_3px_0px_var(--shadow)] font-black'
                     : 'bg-neutral-100 dark:bg-neutral-900 text-neutral-800 dark:text-neutral-200'
                 }`}
               >
                 <div className="flex items-center gap-1">
                   <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-                  <span className="font-black uppercase text-xs">Crafted Pieces</span>
+                  <span className="font-black uppercase text-xs">Crafted</span>
                 </div>
                 <span className="text-[10px] text-center font-normal">Communists, Priests &amp; Supreme Rook</span>
               </button>
             </div>
 
-            {/* Mid-Game Crafting Option for Both Standard and Crafted Game Modes */}
+            {/* Mid-Game Crafting Option (Only for Mugen / Crafted modes, not Classic Chess) */}
+            {gameMode !== 'classic' && (
             <div className="mt-2.5 p-2.5 bg-neutral-100 dark:bg-neutral-900 border-2 border-black dark:border-white">
               <div className="flex items-center justify-between mb-1.5">
                 <div className="flex items-center gap-1.5">
                   <span className="text-[10px] font-black uppercase tracking-wider">Mid-Game Crafting Perk</span>
                   <span className="text-[9px] text-neutral-500 font-normal">
-                    {gameMode === 'crafted' ? '(Mid-game triggers)' : '(Mid-game triggers)'}
+                    (Mid-game triggers)
                   </span>
                 </div>
                 <span className={`text-[10px] font-mono px-1.5 py-0.2 border border-black ${
@@ -174,7 +192,7 @@ export const BotMatchModal: React.FC<BotMatchModalProps> = ({
                   }`}
                 >
                   <span className="font-black uppercase text-[11px]">Avoid Crafting</span>
-                  <span className="text-[9px] text-center opacity-85">No mid-game piece summons</span>
+                  <span className="text-[9px] text-center opacity-85">Normal flow without piece summons</span>
                 </button>
               </div>
               <p className="mt-1.5 text-[9px] text-neutral-500 dark:text-neutral-400 font-normal">
@@ -183,6 +201,7 @@ export const BotMatchModal: React.FC<BotMatchModalProps> = ({
                   : 'Mid-game crafting will be completely avoided throughout the match.'}
               </p>
             </div>
+            )}
           </div>
           
           {/* Board Theme Selection (Light Board vs Dark Board) */}

@@ -148,7 +148,10 @@ export const CullingOpeningDojo: React.FC<CullingOpeningDojoProps> = ({
     const observer = new ResizeObserver((entries) => {
       for (const entry of entries) {
         const { width, height } = entry.contentRect;
-        const available = Math.min(width - 12, height - 12);
+        const isMobile = window.innerWidth < 768;
+        const available = isMobile
+          ? Math.min(width, height)
+          : Math.min(width - 12, height - 12);
         if (available > 100) {
           const clamped = Math.min(available, 1200);
           setMobileBoardDimension(clamped);
@@ -1087,7 +1090,7 @@ export const CullingOpeningDojo: React.FC<CullingOpeningDojoProps> = ({
 
               {/* Active Step Navy Origin & Emerald/Navy Target Guide Boxes */}
               {showArrows && currentStep && !isFreePractice && !isFullStrategyMode && !isLessonFinished && (
-                <div className="absolute inset-0 pointer-events-none z-20 grid grid-cols-10 grid-rows-10 p-1 sm:p-2">
+                <div className="absolute inset-0 pointer-events-none z-20 grid grid-cols-10 grid-rows-10 p-0 md:p-2">
                   {/* Origin Square (Deep Navy Accent) */}
                   <div
                     style={{

@@ -271,9 +271,9 @@ export const SecretMatchView: React.FC<SecretMatchViewProps> = ({
   const isPlayerTurn = match.turn === playerColor;
 
   return (
-    <div className="min-h-screen bg-[#07090e] text-white flex flex-col justify-between p-3 sm:p-5 font-sans select-none">
+    <div className="min-h-screen bg-[#07090e] text-white flex flex-col justify-between p-0 md:p-3 sm:p-5 font-sans select-none">
       {/* Top Bar */}
-      <header className="w-full max-w-7xl mx-auto flex items-center justify-between gap-2 mb-3 pb-2.5 border-b-2 border-slate-800">
+      <header className="w-full max-w-7xl mx-auto flex items-center justify-between gap-2 px-2 md:px-0 mb-3 pb-2.5 border-b-2 border-slate-800">
         <button
           onClick={onExit}
           className="px-3.5 py-1.5 bg-neutral-900 hover:bg-neutral-800 text-xs font-black uppercase flex items-center gap-1.5 border-2 border-slate-200 text-white shadow-[3px_3px_0px_#ffffff] cursor-pointer"
@@ -365,10 +365,10 @@ export const SecretMatchView: React.FC<SecretMatchViewProps> = ({
         </aside>
 
         {/* CENTER COLUMN: Chess Board & Mobile Live Message Box */}
-        <div className="lg:col-span-6 flex flex-col items-center justify-center w-full max-w-[540px] mx-auto">
+        <div className="lg:col-span-6 flex flex-col items-center justify-center w-full max-w-[100vw] lg:max-w-[540px] mx-auto">
           
           {/* MOBILE ONLY: Fixed Height Live Message Box */}
-          <div className="block lg:hidden w-full">
+          <div className="block lg:hidden w-full px-2 md:px-0">
             <SecretChatOverlay
               botConfig={botConfig}
               currentMessage={currentMessage}
@@ -377,7 +377,7 @@ export const SecretMatchView: React.FC<SecretMatchViewProps> = ({
           </div>
 
           {/* Status Bar */}
-          <div className="w-full mb-2 px-3.5 py-2 bg-[#0c1017] border-2 border-slate-700 flex items-center justify-between text-xs font-black uppercase shadow-sm">
+          <div className="w-full mb-2 px-2 md:px-3.5 py-2 bg-[#0c1017] border-2 border-slate-700 flex items-center justify-between text-xs font-black uppercase shadow-sm">
             <div className="flex items-center gap-2">
               <span
                 className={`w-2.5 h-2.5 rounded-full ${

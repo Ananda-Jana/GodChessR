@@ -78,8 +78,10 @@ export const RulebookWindow: React.FC<RulebookWindowProps> = ({
         activeMatch.blackPlayer?.userId === 'usr_bot_gm'
       );
       if (isBot) {
+        if (activeMatch.gameMode === 'classic') return 'classic';
         return activeMatch.gameMode === 'crafted' ? 'crafted' : 'standard';
       }
+      if (activeMatch.gameMode === 'classic') return 'classic';
       return 'multiplayer';
     }
     return 'standard';
@@ -237,7 +239,7 @@ export const RulebookWindow: React.FC<RulebookWindowProps> = ({
             aria-expanded={isMobileModesExpanded}
             title="Toggle All Modes Menu"
           >
-            <span>Modes (6)</span>
+            <span>Modes ({RULEBOOK_MODES.length})</span>
             {isMobileModesExpanded ? (
               <ChevronUp className="w-3 h-3 text-amber-400" />
             ) : (
@@ -274,6 +276,7 @@ export const RulebookWindow: React.FC<RulebookWindowProps> = ({
                       : 'bg-black/60 text-neutral-400 hover:text-white border-neutral-700 hover:border-neutral-500'
                   }`}
                 >
+                  {mode.id === 'classic' && <Crown className="w-3.5 h-3.5 text-amber-400" />}
                   {mode.id === 'standard' && <Bot className="w-3.5 h-3.5" />}
                   {mode.id === 'crafted' && <Sparkles className="w-3.5 h-3.5" />}
                   {mode.id === 'culling' && <Flame className="w-3.5 h-3.5 text-red-500" />}

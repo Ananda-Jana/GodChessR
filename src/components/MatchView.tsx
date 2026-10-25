@@ -769,7 +769,9 @@ const MatchViewContent: React.FC<MatchViewContentProps> = ({
               />
               <span className="hidden md:inline whitespace-nowrap">
                 {isMyTurn
-                  ? !isDicePhaseActive
+                  ? activeMatch.gameMode === 'classic'
+                    ? 'Your Turn (Traditional Chess)'
+                    : !isDicePhaseActive
                     ? 'Your Turn (Normal Chess)'
                     : 'Your Turn'
                   : isBotThinking
@@ -841,7 +843,7 @@ const MatchViewContent: React.FC<MatchViewContentProps> = ({
       </header>
 
       {/* MAIN WORKSPACE: Fixed 3-zone column on mobile (<768px), 3-col grid on desktop (>=768px) */}
-      <main className="flex-1 min-h-0 w-full mx-auto flex flex-col md:grid md:grid-cols-[1fr_320px] lg:grid-cols-[300px_1fr_320px] h-[calc(100dvh-48px)] md:h-[calc(100dvh-56px)] gap-4 md:gap-6 p-2 md:p-6 overflow-hidden max-w-[1600px]">
+      <main className="flex-1 min-h-0 w-full mx-auto flex flex-col md:grid md:grid-cols-[1fr_320px] lg:grid-cols-[300px_1fr_320px] h-[calc(100dvh-48px)] md:h-[calc(100dvh-56px)] gap-0 md:gap-6 p-0 md:p-6 overflow-hidden max-w-[1600px]">
         {/* Desktop Left Column (300px on lg:) */}
         <div className="hidden lg:flex flex-col gap-4 overflow-y-auto pr-1">
           <div className="bg-white dark:bg-[#0a0a0c] border-3 border-black dark:border-white p-4 shadow-[4px_4px_0px_#000000] dark:shadow-[4px_4px_0px_#ffffff] space-y-3">
@@ -851,7 +853,11 @@ const MatchViewContent: React.FC<MatchViewContentProps> = ({
                 Clocks ({activeMatch.timeControl === 120 ? '2m' : '5m'})
               </h4>
               <span className="text-[10px] font-mono text-neutral-500 uppercase">
-                {isBotMatch ? '≥3 rule active' : '>7 rule active'}
+                {activeMatch.gameMode === 'classic'
+                  ? 'FIDE Timeout'
+                  : isBotMatch
+                  ? '≥3 rule active'
+                  : '>7 rule active'}
               </span>
             </div>
 
@@ -895,72 +901,82 @@ const MatchViewContent: React.FC<MatchViewContentProps> = ({
               </div>
             </div>
 
-            <div className="pt-2 border-t-2 border-black dark:border-white">
-              <div className="flex items-center justify-between text-xs mb-1 font-bold">
-                <span className="uppercase">{isBotMatch ? 'Human Piece Lead:' : 'Piece Diff:'}</span>
-                <span className="font-mono font-black tabular-nums">
-                  {isBotMatch
-                    ? `${humanPieceLead >= 0 ? '+' : ''}${humanPieceLead} (needs ≥ 3)`
-                    : `${pieceDiff} ${hasMajorPieceAdvantage ? '(> 7)' : '(≤ 7)'}`}
-                </span>
+            {activeMatch.gameMode === 'classic' ? (
+              <div className="pt-2 border-t-2 border-black dark:border-white">
+                <p className="text-[10px] text-neutral-500 font-bold uppercase leading-tight">
+                  * Traditional Chess: If your timer expires, you lose. No piece-lead exceptions.
+                </p>
               </div>
-              {isBotMatch ? (
-                hasBotPieceAdvantage ? (
+            ) : (
+              <div className="pt-2 border-t-2 border-black dark:border-white">
+                <div className="flex items-center justify-between text-xs mb-1 font-bold">
+                  <span className="uppercase">{isBotMatch ? 'Human Piece Lead:' : 'Piece Diff:'}</span>
+                  <span className="font-mono font-black tabular-nums">
+                    {isBotMatch
+                      ? `${humanPieceLead >= 0 ? '+' : ''}${humanPieceLead} (needs ≥ 3)`
+                      : `${pieceDiff} ${hasMajorPieceAdvantage ? '(> 7)' : '(≤ 7)'}`}
+                  </span>
+                </div>
+                {isBotMatch ? (
+                  hasBotPieceAdvantage ? (
+                    <div className="p-2 bg-amber-400 text-black border-2 border-black text-[11px] font-bold leading-tight flex items-start gap-1.5">
+                      <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" aria-hidden="true" />
+                      <span>
+                        <strong>You lead by {humanPieceLead} pieces (≥3).</strong> Timeout awards win to you!
+                      </span>
+                    </div>
+                  ) : (
+                    <p className="text-[10px] text-neutral-500 font-bold uppercase leading-tight">
+                      * If your timer expires, you lose unless you lead by ≥ 3 pieces (current lead: {humanPieceLead}).
+                    </p>
+                  )
+                ) : hasMajorPieceAdvantage ? (
                   <div className="p-2 bg-amber-400 text-black border-2 border-black text-[11px] font-bold leading-tight flex items-start gap-1.5">
                     <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" aria-hidden="true" />
                     <span>
-                      <strong>You lead by {humanPieceLead} pieces (≥3).</strong> Timeout awards win to you!
+                      <strong>
+                        {pieceLeader === 'white' ? 'White' : 'Black'} leads by {pieceDiff} pieces (&gt;7).
+                      </strong>{' '}
+                      Timeout awards win to leader!
                     </span>
                   </div>
                 ) : (
                   <p className="text-[10px] text-neutral-500 font-bold uppercase leading-tight">
-                    * If your timer expires, you lose unless you lead by ≥ 3 pieces (current lead: {humanPieceLead}).
+                    * If timer expires, timed-out player loses.
                   </p>
-                )
-              ) : hasMajorPieceAdvantage ? (
-                <div className="p-2 bg-amber-400 text-black border-2 border-black text-[11px] font-bold leading-tight flex items-start gap-1.5">
-                  <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" aria-hidden="true" />
-                  <span>
-                    <strong>
-                      {pieceLeader === 'white' ? 'White' : 'Black'} leads by {pieceDiff} pieces (&gt;7).
-                    </strong>{' '}
-                    Timeout awards win to leader!
-                  </span>
-                </div>
-              ) : (
-                <p className="text-[10px] text-neutral-500 font-bold uppercase leading-tight">
-                  * If timer expires, timed-out player loses.
-                </p>
-              )}
-            </div>
+                )}
+              </div>
+            )}
           </div>
 
-          <div className="bg-white dark:bg-[#0a0a0c] border-3 border-black dark:border-white p-4 shadow-[4px_4px_0px_#000000] dark:shadow-[4px_4px_0px_#ffffff]">
-            <h4 className="text-xs font-black uppercase tracking-wider mb-2 flex items-center gap-1.5">
-              <Layers className="w-4 h-4 text-amber-500" aria-hidden="true" />
-              2-Pawn Draw Target
-            </h4>
-            <div className="space-y-1.5 text-xs font-bold">
-              <div className="flex items-center justify-between">
-                <span>Your Pawns:</span>
-                <span className="font-mono font-black text-amber-500 tabular-nums">
-                  {myPawnsEndRank} / 2
-                </span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-neutral-500">Opponent Pawns:</span>
-                <span className="font-mono text-neutral-500 tabular-nums">
-                  {oppPawnsEndRank} / 2
-                </span>
-              </div>
-              <div className="w-full bg-neutral-200 dark:bg-neutral-800 border-2 border-black dark:border-white h-3 overflow-hidden">
-                <div
-                  className="bg-amber-400 h-full origin-left transition-transform duration-200 motion-reduce:transition-none"
-                  style={{ transform: `scaleX(${Math.min(1, myPawnsEndRank / 2)})` }}
-                />
+          {activeMatch.gameMode !== 'classic' && (
+            <div className="bg-white dark:bg-[#0a0a0c] border-3 border-black dark:border-white p-4 shadow-[4px_4px_0px_#000000] dark:shadow-[4px_4px_0px_#ffffff]">
+              <h4 className="text-xs font-black uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                <Layers className="w-4 h-4 text-amber-500" aria-hidden="true" />
+                2-Pawn Draw Target
+              </h4>
+              <div className="space-y-1.5 text-xs font-bold">
+                <div className="flex items-center justify-between">
+                  <span>Your Pawns:</span>
+                  <span className="font-mono font-black text-amber-500 tabular-nums">
+                    {myPawnsEndRank} / 2
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-neutral-500">Opponent Pawns:</span>
+                  <span className="font-mono text-neutral-500 tabular-nums">
+                    {oppPawnsEndRank} / 2
+                  </span>
+                </div>
+                <div className="w-full bg-neutral-200 dark:bg-neutral-800 border-2 border-black dark:border-white h-3 overflow-hidden">
+                  <div
+                    className="bg-amber-400 h-full origin-left transition-transform duration-200 motion-reduce:transition-none"
+                    style={{ transform: `scaleX(${Math.min(1, myPawnsEndRank / 2)})` }}
+                  />
+                </div>
               </div>
             </div>
-          </div>
+          )}
 
           <div className="bg-white dark:bg-[#0a0a0c] border-3 border-black dark:border-white p-4 shadow-[4px_4px_0px_#000000] dark:shadow-[4px_4px_0px_#ffffff]">
             <div className="flex items-center justify-between mb-2">
@@ -969,7 +985,9 @@ const MatchViewContent: React.FC<MatchViewContentProps> = ({
                 Captures
               </h4>
               <span className="text-[10px] font-mono font-black uppercase text-amber-500 tabular-nums">
-                {!isDicePhaseActive
+                {activeMatch.gameMode === 'classic'
+                  ? 'Traditional'
+                  : !isDicePhaseActive
                   ? 'Normal Chess'
                   : `${Math.max(0, 3 - totalCapturesCount)} left`}
               </span>
@@ -1040,33 +1058,35 @@ const MatchViewContent: React.FC<MatchViewContentProps> = ({
 
         {/* ZONE 2 (Mobile Middle) & Center Column (Desktop) */}
         <div
-          className="flex-1 min-h-0 w-full flex flex-col items-center justify-center relative overflow-hidden px-1 py-1 md:p-0"
+          className="flex-1 min-h-0 w-full flex flex-col items-center justify-center relative overflow-hidden px-0 py-0 md:p-0"
         >
           {/* Tablet (768px - 1023px) compact status card */}
-          <div className="hidden md:flex lg:hidden w-full flex-col gap-1 bg-white dark:bg-[#0a0a0c] border-3 border-black dark:border-white p-2.5 text-xs font-bold">
-            <div className="flex items-center justify-between">
-              <span className="uppercase text-neutral-500">2-Pawn Draw:</span>
-              <span className="font-mono font-black text-amber-500 tabular-nums">
-                You: {myPawnsEndRank}/2 · Opp: {oppPawnsEndRank}/2
-              </span>
+          {activeMatch.gameMode !== 'classic' && (
+            <div className="hidden md:flex lg:hidden w-full flex-col gap-1 bg-white dark:bg-[#0a0a0c] border-3 border-black dark:border-white p-2.5 text-xs font-bold">
+              <div className="flex items-center justify-between">
+                <span className="uppercase text-neutral-500">2-Pawn Draw:</span>
+                <span className="font-mono font-black text-amber-500 tabular-nums">
+                  You: {myPawnsEndRank}/2 · Opp: {oppPawnsEndRank}/2
+                </span>
+              </div>
+              <div className="flex items-center justify-between pt-1 border-t border-black/20 dark:border-white/20 text-[11px]">
+                <span className="tabular-nums">
+                  Pieces: {whitePiecesCount}W vs {blackPiecesCount}B (Diff: {pieceDiff})
+                </span>
+                {isBotMatch
+                  ? hasBotPieceAdvantage && (
+                      <span className="text-amber-500 font-black uppercase">
+                        ≥3 Rule (You lead by {humanPieceLead})
+                      </span>
+                    )
+                  : hasMajorPieceAdvantage && (
+                      <span className="text-amber-500 font-black uppercase">
+                        &gt;7 Rule ({pieceLeader === 'white' ? 'White' : 'Black'} leads)
+                      </span>
+                    )}
+              </div>
             </div>
-            <div className="flex items-center justify-between pt-1 border-t border-black/20 dark:border-white/20 text-[11px]">
-              <span className="tabular-nums">
-                Pieces: {whitePiecesCount}W vs {blackPiecesCount}B (Diff: {pieceDiff})
-              </span>
-              {isBotMatch
-                ? hasBotPieceAdvantage && (
-                    <span className="text-amber-500 font-black uppercase">
-                      ≥3 Rule (You lead by {humanPieceLead})
-                    </span>
-                  )
-                : hasMajorPieceAdvantage && (
-                    <span className="text-amber-500 font-black uppercase">
-                      &gt;7 Rule ({pieceLeader === 'white' ? 'White' : 'Black'} leads)
-                    </span>
-                  )}
-            </div>
-          </div>
+          )}
 
           {/* Desktop Locked Crafting Banner (Non-reflowing overlay on mobile if triggered) */}
           {activeMatch.craftingAllowed !== false && activeMatch.craftingLocked?.[myColor] && !isGameOver && (
@@ -1224,7 +1244,7 @@ const MatchViewContent: React.FC<MatchViewContentProps> = ({
 
           {/* Single Mounted ChessBoard Instance (Zero reflow on mobile, 820px max on desktop) */}
           <div
-            className={`w-[min(calc(100vw-16px),calc(100dvh-224px-env(safe-area-inset-bottom,0px)),520px)] lg:w-[min(calc(100dvh-140px),calc(100%-48px),820px)] aspect-square flex justify-center items-center shrink-0 ${shouldShake ? 'animate-shake' : ''}`}
+            className={`w-full max-w-[100vw] md:w-[min(calc(100vw-16px),calc(100dvh-224px-env(safe-area-inset-bottom,0px)),520px)] lg:w-[min(calc(100dvh-140px),calc(100%-48px),820px)] aspect-square flex justify-center items-center shrink-0 ${shouldShake ? 'animate-shake' : ''}`}
           >
             <ChessBoard
               board={activeMatch.board}
@@ -1359,6 +1379,7 @@ const MatchViewContent: React.FC<MatchViewContentProps> = ({
                 isBotThinking={isBotThinking}
                 isGameOver={isGameOver}
                 availablePieceTypes={activeTurnPieceTypes}
+                gameMode={activeMatch.gameMode}
               />
             )
           )}
@@ -1368,7 +1389,13 @@ const MatchViewContent: React.FC<MatchViewContentProps> = ({
         <div className="hidden md:flex flex-col gap-4 overflow-y-auto pr-1">
           <PredictorPanel
             metrics={standardMetrics}
-            modeLabel={activeMatch.gameMode === 'crafted' ? 'Crafted Chess' : 'Standard Chess'}
+            modeLabel={
+              activeMatch.gameMode === 'classic'
+                ? 'Traditional Chess'
+                : activeMatch.gameMode === 'crafted'
+                ? 'Crafted Chess'
+                : 'Mugen Chess'
+            }
           />
 
           {/* Swapped Order: 1. Dice Roller (or Post-Dice Status Panel) ABOVE */}
@@ -1388,6 +1415,7 @@ const MatchViewContent: React.FC<MatchViewContentProps> = ({
               isBotThinking={isBotThinking}
               isGameOver={isGameOver}
               availablePieceTypes={activeTurnPieceTypes}
+              gameMode={activeMatch.gameMode}
             />
           )}
 
@@ -1409,7 +1437,9 @@ const MatchViewContent: React.FC<MatchViewContentProps> = ({
             </div>
           </div>
 
-          <PrinceRulesCard myColor={myColor} princeSpecialUsed={princeSpecialUsed} />
+          {activeMatch.gameMode !== 'classic' && (
+            <PrinceRulesCard myColor={myColor} princeSpecialUsed={princeSpecialUsed} />
+          )}
         </div>
       </main>
 
@@ -1573,15 +1603,24 @@ const MatchViewContent: React.FC<MatchViewContentProps> = ({
                     ))
                   )}
                 </div>
-                <div className="pt-2 border-t border-black/20 dark:border-white/20 flex items-center justify-between font-mono font-bold">
-                  <span>2-Pawn Draw: You {myPawnsEndRank}/2 · Opp {oppPawnsEndRank}/2</span>
-                  <span>
-                    {isBotMatch ? `Lead ${humanPieceLead >= 0 ? `+${humanPieceLead}` : humanPieceLead} (≥3)` : `Diff ${pieceDiff} (>7)`}
-                  </span>
-                </div>
+                {activeMatch.gameMode !== 'classic' ? (
+                  <div className="pt-2 border-t border-black/20 dark:border-white/20 flex items-center justify-between font-mono font-bold">
+                    <span>2-Pawn Draw: You {myPawnsEndRank}/2 · Opp {oppPawnsEndRank}/2</span>
+                    <span>
+                      {isBotMatch ? `Lead ${humanPieceLead >= 0 ? `+${humanPieceLead}` : humanPieceLead} (≥3)` : `Diff ${pieceDiff} (>7)`}
+                    </span>
+                  </div>
+                ) : (
+                  <div className="pt-2 border-t border-black/20 dark:border-white/20 flex items-center justify-between font-mono font-bold">
+                    <span>Traditional Rules: Checkmate / Resignation</span>
+                    <span>FIDE Timeout</span>
+                  </div>
+                )}
               </div>
 
-              <PrinceRulesCard myColor={myColor} princeSpecialUsed={princeSpecialUsed} />
+              {activeMatch.gameMode !== 'classic' && (
+                <PrinceRulesCard myColor={myColor} princeSpecialUsed={princeSpecialUsed} />
+              )}
             </div>
           )}
         </div>

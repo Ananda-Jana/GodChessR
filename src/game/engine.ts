@@ -91,32 +91,45 @@ export const BIASED_DICE_WEIGHTS = {
  * - Normal Knights are replaced with Priest (b1 for White; g8 for Black)
  * - One normal Rook is replaced with Supreme Rook (d1 for White; d8 for Black), with remaining Rook (g1, b8) intact.
  */
-export function createInitialBoard(gameMode: 'standard' | 'crafted' = 'standard'): (Piece | null)[][] {
+export function createInitialBoard(gameMode: 'standard' | 'crafted' | 'classic' = 'standard'): (Piece | null)[][] {
   const board: (Piece | null)[][] = Array(8)
     .fill(null)
     .map(() => Array(8).fill(null));
 
   const isCrafted = gameMode === 'crafted';
+  const isClassic = gameMode === 'classic';
 
-  // Rank 1 (y=0): White pieces
-  // Standard: a1: Queen, b1: Knight, c1: Bishop, d1: Rook, e1: King, f1: Bishop, g1: Rook, h1: Prince
-  // Crafted: a1: Queen, b1: Priest, c1: Communist, d1: Supreme Rook, e1: King, f1: Communist, g1: Rook, h1: Prince
-  board[0][0] = { id: 'w_q_a1', type: 'queen', color: 'white', hasMoved: false };
-  board[0][1] = isCrafted
-    ? { id: 'w_pr_b1', type: 'priest', color: 'white', hasMoved: false }
-    : { id: 'w_n_b1', type: 'knight', color: 'white', hasMoved: false };
-  board[0][2] = isCrafted
-    ? { id: 'w_c_c1', type: 'communist', color: 'white', hasMoved: false }
-    : { id: 'w_b_c1', type: 'bishop', color: 'white', hasMoved: false };
-  board[0][3] = isCrafted
-    ? { id: 'w_sr_d1', type: 'supremeRook', color: 'white', hasMoved: false }
-    : { id: 'w_r_d1', type: 'rook', color: 'white', hasMoved: false };
-  board[0][4] = { id: 'w_k_e1', type: 'king', color: 'white', hasMoved: false };
-  board[0][5] = isCrafted
-    ? { id: 'w_c_f1', type: 'communist', color: 'white', hasMoved: false }
-    : { id: 'w_b_f1', type: 'bishop', color: 'white', hasMoved: false };
-  board[0][6] = { id: 'w_r_g1', type: 'rook', color: 'white', hasMoved: false };
-  board[0][7] = { id: 'w_p_h1', type: 'prince', color: 'white', hasMoved: false, princeSpecialUsed: false };
+  if (isClassic) {
+    // Rank 1 (y=0): Traditional White pieces (King on e1, Queen on d1, no Prince)
+    board[0][0] = { id: 'w_r_a1', type: 'rook', color: 'white', hasMoved: false };
+    board[0][1] = { id: 'w_n_b1', type: 'knight', color: 'white', hasMoved: false };
+    board[0][2] = { id: 'w_b_c1', type: 'bishop', color: 'white', hasMoved: false };
+    board[0][3] = { id: 'w_q_d1', type: 'queen', color: 'white', hasMoved: false };
+    board[0][4] = { id: 'w_k_e1', type: 'king', color: 'white', hasMoved: false };
+    board[0][5] = { id: 'w_b_f1', type: 'bishop', color: 'white', hasMoved: false };
+    board[0][6] = { id: 'w_n_g1', type: 'knight', color: 'white', hasMoved: false };
+    board[0][7] = { id: 'w_r_h1', type: 'rook', color: 'white', hasMoved: false };
+  } else {
+    // Rank 1 (y=0): White pieces
+    // Standard: a1: Queen, b1: Knight, c1: Bishop, d1: Rook, e1: King, f1: Bishop, g1: Rook, h1: Prince
+    // Crafted: a1: Queen, b1: Priest, c1: Communist, d1: Supreme Rook, e1: King, f1: Communist, g1: Rook, h1: Prince
+    board[0][0] = { id: 'w_q_a1', type: 'queen', color: 'white', hasMoved: false };
+    board[0][1] = isCrafted
+      ? { id: 'w_pr_b1', type: 'priest', color: 'white', hasMoved: false }
+      : { id: 'w_n_b1', type: 'knight', color: 'white', hasMoved: false };
+    board[0][2] = isCrafted
+      ? { id: 'w_c_c1', type: 'communist', color: 'white', hasMoved: false }
+      : { id: 'w_b_c1', type: 'bishop', color: 'white', hasMoved: false };
+    board[0][3] = isCrafted
+      ? { id: 'w_sr_d1', type: 'supremeRook', color: 'white', hasMoved: false }
+      : { id: 'w_r_d1', type: 'rook', color: 'white', hasMoved: false };
+    board[0][4] = { id: 'w_k_e1', type: 'king', color: 'white', hasMoved: false };
+    board[0][5] = isCrafted
+      ? { id: 'w_c_f1', type: 'communist', color: 'white', hasMoved: false }
+      : { id: 'w_b_f1', type: 'bishop', color: 'white', hasMoved: false };
+    board[0][6] = { id: 'w_r_g1', type: 'rook', color: 'white', hasMoved: false };
+    board[0][7] = { id: 'w_p_h1', type: 'prince', color: 'white', hasMoved: false, princeSpecialUsed: false };
+  }
 
   // Rank 2 (y=1): White pawns
   for (let x = 0; x < 8; x++) {
@@ -138,25 +151,37 @@ export function createInitialBoard(gameMode: 'standard' | 'crafted' = 'standard'
     };
   }
 
-  // Rank 8 (y=7): Black pieces
-  // Standard: a8: Prince, b8: Rook, c8: Bishop, d8: Rook, e8: King, f8: Bishop, g8: Knight, h8: Queen
-  // Crafted: a8: Prince, b8: Rook, c8: Communist, d8: Supreme Rook, e8: King, f8: Communist, g8: Priest, h8: Queen
-  board[7][0] = { id: 'b_p_a8', type: 'prince', color: 'black', hasMoved: false, princeSpecialUsed: false };
-  board[7][1] = { id: 'b_r_b8', type: 'rook', color: 'black', hasMoved: false };
-  board[7][2] = isCrafted
-    ? { id: 'b_c_c8', type: 'communist', color: 'black', hasMoved: false }
-    : { id: 'b_b_c8', type: 'bishop', color: 'black', hasMoved: false };
-  board[7][3] = isCrafted
-    ? { id: 'b_sr_d8', type: 'supremeRook', color: 'black', hasMoved: false }
-    : { id: 'b_r_d8', type: 'rook', color: 'black', hasMoved: false };
-  board[7][4] = { id: 'b_k_e8', type: 'king', color: 'black', hasMoved: false };
-  board[7][5] = isCrafted
-    ? { id: 'b_c_f8', type: 'communist', color: 'black', hasMoved: false }
-    : { id: 'b_b_f8', type: 'bishop', color: 'black', hasMoved: false };
-  board[7][6] = isCrafted
-    ? { id: 'b_pr_g8', type: 'priest', color: 'black', hasMoved: false }
-    : { id: 'b_n_g8', type: 'knight', color: 'black', hasMoved: false };
-  board[7][7] = { id: 'b_q_h8', type: 'queen', color: 'black', hasMoved: false };
+  if (isClassic) {
+    // Rank 8 (y=7): Traditional Black pieces (King on e8, Queen on d8, no Prince)
+    board[7][0] = { id: 'b_r_a8', type: 'rook', color: 'black', hasMoved: false };
+    board[7][1] = { id: 'b_n_b8', type: 'knight', color: 'black', hasMoved: false };
+    board[7][2] = { id: 'b_b_c8', type: 'bishop', color: 'black', hasMoved: false };
+    board[7][3] = { id: 'b_q_d8', type: 'queen', color: 'black', hasMoved: false };
+    board[7][4] = { id: 'b_k_e8', type: 'king', color: 'black', hasMoved: false };
+    board[7][5] = { id: 'b_b_f8', type: 'bishop', color: 'black', hasMoved: false };
+    board[7][6] = { id: 'b_n_g8', type: 'knight', color: 'black', hasMoved: false };
+    board[7][7] = { id: 'b_r_h8', type: 'rook', color: 'black', hasMoved: false };
+  } else {
+    // Rank 8 (y=7): Black pieces
+    // Standard: a8: Prince, b8: Rook, c8: Bishop, d8: Rook, e8: King, f8: Bishop, g8: Knight, h8: Queen
+    // Crafted: a8: Prince, b8: Rook, c8: Communist, d8: Supreme Rook, e8: King, f8: Communist, g8: Priest, h8: Queen
+    board[7][0] = { id: 'b_p_a8', type: 'prince', color: 'black', hasMoved: false, princeSpecialUsed: false };
+    board[7][1] = { id: 'b_r_b8', type: 'rook', color: 'black', hasMoved: false };
+    board[7][2] = isCrafted
+      ? { id: 'b_c_c8', type: 'communist', color: 'black', hasMoved: false }
+      : { id: 'b_b_c8', type: 'bishop', color: 'black', hasMoved: false };
+    board[7][3] = isCrafted
+      ? { id: 'b_sr_d8', type: 'supremeRook', color: 'black', hasMoved: false }
+      : { id: 'b_r_d8', type: 'rook', color: 'black', hasMoved: false };
+    board[7][4] = { id: 'b_k_e8', type: 'king', color: 'black', hasMoved: false };
+    board[7][5] = isCrafted
+      ? { id: 'b_c_f8', type: 'communist', color: 'black', hasMoved: false }
+      : { id: 'b_b_f8', type: 'bishop', color: 'black', hasMoved: false };
+    board[7][6] = isCrafted
+      ? { id: 'b_pr_g8', type: 'priest', color: 'black', hasMoved: false }
+      : { id: 'b_n_g8', type: 'knight', color: 'black', hasMoved: false };
+    board[7][7] = { id: 'b_q_h8', type: 'queen', color: 'black', hasMoved: false };
+  }
 
   return board;
 }
@@ -990,8 +1015,8 @@ export function executeMove(
       completedAt: Date.now(),
     };
     nextStatus = 'completed';
-  } else if (whitePawnsEndRank >= 2 || blackPawnsEndRank >= 2) {
-    // 2. Two-Pawn Draw takes priority over normal play
+  } else if (currentState.gameMode !== 'classic' && (whitePawnsEndRank >= 2 || blackPawnsEndRank >= 2)) {
+    // 2. Two-Pawn Draw takes priority over normal play (Mugen modes only)
     result = {
       winner: 'draw',
       reason: 'two_pawns_end_rank_draw',
@@ -1011,8 +1036,10 @@ export function executeMove(
   // Check triggers only if match has not ended
   let pausedForAction = currentState.pausedForAction ?? null;
   if (nextStatus !== 'completed' && victimColor) {
-    // Check Board Expansion Trigger: 7th lost piece
+    // Check Board Expansion Trigger: 7th lost piece (disabled in classic mode or if expansion is explicitly disabled)
+    const isExpansionAllowed = currentState.gameMode !== 'classic' && !currentState.expansionDisabled;
     if (
+      isExpansionAllowed &&
       lostPieces[victimColor] >= EXPANSION_LOST_PIECES_THRESHOLD &&
       !expansionUsed[victimColor] &&
       !expansionPending[victimColor]
@@ -1187,6 +1214,25 @@ export function handleTimeout(
   isBotMatch?: boolean
 ): MatchState {
   if (currentState.status !== 'active') return currentState;
+
+  // Traditional Chess: Pure timeout rule (the player whose timer expires loses directly)
+  if (currentState.gameMode === 'classic') {
+    const winner: PieceColor = timedOutColor === 'white' ? 'black' : 'white';
+    const winnerUserId =
+      winner === 'white' ? currentState.whitePlayer.userId : currentState.blackPlayer.userId;
+    return {
+      ...currentState,
+      status: 'completed',
+      result: {
+        winner,
+        reason: 'timeout',
+        winnerUserId,
+        completedAt: Date.now(),
+        explanation: `Timer expired for ${timedOutColor}. ${winner === 'white' ? 'White' : 'Black'} wins on time!`,
+      },
+      updatedAt: Date.now(),
+    };
+  }
 
   const isBot = Boolean(
     isBotMatch ??

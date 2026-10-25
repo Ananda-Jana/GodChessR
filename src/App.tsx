@@ -63,7 +63,7 @@ function AppContent() {
   const [isRoseOpen, setIsRoseOpen] = useState(false);
   const [isHashiraTrainingOpen, setIsHashiraTrainingOpen] = useState(false);
   const [selectedTrainerForTraining, setSelectedTrainerForTraining] = useState<TrainerId>('thukuna');
-  const [botInitialGameMode, setBotInitialGameMode] = useState<'standard' | 'crafted'>('standard');
+  const [botInitialGameMode, setBotInitialGameMode] = useState<'standard' | 'crafted' | 'classic'>('standard');
   const [activeSecretBot, setActiveSecretBot] = useState<SecretPlayerConfig | null>(null);
 
   // Last completed game review state (retained for 10 minutes then auto-flushed)
@@ -224,7 +224,7 @@ function AppContent() {
     difficulty: 'grandmaster' | 'master',
     timeControl: 120 | 300 = 300,
     moveSuggestions: 'included' | 'excluded' = 'included',
-    gameMode: 'standard' | 'crafted' = 'standard',
+    gameMode: 'standard' | 'crafted' | 'classic' = 'standard',
     craftingAllowed: boolean = true,
     pieceTheme: PieceTheme = 'classic'
   ) => {
@@ -259,7 +259,7 @@ function AppContent() {
       } : botUser,
       board: createInitialBoard(gameMode),
       gameMode,
-      craftingAllowed,
+      craftingAllowed: gameMode === 'classic' ? false : craftingAllowed,
       pieceTheme,
       turn: 'white',
       status: 'active',
@@ -273,7 +273,7 @@ function AppContent() {
       result: null,
       moveSuggestions,
       totalCaptures: 0,
-      diceActive: true,
+      diceActive: gameMode === 'classic' ? false : true,
       timeControl,
       whiteTimeRemaining: timeControl,
       blackTimeRemaining: timeControl,
@@ -547,6 +547,10 @@ function AppContent() {
           }}
           onOpenCraftedBotModal={() => {
             setBotInitialGameMode('crafted');
+            setIsBotModalOpen(true);
+          }}
+          onOpenClassicBotModal={() => {
+            setBotInitialGameMode('classic');
             setIsBotModalOpen(true);
           }}
           onOpenCraftTheory={() => setShowCraftTheory(true)}
