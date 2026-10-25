@@ -56,6 +56,11 @@ interface DashboardProps {
   onClearLastGame?: () => void;
 }
 
+const BANNER_IMAGES = [
+  '/assets/aistudio/image_8cc24db1.png',
+  '/assets/aistudio/image_71a2a916.png',
+] as const;
+
 export const Dashboard: React.FC<DashboardProps> = ({
   onOpenRules,
   onOpenBotModal,
@@ -184,6 +189,16 @@ export const Dashboard: React.FC<DashboardProps> = ({
     const interval = setInterval(refreshUserData, 5000);
     return () => clearInterval(interval);
   }, [token]);
+
+  // Rotating Banner Images State (5s loop, fixed bounding box)
+  const [bannerIndex, setBannerIndex] = useState<number>(0);
+
+  useEffect(() => {
+    const bannerTimer = setInterval(() => {
+      setBannerIndex((prev) => (prev + 1) % BANNER_IMAGES.length);
+    }, 5000);
+    return () => clearInterval(bannerTimer);
+  }, []);
 
   const [challengeTimeControl, setChallengeTimeControl] = useState<120 | 300>(300);
   const [challengeMoveSuggestions, setChallengeMoveSuggestions] = useState<'included' | 'excluded'>('included');
@@ -390,12 +405,17 @@ export const Dashboard: React.FC<DashboardProps> = ({
         </div>
 
         {/* Latest Edition Banner (Mobile) */}
-        <div className="lg:hidden order-2 w-full">
-          <img
-            src="/assets/aistudio/image_8cc24db1.png"
-            alt="Latest Edition"
-            className="w-full pointer-events-none border-2 border-black dark:border-white shadow-[4px_4px_0px_#000000]"
-          />
+        <div className="lg:hidden order-2 w-full aspect-[3/2] relative overflow-hidden border-2 border-black dark:border-white shadow-[4px_4px_0px_#000000] bg-black">
+          {BANNER_IMAGES.map((src, idx) => (
+            <img
+              key={src}
+              src={src}
+              alt="Featured Edition Banner"
+              className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-700 ease-in-out pointer-events-none ${
+                idx === bannerIndex ? 'opacity-100' : 'opacity-0'
+              }`}
+            />
+          ))}
         </div>
 
         {/* Mobile Resume Active Match Strip (order-3, md:hidden) */}
@@ -422,13 +442,18 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
         {/* Left Column: Profile Card & Outgoing Challenges (4 cols) */}
         <div className="order-5 lg:order-1 lg:col-span-4 flex flex-col gap-6">
-          {/* Latest Edition Banner (Desktop) */}
-          <div className="hidden lg:block">
-            <img
-              src="/assets/aistudio/image_8cc24db1.png"
-              alt="Latest Edition"
-              className="w-full pointer-events-none border-3 border-black dark:border-white shadow-[5px_5px_0px_#000000] dark:shadow-[5px_5px_0px_#ffffff]"
-            />
+          {/* Latest Edition Banner (Desktop Left Sidebar) */}
+          <div className="hidden lg:block w-full aspect-[3/2] relative overflow-hidden border-3 border-black dark:border-white shadow-[5px_5px_0px_#000000] dark:shadow-[5px_5px_0px_#ffffff] bg-black">
+            {BANNER_IMAGES.map((src, idx) => (
+              <img
+                key={src}
+                src={src}
+                alt="Featured Edition Banner"
+                className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-700 ease-in-out pointer-events-none ${
+                  idx === bannerIndex ? 'opacity-100' : 'opacity-0'
+                }`}
+              />
+            ))}
           </div>
 
           {/* Desktop Left Sidebar: Train with Thukuna & Train with Gatoru */}
@@ -846,12 +871,21 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 will-change: transform, opacity;
               }
 
+              .punisher-cont {
+                box-shadow: 4px 4px 0px #000000, 0 0 16px rgba(220, 38, 38, 0.45);
+                transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+              }
+              .punisher-cont:hover {
+                transform: scale(1.04);
+                box-shadow: 5px 5px 0px #000000, 0 0 28px rgba(220, 38, 38, 0.85);
+              }
+
               .glitch-text {
                 animation: glitchBurst 7s infinite;
               }
 
               @media (prefers-reduced-motion: reduce) {
-                .punisher-reactor-card, .punisher-reactor-card::before, .plasma-layer, .hologrid-layer, .scanline-layer, .core-glow, .glitch-text {
+                .punisher-reactor-card, .punisher-reactor-card::before, .plasma-layer, .hologrid-layer, .scanline-layer, .core-glow, .glitch-text, .punisher-cont {
                   animation: none !important;
                 }
                 .plasma-layer {
@@ -883,16 +917,38 @@ export const Dashboard: React.FC<DashboardProps> = ({
             </div>
 
             {/* Content (z-10) */}
-            <div className="flex items-center gap-3.5 relative z-10">
-              <div className="w-12 h-12 bg-black border-2 border-[#2727F5] flex items-center justify-center text-[#2727F5] shrink-0 shadow-[2px_2px_0px_#2727F5]">
-                <Bot className="w-7 h-7" />
+            <div className="flex items-center gap-3.5 sm:gap-4.5 relative z-10">
+              {/* Punisher Container (punisher-cont) with enlarged intimidating Oni demon avatar */}
+              <div 
+                id="punisher-cont"
+                className="punisher-cont w-20 h-20 sm:w-24 sm:h-24 bg-black border-3 border-red-600 flex items-center justify-center shrink-0 shadow-[4px_4px_0px_#000000] overflow-hidden relative group cursor-pointer"
+                data-container="punisher-cont"
+                onClick={onOpenPunisher}
+                title="Enter Punisher Robot Selector"
+              >
+                {/* Ominous red radial glow backdrop */}
+                <div 
+                  aria-hidden="true" 
+                  className="absolute inset-0 bg-[radial-gradient(circle_at_center,_rgba(220,38,38,0.35)_0%,_transparent_75%)] pointer-events-none" 
+                />
+                <img 
+                  src="/assets/aistudio/image_6c6f27fb.png" 
+                  alt="Punisher Robot Demon Mask" 
+                  className="w-full h-full object-contain filter contrast-125 brightness-110 p-1.5 transition-transform duration-300 group-hover:scale-110 drop-shadow-[0_0_10px_rgba(220,38,38,0.55)]"
+                />
               </div>
+
               <div>
-                <h3 className="text-sm sm:text-base font-black uppercase text-white tracking-wide glitch-text">
-                  Punisher Robot Selector
-                </h3>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h3 className="text-sm sm:text-base font-black uppercase text-white tracking-wide glitch-text">
+                    Punisher Robot Selector
+                  </h3>
+                  <span className="text-[9px] font-mono font-black uppercase px-1.5 py-0.5 bg-black text-amber-400 border border-amber-400/40 shadow-[1px_1px_0px_#000]">
+                    RUTHLESS AI
+                  </span>
+                </div>
                 <p className="text-xs font-bold text-[#c7d2fe] mt-0.5 max-w-md">
-                  Face 6 legendary mechanical opponents. From the clumsy Joystick Wraith to the calculating Chrome Reaper. No dice, no mercy.
+                  Face 7 legendary mechanical opponents. From the clumsy Joystick Wraith to the calculating Chrome Reaper. No dice, no mercy.
                 </p>
               </div>
             </div>

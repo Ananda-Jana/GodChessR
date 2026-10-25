@@ -8,6 +8,7 @@ interface AuthContextType {
   error: string | null;
   login: (username: string, password: string) => Promise<boolean>;
   register: (username: string, displayName: string, password: string, avatarId: string) => Promise<boolean>;
+  loginGuest: () => Promise<boolean>;
   logout: () => void;
   updateProfile: (displayName: string, avatarId: string) => Promise<boolean>;
   clearError: () => void;
@@ -141,6 +142,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const loginGuest = async (): Promise<boolean> => {
+    setError(null);
+    try {
+      const res = await fetch('/api/auth/guest', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || 'Guest login failed.');
+        return false;
+      }
+      localStorage.setItem('dice_chess_token', data.token);
+      setToken(data.token);
+      setUser(data.user);
+      return true;
+    } catch (err) {
+      setError('Network error. Unable to reach server.');
+      return false;
+    }
+  };
+
   const clearError = () => setError(null);
 
   return (
@@ -152,6 +175,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         error,
         login,
         register,
+        loginGuest,
         logout,
         updateProfile,
         clearError,

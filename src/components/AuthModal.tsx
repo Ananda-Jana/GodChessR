@@ -1,16 +1,26 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { AVATAR_OPTIONS, AvatarDisplay } from './Avatars';
-import { Crown, AlertCircle } from 'lucide-react';
+import { Crown, AlertCircle, UserCheck } from 'lucide-react';
 
 export const AuthModal: React.FC = () => {
-  const { login, register, error, clearError } = useAuth();
+  const { login, register, loginGuest, error, clearError } = useAuth();
   const [isRegister, setIsRegister] = useState(false);
   const [username, setUsername] = useState('');
   const [displayName, setDisplayName] = useState('');
   const [password, setPassword] = useState('');
   const [avatarId, setAvatarId] = useState(AVATAR_OPTIONS[0].id);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleGuestLogin = async () => {
+    clearError();
+    setIsSubmitting(true);
+    try {
+      await loginGuest();
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -75,6 +85,17 @@ export const AuthModal: React.FC = () => {
               Multiplayer online strategy featuring Prince mechanics and dice rolls.
             </p>
           </div>
+
+          {/* Play as Guest White Button */}
+          <button
+            type="button"
+            onClick={handleGuestLogin}
+            disabled={isSubmitting}
+            className="w-full min-h-[48px] py-3 px-4 bg-white hover:bg-neutral-100 active:bg-neutral-200 text-black border-3 border-black font-black text-sm uppercase tracking-wider shadow-[4px_4px_0px_#000] cursor-pointer flex items-center justify-center gap-2.5 transition-transform active:translate-x-0.5 active:translate-y-0.5 focus-visible:ring-4 focus-visible:ring-amber-400 outline-none disabled:opacity-50"
+          >
+            <UserCheck className="w-5 h-5 text-black shrink-0" />
+            <span>Play as Guest</span>
+          </button>
 
           {/* Tab Switcher */}
           <div className="flex bg-[#32040b] border-2 border-amber-400 p-1">

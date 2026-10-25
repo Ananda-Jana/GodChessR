@@ -171,8 +171,8 @@ export const PunisherSelector: React.FC<PunisherSelectorProps> = ({ onSelect, on
           })}
         </div>
 
-        {/* ================= DESKTOP VIEW (>= md): 7-Card Grid ================= */}
-        <div className="hidden md:grid grid-cols-2 lg:grid-cols-3 gap-6 p-6 max-w-7xl mx-auto">
+        {/* ================= DESKTOP VIEW (>= md): Compact Rectangular Cards ================= */}
+        <div className="hidden md:grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-4 p-4 sm:p-6 max-w-7xl mx-auto">
           {ALL_PUNISHER_BOTS.map((bot) => {
             const config = PUNISHER_BOTS[bot.id as PunisherBotId];
             const Icon = resolveBotFace(bot.id);
@@ -184,13 +184,13 @@ export const PunisherSelector: React.FC<PunisherSelectorProps> = ({ onSelect, on
             return (
               <motion.div
                 key={bot.id}
-                whileHover={{ scale: 1.02 }}
+                whileHover={{ scale: 1.015 }}
                 onHoverStart={() => setHoveredBot(bot.id as PunisherBotId)}
                 onHoverEnd={() => setHoveredBot(null)}
-                className={`relative p-6 flex flex-col justify-between group cursor-pointer overflow-hidden min-h-[400px] ${
+                className={`relative p-3.5 sm:p-4 flex flex-col justify-between group cursor-pointer overflow-hidden rounded-none border-3 ${
                   isBangla
-                    ? 'border-4 border-red-500 shadow-[6px_6px_0px_#dc2626]'
-                    : `bg-gradient-to-b ${bgGradient} border-4 border-white shadow-[6px_6px_0px_#fff]`
+                    ? 'border-red-500 shadow-[4px_4px_0px_#dc2626]'
+                    : `bg-gradient-to-b ${bgGradient} border-white shadow-[4px_4px_0px_#fff]`
                 }`}
                 onClick={() => onSelect(bot.id as PunisherBotId)}
               >
@@ -198,7 +198,7 @@ export const PunisherSelector: React.FC<PunisherSelectorProps> = ({ onSelect, on
                 {isBangla && (
                   <div 
                     aria-hidden="true" 
-                    className="absolute inset-0 overflow-hidden pointer-events-none z-0 bangla-fire-surface"
+                    className="absolute inset-0 overflow-hidden pointer-events-none z-0 bangla-fire-surface opacity-40"
                     style={{ contain: 'layout paint' }}
                   >
                     {/* Dark vignette to ensure high text contrast */}
@@ -219,22 +219,12 @@ export const PunisherSelector: React.FC<PunisherSelectorProps> = ({ onSelect, on
                         mixBlendMode: 'screen',
                       }}
                     />
-                    <div 
-                      className="absolute -bottom-8 left-1/3 w-28 h-40 rounded-full blur-lg pointer-events-none bangla-fire-tongue-3"
-                      style={{
-                        background: 'radial-gradient(circle, #fde047 15%, #f97316 55%, transparent 85%)',
-                        mixBlendMode: 'screen',
-                      }}
-                    />
 
                     {/* Floating Embers */}
                     {[
                       { left: '15%', delay: '0s', dur: '3.2s', drift: '6px' },
-                      { left: '35%', delay: '1.2s', dur: '4.5s', drift: '-8px' },
-                      { left: '55%', delay: '0.5s', dur: '2.8s', drift: '10px' },
-                      { left: '75%', delay: '2.0s', dur: '4.8s', drift: '-6px' },
-                      { left: '25%', delay: '1.8s', dur: '3.8s', drift: '12px' },
-                      { left: '85%', delay: '0.8s', dur: '3.0s', drift: '-10px' },
+                      { left: '45%', delay: '1.2s', dur: '4.5s', drift: '-8px' },
+                      { left: '75%', delay: '0.5s', dur: '2.8s', drift: '10px' },
                     ].map((ember, idx) => (
                       <div
                         key={idx}
@@ -249,67 +239,67 @@ export const PunisherSelector: React.FC<PunisherSelectorProps> = ({ onSelect, on
 
                     {/* Hot-edge flicker */}
                     <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-red-600 via-amber-400 to-yellow-300 pointer-events-none bangla-fire-edge-glow" />
-                    <div className="absolute inset-x-0 bottom-0 h-1 bg-gradient-to-r from-yellow-300 via-amber-400 to-red-600 pointer-events-none bangla-fire-edge-glow" />
                   </div>
                 )}
 
-                {/* Content Layer (Relative z-10, no layout shifts) */}
-                <div className="relative z-10 flex flex-col justify-between h-full">
-                  {/* Top Row: ELO & Depth + NEW badge */}
+                {/* Content Layer (Relative z-10) */}
+                <div className="relative z-10 flex flex-col gap-3">
+                  {/* Top Row: ELO & Depth badges */}
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1.5">
                       {isBangla && (
-                        <span className="text-[10px] font-mono font-black uppercase px-2 py-0.5 bg-yellow-400 text-black border-2 border-black shadow-[1px_1px_0px_#000]">
+                        <span className="text-[9px] font-mono font-black uppercase px-1.5 py-0.5 bg-yellow-400 text-black border border-black shadow-[1px_1px_0px_#000]">
                           NEW
                         </span>
                       )}
-                      <span className={`text-xs font-mono font-black px-2 py-1 bg-black border-2 border-white ${colorClass}`}>
+                      <span className={`text-[11px] font-mono font-black px-2 py-0.5 bg-black border border-white ${colorClass}`}>
                         ELO {config.rating}
                       </span>
                     </div>
-                    <span className="text-xs font-mono font-bold text-white/80 bg-black/60 px-2 py-1 border border-white/20">
+                    <span className="text-[10px] font-mono font-bold text-white/80 bg-black/60 px-2 py-0.5 border border-white/20">
                       Depth {config.depth}
                     </span>
                   </div>
 
-                  {/* Center: Face Icon */}
-                  <div className="my-6 flex justify-center items-center">
-                    <div className={`p-4 border-4 transition-colors duration-300 ${
+                  {/* Body Row: Face on left + Details & Fight button on right */}
+                  <div className="flex items-center gap-3.5">
+                    {/* Face Icon Container (constant clear size face) */}
+                    <div className={`p-2 border-2 shrink-0 transition-colors duration-300 ${
                       isBangla 
-                        ? 'border-yellow-400/40 group-hover:border-yellow-400 bg-black/40' 
-                        : 'border-white/20 group-hover:border-white'
+                        ? 'border-yellow-400/50 group-hover:border-yellow-400 bg-black/50' 
+                        : 'border-white/20 group-hover:border-white bg-black/40'
                     } ${colorClass}`}>
-                      <Icon size={120} />
-                    </div>
-                  </div>
-
-                  {/* Bottom: Info & Fight Button */}
-                  <div className="space-y-3">
-                    <div>
-                      <h3 className="text-xl font-black italic uppercase text-white tracking-wider flex items-center gap-1.5 break-words leading-tight">
-                        {isBangla && <Flame className="w-5 h-5 text-amber-400 shrink-0" />}
-                        <span>{bot.name}</span>
-                      </h3>
-                      <p className="text-xs text-zinc-300 font-medium line-clamp-2 mt-1">
-                        {description}
-                      </p>
+                      <Icon size={100} />
                     </div>
 
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onSelect(bot.id as PunisherBotId);
-                      }}
-                      className={`w-full py-3 text-white font-black text-sm uppercase tracking-widest border-2 border-white flex items-center justify-center gap-2 cursor-pointer transition-transform active:translate-x-0.5 active:translate-y-0.5 ${
-                        isBangla
-                          ? 'bg-red-600 hover:bg-red-500 shadow-[3px_3px_0px_#fde047]'
-                          : 'bg-[#2727F5] group-hover:bg-blue-600 shadow-[3px_3px_0px_#fff]'
-                      }`}
-                    >
-                      <Sword className="w-4 h-4" />
-                      FIGHT BOT
-                    </button>
+                    {/* Details & Action Button */}
+                    <div className="flex-1 min-w-0 flex flex-col justify-between self-stretch">
+                      <div>
+                        <h3 className="text-sm sm:text-base font-black italic uppercase text-white tracking-wider flex items-center gap-1 leading-tight break-words">
+                          {isBangla && <Flame className="w-4 h-4 text-amber-400 shrink-0" />}
+                          <span className="truncate">{bot.name}</span>
+                        </h3>
+                        <p className="text-[11px] text-zinc-300 font-medium line-clamp-2 mt-1 leading-snug">
+                          {description}
+                        </p>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onSelect(bot.id as PunisherBotId);
+                        }}
+                        className={`w-full mt-2.5 py-2 px-3 text-white font-black text-xs uppercase tracking-wider border-2 border-white flex items-center justify-center gap-1.5 cursor-pointer transition-transform active:translate-x-0.5 active:translate-y-0.5 ${
+                          isBangla
+                            ? 'bg-red-600 hover:bg-red-500 shadow-[2px_2px_0px_#fde047]'
+                            : 'bg-[#2727F5] group-hover:bg-blue-600 shadow-[2px_2px_0px_#fff]'
+                        }`}
+                      >
+                        <Sword className="w-3.5 h-3.5" />
+                        FIGHT BOT
+                      </button>
+                    </div>
                   </div>
                 </div>
               </motion.div>

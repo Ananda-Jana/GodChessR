@@ -92,6 +92,45 @@ async function startServer() {
     });
   });
 
+  // Auth: Guest Login
+  app.post('/api/auth/guest', (_req, res) => {
+    const baseUsername = 'MechaRuri';
+    let username = baseUsername;
+    let counter = 1;
+    while (db.findUserByUsername(username)) {
+      username = `${baseUsername}_${Math.floor(1000 + Math.random() * 9000)}`;
+      counter++;
+      if (counter > 100) break;
+    }
+
+    const userId = `usr_guest_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+    const { hash, salt } = hashPassword('guest_pass_default');
+
+    const guestUser: UserRecord = {
+      id: userId,
+      username,
+      displayName: 'MechaRuri',
+      avatarId: 'avatar_prince',
+      passwordHash: hash,
+      salt,
+      stats: {
+        wins: 0,
+        losses: 0,
+        draws: 0,
+        totalGames: 0,
+      },
+      createdAt: Date.now(),
+    };
+
+    db.saveUser(guestUser);
+    const token = createSession(guestUser.id);
+
+    return res.status(201).json({
+      token,
+      user: sanitizeUser(guestUser),
+    });
+  });
+
   // Auth: Login
   app.post('/api/auth/login', (req, res) => {
     const { username, password } = req.body;

@@ -47,7 +47,7 @@ import { getPunisherBotMove, PunisherBotId, PUNISHER_BOTS } from './punisher/pun
 function AppContent() {
   const { user, isLoading } = useAuth();
   const [showAd, setShowAd] = useState(false);
-  const adImage = '/assets/aistudio/image_554ae4cc.png';
+  const adImage = '/assets/aistudio/image_1e4df309.png';
 
   useEffect(() => {
     const img = new Image();
@@ -732,7 +732,16 @@ function AppContent() {
 
   return (
     <>
-      {showAd && <PopupAd imageSrc={adImage} onClose={() => setShowAd(false)} />}
+      {showAd && (
+        <PopupAd
+          imageSrc={adImage}
+          onClose={() => setShowAd(false)}
+          onFightPunishers={() => {
+            setShowAd(false);
+            setIsPunisherSelectorOpen(true);
+          }}
+        />
+      )}
       
       <AnimatePresence>
         {isPunisherSelectorOpen && (
