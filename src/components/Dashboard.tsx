@@ -27,6 +27,7 @@ import {
   ChevronDown,
   ChevronUp,
   Users,
+  Zap,
 } from 'lucide-react';
 import { posToNotation } from '../game/engine';
 import { usePredictor } from '../predictor/PredictorContext';
@@ -40,9 +41,6 @@ import { GamepadSkull } from './GamepadSkull';
 import { OctoSkull } from './OctoSkull';
 import { CyberSkull } from './CyberSkull';
 import { AboutGameModal } from './AboutGameModal';
-import { EsEntryCard } from '../endlessSpring/EsEntryCard';
-
-const EsRoot = React.lazy(() => import('../endlessSpring/EsRoot'));
 
 interface DashboardProps {
   onOpenRules: () => void;
@@ -52,6 +50,7 @@ interface DashboardProps {
   onOpenCraftTheory: () => void;
   onOpenRose?: () => void;
   onOpenHashiraTraining?: (trainerId?: TrainerId) => void;
+  onOpenPunisher?: () => void;
   onStartSecretMatch?: (botConfig: SecretPlayerConfig) => void;
   lastCompletedMatch?: { match: MatchState; completedAt: number } | null;
   onClearLastGame?: () => void;
@@ -65,6 +64,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
   onOpenCraftTheory,
   onOpenRose,
   onOpenHashiraTraining,
+  onOpenPunisher,
   onStartSecretMatch,
   lastCompletedMatch,
   onClearLastGame,
@@ -738,6 +738,174 @@ export const Dashboard: React.FC<DashboardProps> = ({
             </button>
           </div>
 
+          {/* PUNISHER ROBOT SELECTOR: Premium Animated Reactor Card */}
+          <div className="punisher-reactor-card relative border-4 border-[#2727F5] p-4 sm:p-5 shadow-[6px_6px_0px_#000000] flex flex-col sm:flex-row sm:items-center justify-between gap-4 overflow-hidden">
+            <style>{`
+              @property --angle {
+                syntax: '<angle>';
+                initial-value: 0deg;
+                inherits: false;
+              }
+
+              @keyframes plasmaFlow {
+                0% { background-position: 0% 50%; }
+                50% { background-position: 100% 50%; }
+                100% { background-position: 0% 50%; }
+              }
+
+              @keyframes borderOrbit {
+                from { --angle: 0deg; }
+                to { --angle: 360deg; }
+              }
+
+              @keyframes gridDrift {
+                from { background-position: 0 0; }
+                to { background-position: 100px 100px; }
+              }
+
+              @keyframes scanSweep {
+                0% { transform: translateY(-100%); opacity: 0; }
+                10% { opacity: 1; }
+                40% { opacity: 1; }
+                50% { transform: translateY(500%); opacity: 0; }
+                100% { transform: translateY(500%); opacity: 0; }
+              }
+
+              @keyframes coreBeat {
+                0%, 100% { transform: scale(1) translate(-50%, -50%); opacity: 0.3; }
+                50% { transform: scale(1.4) translate(-50%, -50%); opacity: 0.6; }
+              }
+
+              @keyframes sparkTwinkle {
+                0%, 100% { opacity: 0; transform: scale(0.5); }
+                50% { opacity: 1; transform: scale(1); }
+              }
+
+              @keyframes glitchBurst {
+                0% { transform: translate(0); text-shadow: none; }
+                1% { transform: translate(-2px, 0); text-shadow: 2px 0 #ff0000, -2px 0 #0000ff; }
+                2% { transform: translate(2px, 0); text-shadow: -2px 0 #ff0000, 2px 0 #0000ff; }
+                3% { transform: translate(0); text-shadow: none; }
+                100% { transform: translate(0); text-shadow: none; }
+              }
+
+              @keyframes neonBreathe {
+                0%, 100% { box-shadow: 6px 6px 0px #000000, 0 0 15px rgba(39,39,245,0.4); }
+                50% { box-shadow: 6px 6px 0px #000000, 0 0 30px rgba(39,39,245,0.8); }
+              }
+
+              .punisher-reactor-card {
+                animation: neonBreathe 3s infinite ease-in-out;
+                background: #0a0a3d;
+                will-change: box-shadow;
+              }
+
+              .punisher-reactor-card::before {
+                content: '';
+                position: absolute;
+                inset: -2px;
+                padding: 3px;
+                background: conic-gradient(from var(--angle), transparent, #818cf8, #ffffff, #818cf8, transparent);
+                -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+                mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+                -webkit-mask-composite: xor;
+                mask-composite: exclude;
+                animation: borderOrbit 4s linear infinite;
+                pointer-events: none;
+                z-index: 5;
+              }
+
+              .plasma-layer {
+                background: radial-gradient(circle at 20% 30%, #2727F5, transparent 70%),
+                            radial-gradient(circle at 80% 70%, #6d28d9, transparent 70%),
+                            linear-gradient(135deg, #14146e 0%, #4c1d95 100%);
+                background-size: 300% 300%;
+                animation: plasmaFlow 10s ease-in-out infinite;
+                will-change: background-position;
+              }
+
+              .hologrid-layer {
+                background-image: repeating-linear-gradient(rgba(129,140,248,0.15) 0 1px, transparent 1px 20px),
+                                  repeating-linear-gradient(90deg, rgba(129,140,248,0.15) 0 1px, transparent 1px 20px);
+                animation: gridDrift 20s linear infinite;
+                mask-image: radial-gradient(circle, black 40%, transparent 100%);
+                will-change: background-position;
+              }
+
+              .scanline-layer {
+                background: linear-gradient(to bottom, transparent, rgba(199,210,254,0.25), transparent);
+                height: 40px;
+                animation: scanSweep 6s ease-in-out infinite;
+                will-change: transform;
+              }
+
+              .core-glow {
+                background: radial-gradient(circle, #2727F5 0%, #6d28d9 50%, transparent 100%);
+                filter: blur(40px);
+                animation: coreBeat 3s ease-in-out infinite;
+                will-change: transform, opacity;
+              }
+
+              .glitch-text {
+                animation: glitchBurst 7s infinite;
+              }
+
+              @media (prefers-reduced-motion: reduce) {
+                .punisher-reactor-card, .punisher-reactor-card::before, .plasma-layer, .hologrid-layer, .scanline-layer, .core-glow, .glitch-text {
+                  animation: none !important;
+                }
+                .plasma-layer {
+                  background: linear-gradient(135deg, #14146e, #4c1d95) !important;
+                }
+              }
+            `}</style>
+
+            {/* Effects Wrapper (z-0) */}
+            <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none select-none">
+              <div className="absolute inset-0 plasma-layer" />
+              <div className="absolute inset-0 hologrid-layer" />
+              <div className="absolute top-0 left-0 right-0 scanline-layer" />
+              <div className="absolute top-1/2 left-1/4 w-64 h-64 core-glow -translate-x-1/2 -translate-y-1/2" />
+              
+              {/* Electric Sparks */}
+              {[...Array(8)].map((_, i) => (
+                <div 
+                  key={i}
+                  className="absolute w-1 h-1 bg-white rounded-full opacity-0"
+                  style={{
+                    top: `${Math.random() * 100}%`,
+                    left: `${Math.random() * 100}%`,
+                    animation: `sparkTwinkle ${2 + Math.random() * 3}s infinite ${Math.random() * 5}s`,
+                    boxShadow: '0 0 8px #c7d2fe'
+                  }}
+                />
+              ))}
+            </div>
+
+            {/* Content (z-10) */}
+            <div className="flex items-center gap-3.5 relative z-10">
+              <div className="w-12 h-12 bg-black border-2 border-[#2727F5] flex items-center justify-center text-[#2727F5] shrink-0 shadow-[2px_2px_0px_#2727F5]">
+                <Bot className="w-7 h-7" />
+              </div>
+              <div>
+                <h3 className="text-sm sm:text-base font-black uppercase text-white tracking-wide glitch-text">
+                  Punisher Robot Selector
+                </h3>
+                <p className="text-xs font-bold text-[#c7d2fe] mt-0.5 max-w-md">
+                  Face 6 legendary mechanical opponents. From the clumsy Joystick Wraith to the calculating Chrome Reaper. No dice, no mercy.
+                </p>
+              </div>
+            </div>
+
+            <button
+              onClick={onOpenPunisher}
+              className="relative z-10 py-3 px-5 bg-[#2727F5] hover:bg-[#4a4aff] text-white font-black text-xs sm:text-sm uppercase tracking-wider border-2 border-black shadow-[3px_3px_0px_#000000] flex items-center justify-center gap-2 shrink-0 cursor-pointer active:translate-x-0.5 active:translate-y-0.5"
+            >
+              <Zap className="w-4 h-4 fill-current" />
+              Enter Selector
+            </button>
+          </div>
+
           {/* Instant Grandmaster Bot Challenge Card (Animated Fire Effect) */}
           <div className="bot-fire-card text-black border-4 border-black p-4 sm:p-5 shadow-[6px_6px_0px_#000000] flex flex-col sm:flex-row sm:items-center justify-between gap-4 relative overflow-hidden transition-all duration-200">
             <style>{`
@@ -928,8 +1096,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
             </button>
           </div>
 
-          {/* Endless Spring Story Mode Card (Immediately After Culling Game Mode) */}
-          <EsEntryCard onOpen={() => setIsEndlessSpringOpen(true)} />
+
 
           {/* Secret Players Arena Launcher Card (Immediately After Culling Game Mode) */}
           <div 
@@ -1614,12 +1781,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
         isOpen={isAboutOpen}
         onClose={() => setIsAboutOpen(false)}
       />
-
-      {isEndlessSpringOpen && (
-        <React.Suspense fallback={<div className="fixed inset-0 z-50 bg-black flex items-center justify-center text-amber-300 font-mono text-sm">Loading Endless Spring...</div>}>
-          <EsRoot onExit={() => setIsEndlessSpringOpen(false)} />
-        </React.Suspense>
-      )}
     </div>
   );
 };

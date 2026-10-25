@@ -319,3 +319,157 @@ html.dark .chess-piece-shadow::after {
   }
 }
 
+/* ============================================================================
+ * BANGLA-BOT FIRE ANIMATION STYLES (Punisher Mode)
+ * Multi-layered surface animation behind card content (will-change on layers only)
+ * ========================================================================== */
+
+@keyframes banglaFireFlow {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+@keyframes banglaFireRise1 {
+  0% {
+    transform: translateY(110%) translateX(0) scaleY(0.85);
+    opacity: 0.3;
+  }
+  40% {
+    transform: translateY(30%) translateX(-6px) scaleY(1.15);
+    opacity: 0.75;
+  }
+  80% {
+    transform: translateY(-20%) translateX(6px) scaleY(1.0);
+    opacity: 0.4;
+  }
+  100% {
+    transform: translateY(-60%) translateX(0) scaleY(0.7);
+    opacity: 0;
+  }
+}
+
+@keyframes banglaFireRise2 {
+  0% {
+    transform: translateY(115%) translateX(4px) scaleY(0.9);
+    opacity: 0.35;
+  }
+  50% {
+    transform: translateY(20%) translateX(-8px) scaleY(1.2);
+    opacity: 0.8;
+  }
+  85% {
+    transform: translateY(-30%) translateX(4px) scaleY(0.95);
+    opacity: 0.35;
+  }
+  100% {
+    transform: translateY(-70%) translateX(0) scaleY(0.65);
+    opacity: 0;
+  }
+}
+
+@keyframes banglaFireRise3 {
+  0% {
+    transform: translateY(120%) translateX(-4px) scaleY(0.95);
+    opacity: 0.25;
+  }
+  45% {
+    transform: translateY(35%) translateX(7px) scaleY(1.1);
+    opacity: 0.7;
+  }
+  80% {
+    transform: translateY(-15%) translateX(-5px) scaleY(1.0);
+    opacity: 0.3;
+  }
+  100% {
+    transform: translateY(-55%) translateX(0) scaleY(0.7);
+    opacity: 0;
+  }
+}
+
+@keyframes banglaFireEmber {
+  0% {
+    transform: translateY(100%) translateX(0);
+    opacity: 0;
+  }
+  20% {
+    opacity: 0.9;
+  }
+  80% {
+    opacity: 0.6;
+    transform: translateY(10%) translateX(var(--ember-drift, 8px));
+  }
+  100% {
+    transform: translateY(-80%) translateX(calc(var(--ember-drift, 8px) * 1.5));
+    opacity: 0;
+  }
+}
+
+@keyframes banglaFireEdge {
+  0%, 100% {
+    opacity: 0.55;
+    filter: drop-shadow(0 0 4px #f97316);
+  }
+  25% {
+    opacity: 0.85;
+    filter: drop-shadow(0 0 10px #fde047);
+  }
+  50% {
+    opacity: 0.45;
+    filter: drop-shadow(0 0 3px #dc2626);
+  }
+  75% {
+    opacity: 0.95;
+    filter: drop-shadow(0 0 12px #fbbf24);
+  }
+}
+
+.bangla-fire-surface {
+  background: linear-gradient(135deg, #7f1d1d, #991b1b, #dc2626, #ea580c, #f97316, #fbbf24, #fde047);
+  background-size: 300% 300%;
+  animation: banglaFireFlow 7s ease-in-out infinite;
+  will-change: background-position;
+}
+
+.bangla-fire-tongue-1 {
+  animation: banglaFireRise1 3.5s ease-in-out infinite;
+  will-change: transform, opacity;
+}
+
+.bangla-fire-tongue-2 {
+  animation: banglaFireRise2 4.8s ease-in-out infinite 0.7s;
+  will-change: transform, opacity;
+}
+
+.bangla-fire-tongue-3 {
+  animation: banglaFireRise3 5.6s ease-in-out infinite 1.4s;
+  will-change: transform, opacity;
+}
+
+.bangla-fire-edge-glow {
+  animation: banglaFireEdge 2.2s ease-in-out infinite;
+  will-change: opacity, filter;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bangla-fire-surface {
+    background: linear-gradient(135deg, #7f1d1d, #dc2626, #ea580c) !important;
+    animation: none !important;
+  }
+  .bangla-fire-tongue-1,
+  .bangla-fire-tongue-2,
+  .bangla-fire-tongue-3,
+  .bangla-fire-ember,
+  .bangla-fire-edge-glow {
+    display: none !important;
+    animation: none !important;
+  }
+}
+
+

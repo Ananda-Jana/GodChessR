@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { AnimatePresence } from 'motion/react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { SocketProvider, useSocket } from './context/SocketContext';
 import { ThemeProvider } from './context/ThemeContext';
@@ -34,10 +35,14 @@ import {
   applyBoardExpansion,
   applyCraftPlacement,
   cancelCrafting,
+  isKingInCheck,
+  applyMoveToBoard,
 } from './game/engine';
 import { getBestBotMove, getBotExpansionChoice, getBotCraftingChoice } from './game/bot';
 import { sounds } from './utils/audio';
-import { Crown } from 'lucide-react';
+import { Crown, Bot } from 'lucide-react';
+import { PunisherSelector } from './punisher/PunisherSelector';
+import { getPunisherBotMove, PunisherBotId, PUNISHER_BOTS } from './punisher/punisherBot';
 
 function AppContent() {
   const { user, isLoading } = useAuth();
@@ -65,6 +70,166 @@ function AppContent() {
   const [selectedTrainerForTraining, setSelectedTrainerForTraining] = useState<TrainerId>('thukuna');
   const [botInitialGameMode, setBotInitialGameMode] = useState<'standard' | 'crafted' | 'classic'>('standard');
   const [activeSecretBot, setActiveSecretBot] = useState<SecretPlayerConfig | null>(null);
+
+  // Punisher Robot Selector Mode State
+  const [isPunisherSelectorOpen, setIsPunisherSelectorOpen] = useState(false);
+  const [punisherMatch, setPunisherMatch] = useState<MatchState | null>(null);
+  const [activePunisherBotId, setActivePunisherBotId] = useState<PunisherBotId | null>(null);
+
+  const punisherTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (punisherTimeoutRef.current) {
+        clearTimeout(punisherTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  // Run Punisher Bot turn with natural thinking time:
+  // - Fast instant calculation (< 25ms, never stalls the tab)
+  // - Normal moves: within 2 seconds (1.2s to 1.85s randomly)
+  // - Special moves (captures, checks, escaping check, promotion): 3 to 4 seconds (3.0s to 3.8s randomly)
+  const runPunisherBotTurn = useCallback(
+    (currentMatch: MatchState, botId: PunisherBotId) => {
+      if (punisherTimeoutRef.current) {
+        clearTimeout(punisherTimeoutRef.current);
+        punisherTimeoutRef.current = null;
+      }
+
+      setIsBotThinking(true);
+
+      // Instant calculation (< 25ms)
+      const bestMove = getPunisherBotMove(currentMatch, botId);
+      if (!bestMove) {
+        setIsBotThinking(false);
+        return;
+      }
+
+      // Check if move is a "special move"
+      const nextBoard = applyMoveToBoard(currentMatch.board, bestMove);
+      const opponentColor: PieceColor = currentMatch.turn === 'white' ? 'black' : 'white';
+      const deliversCheck = isKingInCheck(nextBoard, opponentColor);
+      const isEscapingCheck = currentMatch.inCheck === currentMatch.turn;
+      const isCapture = Boolean(bestMove.captured);
+      const isPromotion = bestMove.piece.type === 'pawn' && (bestMove.to.y === 0 || bestMove.to.y === 7);
+
+      const isSpecialMove = isCapture || deliversCheck || isEscapingCheck || isPromotion;
+
+      // Detect obvious moves (recaptures on the square just played or escaping check)
+      const lastPlayerMove = currentMatch.moveHistory[currentMatch.moveHistory.length - 1];
+      const isRecapture = Boolean(
+        lastPlayerMove?.captured &&
+        bestMove.captured &&
+        bestMove.to.x === lastPlayerMove.to.x &&
+        bestMove.to.y === lastPlayerMove.to.y
+      );
+      const isObviousMove = isRecapture || isEscapingCheck;
+
+      // Identify the two highest-ELO bots: Chrome Reaper (2500+) and Cyclops Revenant (2200-2400)
+      const isTopTwoBot = botId === 'chrome-reaper' || botId === 'cyclops-revenant';
+
+      // Thinking delay:
+      // For Top 2 highest-ELO bots:
+      // - Obvious moves (recaptures, check responses, forced replies): 320ms - 520ms
+      // - Normal moves: 400ms - 750ms
+      // - Special tactical strikes (checks, promotions, major captures): 650ms - 980ms
+      // (All strictly within 300 - 1100ms, visible for >= 300ms without flickering)
+      // For other bots: retain original delay (3000-3800ms special, 1250-1900ms normal)
+      let thinkingTimeMs: number;
+      if (isTopTwoBot) {
+        if (isObviousMove) {
+          thinkingTimeMs = Math.floor(320 + Math.random() * 200);
+        } else if (isSpecialMove) {
+          thinkingTimeMs = Math.floor(650 + Math.random() * 330);
+        } else {
+          thinkingTimeMs = Math.floor(400 + Math.random() * 350);
+        }
+      } else {
+        thinkingTimeMs = isSpecialMove
+          ? Math.floor(3000 + Math.random() * 800)
+          : Math.floor(1250 + Math.random() * 650);
+      }
+
+      punisherTimeoutRef.current = setTimeout(() => {
+        const res = executeMove(currentMatch, bestMove.from, bestMove.to);
+        if (res.success) {
+          setPunisherMatch(res.state);
+          if (res.state.status === 'completed') {
+            sounds.playGameOver();
+            const entry = { match: res.state, completedAt: Date.now() };
+            setLastCompletedMatch(entry);
+          } else if (bestMove.captured) {
+            sounds.playCapture();
+          } else {
+            sounds.playMove();
+          }
+        }
+        setIsBotThinking(false);
+        punisherTimeoutRef.current = null;
+      }, thinkingTimeMs);
+    },
+    []
+  );
+
+  const handleStartPunisherMatch = (botId: PunisherBotId) => {
+    if (!user) return;
+    if (punisherTimeoutRef.current) {
+      clearTimeout(punisherTimeoutRef.current);
+      punisherTimeoutRef.current = null;
+    }
+    setIsBotThinking(false);
+    setIsPunisherSelectorOpen(false);
+    setActivePunisherBotId(botId);
+    setLastCompletedMatch(null);
+    
+    const botConfig = PUNISHER_BOTS[botId];
+    const botUser = {
+      userId: `punisher_${botId}`,
+      username: botId,
+      displayName: botConfig.name,
+      avatarId: 'avatar_prince',
+    };
+
+    const now = Date.now();
+    // Use 'classic' mode for "simple chess" as requested (standard board, no prince, no dice)
+    const initialMatch: MatchState = {
+      id: `punisher_${botId}_${now}`,
+      whitePlayer: {
+        userId: user.id,
+        username: user.username,
+        displayName: user.displayName,
+        avatarId: user.avatarId,
+      },
+      blackPlayer: botUser,
+      board: createInitialBoard('classic'),
+      gameMode: 'classic',
+      craftingAllowed: false,
+      pieceTheme: 'classic',
+      turn: 'white',
+      status: 'active',
+      dice: null,
+      diceActive: false, // Force no dice
+      whitePawnsReachedEndRank: 0,
+      blackPawnsReachedEndRank: 0,
+      capturedByWhite: [],
+      capturedByBlack: [],
+      moveHistory: [],
+      inCheck: null,
+      result: null,
+      moveSuggestions: 'included',
+      totalCaptures: 0,
+      timeControl: 300,
+      whiteTimeRemaining: 300,
+      blackTimeRemaining: 300,
+      lastTurnStartTime: now,
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    setPunisherMatch(initialMatch);
+    sounds.playChallenge();
+  };
 
   // Last completed game review state (retained for 10 minutes then auto-flushed)
   const [lastCompletedMatch, setLastCompletedMatch] = useState<{ match: MatchState; completedAt: number } | null>(() => {
@@ -465,6 +630,50 @@ function AppContent() {
     }
   };
 
+  // Punisher Match: Human Moves Piece
+  const handlePunisherMatchMove = (from: Position, to: Position) => {
+    if (!punisherMatch || punisherMatch.status !== 'active') return;
+    if (punisherMatch.turn !== 'white') return; // User is always white in this mode
+
+    const res = executeMove(punisherMatch, from, to);
+    if (!res.success) return;
+
+    setPunisherMatch(res.state);
+
+    if (res.state.status === 'completed') {
+      sounds.playGameOver();
+      const entry = { match: res.state, completedAt: Date.now() };
+      setLastCompletedMatch(entry);
+      return;
+    }
+
+    const lastMove = res.state.moveHistory[res.state.moveHistory.length - 1];
+    if (lastMove?.captured) {
+      sounds.playCapture();
+    } else {
+      sounds.playMove();
+    }
+
+    // Trigger Bot's turn
+    if (activePunisherBotId) {
+      runPunisherBotTurn(res.state, activePunisherBotId);
+    }
+  };
+
+  const handlePunisherMatchResign = () => {
+    if (!punisherMatch || !user) return;
+    if (punisherTimeoutRef.current) {
+      clearTimeout(punisherTimeoutRef.current);
+      punisherTimeoutRef.current = null;
+    }
+    setIsBotThinking(false);
+    const resMatch = resignMatch(punisherMatch, user.id);
+    setPunisherMatch(resMatch);
+    sounds.playGameOver();
+    const entry = { match: resMatch, completedAt: Date.now() };
+    setLastCompletedMatch(entry);
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-black flex flex-col items-center justify-center gap-6" role="status">
@@ -519,24 +728,45 @@ function AppContent() {
     );
   }
 
-  const activeGame = botMatch || socketMatch;
+  const activeGame = botMatch || socketMatch || punisherMatch;
 
   return (
     <>
       {showAd && <PopupAd imageSrc={adImage} onClose={() => setShowAd(false)} />}
+      
+      <AnimatePresence>
+        {isPunisherSelectorOpen && (
+          <PunisherSelector 
+            onSelect={handleStartPunisherMatch}
+            onClose={() => setIsPunisherSelectorOpen(false)}
+          />
+        )}
+      </AnimatePresence>
+
       {activeGame ? (
         <MatchView
           onOpenRules={() => setIsRulesOpen(true)}
-          onExit={handleExitMatch}
-          overrideMatch={botMatch || undefined}
-          customOnRoll={botMatch ? handleBotMatchRoll : undefined}
-          customOnMove={botMatch ? handleBotMatchMove : undefined}
-          customOnResign={botMatch ? handleBotMatchResign : undefined}
+          onExit={() => {
+            if (punisherTimeoutRef.current) {
+              clearTimeout(punisherTimeoutRef.current);
+              punisherTimeoutRef.current = null;
+            }
+            setIsBotThinking(false);
+            setBotMatch(null);
+            setPunisherMatch(null);
+            setActivePunisherBotId(null);
+            clearSocketMatch();
+          }}
+          overrideMatch={activeGame || undefined}
+          customOnRoll={botMatch ? handleBotMatchRoll : (punisherMatch ? () => {} : undefined)}
+          customOnMove={botMatch ? handleBotMatchMove : (punisherMatch ? handlePunisherMatchMove : undefined)}
+          customOnResign={botMatch ? handleBotMatchResign : (punisherMatch ? handlePunisherMatchResign : undefined)}
           customOnExpand={botMatch ? handleBotMatchExpand : undefined}
           customOnCraftPlace={botMatch ? handleBotMatchCraftPlace : undefined}
           customOnCraftCancel={botMatch ? handleBotMatchCraftCancel : undefined}
-          isBotMatch={Boolean(botMatch)}
+          isBotMatch={Boolean(botMatch || punisherMatch)}
           isBotThinking={isBotThinking}
+          activePunisherBotId={activePunisherBotId}
         />
       ) : (
         <Dashboard
@@ -559,6 +789,7 @@ function AppContent() {
             if (trainerId) setSelectedTrainerForTraining(trainerId);
             setIsHashiraTrainingOpen(true);
           }}
+          onOpenPunisher={() => setIsPunisherSelectorOpen(true)}
           onStartSecretMatch={(botConfig) => setActiveSecretBot(botConfig)}
           lastCompletedMatch={lastCompletedMatch}
           onClearLastGame={() => {

@@ -47,6 +47,8 @@ import { TrophyRoomModal } from './TrophyRoomModal';
 import type { AchievementCard } from '../predictor/types';
 import { LiveAnnouncer } from './LiveAnnouncer';
 import { useModalFocus } from '../utils/useModalFocus';
+import { ObserverBot } from '../punisher/ObserverBot';
+import { PunisherBotId } from '../punisher/punisherBot';
 
 const ExpansionModal = React.lazy(() => import('./ExpansionModal'));
 const CraftingModal = React.lazy(() => import('./CraftingModal'));
@@ -63,6 +65,7 @@ interface MatchViewProps {
   customOnCraftCancel?: () => void;
   isBotMatch?: boolean;
   isBotThinking?: boolean;
+  activePunisherBotId?: PunisherBotId | null;
 }
 
 export const MatchView: React.FC<MatchViewProps> = (props) => {
@@ -91,6 +94,7 @@ const MatchViewContent: React.FC<MatchViewContentProps> = ({
   customOnCraftCancel,
   isBotMatch = false,
   isBotThinking = false,
+  activePunisherBotId = null,
   user,
   activeMatch,
 }) => {
@@ -526,11 +530,6 @@ const MatchViewContent: React.FC<MatchViewContentProps> = ({
 
   useEffect(() => {
     if (isGameOver || Boolean(activeMatch.pausedForAction)) return;
-    if (isBotMatch) {
-      setDisplayWhiteTime(activeMatch.whiteTimeRemaining ?? defaultTime);
-      setDisplayBlackTime(activeMatch.blackTimeRemaining ?? defaultTime);
-      return;
-    }
     const interval = setInterval(() => {
       const now = Date.now();
       const needsDice = activeMatch.diceActive !== false && activeMatch.inCheck !== activeMatch.turn;
@@ -718,7 +717,7 @@ const MatchViewContent: React.FC<MatchViewContentProps> = ({
             </div>
             <div className="min-w-0">
               <div className="flex items-center gap-1 min-w-0">
-                <span className="text-[11px] sm:text-xs font-black uppercase truncate max-w-[58px] min-[360px]:max-w-[96px] sm:max-w-[180px]">
+                <span className="text-[11px] sm:text-xs font-black uppercase truncate max-w-[100px] min-[360px]:max-w-[140px] sm:max-w-[240px]">
                   vs {opponent.displayName}
                 </span>
                 <span
@@ -850,6 +849,14 @@ const MatchViewContent: React.FC<MatchViewContentProps> = ({
       } gap-0 md:gap-6 p-0 md:p-6 max-w-[1600px]`}>
         {/* Desktop Left Column (300px on lg:) */}
         <div className="hidden lg:flex flex-col gap-4 overflow-y-auto pr-1">
+          {activePunisherBotId && (
+            <ObserverBot
+              variant="desktop"
+              botId={activePunisherBotId}
+              match={activeMatch}
+              isThinking={isBotThinking}
+            />
+          )}
           <div className="bg-white dark:bg-[#0a0a0c] border-3 border-black dark:border-white p-4 shadow-[4px_4px_0px_#000000] dark:shadow-[4px_4px_0px_#ffffff] space-y-3">
             <div className="flex items-center justify-between">
               <h4 className="text-xs font-black uppercase tracking-wider flex items-center gap-1.5">
@@ -1066,6 +1073,17 @@ const MatchViewContent: React.FC<MatchViewContentProps> = ({
             isGameOver ? 'overflow-y-auto justify-start py-2' : 'overflow-hidden justify-center'
           }`}
         >
+          {/* Mobile Punisher Bot Observer (Dedicated top rectangular box pushing board slightly below without overflow) */}
+          {activePunisherBotId && (
+            <div className="md:hidden w-full px-2 pt-1 pb-1 shrink-0 max-w-[500px]">
+              <ObserverBot
+                variant="mobile"
+                botId={activePunisherBotId}
+                match={activeMatch}
+                isThinking={isBotThinking}
+              />
+            </div>
+          )}
           {/* Tablet (768px - 1023px) compact status card */}
           {activeMatch.gameMode !== 'classic' && (
             <div className="hidden md:flex lg:hidden w-full flex-col gap-1 bg-white dark:bg-[#0a0a0c] border-3 border-black dark:border-white p-2.5 text-xs font-bold">
@@ -1250,7 +1268,11 @@ const MatchViewContent: React.FC<MatchViewContentProps> = ({
 
           {/* Single Mounted ChessBoard Instance (Zero reflow on mobile, 820px max on desktop) */}
           <div
-            className={`w-full max-w-[100vw] md:w-[min(calc(100vw-16px),calc(100dvh-224px-env(safe-area-inset-bottom,0px)),520px)] lg:w-[min(calc(100dvh-140px),calc(100%-48px),820px)] aspect-square flex justify-center items-center shrink-0 ${shouldShake ? 'animate-shake' : ''}`}
+            className={`w-full max-w-[100vw] ${
+              activePunisherBotId
+                ? 'w-[min(calc(100vw-8px),calc(100dvh-270px-env(safe-area-inset-bottom,0px)),520px)] md:w-[min(calc(100vw-16px),calc(100dvh-224px-env(safe-area-inset-bottom,0px)),520px)]'
+                : 'md:w-[min(calc(100vw-16px),calc(100dvh-224px-env(safe-area-inset-bottom,0px)),520px)]'
+            } lg:w-[min(calc(100dvh-140px),calc(100%-48px),820px)] aspect-square flex justify-center items-center shrink-0 relative ${shouldShake ? 'animate-shake' : ''}`}
           >
             <ChessBoard
               board={activeMatch.board}
