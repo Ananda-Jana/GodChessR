@@ -4,7 +4,7 @@
  */
 
 import { CHEST_ENABLED, MIN_MOVES, REPORT_DELAY_MS } from './chestConfig';
-import { isMatchAwarded, recordAwardedMatch } from './chestStore';
+import { isMatchAwarded, recordAwardedMatch, addPendingChestEvent } from './chestStore';
 
 export interface GameEndReport {
   matchId: string;
@@ -22,6 +22,7 @@ export interface ChestTriggerEvent {
   result: 'win' | 'loss';
   userId?: string;
   resigned?: boolean;
+  eloBoost?: number;
 }
 
 type ChestListener = (event: ChestTriggerEvent) => void;
@@ -55,16 +56,20 @@ export function reportGameEnd(report: GameEndReport): void {
     // Record match ID to prevent duplicate awards
     recordAwardedMatch(report.matchId, report.userId);
 
+    const event: ChestTriggerEvent = {
+      matchId: report.matchId,
+      mode: report.mode,
+      result: report.result as 'win' | 'loss',
+      userId: report.userId,
+      resigned: report.resigned,
+    };
+
+    // Store as pending first so unmounting or page navigation never loses the chest
+    addPendingChestEvent(event, report.userId);
+
     // Schedule presentation with delay so player sees result screen first
     setTimeout(() => {
       try {
-        const event: ChestTriggerEvent = {
-          matchId: report.matchId,
-          mode: report.mode,
-          result: report.result as 'win' | 'loss',
-          userId: report.userId,
-          resigned: report.resigned,
-        };
         listeners.forEach((listener) => {
           try {
             listener(event);

@@ -41,6 +41,8 @@ import { GamepadSkull } from './GamepadSkull';
 import { OctoSkull } from './OctoSkull';
 import { CyberSkull } from './CyberSkull';
 import { AboutGameModal } from './AboutGameModal';
+import { AllGameModesModal } from './AllGameModesModal';
+import { HashiraTrainingCard } from './HashiraTrainingCard';
 
 interface DashboardProps {
   onOpenRules: () => void;
@@ -58,7 +60,7 @@ interface DashboardProps {
 
 const BANNER_IMAGES = [
   '/assets/aistudio/image_8cc24db1.png',
-  '/assets/aistudio/image_71a2a916.png',
+  '/assets/aistudio/image_d336b87f.png',
 ] as const;
 
 export const Dashboard: React.FC<DashboardProps> = ({
@@ -98,6 +100,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
   const [isCullingOpen, setIsCullingOpen] = useState(false);
   const [isSecretArenaOpen, setIsSecretArenaOpen] = useState(false);
   const [isAboutOpen, setIsAboutOpen] = useState(false);
+  const [isAllGameModesOpen, setIsAllGameModesOpen] = useState(false);
   const [isEndlessSpringOpen, setIsEndlessSpringOpen] = useState(false);
   const [challengeModalTarget, setChallengeModalTarget] = useState<{ id: string; name: string } | null>(null);
 
@@ -268,13 +271,13 @@ export const Dashboard: React.FC<DashboardProps> = ({
             <BookOpen className="w-4.5 h-4.5 text-amber-400 shrink-0" />
           </button>
 
-          {/* Red Square GamepadSkull Culling Launcher Button */}
+          {/* Glassmorphic Square GamepadSkull Culling Launcher Button */}
           <button
             type="button"
             onClick={() => setIsCullingOpen(true)}
             aria-label="Play Culling mode"
             title="Culling"
-            className="w-9.5 h-9.5 rounded-xl flex items-center justify-center bg-red-600/90 hover:bg-red-500 active:bg-red-500 border border-red-400/40 text-white active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 transition-all cursor-pointer shrink-0"
+            className="w-9.5 h-9.5 rounded-xl flex items-center justify-center bg-white/10 hover:bg-white/20 active:bg-white/25 backdrop-blur-md border border-white/20 hover:border-white/30 text-white active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 transition-all cursor-pointer shrink-0 shadow-sm"
           >
             <GamepadSkull size={22} className="shrink-0" />
           </button>
@@ -335,13 +338,13 @@ export const Dashboard: React.FC<DashboardProps> = ({
         </nav>
 
         <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-          {/* Instant Culling Mode Launcher Button (Replacing Theme Switcher) */}
+          {/* Glassmorphic Culling Mode Launcher Button */}
           <button
             type="button"
             onClick={() => setIsCullingOpen(true)}
             aria-label="Play Culling mode"
             title="Culling Game Mode"
-            className="p-1.5 sm:px-3 sm:py-1.5 bg-red-600/90 hover:bg-red-500 active:bg-red-500 border border-red-400/40 text-white text-xs font-black uppercase flex items-center gap-1.5 rounded-lg cursor-pointer transition-all active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 shrink-0"
+            className="p-1.5 sm:px-3 sm:py-1.5 bg-white/10 hover:bg-white/20 active:bg-white/25 backdrop-blur-md border border-white/20 hover:border-white/30 text-white text-xs font-black uppercase flex items-center gap-1.5 rounded-lg cursor-pointer transition-all active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 shrink-0 shadow-sm"
           >
             <GamepadSkull size={18} className="shrink-0" />
             <span className="hidden sm:inline">Culling Mode</span>
@@ -386,22 +389,9 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
       {/* Main Content Area */}
       <main className="relative z-10 flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 flex flex-col lg:grid lg:grid-cols-12 gap-6 pb-24 md:pb-6">
-        {/* Mobile Top Training Buttons Bar */}
-        <div className="lg:hidden order-1 col-span-1 flex items-center justify-center gap-2 w-full mb-1">
-          <button
-            onClick={() => onOpenHashiraTraining && onOpenHashiraTraining('thukuna')}
-            className="flex-1 py-1.5 px-2 bg-gradient-to-r from-amber-900 to-neutral-950 border-2 border-amber-600 text-amber-200 font-black text-[10px] uppercase flex items-center gap-1.5 shadow-[2px_2px_0px_#000] cursor-pointer truncate"
-          >
-            <img src={TRAINER_PROFILES.thukuna.avatarSrc} alt="Thukuna" className="w-5 h-5 object-cover border border-amber-500 shrink-0" />
-            <span className="truncate">Train Thukuna</span>
-          </button>
-          <button
-            onClick={() => onOpenHashiraTraining && onOpenHashiraTraining('gatoru')}
-            className="flex-1 py-1.5 px-2 bg-gradient-to-r from-sky-700 to-neutral-950 border-2 border-sky-400 text-sky-200 font-black text-[10px] uppercase flex items-center gap-1.5 shadow-[2px_2px_0px_#000] cursor-pointer truncate"
-          >
-            <img src={TRAINER_PROFILES.gatoru.avatarSrc} alt="Gatoru" className="w-5 h-5 object-cover border border-sky-400 shrink-0" />
-            <span className="truncate">Train Gatoru</span>
-          </button>
+        {/* Mobile Hashira Training Dojos Card */}
+        <div className="lg:hidden order-1 w-full">
+          <HashiraTrainingCard onOpenHashiraTraining={onOpenHashiraTraining} />
         </div>
 
         {/* Latest Edition Banner (Mobile) */}
@@ -416,6 +406,31 @@ export const Dashboard: React.FC<DashboardProps> = ({
               }`}
             />
           ))}
+
+          {/* Subtle bottom gradient to ensure text readability */}
+          <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/80 via-black/30 to-transparent pointer-events-none z-10" />
+
+          {/* Fixed Glassmorphic Chess Play Now Button (Mobile) */}
+          <div className="absolute inset-x-3 bottom-3 z-20">
+            <button
+              type="button"
+              onClick={() => setIsAllGameModesOpen(true)}
+              className="w-full py-2 px-3 rounded-xl backdrop-blur-md bg-black/60 hover:bg-black/75 active:bg-black/85 border border-white/30 hover:border-amber-400 text-white font-black text-xs uppercase tracking-wider flex items-center justify-between shadow-[0_8px_20px_rgba(0,0,0,0.6)] cursor-pointer transition-all active:scale-95 group/btn focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400"
+              aria-label="Chess Play Now - View all game modes"
+            >
+              <div className="flex items-center gap-2">
+                <div className="w-5 h-5 rounded-lg bg-amber-400/20 border border-amber-400/60 flex items-center justify-center shrink-0">
+                  <Play className="w-2.5 h-2.5 fill-amber-400 text-amber-400 group-hover/btn:scale-110 transition-transform" />
+                </div>
+                <span className="font-black tracking-wide text-white group-hover/btn:text-amber-300 transition-colors">
+                  Chess Play Now
+                </span>
+              </div>
+              <span className="text-[9px] px-1.5 py-0.5 rounded bg-white/15 text-white/90 font-mono font-bold border border-white/20 uppercase">
+                All Modes
+              </span>
+            </button>
+          </div>
         </div>
 
         {/* Mobile Resume Active Match Strip (order-3, md:hidden) */}
@@ -454,37 +469,37 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 }`}
               />
             ))}
+
+            {/* Subtle bottom gradient to ensure crystal-clear text readability over any slide image */}
+            <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-black/80 via-black/30 to-transparent pointer-events-none z-10" />
+
+            {/* Fixed Glassmorphic Chess Play Now Button (Desktop Left Sidebar) */}
+            <div className="absolute inset-x-3.5 bottom-3.5 z-20">
+              <button
+                type="button"
+                onClick={() => setIsAllGameModesOpen(true)}
+                className="w-full py-2.5 px-4 rounded-xl backdrop-blur-md bg-black/60 hover:bg-black/75 active:bg-black/85 border border-white/30 hover:border-amber-400 text-white font-black text-xs uppercase tracking-wider flex items-center justify-between shadow-[0_8px_24px_rgba(0,0,0,0.6)] cursor-pointer transition-all active:scale-95 group/btn focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400"
+                aria-label="Chess Play Now - View all game modes"
+              >
+                <div className="flex items-center gap-2">
+                  <div className="w-6 h-6 rounded-lg bg-amber-400/20 border border-amber-400/60 flex items-center justify-center shrink-0">
+                    <Play className="w-3 h-3 fill-amber-400 text-amber-400 group-hover/btn:scale-110 transition-transform" />
+                  </div>
+                  <span className="font-black tracking-wide text-white group-hover/btn:text-amber-300 transition-colors">
+                    Chess Play Now
+                  </span>
+                </div>
+                <span className="text-[10px] px-2 py-0.5 rounded-md bg-white/15 text-white/90 font-mono font-bold border border-white/20 uppercase tracking-tight">
+                  All Modes ⚔️
+                </span>
+              </button>
+            </div>
           </div>
 
           {/* Desktop Left Sidebar: Train with Thukuna & Train with Gatoru */}
-          <div className="hidden lg:flex flex-col gap-3 bg-white dark:bg-[#0a0a0c] border-3 border-black dark:border-white p-4 shadow-[5px_5px_0px_#000000] dark:shadow-[5px_5px_0px_#ffffff]">
-            <h4 className="text-xs font-black uppercase tracking-wider text-amber-600 dark:text-amber-400 flex items-center gap-1.5">
-              <Flame className="w-4 h-4 text-amber-500" />
-              Hashira Training Dojos
-            </h4>
-            <div className="flex flex-col gap-2.5">
-              <button
-                onClick={() => onOpenHashiraTraining && onOpenHashiraTraining('thukuna')}
-                className="w-full py-3 px-3.5 bg-gradient-to-r from-amber-900 to-neutral-950 border-3 border-amber-600 text-amber-200 font-black text-xs uppercase flex items-center gap-3.5 shadow-[3px_3px_0px_#000] cursor-pointer hover:brightness-110 active:translate-x-0.5 active:translate-y-0.5 transition-all text-left"
-              >
-                <img src={TRAINER_PROFILES.thukuna.avatarSrc} alt="Thukuna" className="w-10 h-10 object-cover border-2 border-amber-500 shrink-0 shadow-[1px_1px_0px_#000]" />
-                <div className="flex flex-col min-w-0">
-                  <span className="truncate">Train with Thukuna</span>
-                  <span className="text-[10px] text-amber-400/80 font-normal">Plasma Hashira · Opening & Tactical</span>
-                </div>
-              </button>
-
-              <button
-                onClick={() => onOpenHashiraTraining && onOpenHashiraTraining('gatoru')}
-                className="w-full py-3 px-3.5 bg-gradient-to-r from-sky-700 to-neutral-950 border-3 border-sky-400 text-sky-200 font-black text-xs uppercase flex items-center gap-3.5 shadow-[3px_3px_0px_#000] cursor-pointer hover:brightness-110 active:translate-x-0.5 active:translate-y-0.5 transition-all text-left"
-              >
-                <img src={TRAINER_PROFILES.gatoru.avatarSrc} alt="Gatoru" className="w-10 h-10 object-cover border-2 border-sky-400 shrink-0 shadow-[1px_1px_0px_#000]" />
-                <div className="flex flex-col min-w-0">
-                  <span className="truncate">Train with Gatoru</span>
-                  <span className="text-[10px] text-sky-300/80 font-normal">Void Hashira · Six Eyes & Precision</span>
-                </div>
-              </button>
-            </div>
+          {/* Desktop Left Sidebar Hashira Training Card */}
+          <div className="hidden lg:block w-full">
+            <HashiraTrainingCard onOpenHashiraTraining={onOpenHashiraTraining} />
           </div>
 
           {/* User Profile Card (Desktop only, hidden on mobile) */}
@@ -1858,6 +1873,24 @@ export const Dashboard: React.FC<DashboardProps> = ({
       <AboutGameModal
         isOpen={isAboutOpen}
         onClose={() => setIsAboutOpen(false)}
+      />
+
+      <AllGameModesModal
+        isOpen={isAllGameModesOpen}
+        onClose={() => setIsAllGameModesOpen(false)}
+        onOpenHashiraTraining={() => onOpenHashiraTraining && onOpenHashiraTraining('thukuna')}
+        onOpenPunisher={onOpenPunisher}
+        onOpenBotModal={onOpenBotModal}
+        onOpenClassicBotModal={onOpenClassicBotModal || onOpenBotModal}
+        onOpenCraftedBotModal={onOpenCraftedBotModal || onOpenBotModal}
+        onOpenSecretArena={() => setIsSecretArenaOpen(true)}
+        onOpenCulling={() => setIsCullingOpen(true)}
+        onOpenRose={onOpenRose}
+        onOpenCraftTheory={onOpenCraftTheory}
+        onJumpToMultiplayer={() => {
+          const el = document.getElementById('players') || document.getElementById('matches');
+          el?.scrollIntoView({ behavior: 'smooth' });
+        }}
       />
     </div>
   );

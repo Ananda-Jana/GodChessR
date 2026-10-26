@@ -10,6 +10,9 @@ interface ChestModalProps {
   isOpen: boolean;
   result: 'win' | 'loss';
   resigned?: boolean;
+  matchId?: string;
+  initialEloBoost?: number;
+  onApplyEloBoost?: (boost: number, matchId?: string) => void;
   onClose: (wasOpened: boolean) => void;
   onPlaySecretPlayer: (reward: SecretPlayerRewardDef) => void;
   userId?: string;
@@ -91,6 +94,9 @@ export const ChestModal: React.FC<ChestModalProps> = ({
   isOpen,
   result,
   resigned = false,
+  matchId,
+  initialEloBoost,
+  onApplyEloBoost,
   onClose,
   onPlaySecretPlayer,
   userId,
@@ -105,7 +111,11 @@ export const ChestModal: React.FC<ChestModalProps> = ({
   const [showButtons, setShowButtons] = useState<boolean>(false);
   const [particles, setParticles] = useState<Particle[]>([]);
   const [rewardResult, setRewardResult] = useState<PickedRewardResult | null>(null);
-  const [resignedEloChange, setResignedEloChange] = useState<number>(6);
+  const [resignedEloBoost, setResignedEloBoost] = useState<number>(() => {
+    return initialEloBoost && initialEloBoost >= 6 && initialEloBoost <= 10
+      ? initialEloBoost
+      : Math.floor(Math.random() * 5) + 6;
+  });
 
   const queuedTapRef = useRef<boolean>(false);
   const modalRef = useRef<HTMLDivElement>(null);
@@ -231,9 +241,14 @@ export const ChestModal: React.FC<ChestModalProps> = ({
           setRewardResult(picked);
           unlockSecretPlayer(picked.reward.id, userId);
         } else {
-          // Randomized +6 or +7 ELO penalty display
-          const delta = Math.random() > 0.5 ? 7 : 6;
-          setResignedEloChange(delta);
+          const delta = resignedEloBoost;
+          if (matchId && onApplyEloBoost) {
+            try {
+              onApplyEloBoost(delta, matchId);
+            } catch {
+              // Fail safe
+            }
+          }
         }
 
         setTimeout(() => {
@@ -259,7 +274,7 @@ export const ChestModal: React.FC<ChestModalProps> = ({
         }, 120);
       }
     },
-    [userId, resigned]
+    [userId, resigned, matchId, onApplyEloBoost, resignedEloBoost]
   );
 
   const handleChestTap = () => {
@@ -426,28 +441,27 @@ export const ChestModal: React.FC<ChestModalProps> = ({
                   }}
                 />
               ) : (
-                /* Resign Outcome Panel (Matches 136x204px card dimensions) */
-                <div className="w-[136px] max-w-[136px] h-[204px] min-h-[204px] max-360:w-[120px] max-360:h-[184px] max-360:min-h-[184px] rounded-[14px] bg-[#1a141d] border-2 border-red-950 shadow-[4px_4px_0px_#000000] p-3 flex flex-col justify-between items-center text-center select-none">
-                  <div className="flex items-center gap-1 text-red-500">
-                    <ShieldAlert className="w-4 h-4 shrink-0" />
-                    <span className="text-[9px] font-black uppercase tracking-wider">
-                      PENALTY
+                /* Resign Outcome Card (Square 150x150px, 14px rounded corners, dark background #1a0f0f, 3px border #ef4444) */
+                <div className="w-[150px] h-[150px] min-w-[150px] min-h-[150px] rounded-[14px] bg-[#1a0f0f] border-[3px] border-[#ef4444] shadow-[4px_4px_0px_#000000] p-2.5 flex flex-col justify-between items-center text-center select-none box-border">
+                  <div className="text-[9px] font-black uppercase text-[#ef4444] tracking-wider leading-none pt-0.5">
+                    RATING BOOST
+                  </div>
+
+                  <div className="my-auto flex flex-col items-center justify-center">
+                    <span className="font-black text-[34px] leading-none text-[#ef4444] drop-shadow-md tracking-tight">
+                      +{resignedEloBoost} ELO
                     </span>
                   </div>
 
-                  <div className="my-auto flex flex-col items-center">
-                    <span className="text-[#ef4444] font-black text-[28px] max-360:text-[24px] leading-none drop-shadow-md">
-                      +{resignedEloChange} ELO
-                    </span>
-                    <p className="text-slate-300 font-black uppercase text-[10px] max-360:text-[9px] tracking-wider leading-snug mt-2">
-                      THAT'S WHAT QUITTING GETS YOU
-                    </p>
+                  <div className="text-[8px] font-black uppercase text-slate-300 tracking-wider leading-tight px-1 mb-1">
+                    THAT'S ALL YOU GET FOR RESIGNING
                   </div>
 
-                  <div className="w-full pt-1">
+                  <div className="w-full">
                     <button
+                      type="button"
                       onClick={() => onClose(true)}
-                      className="w-full h-[38px] bg-neutral-900 hover:bg-neutral-800 text-slate-200 hover:text-white font-black text-xs uppercase rounded-[10px] border border-slate-700 shadow-[2px_2px_0px_#000000] cursor-pointer"
+                      className="w-full h-[30px] bg-neutral-900 hover:bg-neutral-800 text-slate-200 hover:text-white font-black text-[11px] uppercase rounded-[8px] border border-slate-700 shadow-[2px_2px_0px_#000000] cursor-pointer active:translate-x-0.5 active:translate-y-0.5 transition-all"
                     >
                       CONTINUE
                     </button>
@@ -466,7 +480,7 @@ export const ChestModal: React.FC<ChestModalProps> = ({
                 {!resigned && <Sparkles className="w-3.5 h-3.5 text-amber-400" />}
                 <span>
                   {resigned
-                    ? 'PENALTY EVALUATED'
+                    ? 'RATING BOOST AWARDED'
                     : rewardResult?.isOwned
                     ? 'SECRET PLAYER CARD REVEALED!'
                     : 'NEW SECRET PLAYER UNLOCKED!'}

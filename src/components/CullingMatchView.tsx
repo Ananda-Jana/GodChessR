@@ -194,7 +194,9 @@ export const CullingMatchView: React.FC<CullingMatchViewProps> = ({
       setEarnedCullingCards(cards);
       try {
         const myMoves = match.history ? match.history.filter((h) => h.piece.color === userColor).length : 0;
-        reportGameEnd({ matchId: match.id, mode: 'culling', result: outcome, moves: myMoves, isTraining: false });
+        const uid = userColor === 'white' ? match.whitePlayer.userId : match.blackPlayer.userId;
+        const isResigned = Boolean(match.winReason?.toLowerCase().includes('resign') && match.winner !== userColor);
+        reportGameEnd({ matchId: match.id, mode: 'culling', result: outcome, moves: myMoves, isTraining: false, userId: uid, resigned: isResigned });
       } catch {}
     }
   }, [match?.status, match, userColor, isBotMatch, finalizeMatch]);
@@ -485,6 +487,11 @@ export const CullingMatchView: React.FC<CullingMatchViewProps> = ({
   // Resignation
   const handleResign = () => {
     if (match.status !== 'active') return;
+    try {
+      const myMoves = match.history ? match.history.filter((h) => h.piece.color === userColor).length : 0;
+      const uid = userColor === 'white' ? match.whitePlayer.userId : match.blackPlayer.userId;
+      reportGameEnd({ matchId: match.id, mode: 'culling', result: 'loss', moves: myMoves, isTraining: false, userId: uid, resigned: true });
+    } catch {}
     if (isBotMatch) {
       if (botTimerRef.current) clearTimeout(botTimerRef.current);
       setIsBotThinking(false);

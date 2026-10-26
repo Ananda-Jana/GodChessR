@@ -1,9 +1,10 @@
 import React, { useState, useEffect, Suspense, useCallback } from 'react';
 import { subscribeToChestTriggers, ChestTriggerEvent } from './reportGameEnd';
 import { SecretPlayerRewardDef } from './chestConfig';
-import { getChestStore, addPendingChest, consumePendingChest } from './chestStore';
+import { getChestStore, addPendingChestEvent, popPendingChestEvent } from './chestStore';
 import { getSecretPlayerById } from '../secret/secretPlayersData';
 import { SecretPlayerConfig } from '../secret/types';
+import { usePredictor } from '../predictor/PredictorContext';
 
 // Lazily load ChestModal so zero chest code is included in initial bundle
 const LazyChestModal = React.lazy(() =>
@@ -21,19 +22,14 @@ export const ChestRewardHost: React.FC<ChestRewardHostProps> = ({
 }) => {
   const [activeEvent, setActiveEvent] = useState<ChestTriggerEvent | null>(null);
   const [isOpen, setIsOpen] = useState<boolean>(false);
+  const { applyRatingBoost } = usePredictor();
 
   // Check and pop pending chests if available
   const tryOpenPending = useCallback(() => {
     try {
-      const store = getChestStore(userId);
-      if (store.pending > 0) {
-        consumePendingChest(userId);
-        setActiveEvent({
-          matchId: `pending_${Date.now()}`,
-          mode: 'pending',
-          result: 'win',
-          userId,
-        });
+      const pendingEvent = popPendingChestEvent(userId);
+      if (pendingEvent) {
+        setActiveEvent(pendingEvent);
         setIsOpen(true);
       }
     } catch {
@@ -41,14 +37,23 @@ export const ChestRewardHost: React.FC<ChestRewardHostProps> = ({
     }
   }, [userId]);
 
+  // Check for pending chests on mount (e.g. when returning to Dashboard)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      tryOpenPending();
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [tryOpenPending]);
+
   // Subscribe to game end chest triggers
   useEffect(() => {
     const unsubscribe = subscribeToChestTriggers((event) => {
       try {
         if (isOpen) {
           // If modal is currently displayed, store as pending
-          addPendingChest(event.userId || userId);
+          addPendingChestEvent(event, event.userId || userId);
         } else {
+          popPendingChestEvent(event.userId || userId);
           setActiveEvent(event);
           setIsOpen(true);
         }
@@ -63,16 +68,17 @@ export const ChestRewardHost: React.FC<ChestRewardHostProps> = ({
   }, [isOpen, userId]);
 
   const handleClose = (wasOpened: boolean) => {
+    const closedEvent = activeEvent;
     setIsOpen(false);
     setActiveEvent(null);
 
-    if (!wasOpened) {
-      // Closed before tap 3: increment pending
-      addPendingChest(userId);
+    if (!wasOpened && closedEvent) {
+      // Closed before tap 3: re-queue into pending
+      addPendingChestEvent(closedEvent, userId);
     } else {
       // Opened successfully: if there are pending chests, show next after brief 400ms pause
       const store = getChestStore(userId);
-      if (store.pending > 0) {
+      if (store.pending > 0 || (store.pendingEvents && store.pendingEvents.length > 0)) {
         setTimeout(() => {
           tryOpenPending();
         }, 400);
@@ -102,6 +108,9 @@ export const ChestRewardHost: React.FC<ChestRewardHostProps> = ({
         isOpen={isOpen}
         result={activeEvent.result}
         resigned={activeEvent.resigned}
+        matchId={activeEvent.matchId}
+        initialEloBoost={activeEvent.eloBoost}
+        onApplyEloBoost={applyRatingBoost}
         onClose={handleClose}
         onPlaySecretPlayer={handlePlaySecretPlayer}
         userId={userId}

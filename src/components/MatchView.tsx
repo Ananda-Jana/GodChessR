@@ -510,6 +510,11 @@ const MatchViewContent: React.FC<MatchViewContentProps> = ({
   };
 
   const handleConfirmResign = () => {
+    try {
+      const mode = activePunisherBotId ? 'punisher' : !isBotMatch ? 'multiplayer' : activeMatch.gameMode === 'crafted' ? 'crafted' : 'standard';
+      const myMoves = activeMatch.moveHistory.filter((m) => m.piece.color === myColor).length;
+      reportGameEnd({ matchId: activeMatch.id, mode, result: 'loss', moves: myMoves, isTraining: false, userId: user?.id, resigned: true });
+    } catch {}
     resignMatch();
     setShowResignConfirm(false);
   };

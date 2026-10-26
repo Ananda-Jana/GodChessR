@@ -24,6 +24,7 @@ interface PredictorContextValue {
   clearPredictorSession: () => void;
   latestMatchCards: AchievementCard[];
   clearLatestMatchCards: () => void;
+  applyRatingBoost: (boostAmount: number, matchId?: string) => void;
 }
 
 const defaultState: PredictorState = {
@@ -248,6 +249,37 @@ export function PredictorProvider({ children }: { children: React.ReactNode }) {
     []
   );
 
+  const appliedRatingMatchIdsRef = useRef<Set<string>>(new Set());
+
+  const applyRatingBoost = useCallback(
+    (boostAmount: number, matchId?: string) => {
+      try {
+        if (!boostAmount || boostAmount <= 0) return;
+        if (matchId) {
+          if (appliedRatingMatchIdsRef.current.has(matchId)) return;
+          appliedRatingMatchIdsRef.current.add(matchId);
+        }
+
+        setState((prev) => {
+          const nextRating = Math.max(100, Math.min(3000, prev.currentRating + boostAmount));
+          const nextState: PredictorState = {
+            ...prev,
+            currentRating: nextRating,
+          };
+          stateRef.current = nextState;
+          if (currentUserId && currentUserId !== 'guest') {
+            const userKey = `mugenchessx_predictor_user_${currentUserId}`;
+            try {
+              sessionStorage.setItem(userKey, JSON.stringify(nextState));
+            } catch {}
+          }
+          return nextState;
+        });
+      } catch {}
+    },
+    [currentUserId]
+  );
+
   return (
     <PredictorContext.Provider
       value={{
@@ -257,6 +289,7 @@ export function PredictorProvider({ children }: { children: React.ReactNode }) {
         clearPredictorSession,
         latestMatchCards,
         clearLatestMatchCards,
+        applyRatingBoost,
       }}
     >
       {children}

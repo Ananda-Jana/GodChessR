@@ -158,6 +158,12 @@ export const RoseParadiseView: React.FC<RoseParadiseViewProps> = ({ onBack }) =>
 
   const handleConcedeMatch = () => {
     setShowConcedeConfirm(false);
+    if (activeMatch) {
+      try {
+        const myMoves = activeMatch.history ? activeMatch.history.filter((h) => h.piece.color === effectiveMyColor).length : 0;
+        reportGameEnd({ matchId: activeMatch.id, mode: 'rose', result: 'loss', moves: myMoves, isTraining: false, userId: user?.id, resigned: true });
+      } catch {}
+    }
     if (isBotMatch && botMatch) {
       const opponentRoleName = botPlayerRole === 'boyfriend' ? 'Boyfriend Bot' : 'Girlfriend Bot';
       const finished: RoseMatchState = {
@@ -257,7 +263,8 @@ export const RoseParadiseView: React.FC<RoseParadiseViewProps> = ({ onBack }) =>
       setEarnedRoseCards(cards);
       try {
         const myMoves = activeMatch.history ? activeMatch.history.filter((h) => h.piece.color === effectiveMyColor).length : 0;
-        reportGameEnd({ matchId: activeMatch.id, mode: 'rose', result: outcome, moves: myMoves, isTraining: false });
+        const isResigned = Boolean(activeMatch.winReason?.toLowerCase().includes('conceded') || activeMatch.winReason?.toLowerCase().includes('resign'));
+        reportGameEnd({ matchId: activeMatch.id, mode: 'rose', result: outcome, moves: myMoves, isTraining: false, userId: user?.id, resigned: isResigned });
       } catch {}
     }
   }, [activeMatch?.status, activeMatch, effectiveMyColor, mySeat?.role, opponentSeat?.displayName, finalizeMatch]);
