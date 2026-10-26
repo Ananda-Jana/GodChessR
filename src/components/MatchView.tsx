@@ -21,7 +21,7 @@ import {
   posToNotation,
 } from '../game/engine';
 import { CRAFTABLE_MAP } from '../game/craftables';
-import { reportGameEnd } from '../chest/reportGameEnd';
+import { reportGameEnd, triggerChestModalNow } from '../chest/reportGameEnd';
 import {
   ArrowLeft,
   Flag,
@@ -39,6 +39,7 @@ import {
   Hammer,
   Maximize2,
   X,
+  Gift,
 } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 import { usePredictor } from '../predictor/PredictorContext';
@@ -1219,6 +1220,14 @@ const MatchViewContent: React.FC<MatchViewContentProps> = ({
                 <div className="flex flex-wrap items-center gap-2">
                   <button
                     type="button"
+                    onClick={() => triggerChestModalNow(user.id)}
+                    className="min-h-[44px] px-3.5 bg-black hover:bg-neutral-900 text-amber-400 font-black text-xs uppercase tracking-wider border-2 border-amber-400 shadow-[2px_2px_0px_#000] cursor-pointer flex items-center justify-center gap-1.5 active:translate-x-0.5 active:translate-y-0.5"
+                  >
+                    <Gift className="w-4 h-4 text-amber-400" aria-hidden="true" />
+                    OPEN CHEST
+                  </button>
+                  <button
+                    type="button"
                     onClick={() => {
                       if (displayMatchCards.length > 0) setSelectedTrophyCard(displayMatchCards[0]);
                       setIsMatchTrophyRoomOpen(true);
@@ -1349,25 +1358,35 @@ const MatchViewContent: React.FC<MatchViewContentProps> = ({
                   BOARD
                 </button>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-col gap-2">
                 <button
                   type="button"
-                  onClick={() => {
-                    if (displayMatchCards.length > 0) setSelectedTrophyCard(displayMatchCards[0]);
-                    setIsMatchTrophyRoomOpen(true);
-                  }}
-                  className="flex-1 min-h-[44px] px-2 bg-amber-400 text-black font-black text-xs uppercase border-2 border-black cursor-pointer flex items-center justify-center gap-1"
+                  onClick={() => triggerChestModalNow(user.id)}
+                  className="w-full min-h-[44px] px-3 bg-black hover:bg-neutral-900 text-amber-400 font-black text-xs uppercase border-2 border-amber-400 shadow-[2px_2px_0px_#000] cursor-pointer flex items-center justify-center gap-2 active:translate-x-0.5 active:translate-y-0.5"
                 >
-                  <Trophy className="w-4 h-4 shrink-0" aria-hidden="true" />
-                  TROPHIES
+                  <Gift className="w-4 h-4 text-amber-400 shrink-0" aria-hidden="true" />
+                  <span>OPEN CHEST</span>
                 </button>
-                <button
-                  type="button"
-                  onClick={onExit}
-                  className="flex-1 min-h-[44px] px-2 bg-black text-white font-black text-xs uppercase border-2 border-white cursor-pointer"
-                >
-                  EXIT
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (displayMatchCards.length > 0) setSelectedTrophyCard(displayMatchCards[0]);
+                      setIsMatchTrophyRoomOpen(true);
+                    }}
+                    className="flex-1 min-h-[44px] px-2 bg-amber-400 text-black font-black text-xs uppercase border-2 border-black cursor-pointer flex items-center justify-center gap-1"
+                  >
+                    <Trophy className="w-4 h-4 shrink-0" aria-hidden="true" />
+                    TROPHIES
+                  </button>
+                  <button
+                    type="button"
+                    onClick={onExit}
+                    className="flex-1 min-h-[44px] px-2 bg-black text-white font-black text-xs uppercase border-2 border-white cursor-pointer"
+                  >
+                    EXIT
+                  </button>
+                </div>
               </div>
             </div>
           )}

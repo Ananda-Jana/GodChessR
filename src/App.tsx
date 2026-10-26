@@ -108,72 +108,79 @@ function AppContent() {
 
       setIsBotThinking(true);
 
-      // Instant calculation (< 25ms)
-      const bestMove = getPunisherBotMove(currentMatch, botId);
-      if (!bestMove) {
-        setIsBotThinking(false);
-        return;
-      }
-
-      // Check if move is a "special move"
-      const nextBoard = applyMoveToBoard(currentMatch.board, bestMove);
-      const opponentColor: PieceColor = currentMatch.turn === 'white' ? 'black' : 'white';
-      const deliversCheck = isKingInCheck(nextBoard, opponentColor);
-      const isEscapingCheck = currentMatch.inCheck === currentMatch.turn;
-      const isCapture = Boolean(bestMove.captured);
-      const isPromotion = bestMove.piece.type === 'pawn' && (bestMove.to.y === 0 || bestMove.to.y === 7);
-
-      const isSpecialMove = isCapture || deliversCheck || isEscapingCheck || isPromotion;
-
-      // Detect obvious moves (recaptures on the square just played or escaping check)
-      const lastPlayerMove = currentMatch.moveHistory[currentMatch.moveHistory.length - 1];
-      const isRecapture = Boolean(
-        lastPlayerMove?.captured &&
-        bestMove.captured &&
-        bestMove.to.x === lastPlayerMove.to.x &&
-        bestMove.to.y === lastPlayerMove.to.y
-      );
-      const isObviousMove = isRecapture || isEscapingCheck;
-
-      // Identify the 4 high-rated bots: Chrome Reaper, Cyclops Revenant, Iron Regent, Bangla-Bot
-      const isHighRatedBot =
-        botId === 'chrome-reaper' ||
-        botId === 'cyclops-revenant' ||
-        botId === 'iron-regent' ||
-        botId === 'bangla-bot';
-
-      let thinkingTimeMs: number;
-      if (isHighRatedBot) {
-        if (isObviousMove) {
-          thinkingTimeMs = Math.floor(150 + Math.random() * 150);
-        } else if (isSpecialMove) {
-          thinkingTimeMs = Math.floor(400 + Math.random() * 200);
-        } else {
-          thinkingTimeMs = Math.floor(200 + Math.random() * 200);
-        }
-      } else {
-        thinkingTimeMs = isSpecialMove
-          ? Math.floor(3000 + Math.random() * 800)
-          : Math.floor(1250 + Math.random() * 650);
-      }
-
+      // Defer bot computation to next tick so React paints player's piece move instantly
       punisherTimeoutRef.current = setTimeout(() => {
-        const res = executeMove(currentMatch, bestMove.from, bestMove.to);
-        if (res.success) {
-          setPunisherMatch(res.state);
-          if (res.state.status === 'completed') {
-            sounds.playGameOver();
-            const entry = { match: res.state, completedAt: Date.now() };
-            setLastCompletedMatch(entry);
-          } else if (bestMove.captured) {
-            sounds.playCapture();
-          } else {
-            sounds.playMove();
-          }
+        const startTime = Date.now();
+        const bestMove = getPunisherBotMove(currentMatch, botId);
+        if (!bestMove) {
+          setIsBotThinking(false);
+          punisherTimeoutRef.current = null;
+          return;
         }
-        setIsBotThinking(false);
-        punisherTimeoutRef.current = null;
-      }, thinkingTimeMs);
+
+        // Check if move is a "special move"
+        const nextBoard = applyMoveToBoard(currentMatch.board, bestMove);
+        const opponentColor: PieceColor = currentMatch.turn === 'white' ? 'black' : 'white';
+        const deliversCheck = isKingInCheck(nextBoard, opponentColor);
+        const isEscapingCheck = currentMatch.inCheck === currentMatch.turn;
+        const isCapture = Boolean(bestMove.captured);
+        const isPromotion = bestMove.piece.type === 'pawn' && (bestMove.to.y === 0 || bestMove.to.y === 7);
+
+        const isSpecialMove = isCapture || deliversCheck || isEscapingCheck || isPromotion;
+
+        // Detect obvious moves (recaptures on the square just played or escaping check)
+        const lastPlayerMove = currentMatch.moveHistory[currentMatch.moveHistory.length - 1];
+        const isRecapture = Boolean(
+          lastPlayerMove?.captured &&
+          bestMove.captured &&
+          bestMove.to.x === lastPlayerMove.to.x &&
+          bestMove.to.y === lastPlayerMove.to.y
+        );
+        const isObviousMove = isRecapture || isEscapingCheck;
+
+        // Identify the 4 high-rated bots: Chrome Reaper, Cyclops Revenant, Iron Regent, Bangla-Bot
+        const isHighRatedBot =
+          botId === 'chrome-reaper' ||
+          botId === 'cyclops-revenant' ||
+          botId === 'iron-regent' ||
+          botId === 'bangla-bot';
+
+        let thinkingTimeMs: number;
+        if (isHighRatedBot) {
+          if (isObviousMove) {
+            thinkingTimeMs = Math.floor(150 + Math.random() * 150);
+          } else if (isSpecialMove) {
+            thinkingTimeMs = Math.floor(400 + Math.random() * 200);
+          } else {
+            thinkingTimeMs = Math.floor(200 + Math.random() * 200);
+          }
+        } else {
+          thinkingTimeMs = isSpecialMove
+            ? Math.floor(3000 + Math.random() * 800)
+            : Math.floor(1250 + Math.random() * 650);
+        }
+
+        const elapsed = Date.now() - startTime;
+        const remainingDelay = Math.max(50, thinkingTimeMs - elapsed);
+
+        punisherTimeoutRef.current = setTimeout(() => {
+          const res = executeMove(currentMatch, bestMove.from, bestMove.to);
+          if (res.success) {
+            setPunisherMatch(res.state);
+            if (res.state.status === 'completed') {
+              sounds.playGameOver();
+              const entry = { match: res.state, completedAt: Date.now() };
+              setLastCompletedMatch(entry);
+            } else if (bestMove.captured) {
+              sounds.playCapture();
+            } else {
+              sounds.playMove();
+            }
+          }
+          setIsBotThinking(false);
+          punisherTimeoutRef.current = null;
+        }, remainingDelay);
+      }, 20);
     },
     []
   );

@@ -818,5 +818,13 @@
   [
     "88e301c48054f0f65b04b6bce2ae3062cbbab07f04e3e468e0ac5b53464fc929",
     "usr_bob_test"
+  ],
+  [
+    "96854c808874ec441cb1262f61c7e5eb02325bd5125cf602ab6f61b8e8262e71",
+    "usr_alice_test"
+  ],
+  [
+    "259392b3aeadd35fe04d941a3467e472ba47ba2b9f5ffb6fe299cd8ca33cae4e",
+    "usr_bob_test"
   ]
 ]

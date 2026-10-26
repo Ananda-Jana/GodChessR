@@ -6,7 +6,7 @@
 export const CHEST_ENABLED = true;
 
 // Anti-farming minimum player moves required in an eligible match
-export const MIN_MOVES = 10;
+export const MIN_MOVES = 0;
 
 // Maximum pending chests accumulated if closed before opening
 export const MAX_PENDING = 3;

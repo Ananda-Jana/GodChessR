@@ -19,7 +19,7 @@ import {
 import type { RoseMatchState, RoseRole, RoseSeat, RoseSummonPieceType } from './types';
 import type { PieceColor } from '../types/game';
 import { sounds } from '../utils/audio';
-import { reportGameEnd } from '../chest/reportGameEnd';
+import { reportGameEnd, triggerChestModalNow } from '../chest/reportGameEnd';
 import {
   Heart,
   Sparkles,
@@ -42,6 +42,7 @@ import {
   ShieldAlert,
   Plus,
   KeyRound,
+  Gift,
 } from 'lucide-react';
 import './rose.css';
 import { usePredictor } from '../predictor/PredictorContext';
@@ -1426,19 +1427,29 @@ export const RoseParadiseView: React.FC<RoseParadiseViewProps> = ({ onBack }) =>
                           {activeMatch.winner === 'draw' ? 'Match Drawn!' : `${activeMatch.winner} Wins!`}
                         </span>
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (displayRoseCards.length > 0) {
-                            setSelectedRoseCard(displayRoseCards[0]);
-                          }
-                          setIsRoseTrophyRoomOpen(true);
-                        }}
-                        className="px-2.5 py-1 bg-amber-400 hover:bg-amber-300 text-black font-black text-[10px] uppercase border-2 border-black shadow-[2px_2px_0px_#000] cursor-pointer flex items-center gap-1 shrink-0"
-                      >
-                        <Trophy className="w-3 h-3 text-black shrink-0" />
-                        <span>Trophy Room</span>
-                      </button>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => triggerChestModalNow(user?.id)}
+                          className="px-2.5 py-1 bg-black hover:bg-neutral-900 text-amber-400 font-black text-[10px] uppercase border-2 border-amber-400 shadow-[2px_2px_0px_#000] cursor-pointer flex items-center gap-1 shrink-0"
+                        >
+                          <Gift className="w-3 h-3 text-amber-400 shrink-0" />
+                          <span>OPEN CHEST</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (displayRoseCards.length > 0) {
+                              setSelectedRoseCard(displayRoseCards[0]);
+                            }
+                            setIsRoseTrophyRoomOpen(true);
+                          }}
+                          className="px-2.5 py-1 bg-amber-400 hover:bg-amber-300 text-black font-black text-[10px] uppercase border-2 border-black shadow-[2px_2px_0px_#000] cursor-pointer flex items-center gap-1 shrink-0"
+                        >
+                          <Trophy className="w-3 h-3 text-black shrink-0" />
+                          <span>Trophy Room</span>
+                        </button>
+                      </div>
                     </div>
 
                     {displayRoseCards.length > 0 ? (

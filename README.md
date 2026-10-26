@@ -1729,3 +1729,16 @@ In `src/game/engine.ts` (`executeMove`), `totalCaptures` counts **combined captu
 - **Bundle Size**: Before: `1,265.48 kB` JS (`299.07 kB` gzip), `137.62 kB` CSS (`19.50 kB` gzip). After: `1,298.62 kB` JS (`304.35 kB` gzip, `+5.28 kB` gzip), `138.94 kB` CSS (`19.71 kB` gzip, `+0.21 kB` gzip); zero new packages.
 
 **Verdict**: Stayed lightweight (`+5.49 kB` total gzip, zero new dependencies, GPU transform-only motion); game logic touched: **no**.
+
+## UI Update: Mobile Top Navigation Bar Redesign (October 2026)
+
+### Audit & Problems Fixed
+1. **Brand Text Clipping & Overflow**: The full `MUGENCHESSX` text string on mobile top navbar was overflowing and clipping against adjacent action buttons on narrow mobile viewports (< 640px).
+2. **Boxy Button Frames**: Mobile action buttons (Walk with Masters, Rules, Culling Mode, 3D Arcade, and ELO Pill) were encased in rigid square border frames, creating a cluttered grid appearance in the compact top header.
+
+### Improvements & Redesign (`src/components/Dashboard.tsx`)
+- **Icon-Only Mobile Branding**: Replaced the text brand string on mobile view (`md:hidden`) with the sleek `OctoSkull` vector logo button. Tapping the logo opens the About MugenChessX modal.
+- **Borderless Mobile Navigation Buttons**: Removed rigid square border boxes and background frames around mobile navigation buttons, replacing them with borderless, touch-friendly icon buttons with subtle hover and active feedback (`hover:bg-white/10`, `active:scale-95`).
+- **Clean Compact Alignment**: Restructured the mobile header layout with tight `gap-1` / `gap-1.5` spacing, eliminating all horizontal overflow and text clipping on mobile screens.
+- **Desktop Preservation**: Retained full desktop navigation bar styling (`md:flex`), keeping the brand lockup ("MUGENCHESSX by ANANDA JANA") and bordered button frames untouched for desktop viewports.
+

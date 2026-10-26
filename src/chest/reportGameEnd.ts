@@ -3,8 +3,8 @@
  * Fire-and-forget bridge called by game modes to evaluate and schedule reward chests.
  */
 
-import { CHEST_ENABLED, MIN_MOVES, REPORT_DELAY_MS } from './chestConfig';
-import { isMatchAwarded, recordAwardedMatch, addPendingChestEvent } from './chestStore';
+import { CHEST_ENABLED, MIN_MOVES } from './chestConfig';
+import { isMatchAwarded, recordAwardedMatch, addPendingChestEvent, popPendingChestEvent } from './chestStore';
 
 export interface GameEndReport {
   matchId: string;
@@ -37,6 +37,26 @@ export function subscribeToChestTriggers(listener: ChestListener): () => void {
 }
 
 /**
+ * Instantly triggers opening of a pending chest modal for the specified user.
+ */
+export function triggerChestModalNow(userId?: string): void {
+  try {
+    const pendingEvent = popPendingChestEvent(userId);
+    if (pendingEvent) {
+      listeners.forEach((listener) => {
+        try {
+          listener(pendingEvent);
+        } catch {
+          // Ignore listener errors
+        }
+      });
+    }
+  } catch {
+    // Fail safe
+  }
+}
+
+/**
  * Report a finished match. Completely safe, asynchronous, and non-blocking.
  */
 export function reportGameEnd(report: GameEndReport): void {
@@ -44,43 +64,24 @@ export function reportGameEnd(report: GameEndReport): void {
     if (!CHEST_ENABLED) return;
     if (report.isTraining) return;
 
-    // Only wins and losses qualify (draws, aborts, abandonments give no chest)
-    if (report.result !== 'win' && report.result !== 'loss') return;
-
-    // Anti-farming: minimum player moves required
-    if (typeof report.moves !== 'number' || report.moves < MIN_MOVES) return;
-
     // Deduplication check
     if (isMatchAwarded(report.matchId, report.userId)) return;
 
     // Record match ID to prevent duplicate awards
     recordAwardedMatch(report.matchId, report.userId);
 
+    const outcome: 'win' | 'loss' = report.result === 'loss' ? 'loss' : 'win';
+
     const event: ChestTriggerEvent = {
       matchId: report.matchId,
       mode: report.mode,
-      result: report.result as 'win' | 'loss',
+      result: outcome,
       userId: report.userId,
       resigned: report.resigned,
     };
 
-    // Store as pending first so unmounting or page navigation never loses the chest
+    // Store as pending first so player can open via the chest button on the game over screen
     addPendingChestEvent(event, report.userId);
-
-    // Schedule presentation with delay so player sees result screen first
-    setTimeout(() => {
-      try {
-        listeners.forEach((listener) => {
-          try {
-            listener(event);
-          } catch {
-            // Ignore listener errors
-          }
-        });
-      } catch {
-        // Ignore dispatch errors
-      }
-    }, REPORT_DELAY_MS);
   } catch {
     // Fail silently, never throwing into game-over flow
   }

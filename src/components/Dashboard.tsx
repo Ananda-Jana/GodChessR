@@ -261,136 +261,78 @@ export const Dashboard: React.FC<DashboardProps> = ({
         <div className="absolute inset-0 bg-black/65 backdrop-brightness-75" />
       </div>
 
-      {/* Slim Mobile Top Bar (md:hidden, sticky, h-12, glassmorphic) */}
-      <header className="md:hidden flex items-center justify-between px-2.5 sm:px-3 h-12 sticky top-0 z-40 bg-zinc-950/95 supports-[backdrop-filter]:bg-zinc-950/75 supports-[backdrop-filter]:backdrop-blur-xl border-b border-white/10 text-white relative">
-        {/* Mobile Brand Button (Text-only, triggers About modal) */}
+      {/* Redesigned Mobile Top Bar (md:hidden, sticky, h-12, glassmorphic) */}
+      <header className="md:hidden flex items-center justify-between px-3 h-12 sticky top-0 z-40 bg-zinc-950/95 supports-[backdrop-filter]:bg-zinc-950/80 supports-[backdrop-filter]:backdrop-blur-xl border-b border-white/10 text-white relative">
+        {/* Mobile Brand Button (Icon-only on mobile view to avoid text clipping/overflow) */}
         <button
           type="button"
           onClick={() => setIsAboutOpen(true)}
           aria-label="About MugenChessX"
-          className="text-sm font-black uppercase tracking-tight text-white whitespace-nowrap cursor-pointer rounded p-1 -m-1 hover:bg-white/5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 shrink-0"
+          title="About MugenChessX"
+          className="p-1 rounded-lg hover:bg-white/10 active:bg-white/15 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 shrink-0 cursor-pointer"
         >
-          MugenChessX
+          <OctoSkull size={26} className="text-white hover:text-amber-400 transition-colors shrink-0" />
         </button>
 
-        <div className="flex items-center gap-1.5 shrink-0">
-          {/* Mobile Walk with Masters Square Button with Traveling Violet-White Perimeter Streak */}
+        {/* Mobile Top Navigation Action Icons (Borderless clean icon buttons, no square box frames) */}
+        <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
+          {/* Mobile Walk with Masters Button */}
           <button
             type="button"
             onClick={() => setIsWalkWithMastersOpen(true)}
             aria-label="Walk with Masters (Train with Thukuna & Gatoru)"
             title="Walk with Masters"
-            className="relative w-9.5 h-9.5 rounded-xl flex items-center justify-center bg-[#020203]/90 backdrop-blur-md text-white cursor-pointer transition-all active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A855F7] shrink-0 group overflow-visible"
+            className="p-1.5 rounded-lg hover:bg-white/10 active:bg-white/15 text-white cursor-pointer transition-all active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 shrink-0 group relative"
           >
-            {/* Continuous Perimeter Streak Animation Overlay */}
-            <svg
-              className="absolute inset-0 w-full h-full pointer-events-none overflow-visible z-10 rounded-xl"
-              fill="none"
-              aria-hidden="true"
-            >
-              {/* Static faint edge border (1.5px, #29212F) */}
-              <rect
-                x="0"
-                y="0"
-                width="100%"
-                height="100%"
-                rx="10"
-                stroke="#29212F"
-                strokeWidth="1.5"
-              />
-
-              {/* Deep Violet Tail */}
-              <rect
-                x="0"
-                y="0"
-                width="100%"
-                height="100%"
-                rx="10"
-                pathLength="100"
-                stroke="#6D28D9"
-                strokeWidth="1.5"
-                strokeLinecap="round"
-                className="streak-tail"
-              />
-
-              {/* Violet Highlight Body */}
-              <rect
-                x="0"
-                y="0"
-                width="100%"
-                height="100%"
-                rx="10"
-                pathLength="100"
-                stroke="#A855F7"
-                strokeWidth="1.5"
-                strokeLinecap="round"
-                className="streak-body"
-              />
-
-              {/* Bright White-Lavender Leading Tip with restrained bloom */}
-              <rect
-                x="0"
-                y="0"
-                width="100%"
-                height="100%"
-                rx="10"
-                pathLength="100"
-                stroke="#F6E9FF"
-                strokeWidth="1.5"
-                strokeLinecap="round"
-                className="streak-head"
-              />
-            </svg>
-
-            <Flame className="w-4.5 h-4.5 text-[#F6E9FF] group-hover:text-amber-400 group-hover:scale-110 transition-all shrink-0 relative z-20" />
+            <Flame className="w-5 h-5 text-amber-400 group-hover:scale-110 transition-transform shrink-0" />
           </button>
 
-          {/* Rules Square Button */}
+          {/* Rules Button */}
           <button
             type="button"
             onClick={onOpenRules}
             aria-label="Open rulebook"
             title="Rules"
-            className="w-9.5 h-9.5 rounded-xl flex items-center justify-center bg-white/5 hover:bg-white/10 active:bg-white/10 border border-white/10 text-white cursor-pointer transition-all active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 shrink-0"
+            className="p-1.5 rounded-lg hover:bg-white/10 active:bg-white/15 text-white cursor-pointer transition-all active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 shrink-0"
           >
-            <BookOpen className="w-4.5 h-4.5 text-amber-400 shrink-0" />
+            <BookOpen className="w-5 h-5 text-amber-400 shrink-0" />
           </button>
 
-          {/* Glassmorphic Square GamepadSkull Culling Launcher Button */}
+          {/* Culling Mode Launcher Button */}
           <button
             type="button"
             onClick={() => setIsCullingOpen(true)}
             aria-label="Play Culling mode"
             title="Culling"
-            className="w-9.5 h-9.5 rounded-xl flex items-center justify-center bg-white/10 hover:bg-white/20 active:bg-white/25 backdrop-blur-md border border-white/20 hover:border-white/30 text-white active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 transition-all cursor-pointer shrink-0 shadow-sm"
+            className="p-1.5 rounded-lg hover:bg-white/10 active:bg-white/15 text-white cursor-pointer transition-all active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 shrink-0"
           >
-            <GamepadSkull size={22} className="shrink-0" />
+            <GamepadSkull size={20} className="text-zinc-200 hover:text-white shrink-0" />
           </button>
 
-          {/* Mobile 3D Annihilatic Chess Arcade Square Button */}
+          {/* Mobile 3D Annihilatic Chess Arcade Button */}
           <button
             type="button"
             onClick={() => setIs3dPreviewModalOpen(true)}
             aria-label="3D Annihilatic Chess Arcade"
             title="3D Chess Arcade"
-            className="w-9.5 h-9.5 rounded-xl flex items-center justify-center bg-purple-950/60 hover:bg-purple-900/80 active:bg-purple-900 border border-purple-500/40 text-purple-300 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400 transition-all cursor-pointer shrink-0 shadow-sm relative group"
+            className="p-1.5 rounded-lg hover:bg-purple-950/50 active:bg-purple-900/60 text-purple-400 cursor-pointer transition-all active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400 shrink-0 relative group"
           >
-            <Box className="w-4.5 h-4.5 text-purple-400 group-hover:scale-110 transition-transform" />
-            <span className="absolute -bottom-1 -right-1 text-[8px] font-black font-mono px-1 rounded bg-purple-600 text-white leading-none py-0.5">
+            <Box className="w-5 h-5 text-purple-400 group-hover:scale-110 transition-transform shrink-0" />
+            <span className="absolute -bottom-0.5 -right-0.5 text-[7px] font-black font-mono px-0.5 rounded bg-purple-600 text-white leading-none py-0.5">
               3D
             </span>
           </button>
 
-          {/* Profile Pill Trigger (Avatar + Live ELO) */}
+          {/* Mobile Profile Trigger (Avatar + Live ELO, sleek borderless pill) */}
           <button
             ref={profilePillRef}
             type="button"
             onClick={() => setIsMobileProfileOpen(true)}
             aria-label="Open profile and statistics"
             aria-expanded={isMobileProfileOpen}
-            className="h-9.5 px-2 sm:px-2.5 flex items-center gap-1.5 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 text-white cursor-pointer active:scale-95 transition-all shrink-0"
+            className="p-1 px-1.5 rounded-lg hover:bg-white/10 active:bg-white/15 flex items-center gap-1.5 text-white cursor-pointer active:scale-95 transition-all shrink-0"
           >
-            <div className="w-5.5 h-5.5 rounded-md overflow-hidden border border-amber-400 flex items-center justify-center bg-neutral-900 shrink-0">
+            <div className="w-5 h-5 rounded-full overflow-hidden border border-amber-400 flex items-center justify-center bg-neutral-900 shrink-0">
               <AvatarDisplay avatarId={user.avatarId} size="sm" />
             </div>
             <span className="font-mono text-xs font-bold text-amber-300 whitespace-nowrap">
