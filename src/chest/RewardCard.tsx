@@ -20,13 +20,13 @@ export const RewardCard: React.FC<RewardCardProps> = ({
       <div className="chest-card-outer-glow rounded-[16px]" aria-hidden="true" />
 
       {/* Glow Shell: Clips the rotating blue-violet conic-gradient border ring */}
-      <div className="chest-card-glow-shell w-[136px] max-w-[136px] h-[204px] min-h-[204px] max-360:w-[120px] max-360:h-[184px] max-360:min-h-[184px] rounded-[14px]">
+      <div className="chest-card-glow-shell w-[148px] max-w-[148px] h-[236px] min-h-[236px] max-360:w-[128px] max-360:h-[208px] max-360:min-h-[208px] rounded-[14px]">
         {/* Rotating Blue-Violet Conic-Gradient Ring */}
         <div className="chest-card-border-ring" aria-hidden="true" />
 
         {/* Card Body Face: Dark premium look (#1d1b4b to #0f0e2a) */}
         <div
-          className="relative z-10 w-full h-full rounded-[12px] border border-white/12 flex flex-col justify-between p-2 text-white overflow-hidden"
+          className="relative z-10 w-full h-full rounded-[12px] border border-white/12 flex flex-col justify-between p-2 text-white overflow-hidden box-border"
           style={{
             background: 'linear-gradient(180deg, #1d1b4b 0%, #0f0e2a 100%)',
           }}
@@ -56,10 +56,10 @@ export const RewardCard: React.FC<RewardCardProps> = ({
             </span>
           </div>
 
-          {/* Centered Avatar (92x92 px, 3px accent border, rounded 10px) */}
+          {/* Centered Avatar (84x84 px, 3px accent border, rounded 10px) */}
           <div className="flex items-center justify-center my-0.5 z-10 shrink-0">
             <div
-              className="w-[92px] h-[92px] max-360:w-[80px] max-360:h-[80px] rounded-[10px] border-[3px] overflow-hidden flex items-center justify-center bg-[#0a0a1a] shrink-0"
+              className="w-[84px] h-[84px] max-360:w-[72px] max-360:h-[72px] rounded-[10px] border-[3px] overflow-hidden flex items-center justify-center bg-[#0a0a1a] shrink-0"
               style={{ borderColor: reward.accentColor }}
             >
               {!imageError ? (
@@ -77,7 +77,7 @@ export const RewardCard: React.FC<RewardCardProps> = ({
                   className="w-full h-full flex items-center justify-center text-white font-black"
                   style={{ backgroundColor: reward.accentColor }}
                 >
-                  <span className="text-2xl font-black drop-shadow-md">
+                  <span className="text-xl font-black drop-shadow-md">
                     {reward.name.charAt(0)}
                   </span>
                 </div>
@@ -85,32 +85,32 @@ export const RewardCard: React.FC<RewardCardProps> = ({
             </div>
           </div>
 
-          {/* Player Name (15px, bold, uppercase, white, truncated) */}
+          {/* Player Name (14px, bold, uppercase, white, truncated) */}
           <div className="text-center min-w-0 z-10 shrink-0 my-0.5">
-            <h4 className="text-[15px] max-360:text-xs font-black uppercase tracking-wide text-white truncate px-1 leading-tight">
+            <h4 className="text-[14px] max-360:text-xs font-black uppercase tracking-wide text-white truncate px-1 leading-tight">
               {reward.name}
             </h4>
           </div>
 
-          {/* Six-digit CODE Pill (monospace bold 16px, #fde68a, dark pill #0b0b1f, dashed border) */}
+          {/* Six-digit CODE Pill (monospace bold 15px, #fde68a, dark pill #0b0b1f, dashed border) */}
           <div className="flex flex-col items-center justify-center z-10 shrink-0 my-0.5">
             <div
-              className="w-full py-0.5 px-1 rounded-[10px] bg-[#0b0b1f] border border-dashed flex flex-col items-center justify-center"
+              className="w-full py-0.5 px-1 rounded-[8px] bg-[#0b0b1f] border border-dashed flex flex-col items-center justify-center"
               style={{ borderColor: reward.accentColor }}
             >
               <span className="text-[8px] font-bold uppercase text-slate-400 leading-none">
                 CODE
               </span>
-              <span className="font-mono font-black text-[16px] max-360:text-[14px] tracking-[2px] text-[#fde68a] leading-tight">
+              <span className="font-mono font-black text-[15px] max-360:text-[13px] tracking-[1.5px] text-[#fde68a] leading-tight">
                 {reward.code}
               </span>
             </div>
           </div>
 
-          {/* Full-width PLAY button (44px high, accent fill, 10px radius, shadow) */}
+          {/* Full-width PLAY button (36px high, accent fill, 8px radius, shadow - strictly contained) */}
           <button
             onClick={onPlay}
-            className="w-full h-[44px] max-360:h-[38px] mt-0.5 text-xs font-black uppercase tracking-wider rounded-[10px] border border-black/40 shadow-[2px_2px_0px_#000000] active:translate-x-0.5 active:translate-y-0.5 active:shadow-[1px_1px_0px_#000000] cursor-pointer transition-all flex items-center justify-center z-20 shrink-0"
+            className="w-full h-[36px] max-360:h-[32px] mt-0.5 text-xs font-black uppercase tracking-wider rounded-[8px] border border-black/40 shadow-[2px_2px_0px_#000000] active:translate-x-0.5 active:translate-y-0.5 active:shadow-[1px_1px_0px_#000000] cursor-pointer transition-all flex items-center justify-center z-20 shrink-0"
             style={{
               backgroundColor: reward.accentColor,
               color: reward.buttonTextColor,

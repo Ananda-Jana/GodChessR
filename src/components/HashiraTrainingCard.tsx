@@ -1,364 +1,433 @@
 import React from 'react';
-import { Flame } from 'lucide-react';
+import { Flame, X } from 'lucide-react';
 import { TRAINER_PROFILES } from '../training/data';
 import type { TrainerId } from '../training/types';
 
-interface HashiraTrainingCardProps {
+export interface WalkWithMastersCardProps {
   onOpenHashiraTraining?: (trainerId: TrainerId) => void;
+  onClose?: () => void;
+  isModal?: boolean;
 }
 
-const FireEffect: React.FC<{ offset?: number }> = ({ offset = 0 }) => {
-  const getDelay = (base: number) => `${base + offset}s`;
-  
-  return (
-    <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none select-none">
-      <div className="absolute inset-0 bot-fire-bg" style={{ animationDelay: getDelay(0) }} />
-      <div className="absolute inset-0 bot-fire-edge" style={{ animationDelay: getDelay(0) }} />
-      <div className="absolute -bottom-8 left-[10%] w-48 h-36 rounded-full bot-flame-blob-1" style={{ animationDelay: getDelay(0) }} />
-      <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 w-64 h-40 rounded-full bot-flame-blob-2" style={{ animationDelay: getDelay(0.6) }} />
-      <div className="absolute -bottom-8 right-[10%] w-52 h-36 rounded-full bot-flame-blob-3" style={{ animationDelay: getDelay(1.2) }} />
+interface PerimeterLightStreakProps {
+  offsetDelay?: number;
+}
 
-      <div className="absolute bottom-1 left-[12%] w-1.5 h-1.5 rounded-full bg-amber-200 bot-ember-1" style={{ animationDelay: getDelay(0.1) }} />
-      <div className="absolute bottom-2 left-[28%] w-1 h-1 rounded-full bg-yellow-300 bot-ember-2" style={{ animationDelay: getDelay(0.7) }} />
-      <div className="absolute bottom-1 left-[45%] w-2 h-2 rounded-full bg-orange-300 bot-ember-3" style={{ animationDelay: getDelay(1.3) }} />
-      <div className="absolute bottom-2 left-[62%] w-1.5 h-1.5 rounded-full bg-amber-300 bot-ember-4" style={{ animationDelay: getDelay(0.4) }} />
-      <div className="absolute bottom-1 left-[78%] w-1 h-1 rounded-full bg-yellow-200 bot-ember-5" style={{ animationDelay: getDelay(1.8) }} />
-      <div className="absolute bottom-2 left-[90%] w-2 h-2 rounded-full bg-orange-400 bot-ember-6" style={{ animationDelay: getDelay(0.9) }} />
-    </div>
+/**
+ * PerimeterLightStreak renders an SVG-based continuous perimeter stroke
+ * that accurately traces the rounded rectangle without rotating around the center.
+ *
+ * Specifications:
+ * - Button Fill: #020203
+ * - Faint Edge: #29212F (1.5px)
+ * - Deep Violet Tail: #6D28D9
+ * - Violet Highlight Body: #A855F7
+ * - Main Light Tip: #F6E9FF
+ * - Cycle: 2.5s traveling streak + 0.7s dormant pause (3.2s total)
+ */
+const PerimeterLightStreak: React.FC<PerimeterLightStreakProps> = ({ offsetDelay = 0 }) => {
+  const delayStyle = offsetDelay ? { animationDelay: `${offsetDelay}s` } : undefined;
+
+  return (
+    <svg
+      className="absolute inset-0 w-full h-full pointer-events-none overflow-visible z-10 rounded-[8px]"
+      fill="none"
+      aria-hidden="true"
+    >
+      {/* Static faint edge border (1.5px) */}
+      <rect
+        x="0"
+        y="0"
+        width="100%"
+        height="100%"
+        rx="8"
+        stroke="#29212F"
+        strokeWidth="1.5"
+      />
+
+      {/* Traveling Streak Layer 1: Deep Violet Tail (length 20) */}
+      <rect
+        x="0"
+        y="0"
+        width="100%"
+        height="100%"
+        rx="8"
+        pathLength="100"
+        stroke="#6D28D9"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        className="streak-tail"
+        style={delayStyle}
+      />
+
+      {/* Traveling Streak Layer 2: Violet Highlight Body (length 12) */}
+      <rect
+        x="0"
+        y="0"
+        width="100%"
+        height="100%"
+        rx="8"
+        pathLength="100"
+        stroke="#A855F7"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        className="streak-body"
+        style={delayStyle}
+      />
+
+      {/* Traveling Streak Layer 3: Main Light White-Lavender Leading Tip (length 4) */}
+      <rect
+        x="0"
+        y="0"
+        width="100%"
+        height="100%"
+        rx="8"
+        pathLength="100"
+        stroke="#F6E9FF"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        className="streak-head"
+        style={delayStyle}
+      />
+    </svg>
   );
 };
 
-export const HashiraTrainingCard: React.FC<HashiraTrainingCardProps> = ({ onOpenHashiraTraining }) => {
+export const WalkWithMastersCard: React.FC<WalkWithMastersCardProps> = ({
+  onOpenHashiraTraining,
+  onClose,
+  isModal = false,
+}) => {
+  const handleSelect = (trainerId: TrainerId) => {
+    if (onOpenHashiraTraining) {
+      onOpenHashiraTraining(trainerId);
+    }
+    if (onClose) {
+      onClose();
+    }
+  };
+
   return (
     <>
       <style>{`
-        .hashira-dojos-card {
-          background: rgba(255, 255, 255, 0.06);
-          backdrop-filter: blur(20px) saturate(160%);
-          -webkit-backdrop-filter: blur(20px) saturate(160%);
-          border: 1px solid rgba(255, 255, 255, 0.18);
-          border-radius: 20px;
+        .walk-with-masters-card {
+          background: #141519;
+          border: 1.5px solid #29212F;
+          border-radius: 12px;
           padding: 16px;
-          box-shadow: 0 8px 32px rgba(0, 0, 0, 0.37), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+          box-shadow: 0 10px 30px rgba(0, 0, 0, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.04);
         }
 
-        .hashira-header {
-          margin-bottom: 12px;
+        .masters-header {
           display: flex;
           align-items: center;
-          gap: 6px;
+          gap: 7px;
           font-size: 12px;
           font-weight: 900;
           text-transform: uppercase;
-          letter-spacing: 0.05em;
-          color: #f59e0b;
+          letter-spacing: 0.06em;
+          color: #F6E9FF;
         }
 
-        .hashira-buttons-container {
+        .masters-buttons-container {
           display: grid;
           grid-template-columns: 1fr 1fr;
           gap: 12px;
         }
 
-        .hashira-btn {
+        .masters-modal-container {
+          display: flex !important;
+          flex-direction: column !important;
+          gap: 12px !important;
+        }
+
+        .masters-btn {
           position: relative;
-          overflow: hidden;
-          isolation: isolate;
           cursor: pointer;
           display: flex;
           flex-direction: column;
           justify-content: center;
           align-items: center;
           text-align: center;
-          padding: 8px;
-          border-radius: 12px;
-          background: #ea580c;
-          border: 1px solid rgba(255, 255, 255, 0.22);
-          transition: filter 0.25s ease;
-          min-height: 58px;
+          padding: 10px 8px;
+          border-radius: 8px;
+          background: #020203;
+          border: none;
+          outline: none;
+          transition: filter 0.2s ease, transform 0.15s ease;
+          min-height: 60px;
         }
 
-        @keyframes fireFlow {
-          0% { background-position: 0% 50%; }
-          50% { background-position: 100% 50%; }
-          100% { background-position: 0% 50%; }
+        .masters-btn:hover {
+          filter: brightness(1.15);
+          transform: translateY(-1px);
         }
 
-        @keyframes flameRise {
-          0% { transform: translateY(20%) scaleY(0.95) scaleX(0.98); opacity: 0.6; }
-          25% { transform: translateY(-12%) scaleY(1.15) scaleX(1.05) translateX(-6px); opacity: 0.9; }
-          50% { transform: translateY(8%) scaleY(0.9) scaleX(0.95) translateX(5px); opacity: 0.65; }
-          75% { transform: translateY(-16%) scaleY(1.2) scaleX(0.92) translateX(-3px); opacity: 0.95; }
-          100% { transform: translateY(20%) scaleY(0.95) scaleX(0.98); opacity: 0.6; }
+        .masters-btn:active {
+          filter: brightness(0.95);
+          transform: translateY(1px);
         }
 
-        @keyframes emberFloat {
-          0% { transform: translateY(30px) translateX(0) scale(1); opacity: 0; }
-          20% { opacity: 0.95; }
-          80% { opacity: 0.7; }
-          100% { transform: translateY(-90px) translateX(14px) scale(0.2); opacity: 0; }
+        .masters-btn:focus-visible {
+          outline: 2px solid #A855F7;
+          outline-offset: 2px;
         }
 
-        @keyframes heatPulse {
-          0%, 100% { box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35), 0 0 16px rgba(249,115,22,0.5); }
-          50% { box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35), 0 0 32px rgba(253,224,71,0.85), inset 0 0 24px rgba(234,88,12,0.4); }
-        }
-
-        @keyframes edgeFlicker {
-          0%, 100% { opacity: 0.4; }
-          12% { opacity: 0.9; }
-          27% { opacity: 0.35; }
-          41% { opacity: 0.95; }
-          63% { opacity: 0.5; }
-          80% { opacity: 0.85; }
-        }
-
-        .bot-fire-bg {
-          background: linear-gradient(115deg, #dc2626 0%, #ea580c 25%, #f97316 50%, #f59e0b 75%, #fde047 100%);
-          background-size: 300% 300%;
-          animation: fireFlow 6.5s ease-in-out infinite;
-          will-change: background-position;
-        }
-
-        .bot-fire-edge {
-          box-shadow: inset 0 3px 12px rgba(255, 255, 255, 0.6), inset 0 -3px 12px rgba(220, 38, 38, 0.8);
-          animation: edgeFlicker 1.8s infinite linear;
-          will-change: opacity;
-        }
-
-        .bot-flame-blob-1 {
-          background: radial-gradient(circle, rgba(253,224,71,0.85) 0%, rgba(249,115,22,0.6) 50%, transparent 80%);
-          filter: blur(14px);
-          mix-blend-mode: overlay;
-          animation: flameRise 3.2s infinite ease-in-out;
-          will-change: transform, opacity;
-        }
-
-        .bot-flame-blob-2 {
-          background: radial-gradient(circle, rgba(255,255,255,0.9) 0%, rgba(251,146,60,0.7) 45%, transparent 75%);
-          filter: blur(16px);
-          mix-blend-mode: screen;
-          animation: flameRise 4.5s infinite ease-in-out 0.6s;
-          will-change: transform, opacity;
-        }
-
-        .bot-flame-blob-3 {
-          background: radial-gradient(circle, rgba(253,224,71,0.8) 0%, rgba(234,88,12,0.65) 55%, transparent 80%);
-          filter: blur(14px);
-          mix-blend-mode: overlay;
-          animation: flameRise 5.2s infinite ease-in-out 1.2s;
-          will-change: transform, opacity;
-        }
-
-        .bot-ember-1 { animation: emberFloat 2.8s infinite ease-out 0.1s; will-change: transform, opacity; }
-        .bot-ember-2 { animation: emberFloat 3.6s infinite ease-out 0.7s; will-change: transform, opacity; }
-        .bot-ember-3 { animation: emberFloat 2.4s infinite ease-out 1.3s; will-change: transform, opacity; }
-        .bot-ember-4 { animation: emberFloat 4.1s infinite ease-out 0.4s; will-change: transform, opacity; }
-        .bot-ember-5 { animation: emberFloat 3.1s infinite ease-out 1.8s; will-change: transform, opacity; }
-        .bot-ember-6 { animation: emberFloat 2.6s infinite ease-out 0.9s; will-change: transform, opacity; }
-
-        .hashira-avatar-mobile,
-        .hashira-avatar-desktop,
-        .hashira-content-wrap,
-        .hashira-chevron {
+        .masters-avatar-mobile,
+        .masters-avatar-desktop,
+        .masters-content-wrap,
+        .masters-chevron {
           position: relative;
           z-index: 2;
         }
 
-        .hashira-avatar-mobile {
+        .masters-avatar-mobile {
           width: 32px;
           height: 32px;
-          border-radius: 8px;
+          border-radius: 6px;
           object-fit: cover;
-          border: 1px solid rgba(255, 255, 255, 0.3);
-          margin-bottom: 4px;
-          box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+          border: 1px solid #29212F;
+          margin-bottom: 5px;
+          box-shadow: 0 2px 6px rgba(0,0,0,0.5);
         }
 
-        .hashira-avatar-desktop {
+        .masters-avatar-desktop {
           display: none;
         }
 
-        .hashira-title {
+        .masters-title {
           font-size: 11px;
-          font-weight: 600;
-          color: #fff;
+          font-weight: 700;
+          color: #FFFFFF;
           line-height: 1.2;
-          text-shadow: 0 1px 2px rgba(0,0,0,0.4);
+          letter-spacing: 0.01em;
         }
 
-        .hashira-subtitle {
+        .masters-subtitle {
           display: none;
         }
 
-        .hashira-chevron {
+        .masters-chevron {
           display: none;
         }
 
-        .hashira-btn-thukuna {
-          animation: heatPulse 2.5s infinite ease-in-out;
+        /* Modal or Desktop Expanded Layout */
+        .masters-modal-btn {
+          height: 72px !important;
+          width: 100% !important;
+          padding: 12px 16px !important;
+          border-radius: 8px !important;
+          display: flex !important;
+          flex-direction: row !important;
+          align-items: center !important;
+          justify-content: flex-start !important;
+          text-align: left !important;
+          gap: 14px !important;
+          min-height: auto !important;
         }
 
-        .hashira-btn-gatoru {
-          animation: heatPulse 2.5s infinite ease-in-out -1.25s;
+        .masters-modal-btn .masters-avatar-mobile {
+          display: none !important;
         }
 
-        .hashira-btn:hover {
-          filter: brightness(1.15);
+        .masters-modal-btn .masters-avatar-desktop {
+          display: block !important;
+          width: 46px !important;
+          height: 46px !important;
+          border-radius: 8px !important;
+          object-fit: cover !important;
+          border: 1.5px solid #29212F !important;
+          flex-shrink: 0 !important;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.6) !important;
         }
 
-        .hashira-btn:active {
-          filter: brightness(0.92);
+        .masters-modal-btn .masters-content-wrap {
+          display: flex !important;
+          flex-direction: column !important;
+          flex: 1 !important;
+          min-width: 0 !important;
         }
 
-        .hashira-btn:focus-visible {
-          outline: 2px solid rgba(255, 255, 255, 0.8);
-          outline-offset: 2px;
+        .masters-modal-btn .masters-title {
+          font-size: 14px !important;
+          font-weight: 700 !important;
+          color: #FFFFFF !important;
+        }
+
+        .masters-modal-btn .masters-subtitle {
+          display: -webkit-box !important;
+          -webkit-line-clamp: 2 !important;
+          -webkit-box-orient: vertical !important;
+          overflow: hidden !important;
+          font-size: 12px !important;
+          color: #94A3B8 !important;
+          margin-top: 2px !important;
+          white-space: normal !important;
+          text-overflow: clip !important;
+        }
+
+        .masters-modal-btn .masters-chevron {
+          display: block !important;
+          font-size: 18px !important;
+          color: #A855F7 !important;
+          flex-shrink: 0 !important;
+          margin-left: auto !important;
+          transition: transform 0.15s ease !important;
         }
 
         @media (min-width: 640px) {
-          .hashira-buttons-container {
+          .masters-buttons-container {
             display: flex;
             flex-direction: column;
             gap: 12px;
           }
 
-          .hashira-btn {
+          .masters-btn {
             height: 72px;
             width: 100%;
-            padding: 12px 14px;
-            border-radius: 18px;
+            padding: 12px 16px;
+            border-radius: 8px;
             display: flex;
             flex-direction: row;
             align-items: center;
             justify-content: flex-start;
             text-align: left;
-            gap: 12px;
+            gap: 14px;
             aspect-ratio: auto;
             min-height: auto;
           }
 
-          .hashira-avatar-mobile {
+          .masters-avatar-mobile {
             display: none;
           }
 
-          .hashira-avatar-desktop {
+          .masters-avatar-desktop {
             display: block;
-            width: 48px;
-            height: 48px;
-            border-radius: 12px;
+            width: 46px;
+            height: 46px;
+            border-radius: 8px;
             object-fit: cover;
-            border: 1px solid rgba(255, 255, 255, 0.3);
+            border: 1.5px solid #29212F;
             flex-shrink: 0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.6);
           }
 
-          .hashira-content-wrap {
+          .masters-content-wrap {
             display: flex;
             flex-direction: column;
             flex: 1;
             min-width: 0;
           }
 
-          .hashira-title {
-            font-size: 15px;
-            font-weight: 600;
-            color: #fff;
+          .masters-title {
+            font-size: 14px;
+            font-weight: 700;
+            color: #FFFFFF;
           }
 
-          .hashira-subtitle {
+          .masters-subtitle {
             display: -webkit-box;
             -webkit-line-clamp: 2;
             -webkit-box-orient: vertical;
             overflow: hidden;
             font-size: 12px;
-            color: rgba(255, 255, 255, 0.65);
-            margin-top: 1px;
+            color: #94A3B8;
+            margin-top: 2px;
             white-space: normal;
             text-overflow: clip;
-            text-shadow: 0 1px 2px rgba(0,0,0,0.4);
           }
 
-          .hashira-chevron {
+          .masters-chevron {
             display: block;
             font-size: 18px;
-            color: rgba(255, 255, 255, 0.5);
+            color: #A855F7;
             flex-shrink: 0;
             margin-left: auto;
+            transition: transform 0.15s ease;
           }
-        }
 
-        @media (prefers-reduced-motion: reduce) {
-          .hashira-btn, .bot-fire-bg, .bot-flame-blob-1, .bot-flame-blob-2, .bot-flame-blob-3, .bot-ember-1, .bot-ember-2, .bot-ember-3, .bot-ember-4, .bot-ember-5, .bot-ember-6, .bot-fire-edge {
-            animation: none !important;
-          }
-          .bot-flame-blob-1, .bot-flame-blob-2, .bot-flame-blob-3, .bot-ember-1, .bot-ember-2, .bot-ember-3, .bot-ember-4, .bot-ember-5, .bot-ember-6 {
-            display: none !important;
-          }
-          .bot-fire-bg {
-             background: linear-gradient(115deg, #ea580c, #f59e0b, #fde047) !important;
+          .masters-btn:hover .masters-chevron {
+            transform: translateX(2px);
           }
         }
       `}</style>
 
-      <div className="hashira-dojos-card">
-        <div className="hashira-header">
-          <Flame className="w-4 h-4 text-amber-400 shrink-0" />
-          <span>Hashira Training Dojos</span>
+      <div className="walk-with-masters-card">
+        <div className="flex items-center justify-between mb-3">
+          <div className="masters-header">
+            <Flame className="w-4 h-4 text-[#A855F7] shrink-0" />
+            <span>Walk with Masters</span>
+          </div>
+          {onClose && (
+            <button
+              type="button"
+              onClick={onClose}
+              className="text-neutral-400 hover:text-white p-1 rounded-md transition-colors cursor-pointer"
+              aria-label="Close Walk with Masters"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
         </div>
-        <div className="hashira-buttons-container">
+
+        <div className={`masters-buttons-container ${isModal ? 'masters-modal-container' : ''}`}>
           <button
             type="button"
-            onClick={() => onOpenHashiraTraining && onOpenHashiraTraining('thukuna')}
-            className="hashira-btn hashira-btn-thukuna"
+            onClick={() => handleSelect('thukuna')}
+            className={`masters-btn ${isModal ? 'masters-modal-btn' : ''}`}
             aria-label="Train with Thukuna"
           >
-            <FireEffect />
+            <PerimeterLightStreak offsetDelay={0} />
             <img
               src={TRAINER_PROFILES.thukuna.avatarSrc}
               alt="Thukuna"
-              className="hashira-avatar-mobile"
+              className="masters-avatar-mobile"
             />
             <img
               src={TRAINER_PROFILES.thukuna.avatarSrc}
               alt="Thukuna"
-              className="hashira-avatar-desktop"
+              className="masters-avatar-desktop"
             />
-            <div className="hashira-content-wrap">
-              <span className="hashira-title">
-                <span className="hidden sm:inline">Train with </span>Thukuna
+            <div className="masters-content-wrap">
+              <span className="masters-title">
+                <span className={isModal ? 'inline' : 'hidden sm:inline'}>Train with </span>Thukuna
               </span>
-              <span className="hashira-subtitle">Plasma Hashira · Opening & Tactical</span>
+              <span className="masters-subtitle">Plasma Hashira · Opening & Tactical</span>
             </div>
-            <span className="hashira-chevron">›</span>
+            <span className="masters-chevron">›</span>
           </button>
 
           <button
             type="button"
-            onClick={() => onOpenHashiraTraining && onOpenHashiraTraining('gatoru')}
-            className="hashira-btn hashira-btn-gatoru"
+            onClick={() => handleSelect('gatoru')}
+            className={`masters-btn ${isModal ? 'masters-modal-btn' : ''}`}
             aria-label="Train with Gatoru"
           >
-            <FireEffect offset={-1.25} />
+            <PerimeterLightStreak offsetDelay={-1.6} />
             <img
               src={TRAINER_PROFILES.gatoru.avatarSrc}
               alt="Gatoru"
-              className="hashira-avatar-mobile"
+              className="masters-avatar-mobile"
             />
             <img
               src={TRAINER_PROFILES.gatoru.avatarSrc}
               alt="Gatoru"
-              className="hashira-avatar-desktop"
+              className="masters-avatar-desktop"
             />
-            <div className="hashira-content-wrap">
-              <span className="hashira-title">
-                <span className="hidden sm:inline">Train with </span>Gatoru
+            <div className="masters-content-wrap">
+              <span className="masters-title">
+                <span className={isModal ? 'inline' : 'hidden sm:inline'}>Train with </span>Gatoru
               </span>
-              <span className="hashira-subtitle">Void Hashira · Six Eyes & Precision</span>
+              <span className="masters-subtitle">Void Hashira · Six Eyes & Precision</span>
             </div>
-            <span className="hashira-chevron">›</span>
+            <span className="masters-chevron">›</span>
           </button>
         </div>
       </div>
     </>
   );
 };
+
+// Backwards-compatible alias so existing imports continue working smoothly
+export const HashiraTrainingCard = WalkWithMastersCard;
+export default WalkWithMastersCard;

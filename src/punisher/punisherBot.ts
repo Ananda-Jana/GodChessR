@@ -84,7 +84,7 @@ export const PUNISHER_BOTS: Record<PunisherBotId, PunisherBotConfig> = {
     id: 'iron-regent',
     name: 'Iron Regent',
     rating: '1900-2100',
-    depth: 3,
+    depth: 4,
     blunderChance: 0,
     aggression: 1.0,
     mobilityWeight: 1.2,
@@ -96,7 +96,7 @@ export const PUNISHER_BOTS: Record<PunisherBotId, PunisherBotConfig> = {
     id: 'cyclops-revenant',
     name: 'Cyclops Revenant',
     rating: '2200-2400',
-    depth: 3,
+    depth: 5,
     blunderChance: 0,
     aggression: 1.8,
     mobilityWeight: 1.5,
@@ -108,7 +108,7 @@ export const PUNISHER_BOTS: Record<PunisherBotId, PunisherBotConfig> = {
     id: 'chrome-reaper',
     name: 'Chrome Reaper',
     rating: '2500+',
-    depth: 3, // Depth 3 + Quiescence tactical search + Positional PST gives 2500+ master play in < 30ms
+    depth: 5,
     blunderChance: 0,
     aggression: 1.2,
     mobilityWeight: 1.3,
@@ -120,8 +120,8 @@ export const PUNISHER_BOTS: Record<PunisherBotId, PunisherBotConfig> = {
     id: 'bangla-bot',
     name: 'বাংলা-বট',
     rating: '1800-1900',
-    depth: 3,
-    blunderChance: 0.02,
+    depth: 4,
+    blunderChance: 0,
     aggression: 2.2,
     mobilityWeight: 1.2,
     centerControlWeight: 1.3,
@@ -285,7 +285,7 @@ function getFastBoardHash(board: (Piece | null)[][], turn: PieceColor): string {
     for (let x = 0; x < width; x++) {
       const p = board[y][x];
       if (p) {
-        hash += `${x}${y}${p.color[0]}${p.type[0]};`;
+        hash += `${x}${y}${p.color[0]}${p.type[0]}${p.hasMoved ? 'm' : 'o'};`;
       }
     }
   }
@@ -305,6 +305,12 @@ function evaluateBoard(
   const width = board[0].length;
   const isWhiteBot = turn === 'white';
 
+  const isHighRated =
+    config.id === 'chrome-reaper' ||
+    config.id === 'cyclops-revenant' ||
+    config.id === 'iron-regent' ||
+    config.id === 'bangla-bot';
+
   for (let y = 0; y < height; y++) {
     for (let x = 0; x < width; x++) {
       const piece = board[y][x];
@@ -313,8 +319,8 @@ function evaluateBoard(
       const isPieceWhite = piece.color === 'white';
       let pieceVal = PIECE_VALUES[piece.type] || 0;
 
-      // Aggression adjustment
-      if (isPieceWhite !== isWhiteBot) {
+      // Aggression adjustment ONLY for low/mid bots
+      if (!isHighRated && isPieceWhite !== isWhiteBot) {
         pieceVal *= config.aggression;
       }
 
@@ -356,8 +362,9 @@ function evaluateBoard(
   }
 
   // Check pressure bonuses
-  if (isKingInCheck(board, 'black')) score += 70 * (isWhiteBot ? config.aggression : 1);
-  if (isKingInCheck(board, 'white')) score -= 70 * (!isWhiteBot ? config.aggression : 1);
+  const checkAggression = isHighRated ? 1 : config.aggression;
+  if (isKingInCheck(board, 'black')) score += 70 * (isWhiteBot ? checkAggression : 1);
+  if (isKingInCheck(board, 'white')) score -= 70 * (!isWhiteBot ? checkAggression : 1);
 
   return isWhiteBot ? score : -score;
 }
@@ -426,6 +433,11 @@ function quiescence(
   return alpha;
 }
 
+interface TTEntry {
+  score: number;
+  depth: number;
+}
+
 /**
  * Minimax with Alpha-Beta pruning, Transposition Cache, and Time Budget
  */
@@ -438,7 +450,7 @@ function minimax(
   config: PunisherBotConfig,
   botColor: PieceColor,
   deadline: number,
-  transpositionTable: Map<string, number>,
+  transpositionTable: Map<string, TTEntry>,
   useQuiescence: boolean
 ): number {
   if (performance.now() > deadline) {
@@ -447,11 +459,11 @@ function minimax(
 
   const turn: PieceColor = isMaximizing ? botColor : (botColor === 'white' ? 'black' : 'white');
 
-  // Check transposition table
+  // Check transposition table with depth guard
   const boardHash = getFastBoardHash(board, turn);
   const cachedVal = transpositionTable.get(boardHash);
-  if (cachedVal !== undefined) {
-    return cachedVal;
+  if (cachedVal !== undefined && cachedVal.depth >= depth) {
+    return cachedVal.score;
   }
 
   if (depth === 0) {
@@ -463,7 +475,7 @@ function minimax(
     } else {
       evalScore = evaluateBoard(board, config, botColor);
     }
-    transpositionTable.set(boardHash, evalScore);
+    transpositionTable.set(boardHash, { score: evalScore, depth });
     return evalScore;
   }
 
@@ -498,7 +510,7 @@ function minimax(
       alpha = Math.max(alpha, evalScore);
       if (beta <= alpha) break; // Beta cutoff
     }
-    transpositionTable.set(boardHash, maxEval);
+    transpositionTable.set(boardHash, { score: maxEval, depth });
     return maxEval;
   } else {
     let minEval = Infinity;
@@ -520,14 +532,14 @@ function minimax(
       beta = Math.min(beta, evalScore);
       if (beta <= alpha) break; // Alpha cutoff
     }
-    transpositionTable.set(boardHash, minEval);
+    transpositionTable.set(boardHash, { score: minEval, depth });
     return minEval;
   }
 }
 
 /**
  * Superfast move engine for Punisher Bots
- * Calculates master-level moves in < 30ms without freezing the main thread.
+ * Calculates master-level moves without freezing the main thread.
  */
 export function getPunisherBotMove(
   match: MatchState,
@@ -536,7 +548,11 @@ export function getPunisherBotMove(
   const config = PUNISHER_BOTS[botId];
   const botColor = match.turn;
   const opponentColor: PieceColor = botColor === 'white' ? 'black' : 'white';
-  const isTopTwo = botId === 'chrome-reaper' || botId === 'cyclops-revenant';
+  const isHighRated =
+    botId === 'chrome-reaper' ||
+    botId === 'cyclops-revenant' ||
+    botId === 'iron-regent' ||
+    botId === 'bangla-bot';
 
   // 1. Opening Book (0ms instant Grandmaster moves)
   const moveHistoryStr = match.moveHistory
@@ -586,8 +602,8 @@ export function getPunisherBotMove(
     }
   }
 
-  // Early-Exit Rule 2: Instant equal or better recapture on just-played square (for top two bots)
-  if (isTopTwo && match.moveHistory.length > 0) {
+  // Early-Exit Rule 2: Instant equal or better recapture on just-played square (for high-rated bots)
+  if (isHighRated && match.moveHistory.length > 0) {
     const lastMove = match.moveHistory[match.moveHistory.length - 1];
     if (lastMove?.captured) {
       const recaptures = allMoves.filter(
@@ -607,47 +623,136 @@ export function getPunisherBotMove(
     }
   }
 
-  // 5. High-speed Minimax search with compute budget safeguard
-  const isTop3 = botId === 'iron-regent' || botId === 'cyclops-revenant' || botId === 'chrome-reaper';
-  // Compute budget: 30ms for the two highest-ELO bots (Chrome Reaper & Cyclops Revenant), 45ms for others
-  const deadline = performance.now() + (isTopTwo ? 30 : 45);
-  const transpositionTable = new Map<string, number>();
+  // Branch search based on bot difficulty tier
+  if (!isHighRated) {
+    // Low/Mid bots: preserve exact legacy single-pass 45ms search
+    const deadline = performance.now() + 45;
+    const transpositionTable = new Map<string, TTEntry>();
+
+    let bestMove: Move = allMoves[0];
+    let bestScore = -Infinity;
+    let alpha = -Infinity;
+    let beta = Infinity;
+
+    const orderedMoves = sortMovesFast(allMoves);
+    const searchDepth = config.depth;
+
+    for (const move of orderedMoves) {
+      if (performance.now() > deadline) break;
+
+      const nextBoard = applyMoveToBoard(match.board, move);
+      const score = minimax(
+        nextBoard,
+        searchDepth - 1,
+        alpha,
+        beta,
+        false,
+        config,
+        botColor,
+        deadline,
+        transpositionTable,
+        false
+      );
+
+      if (score > bestScore) {
+        bestScore = score;
+        bestMove = move;
+      }
+      alpha = Math.max(alpha, score);
+
+      if (score >= 10000) {
+        return move;
+      }
+    }
+
+    return bestMove;
+  }
+
+  // High-Rated Bots (Iron Regent, Bangla-Bot, Cyclops Revenant, Chrome Reaper)
+  // Iterative Deepening up to config.depth with 250ms budget and full-iteration completion guarantee
+  const maxSearchDepth = config.depth;
+  const deadline = performance.now() + 250;
+  const transpositionTable = new Map<string, TTEntry>();
 
   let bestMove: Move = allMoves[0];
   let bestScore = -Infinity;
-  let alpha = -Infinity;
-  let beta = Infinity;
 
-  // Order moves with MVV-LVA
   const orderedMoves = sortMovesFast(allMoves);
-  const searchDepth = config.depth;
 
-  for (const move of orderedMoves) {
-    if (performance.now() > deadline) break;
+  for (let currentDepth = 1; currentDepth <= maxSearchDepth; currentDepth++) {
+    let depthBestMove: Move | null = null;
+    let depthBestScore = -Infinity;
+    let alpha = -Infinity;
+    let beta = Infinity;
+    let completedIteration = true;
 
-    const nextBoard = applyMoveToBoard(match.board, move);
-    const score = minimax(
-      nextBoard,
-      searchDepth - 1,
-      alpha,
-      beta,
-      false,
-      config,
-      botColor,
-      deadline,
-      transpositionTable,
-      isTop3
-    );
+    for (const move of orderedMoves) {
+      if (performance.now() > deadline && currentDepth > 1) {
+        completedIteration = false;
+        break;
+      }
 
-    if (score > bestScore) {
-      bestScore = score;
-      bestMove = move;
+      const nextBoard = applyMoveToBoard(match.board, move);
+      const score = minimax(
+        nextBoard,
+        currentDepth - 1,
+        alpha,
+        beta,
+        false,
+        config,
+        botColor,
+        deadline,
+        transpositionTable,
+        true
+      );
+
+      if (score > depthBestScore) {
+        depthBestScore = score;
+        depthBestMove = move;
+      }
+      alpha = Math.max(alpha, score);
+
+      if (score >= 100000) {
+        return move;
+      }
     }
-    alpha = Math.max(alpha, score);
 
-    // Early-Exit Rule 3: Forced checkmate found in search (score >= 10000)
-    if (score >= 10000) {
-      return move;
+    if (completedIteration && depthBestMove) {
+      bestMove = depthBestMove;
+      bestScore = depthBestScore;
+    }
+  }
+
+  // 2-Ply Safety Net: Ensure bestMove does not blunder mate-in-1
+  const testBoard = applyMoveToBoard(match.board, bestMove);
+  if (!isKingInCheck(testBoard, opponentColor)) {
+    const oppResponses = getAllLegalMoves(testBoard, opponentColor);
+    let allowsMateInOne = false;
+    for (const oppMove of oppResponses) {
+      const oppBoard = applyMoveToBoard(testBoard, oppMove);
+      if (isKingInCheck(oppBoard, botColor)) {
+        if (getAllLegalMoves(oppBoard, botColor).length === 0) {
+          allowsMateInOne = true;
+          break;
+        }
+      }
+    }
+
+    if (allowsMateInOne) {
+      const safeMoves = allMoves.filter(candidateMove => {
+        const b2 = applyMoveToBoard(match.board, candidateMove);
+        const opps = getAllLegalMoves(b2, opponentColor);
+        for (const m2 of opps) {
+          const b3 = applyMoveToBoard(b2, m2);
+          if (isKingInCheck(b3, botColor) && getAllLegalMoves(b3, botColor).length === 0) {
+            return false;
+          }
+        }
+        return true;
+      });
+      if (safeMoves.length > 0) {
+        return safeMoves[0];
+      }
     }
   }
 

@@ -362,10 +362,10 @@
     opacity: 1;
   }
   80% {
-    transform: translateY(-165px) scale(1.04) rotate(1deg);
+    transform: translateY(-170px) scale(1.04) rotate(1deg);
   }
   100% {
-    transform: translateY(-155px) scale(1) rotate(0deg);
+    transform: translateY(-160px) scale(1) rotate(0deg);
     opacity: 1;
   }
 }

@@ -472,4 +472,115 @@ html.dark .chess-piece-shadow::after {
   }
 }
 
+/* Traveling Perimeter Light Streak Animation (2.5s travel + 0.7s pause = 3.2s total) */
+@keyframes streakTravelTail {
+  0% {
+    stroke-dashoffset: 0;
+    opacity: 0.75;
+  }
+  75% {
+    stroke-dashoffset: -96;
+    opacity: 0.75;
+  }
+  78.125% {
+    stroke-dashoffset: -100;
+    opacity: 0;
+  }
+  98% {
+    stroke-dashoffset: -100;
+    opacity: 0;
+  }
+  99.9% {
+    stroke-dashoffset: 0;
+    opacity: 0;
+  }
+  100% {
+    stroke-dashoffset: 0;
+    opacity: 0.75;
+  }
+}
+
+@keyframes streakTravelBody {
+  0% {
+    stroke-dashoffset: -8;
+    opacity: 0.9;
+  }
+  75% {
+    stroke-dashoffset: -104;
+    opacity: 0.9;
+  }
+  78.125% {
+    stroke-dashoffset: -108;
+    opacity: 0;
+  }
+  98% {
+    stroke-dashoffset: -108;
+    opacity: 0;
+  }
+  99.9% {
+    stroke-dashoffset: -8;
+    opacity: 0;
+  }
+  100% {
+    stroke-dashoffset: -8;
+    opacity: 0.9;
+  }
+}
+
+@keyframes streakTravelHead {
+  0% {
+    stroke-dashoffset: -16;
+    opacity: 1;
+  }
+  75% {
+    stroke-dashoffset: -112;
+    opacity: 1;
+  }
+  78.125% {
+    stroke-dashoffset: -116;
+    opacity: 0;
+  }
+  98% {
+    stroke-dashoffset: -116;
+    opacity: 0;
+  }
+  99.9% {
+    stroke-dashoffset: -16;
+    opacity: 0;
+  }
+  100% {
+    stroke-dashoffset: -16;
+    opacity: 1;
+  }
+}
+
+.streak-tail {
+  stroke-dasharray: 20 80;
+  stroke-dashoffset: 0;
+  animation: streakTravelTail 3.2s linear infinite;
+  filter: drop-shadow(0 0 4px rgba(109, 40, 217, 0.45));
+}
+
+.streak-body {
+  stroke-dasharray: 12 88;
+  stroke-dashoffset: -8;
+  animation: streakTravelBody 3.2s linear infinite;
+  filter: drop-shadow(0 0 5px rgba(168, 85, 247, 0.7));
+}
+
+.streak-head {
+  stroke-dasharray: 4 96;
+  stroke-dashoffset: -16;
+  animation: streakTravelHead 3.2s linear infinite;
+  filter: drop-shadow(0 0 3px #F6E9FF) drop-shadow(0 0 6px #A855F7);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .streak-tail, .streak-body, .streak-head {
+    animation: none !important;
+    display: none !important;
+  }
+}
+
+
 

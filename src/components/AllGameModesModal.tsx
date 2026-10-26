@@ -8,6 +8,7 @@ import {
   Sparkles,
   ShieldCheck,
   Zap,
+  Box,
 } from 'lucide-react';
 import { CyberSkull } from './CyberSkull';
 import { RoseParadiseEntryButton } from '../rose/RoseParadiseEntryButton';
@@ -24,6 +25,7 @@ export interface AllGameModesModalProps {
   onOpenCulling?: () => void;
   onOpenRose?: () => void;
   onOpenCraftTheory?: () => void;
+  onOpen3dChess?: () => void;
   onJumpToMultiplayer?: () => void;
 }
 
@@ -38,6 +40,7 @@ export const AllGameModesModal: React.FC<AllGameModesModalProps> = ({
   onOpenSecretArena,
   onOpenCulling,
   onOpenRose,
+  onOpen3dChess,
   onJumpToMultiplayer,
 }) => {
   const closeButtonRef = useRef<HTMLButtonElement | null>(null);
@@ -565,7 +568,40 @@ export const AllGameModesModal: React.FC<AllGameModesModalProps> = ({
               </div>
             </div>
 
-            {/* 7. ROSE PARADISE ENTRY */}
+            {/* 7. 3D ANNIHILATIC CHESS ARCADE */}
+            <div className="bg-gradient-to-br from-[#1b1429] via-neutral-900 to-black text-white border-4 border-purple-500 p-4 sm:p-5 shadow-[6px_6px_0px_#9333ea] flex flex-col justify-between gap-4 min-w-0 shrink-0">
+              <div className="flex items-center gap-3.5">
+                <div className="w-12 h-12 bg-purple-600 border-2 border-black flex items-center justify-center text-white shrink-0 shadow-[2px_2px_0px_#000]">
+                  <Box className="w-7 h-7 text-white" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h3 className="text-sm sm:text-base font-black uppercase text-purple-300">
+                      3D Annihilatic Chess Arcade
+                    </h3>
+                    <span className="text-[10px] px-1.5 py-0.5 bg-purple-600 text-white font-black uppercase">
+                      New Mode · FIDE
+                    </span>
+                  </div>
+                  <p className="text-xs font-bold text-purple-100/90 mt-0.5">
+                    Standard FIDE chess with 3D cat pieces, deep Punisher AI calculation, and real-time multiplayer rooms.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-3 shrink-0 relative z-10 lg:mt-auto">
+                <button
+                  type="button"
+                  onClick={() => handleSelect(onOpen3dChess)}
+                  className="py-3 px-5 bg-purple-600 hover:bg-purple-500 text-white font-black text-xs sm:text-sm uppercase tracking-wider border-2 border-black shadow-[3px_3px_0px_#000000] flex items-center justify-center gap-2 shrink-0 cursor-pointer active:translate-x-0.5 active:translate-y-0.5"
+                >
+                  <Swords className="w-4 h-4 text-white" />
+                  Enter 3D Arcade
+                </button>
+              </div>
+            </div>
+
+            {/* 8. ROSE PARADISE ENTRY */}
             <div className="min-w-0 shrink-0">
               <RoseParadiseEntryButton onClick={() => handleSelect(onOpenRose)} />
             </div>

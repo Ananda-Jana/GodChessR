@@ -28,6 +28,7 @@ import {
   ChevronUp,
   Users,
   Zap,
+  Box,
 } from 'lucide-react';
 import { posToNotation } from '../game/engine';
 import { usePredictor } from '../predictor/PredictorContext';
@@ -42,7 +43,11 @@ import { OctoSkull } from './OctoSkull';
 import { CyberSkull } from './CyberSkull';
 import { AboutGameModal } from './AboutGameModal';
 import { AllGameModesModal } from './AllGameModesModal';
-import { HashiraTrainingCard } from './HashiraTrainingCard';
+import { WalkWithMastersCard } from './HashiraTrainingCard';
+import { Chess3dEntryCard } from '../chess3d/Chess3dEntryCard';
+import { Chess3dRulesPreviewModal } from '../chess3d/Chess3dRulesPreviewModal';
+import type { PunisherBotId } from '../chess3d/chess3dBot';
+import type { Team as Team3D, TimeControl3D } from '../chess3d/types';
 
 interface DashboardProps {
   onOpenRules: () => void;
@@ -54,6 +59,12 @@ interface DashboardProps {
   onOpenHashiraTraining?: (trainerId?: TrainerId) => void;
   onOpenPunisher?: () => void;
   onStartSecretMatch?: (botConfig: SecretPlayerConfig) => void;
+  onStart3dMatch?: (params: {
+    botId?: PunisherBotId;
+    playerTeam?: Team3D;
+    timeControl?: TimeControl3D;
+    roomCode?: string;
+  }) => void;
   lastCompletedMatch?: { match: MatchState; completedAt: number } | null;
   onClearLastGame?: () => void;
 }
@@ -73,6 +84,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
   onOpenHashiraTraining,
   onOpenPunisher,
   onStartSecretMatch,
+  onStart3dMatch,
   lastCompletedMatch,
   onClearLastGame,
 }) => {
@@ -103,6 +115,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
   const [isAllGameModesOpen, setIsAllGameModesOpen] = useState(false);
   const [isEndlessSpringOpen, setIsEndlessSpringOpen] = useState(false);
   const [challengeModalTarget, setChallengeModalTarget] = useState<{ id: string; name: string } | null>(null);
+  const [isWalkWithMastersOpen, setIsWalkWithMastersOpen] = useState(false);
+  const [is3dPreviewModalOpen, setIs3dPreviewModalOpen] = useState(false);
 
   // Mobile navigation & bottom sheet states
   const [isMobileProfileOpen, setIsMobileProfileOpen] = useState(false);
@@ -260,6 +274,77 @@ export const Dashboard: React.FC<DashboardProps> = ({
         </button>
 
         <div className="flex items-center gap-1.5 shrink-0">
+          {/* Mobile Walk with Masters Square Button with Traveling Violet-White Perimeter Streak */}
+          <button
+            type="button"
+            onClick={() => setIsWalkWithMastersOpen(true)}
+            aria-label="Walk with Masters (Train with Thukuna & Gatoru)"
+            title="Walk with Masters"
+            className="relative w-9.5 h-9.5 rounded-xl flex items-center justify-center bg-[#020203]/90 backdrop-blur-md text-white cursor-pointer transition-all active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A855F7] shrink-0 group overflow-visible"
+          >
+            {/* Continuous Perimeter Streak Animation Overlay */}
+            <svg
+              className="absolute inset-0 w-full h-full pointer-events-none overflow-visible z-10 rounded-xl"
+              fill="none"
+              aria-hidden="true"
+            >
+              {/* Static faint edge border (1.5px, #29212F) */}
+              <rect
+                x="0"
+                y="0"
+                width="100%"
+                height="100%"
+                rx="10"
+                stroke="#29212F"
+                strokeWidth="1.5"
+              />
+
+              {/* Deep Violet Tail */}
+              <rect
+                x="0"
+                y="0"
+                width="100%"
+                height="100%"
+                rx="10"
+                pathLength="100"
+                stroke="#6D28D9"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                className="streak-tail"
+              />
+
+              {/* Violet Highlight Body */}
+              <rect
+                x="0"
+                y="0"
+                width="100%"
+                height="100%"
+                rx="10"
+                pathLength="100"
+                stroke="#A855F7"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                className="streak-body"
+              />
+
+              {/* Bright White-Lavender Leading Tip with restrained bloom */}
+              <rect
+                x="0"
+                y="0"
+                width="100%"
+                height="100%"
+                rx="10"
+                pathLength="100"
+                stroke="#F6E9FF"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                className="streak-head"
+              />
+            </svg>
+
+            <Flame className="w-4.5 h-4.5 text-[#F6E9FF] group-hover:text-amber-400 group-hover:scale-110 transition-all shrink-0 relative z-20" />
+          </button>
+
           {/* Rules Square Button */}
           <button
             type="button"
@@ -280,6 +365,20 @@ export const Dashboard: React.FC<DashboardProps> = ({
             className="w-9.5 h-9.5 rounded-xl flex items-center justify-center bg-white/10 hover:bg-white/20 active:bg-white/25 backdrop-blur-md border border-white/20 hover:border-white/30 text-white active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 transition-all cursor-pointer shrink-0 shadow-sm"
           >
             <GamepadSkull size={22} className="shrink-0" />
+          </button>
+
+          {/* Mobile 3D Annihilatic Chess Arcade Square Button */}
+          <button
+            type="button"
+            onClick={() => setIs3dPreviewModalOpen(true)}
+            aria-label="3D Annihilatic Chess Arcade"
+            title="3D Chess Arcade"
+            className="w-9.5 h-9.5 rounded-xl flex items-center justify-center bg-purple-950/60 hover:bg-purple-900/80 active:bg-purple-900 border border-purple-500/40 text-purple-300 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400 transition-all cursor-pointer shrink-0 shadow-sm relative group"
+          >
+            <Box className="w-4.5 h-4.5 text-purple-400 group-hover:scale-110 transition-transform" />
+            <span className="absolute -bottom-1 -right-1 text-[8px] font-black font-mono px-1 rounded bg-purple-600 text-white leading-none py-0.5">
+              3D
+            </span>
           </button>
 
           {/* Profile Pill Trigger (Avatar + Live ELO) */}
@@ -350,6 +449,18 @@ export const Dashboard: React.FC<DashboardProps> = ({
             <span className="hidden sm:inline">Culling Mode</span>
           </button>
 
+          {/* Glassmorphic 3D Chess Arcade Launcher Button */}
+          <button
+            type="button"
+            onClick={() => setIs3dPreviewModalOpen(true)}
+            aria-label="3D Annihilatic Chess Arcade"
+            title="3D Chess Arcade"
+            className="p-1.5 sm:px-3 sm:py-1.5 bg-purple-950/40 hover:bg-purple-900/60 active:bg-purple-900 backdrop-blur-md border border-purple-500/40 hover:border-purple-400 text-white text-xs font-black uppercase flex items-center gap-1.5 rounded-lg cursor-pointer transition-all active:scale-95 shadow-sm"
+          >
+            <Box className="w-4 h-4 text-purple-400" />
+            <span className="hidden sm:inline">3D Arcade</span>
+          </button>
+
           <div className="flex items-center gap-2">
             <div className="border border-white/20 p-0.5 bg-neutral-900 rounded-lg">
               <AvatarDisplay avatarId={user.avatarId} size="sm" />
@@ -389,10 +500,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
       {/* Main Content Area */}
       <main className="relative z-10 flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 flex flex-col lg:grid lg:grid-cols-12 gap-6 pb-24 md:pb-6">
-        {/* Mobile Hashira Training Dojos Card */}
-        <div className="lg:hidden order-1 w-full">
-          <HashiraTrainingCard onOpenHashiraTraining={onOpenHashiraTraining} />
-        </div>
 
         {/* Latest Edition Banner (Mobile) */}
         <div className="lg:hidden order-2 w-full aspect-[3/2] relative overflow-hidden border-2 border-black dark:border-white shadow-[4px_4px_0px_#000000] bg-black">
@@ -497,9 +604,9 @@ export const Dashboard: React.FC<DashboardProps> = ({
           </div>
 
           {/* Desktop Left Sidebar: Train with Thukuna & Train with Gatoru */}
-          {/* Desktop Left Sidebar Hashira Training Card */}
+          {/* Desktop Left Sidebar Walk with Masters Card */}
           <div className="hidden lg:block w-full">
-            <HashiraTrainingCard onOpenHashiraTraining={onOpenHashiraTraining} />
+            <WalkWithMastersCard onOpenHashiraTraining={onOpenHashiraTraining} />
           </div>
 
           {/* User Profile Card (Desktop only, hidden on mobile) */}
@@ -1285,6 +1392,11 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 </div>
               </div>
 
+              {/* 3D Annihilatic Chess Arcade Entry Card (Desktop Right Column & Mobile before Rose Paradise) */}
+              <div className="order-5 lg:order-none min-w-0">
+                <Chess3dEntryCard onOpen={() => setIs3dPreviewModalOpen(true)} />
+              </div>
+
               {/* Rose Paradise Entry Button Card */}
               <div className="order-6 lg:order-none min-w-0">
                 <RoseParadiseEntryButton onClick={onOpenRose || (() => {})} />
@@ -1886,10 +1998,47 @@ export const Dashboard: React.FC<DashboardProps> = ({
         onOpenSecretArena={() => setIsSecretArenaOpen(true)}
         onOpenCulling={() => setIsCullingOpen(true)}
         onOpenRose={onOpenRose}
+        onOpen3dChess={() => setIs3dPreviewModalOpen(true)}
         onOpenCraftTheory={onOpenCraftTheory}
         onJumpToMultiplayer={() => {
           const el = document.getElementById('players') || document.getElementById('matches');
           el?.scrollIntoView({ behavior: 'smooth' });
+        }}
+      />
+
+      {/* Mobile Walk with Masters Modal */}
+      {isWalkWithMastersOpen && (
+        <div
+          className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4 sm:p-6"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Walk with Masters"
+          onClick={() => setIsWalkWithMastersOpen(false)}
+        >
+          <div
+            className="w-full max-w-sm relative"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <WalkWithMastersCard
+              onOpenHashiraTraining={onOpenHashiraTraining}
+              onClose={() => setIsWalkWithMastersOpen(false)}
+              isModal={true}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* 3D Annihilatic Chess Arcade Rules Preview & Launch Modal */}
+      <Chess3dRulesPreviewModal
+        isOpen={is3dPreviewModalOpen}
+        onClose={() => setIs3dPreviewModalOpen(false)}
+        onStartBotMatch={(botId, playerTeam) => {
+          setIs3dPreviewModalOpen(false);
+          onStart3dMatch?.({ botId, playerTeam });
+        }}
+        onStartMultiplayerMatch={(roomCode, timeControl, team) => {
+          setIs3dPreviewModalOpen(false);
+          onStart3dMatch?.({ roomCode, timeControl, playerTeam: team });
         }}
       />
     </div>

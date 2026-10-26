@@ -17,6 +17,8 @@ import { HashiraTrainingView } from './training/HashiraTrainingView';
 import type { TrainerId } from './training/types';
 import { SecretMatchView } from './secret/SecretMatchView';
 import type { SecretPlayerConfig } from './secret/types';
+import { Chess3dArcadeView } from './chess3d/Chess3dArcadeView';
+import type { Team as Team3D, TimeControl3D } from './chess3d/types';
 import {
   MatchState,
   PieceColor,
@@ -71,6 +73,12 @@ function AppContent() {
   const [selectedTrainerForTraining, setSelectedTrainerForTraining] = useState<TrainerId>('thukuna');
   const [botInitialGameMode, setBotInitialGameMode] = useState<'standard' | 'crafted' | 'classic'>('standard');
   const [activeSecretBot, setActiveSecretBot] = useState<SecretPlayerConfig | null>(null);
+  const [active3dMatchParams, setActive3dMatchParams] = useState<{
+    botId?: PunisherBotId;
+    playerTeam?: Team3D;
+    timeControl?: TimeControl3D;
+    roomCode?: string;
+  } | null>(null);
 
   // Punisher Robot Selector Mode State
   const [isPunisherSelectorOpen, setIsPunisherSelectorOpen] = useState(false);
@@ -127,24 +135,21 @@ function AppContent() {
       );
       const isObviousMove = isRecapture || isEscapingCheck;
 
-      // Identify the two highest-ELO bots: Chrome Reaper (2500+) and Cyclops Revenant (2200-2400)
-      const isTopTwoBot = botId === 'chrome-reaper' || botId === 'cyclops-revenant';
+      // Identify the 4 high-rated bots: Chrome Reaper, Cyclops Revenant, Iron Regent, Bangla-Bot
+      const isHighRatedBot =
+        botId === 'chrome-reaper' ||
+        botId === 'cyclops-revenant' ||
+        botId === 'iron-regent' ||
+        botId === 'bangla-bot';
 
-      // Thinking delay:
-      // For Top 2 highest-ELO bots:
-      // - Obvious moves (recaptures, check responses, forced replies): 320ms - 520ms
-      // - Normal moves: 400ms - 750ms
-      // - Special tactical strikes (checks, promotions, major captures): 650ms - 980ms
-      // (All strictly within 300 - 1100ms, visible for >= 300ms without flickering)
-      // For other bots: retain original delay (3000-3800ms special, 1250-1900ms normal)
       let thinkingTimeMs: number;
-      if (isTopTwoBot) {
+      if (isHighRatedBot) {
         if (isObviousMove) {
-          thinkingTimeMs = Math.floor(320 + Math.random() * 200);
+          thinkingTimeMs = Math.floor(150 + Math.random() * 150);
         } else if (isSpecialMove) {
-          thinkingTimeMs = Math.floor(650 + Math.random() * 330);
+          thinkingTimeMs = Math.floor(400 + Math.random() * 200);
         } else {
-          thinkingTimeMs = Math.floor(400 + Math.random() * 350);
+          thinkingTimeMs = Math.floor(200 + Math.random() * 200);
         }
       } else {
         thinkingTimeMs = isSpecialMove
@@ -729,6 +734,18 @@ function AppContent() {
     );
   }
 
+  if (active3dMatchParams) {
+    return (
+      <Chess3dArcadeView
+        botId={active3dMatchParams.botId}
+        playerTeam={active3dMatchParams.playerTeam}
+        timeControl={active3dMatchParams.timeControl}
+        roomCode={active3dMatchParams.roomCode}
+        onExit={() => setActive3dMatchParams(null)}
+      />
+    );
+  }
+
   const activeGame = botMatch || socketMatch || punisherMatch;
 
   return (
@@ -801,6 +818,7 @@ function AppContent() {
           }}
           onOpenPunisher={() => setIsPunisherSelectorOpen(true)}
           onStartSecretMatch={(botConfig) => setActiveSecretBot(botConfig)}
+          onStart3dMatch={(params) => setActive3dMatchParams(params)}
           lastCompletedMatch={lastCompletedMatch}
           onClearLastGame={() => {
             setLastCompletedMatch(null);
