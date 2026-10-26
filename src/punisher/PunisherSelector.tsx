@@ -12,6 +12,7 @@ import {
 import { BANGLA_BOT_ENTRY, resolveBotFace } from './BanglaBotFaces';
 import { PUNISHER_BOTS, PunisherBotId } from './punisherBot';
 import { X, Sword, Target, Shield, Zap, Cpu, Flame } from 'lucide-react';
+import { ModeArtPanel } from '../components/ModeArtPanel';
 
 interface PunisherSelectorProps {
   onSelect: (botId: PunisherBotId) => void;
@@ -172,7 +173,14 @@ export const PunisherSelector: React.FC<PunisherSelectorProps> = ({ onSelect, on
         </div>
 
         {/* ================= DESKTOP VIEW (>= md): Compact Rectangular Cards ================= */}
-        <div className="hidden md:grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-4 p-4 sm:p-6 max-w-7xl mx-auto">
+        <div className="hidden md:flex md:flex-row max-w-7xl mx-auto overflow-hidden">
+          <ModeArtPanel
+            modeKey="punisher-robot"
+            title="Punisher Selector"
+            subtitle="7 Mechanical AI Opponents"
+          />
+
+          <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 p-4 sm:p-6 overflow-y-auto">
           {ALL_PUNISHER_BOTS.map((bot) => {
             const config = PUNISHER_BOTS[bot.id as PunisherBotId];
             const Icon = resolveBotFace(bot.id);
@@ -305,6 +313,7 @@ export const PunisherSelector: React.FC<PunisherSelectorProps> = ({ onSelect, on
               </motion.div>
             );
           })}
+          </div>
         </div>
       </div>
 

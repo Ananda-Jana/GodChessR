@@ -4,6 +4,7 @@ import { PieceColor, PieceTheme } from '../types/game';
 import { useTheme } from '../context/ThemeContext';
 import { ChessPiece } from './ChessPiece';
 import { useModalFocus } from '../utils/useModalFocus';
+import { ModeArtPanel } from './ModeArtPanel';
 
 interface BotMatchModalProps {
   isOpen: boolean;
@@ -58,9 +59,16 @@ export const BotMatchModal: React.FC<BotMatchModalProps> = ({
         role="dialog"
         aria-modal="true"
         aria-labelledby="bot-match-modal-title"
-        className="bg-white dark:bg-[#0a0a0c] border-4 border-black dark:border-white max-w-lg w-full max-h-[90dvh] [max-height:90vh] shadow-[8px_8px_0px_#000000] dark:shadow-[8px_8px_0px_#ffffff] text-black dark:text-white flex flex-col overflow-hidden animate-in slide-in-from-bottom-4 sm:slide-in-from-bottom-0 sm:zoom-in-95 duration-150"
+        className="bg-white dark:bg-[#0a0a0c] border-4 border-black dark:border-white max-w-3xl w-full max-h-[90dvh] [max-height:90vh] shadow-[8px_8px_0px_#000000] dark:shadow-[8px_8px_0px_#ffffff] text-black dark:text-white flex flex-col md:flex-row overflow-hidden animate-in slide-in-from-bottom-4 sm:slide-in-from-bottom-0 sm:zoom-in-95 duration-150"
         onClick={(e) => e.stopPropagation()}
       >
+        <ModeArtPanel
+          modeKey={gameMode === 'crafted' ? 'crafted-pieces' : 'grandmaster-bot'}
+          title={gameMode === 'crafted' ? 'Crafted Army' : 'Grandmaster Bot'}
+          subtitle="Tactical AI Rival"
+        />
+
+        <div className="flex-1 flex flex-col min-w-0 max-h-[90dvh] overflow-hidden">
         
         {/* Sticky Top Header with Title and Close Button */}
         <div className={`p-3 sm:px-4 sm:py-3 border-b-3 border-black dark:border-white flex items-center justify-between shrink-0 bg-black text-white`}>
@@ -449,9 +457,9 @@ export const BotMatchModal: React.FC<BotMatchModalProps> = ({
               </button>
             </div>
           </div>
-
         </div>
       </div>
     </div>
+  </div>
   );
 };

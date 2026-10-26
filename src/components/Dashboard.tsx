@@ -731,528 +731,550 @@ export const Dashboard: React.FC<DashboardProps> = ({
           )}
 
           {/* Game Modes List with single #modes anchor */}
-          <div id="modes" className="scroll-mt-16 flex flex-col gap-6">
+          <div id="modes" className="scroll-mt-16 flex flex-col gap-4 sm:gap-5 lg:grid lg:grid-cols-2 lg:gap-4 lg:items-start">
 
-          {/* FEATURE BANNER: CHESS HASHIRA TRAINING */}
-          <div className="bg-gradient-to-r from-yellow-950 via-neutral-900 to-black text-white border-4 border-amber-400 p-4 sm:p-5 shadow-[6px_6px_0px_#eab308] flex flex-col sm:flex-row sm:items-center justify-between gap-4 relative overflow-hidden">
-            <div className="flex items-center gap-3.5 relative z-10">
-              <div className="w-12 h-12 bg-amber-400 border-2 border-black flex items-center justify-center text-black shrink-0 shadow-[2px_2px_0px_#000]">
-                <Flame className="w-7 h-7 text-black fill-black" />
-              </div>
-              <div>
-                <div className="flex items-center gap-2 flex-wrap">
-                  <h3 className="text-sm sm:text-base font-black uppercase text-amber-400 tracking-wide">
-                    Chess Hashira Training · 鬼殺チェス柱稽古
-                  </h3>
-                  <span className="text-[10px] px-1.5 py-0.5 bg-amber-400 text-black font-black uppercase">
-                    6 Martial Tiers
-                  </span>
+            {/* Desktop Column 1 (Left Column) */}
+            <div className="contents lg:flex lg:flex-col lg:gap-4">
+              {/* FEATURE BANNER: CHESS HASHIRA TRAINING */}
+              <div className="order-1 lg:order-none bg-gradient-to-r from-yellow-950 via-neutral-900 to-black text-white border-4 border-amber-400 p-4 sm:p-5 shadow-[6px_6px_0px_#eab308] flex flex-col sm:flex-row lg:flex-col sm:items-center lg:items-start justify-between gap-4 relative overflow-hidden min-w-0">
+                <div className="flex items-center gap-3.5 relative z-10">
+                  <div className="w-12 h-12 bg-amber-400 border-2 border-black flex items-center justify-center text-black shrink-0 shadow-[2px_2px_0px_#000]">
+                    <Flame className="w-7 h-7 text-black fill-black" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h3 className="text-sm sm:text-base font-black uppercase text-amber-400 tracking-wide">
+                        Chess Hashira Training · 鬼殺チェス柱稽古
+                      </h3>
+                      <span className="text-[10px] px-1.5 py-0.5 bg-amber-400 text-black font-black uppercase">
+                        6 Martial Tiers
+                      </span>
+                    </div>
+                    <p className="text-xs font-bold text-neutral-300 mt-0.5">
+                      Train under Thukuna : The Plasma Hashira across Opening, Tactical & Culling Dojos. Practice sparring, earn authentic badges, and ascend to the Hashira Pillar!
+                    </p>
+                  </div>
                 </div>
-                <p className="text-xs font-bold text-neutral-300 mt-0.5">
-                  Train under Thukuna : The Plasma Hashira across Opening, Tactical & Culling Dojos. Practice sparring, earn authentic badges, and ascend to the Hashira Pillar!
-                </p>
+
+                <div className="flex flex-wrap items-center gap-3 shrink-0 relative z-10 lg:mt-auto">
+                  <button
+                    onClick={() => onOpenHashiraTraining && onOpenHashiraTraining('thukuna')}
+                    className="py-3 px-5 bg-amber-400 hover:bg-amber-300 text-black font-black text-xs sm:text-sm uppercase tracking-wider border-2 border-black shadow-[3px_3px_0px_#000000] flex items-center justify-center gap-2 shrink-0 cursor-pointer active:translate-x-0.5 active:translate-y-0.5"
+                  >
+                    <Swords className="w-4 h-4" />
+                    Enter Hashira Dojo
+                  </button>
+                </div>
+              </div>
+
+              {/* PUNISHER ROBOT SELECTOR: Premium Animated Reactor Card */}
+              <div className="order-2 lg:order-none punisher-reactor-card relative border-4 border-[#2727F5] p-4 sm:p-5 shadow-[6px_6px_0px_#000000] flex flex-col sm:flex-row lg:flex-col sm:items-center lg:items-start justify-between gap-4 overflow-hidden min-w-0">
+                <style>{`
+                  @property --angle {
+                    syntax: '<angle>';
+                    initial-value: 0deg;
+                    inherits: false;
+                  }
+
+                  @keyframes plasmaFlow {
+                    0% { background-position: 0% 50%; }
+                    50% { background-position: 100% 50%; }
+                    100% { background-position: 0% 50%; }
+                  }
+
+                  @keyframes borderOrbit {
+                    from { --angle: 0deg; }
+                    to { --angle: 360deg; }
+                  }
+
+                  @keyframes gridDrift {
+                    from { background-position: 0 0; }
+                    to { background-position: 100px 100px; }
+                  }
+
+                  @keyframes scanSweep {
+                    0% { transform: translateY(-100%); opacity: 0; }
+                    10% { opacity: 1; }
+                    40% { opacity: 1; }
+                    50% { transform: translateY(500%); opacity: 0; }
+                    100% { transform: translateY(500%); opacity: 0; }
+                  }
+
+                  @keyframes coreBeat {
+                    0%, 100% { transform: scale(1) translate(-50%, -50%); opacity: 0.3; }
+                    50% { transform: scale(1.4) translate(-50%, -50%); opacity: 0.6; }
+                  }
+
+                  @keyframes sparkTwinkle {
+                    0%, 100% { opacity: 0; transform: scale(0.5); }
+                    50% { opacity: 1; transform: scale(1); }
+                  }
+
+                  @keyframes glitchBurst {
+                    0% { transform: translate(0); text-shadow: none; }
+                    1% { transform: translate(-2px, 0); text-shadow: 2px 0 #ff0000, -2px 0 #0000ff; }
+                    2% { transform: translate(2px, 0); text-shadow: -2px 0 #ff0000, 2px 0 #0000ff; }
+                    3% { transform: translate(0); text-shadow: none; }
+                    100% { transform: translate(0); text-shadow: none; }
+                  }
+
+                  @keyframes neonBreathe {
+                    0%, 100% { box-shadow: 6px 6px 0px #000000, 0 0 15px rgba(39,39,245,0.4); }
+                    50% { box-shadow: 6px 6px 0px #000000, 0 0 30px rgba(39,39,245,0.8); }
+                  }
+
+                  .punisher-reactor-card {
+                    animation: neonBreathe 3s infinite ease-in-out;
+                    background: #0a0a3d;
+                    will-change: box-shadow;
+                  }
+
+                  .punisher-reactor-card::before {
+                    content: '';
+                    position: absolute;
+                    inset: -2px;
+                    padding: 3px;
+                    background: conic-gradient(from var(--angle), transparent, #818cf8, #ffffff, #818cf8, transparent);
+                    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+                    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+                    -webkit-mask-composite: xor;
+                    mask-composite: exclude;
+                    animation: borderOrbit 4s linear infinite;
+                    pointer-events: none;
+                    z-index: 5;
+                  }
+
+                  .plasma-layer {
+                    background: radial-gradient(circle at 20% 30%, #2727F5, transparent 70%),
+                                radial-gradient(circle at 80% 70%, #6d28d9, transparent 70%),
+                                linear-gradient(135deg, #14146e 0%, #4c1d95 100%);
+                    background-size: 300% 300%;
+                    animation: plasmaFlow 10s ease-in-out infinite;
+                    will-change: background-position;
+                  }
+
+                  .hologrid-layer {
+                    background-image: repeating-linear-gradient(rgba(129,140,248,0.15) 0 1px, transparent 1px 20px),
+                                      repeating-linear-gradient(90deg, rgba(129,140,248,0.15) 0 1px, transparent 1px 20px);
+                    animation: gridDrift 20s linear infinite;
+                    mask-image: radial-gradient(circle, black 40%, transparent 100%);
+                    will-change: background-position;
+                  }
+
+                  .scanline-layer {
+                    background: linear-gradient(to bottom, transparent, rgba(199,210,254,0.25), transparent);
+                    height: 40px;
+                    animation: scanSweep 6s ease-in-out infinite;
+                    will-change: transform;
+                  }
+
+                  .core-glow {
+                    background: radial-gradient(circle, #2727F5 0%, #6d28d9 50%, transparent 100%);
+                    filter: blur(40px);
+                    animation: coreBeat 3s ease-in-out infinite;
+                    will-change: transform, opacity;
+                  }
+
+                  .punisher-cont {
+                    box-shadow: 4px 4px 0px #000000, 0 0 16px rgba(220, 38, 38, 0.45);
+                    transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+                  }
+                  .punisher-cont:hover {
+                    transform: scale(1.04);
+                    box-shadow: 5px 5px 0px #000000, 0 0 28px rgba(220, 38, 38, 0.85);
+                  }
+
+                  .glitch-text {
+                    animation: glitchBurst 7s infinite;
+                  }
+
+                  @media (prefers-reduced-motion: reduce) {
+                    .punisher-reactor-card, .punisher-reactor-card::before, .plasma-layer, .hologrid-layer, .scanline-layer, .core-glow, .glitch-text, .punisher-cont {
+                      animation: none !important;
+                    }
+                    .plasma-layer {
+                      background: linear-gradient(135deg, #14146e, #4c1d95) !important;
+                    }
+                  }
+                `}</style>
+
+                {/* Effects Wrapper (z-0) */}
+                <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none select-none">
+                  <div className="absolute inset-0 plasma-layer" />
+                  <div className="absolute inset-0 hologrid-layer" />
+                  <div className="absolute top-0 left-0 right-0 scanline-layer" />
+                  <div className="absolute top-1/2 left-1/4 w-64 h-64 core-glow -translate-x-1/2 -translate-y-1/2" />
+                  
+                  {/* Electric Sparks */}
+                  {[...Array(8)].map((_, i) => (
+                    <div 
+                      key={i}
+                      className="absolute w-1 h-1 bg-white rounded-full opacity-0"
+                      style={{
+                        top: `${Math.random() * 100}%`,
+                        left: `${Math.random() * 100}%`,
+                        animation: `sparkTwinkle ${2 + Math.random() * 3}s infinite ${Math.random() * 5}s`,
+                        boxShadow: '0 0 8px #c7d2fe'
+                      }}
+                    />
+                  ))}
+                </div>
+
+                {/* Content (z-10) */}
+                <div className="flex items-center gap-3.5 sm:gap-4.5 relative z-10">
+                  {/* Punisher Container (punisher-cont) with enlarged intimidating Oni demon avatar */}
+                  <div 
+                    id="punisher-cont"
+                    className="punisher-cont w-20 h-20 sm:w-24 sm:h-24 bg-black border-3 border-red-600 flex items-center justify-center shrink-0 shadow-[4px_4px_0px_#000000] overflow-hidden relative group cursor-pointer"
+                    data-container="punisher-cont"
+                    onClick={onOpenPunisher}
+                    title="Enter Punisher Robot Selector"
+                  >
+                    {/* Ominous red radial glow backdrop */}
+                    <div 
+                      aria-hidden="true" 
+                      className="absolute inset-0 bg-[radial-gradient(circle_at_center,_rgba(220,38,38,0.35)_0%,_transparent_75%)] pointer-events-none" 
+                    />
+                    <img 
+                      src="/assets/aistudio/image_6c6f27fb.png" 
+                      alt="Punisher Robot Demon Mask" 
+                      className="w-full h-full object-contain filter contrast-125 brightness-110 p-1.5 transition-transform duration-300 group-hover:scale-110 drop-shadow-[0_0_10px_rgba(220,38,38,0.55)]"
+                    />
+                  </div>
+
+                  <div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h3 className="text-sm sm:text-base font-black uppercase text-white tracking-wide glitch-text">
+                        Punisher Robot Selector
+                      </h3>
+                      <span className="text-[9px] font-mono font-black uppercase px-1.5 py-0.5 bg-black text-amber-400 border border-amber-400/40 shadow-[1px_1px_0px_#000]">
+                        RUTHLESS AI
+                      </span>
+                    </div>
+                    <p className="text-xs font-bold text-[#c7d2fe] mt-0.5 max-w-md">
+                      Face 7 legendary mechanical opponents. From the clumsy Joystick Wraith to the calculating Chrome Reaper. No dice, no mercy.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-3 shrink-0 relative z-10 lg:mt-auto">
+                  <button
+                    onClick={onOpenPunisher}
+                    className="relative z-10 py-3 px-5 bg-[#2727F5] hover:bg-[#4a4aff] text-white font-black text-xs sm:text-sm uppercase tracking-wider border-2 border-black shadow-[3px_3px_0px_#000000] flex items-center justify-center gap-2 shrink-0 cursor-pointer active:translate-x-0.5 active:translate-y-0.5"
+                  >
+                    <Zap className="w-4 h-4 fill-current" />
+                    Enter Selector
+                  </button>
+                </div>
+              </div>
+
+              {/* Instant Grandmaster Bot Challenge Card (Animated Fire Effect) */}
+              <div className="order-3 lg:order-none bot-fire-card text-black border-4 border-black p-4 sm:p-5 shadow-[6px_6px_0px_#000000] flex flex-col sm:flex-row lg:flex-col sm:items-center lg:items-start justify-between gap-4 relative overflow-hidden transition-all duration-200 min-w-0">
+                <style>{`
+                  @keyframes fireFlow {
+                    0% { background-position: 0% 50%; }
+                    50% { background-position: 100% 50%; }
+                    100% { background-position: 0% 50%; }
+                  }
+
+                  @keyframes flameRise {
+                    0% { transform: translateY(20%) scaleY(0.95) scaleX(0.98); opacity: 0.6; }
+                    25% { transform: translateY(-12%) scaleY(1.15) scaleX(1.05) translateX(-6px); opacity: 0.9; }
+                    50% { transform: translateY(8%) scaleY(0.9) scaleX(0.95) translateX(5px); opacity: 0.65; }
+                    75% { transform: translateY(-16%) scaleY(1.2) scaleX(0.92) translateX(-3px); opacity: 0.95; }
+                    100% { transform: translateY(20%) scaleY(0.95) scaleX(0.98); opacity: 0.6; }
+                  }
+
+                  @keyframes emberFloat {
+                    0% { transform: translateY(30px) translateX(0) scale(1); opacity: 0; }
+                    20% { opacity: 0.95; }
+                    80% { opacity: 0.7; }
+                    100% { transform: translateY(-90px) translateX(14px) scale(0.2); opacity: 0; }
+                  }
+
+                  @keyframes heatPulse {
+                    0%, 100% { box-shadow: 6px 6px 0px #000000, 0 0 16px rgba(249,115,22,0.5); }
+                    50% { box-shadow: 6px 6px 0px #000000, 0 0 32px rgba(253,224,71,0.85), inset 0 0 24px rgba(234,88,12,0.4); }
+                  }
+
+                  @keyframes edgeFlicker {
+                    0%, 100% { opacity: 0.4; }
+                    12% { opacity: 0.9; }
+                    27% { opacity: 0.35; }
+                    41% { opacity: 0.95; }
+                    63% { opacity: 0.5; }
+                    80% { opacity: 0.85; }
+                  }
+
+                  .bot-fire-card {
+                    animation: heatPulse 2.5s infinite ease-in-out;
+                    will-change: box-shadow;
+                  }
+
+                  .bot-fire-bg {
+                    background: linear-gradient(115deg, #dc2626 0%, #ea580c 25%, #f97316 50%, #f59e0b 75%, #fde047 100%);
+                    background-size: 300% 300%;
+                    animation: fireFlow 6.5s ease-in-out infinite;
+                    will-change: background-position;
+                  }
+
+                  .bot-fire-edge {
+                    box-shadow: inset 0 3px 12px rgba(255, 255, 255, 0.6), inset 0 -3px 12px rgba(220, 38, 38, 0.8);
+                    animation: edgeFlicker 1.8s infinite linear;
+                    will-change: opacity;
+                  }
+
+                  .bot-flame-blob-1 {
+                    background: radial-gradient(circle, rgba(253,224,71,0.85) 0%, rgba(249,115,22,0.6) 50%, transparent 80%);
+                    filter: blur(14px);
+                    mix-blend-mode: overlay;
+                    animation: flameRise 3.2s infinite ease-in-out;
+                    will-change: transform, opacity;
+                  }
+
+                  .bot-flame-blob-2 {
+                    background: radial-gradient(circle, rgba(255,255,255,0.9) 0%, rgba(251,146,60,0.7) 45%, transparent 75%);
+                    filter: blur(16px);
+                    mix-blend-mode: screen;
+                    animation: flameRise 4.5s infinite ease-in-out 0.6s;
+                    will-change: transform, opacity;
+                  }
+
+                  .bot-flame-blob-3 {
+                    background: radial-gradient(circle, rgba(253,224,71,0.8) 0%, rgba(234,88,12,0.65) 55%, transparent 80%);
+                    filter: blur(14px);
+                    mix-blend-mode: overlay;
+                    animation: flameRise 5.2s infinite ease-in-out 1.2s;
+                    will-change: transform, opacity;
+                  }
+
+                  .bot-ember-1 { animation: emberFloat 2.8s infinite ease-out 0.1s; will-change: transform, opacity; }
+                  .bot-ember-2 { animation: emberFloat 3.6s infinite ease-out 0.7s; will-change: transform, opacity; }
+                  .bot-ember-3 { animation: emberFloat 2.4s infinite ease-out 1.3s; will-change: transform, opacity; }
+                  .bot-ember-4 { animation: emberFloat 4.1s infinite ease-out 0.4s; will-change: transform, opacity; }
+                  .bot-ember-5 { animation: emberFloat 3.1s infinite ease-out 1.8s; will-change: transform, opacity; }
+                  .bot-ember-6 { animation: emberFloat 2.6s infinite ease-out 0.9s; will-change: transform, opacity; }
+
+                  @media (prefers-reduced-motion: reduce) {
+                    .bot-fire-card {
+                      animation: none !important;
+                    }
+                    .bot-fire-bg {
+                      background: linear-gradient(115deg, #ea580c, #f59e0b, #fde047) !important;
+                      animation: none !important;
+                    }
+                    .bot-flame-blob-1, .bot-flame-blob-2, .bot-flame-blob-3,
+                    .bot-ember-1, .bot-ember-2, .bot-ember-3, .bot-ember-4, .bot-ember-5, .bot-ember-6,
+                    .bot-fire-edge {
+                      animation: none !important;
+                      display: none !important;
+                    }
+                  }
+                `}</style>
+
+                {/* Fire Effect Background Container (z-0) */}
+                <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none select-none">
+                  <div className="absolute inset-0 bot-fire-bg" />
+                  <div className="absolute inset-0 bot-fire-edge" />
+                  <div className="absolute -bottom-8 left-[10%] w-48 h-36 rounded-full bot-flame-blob-1" />
+                  <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 w-64 h-40 rounded-full bot-flame-blob-2" />
+                  <div className="absolute -bottom-8 right-[10%] w-52 h-36 rounded-full bot-flame-blob-3" />
+
+                  <div className="absolute bottom-1 left-[12%] w-1.5 h-1.5 rounded-full bg-amber-200 bot-ember-1" />
+                  <div className="absolute bottom-2 left-[28%] w-1 h-1 rounded-full bg-yellow-300 bot-ember-2" />
+                  <div className="absolute bottom-1 left-[45%] w-2 h-2 rounded-full bg-orange-300 bot-ember-3" />
+                  <div className="absolute bottom-2 left-[62%] w-1.5 h-1.5 rounded-full bg-amber-300 bot-ember-4" />
+                  <div className="absolute bottom-1 left-[78%] w-1 h-1 rounded-full bg-yellow-200 bot-ember-5" />
+                  <div className="absolute bottom-2 left-[90%] w-2 h-2 rounded-full bg-orange-400 bot-ember-6" />
+                </div>
+
+                {/* Card Content & Text (z-10) */}
+                <div className="flex items-center gap-3.5 relative z-10 drop-shadow-[0_1px_2px_rgba(0,0,0,0.4)]">
+                  <div className="w-12 h-12 bg-black border-2 border-black flex items-center justify-center text-amber-400 shrink-0 shadow-[2px_2px_0px_#000]">
+                    <CyberSkull size={28} className="w-7 h-7 text-amber-400" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-sm sm:text-base font-black uppercase text-black">Play vs Grandmaster Bot</h3>
+                      <span className="text-[10px] px-1.5 py-0.5 bg-black text-amber-400 font-black uppercase shadow-sm">
+                        Instant
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Inner Action Buttons (z-10) */}
+                <div className="flex flex-wrap items-center gap-2.5 shrink-0 relative z-10 lg:mt-auto">
+                  <button
+                    type="button"
+                    onClick={onOpenClassicBotModal || onOpenBotModal}
+                    className="py-2 px-3.5 bg-neutral-900 hover:bg-black text-white font-black text-xs uppercase tracking-wider border-2 border-black shadow-[3px_3px_0px_#000000] flex flex-col items-center justify-center cursor-pointer transition-transform duration-75 active:scale-95"
+                    title="Play Traditional Chess (No Prince)"
+                  >
+                    <span className="leading-tight">Play Normal Chess</span>
+                    <span className="text-[9px] font-bold text-amber-300 lowercase tracking-normal leading-tight">
+                      without prince
+                    </span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={onOpenBotModal}
+                    className="py-3 px-5 bg-black hover:bg-neutral-900 text-amber-400 font-black text-xs sm:text-sm uppercase tracking-wider border-2 border-black shadow-[3px_3px_0px_#000000] flex items-center justify-center gap-2 cursor-pointer transition-transform duration-75 active:scale-95"
+                  >
+                    <Swords className="w-4 h-4" />
+                    Play vs Bot
+                  </button>
+                </div>
+              </div>
+
+              {/* NEW: Instant Grandmaster Bot with Crafted Pieces Challenge Card (Navy Blue Background) */}
+              <div className="order-7 lg:order-none bg-[#0f172a] text-white border-4 border-black dark:border-white p-4 sm:p-5 shadow-[6px_6px_0px_#000000] dark:shadow-[6px_6px_0px_#ffffff] flex flex-col sm:flex-row lg:flex-col sm:items-center lg:items-start justify-between gap-4 min-w-0">
+                <div className="flex items-center gap-3.5">
+                  <div className="w-12 h-12 bg-amber-400 border-2 border-black flex items-center justify-center text-black shrink-0 shadow-[2px_2px_0px_#000]">
+                    <Sparkles className="w-7 h-7 text-black" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h3 className="text-sm sm:text-base font-black uppercase text-amber-400">
+                        Play vs Grandmaster Bot with Crafted Pieces
+                      </h3>
+                      <span className="text-[10px] px-1.5 py-0.5 bg-amber-400 text-black font-black uppercase">
+                        New Mode
+                      </span>
+                    </div>
+                    <p className="text-xs font-bold text-slate-300 mt-0.5">
+                      Custom crafted army: Bishops replaced with Communists, Knights with Priests, and a Rook with Supreme Rook. Same tactical dice rules!
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-3 shrink-0 relative z-10 lg:mt-auto">
+                  <button
+                    onClick={onOpenCraftedBotModal || onOpenBotModal}
+                    className="py-3 px-5 bg-amber-400 hover:bg-amber-300 text-black font-black text-xs sm:text-sm uppercase tracking-wider border-2 border-black shadow-[3px_3px_0px_#000000] flex items-center justify-center gap-2 shrink-0 cursor-pointer"
+                  >
+                    <Swords className="w-4 h-4" />
+                    Play vs Bot (Crafted)
+                  </button>
+                </div>
+              </div>
+
+              {/* Craft Theory Catalog Button Card (Solid White, Highlighted) */}
+              <div className="order-8 lg:order-none bg-white text-black border-4 border-black dark:border-white p-4 sm:p-5 shadow-[6px_6px_0px_#000000] dark:shadow-[6px_6px_0px_#ffffff] flex flex-col sm:flex-row lg:flex-col sm:items-center lg:items-start justify-between gap-4 min-w-0">
+                <div className="flex items-center gap-3.5">
+                  <div className="w-12 h-12 bg-amber-400 border-2 border-black flex items-center justify-center text-black shrink-0 shadow-[2px_2px_0px_#000]">
+                    <BookOpen className="w-7 h-7 text-black" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h3 className="text-sm sm:text-base font-black uppercase text-black">
+                        Craft Theory & Piece Encyclopedia
+                      </h3>
+                      <span className="text-[10px] px-1.5 py-0.5 bg-black text-amber-400 font-black uppercase">
+                        Guide
+                      </span>
+                    </div>
+                    <p className="text-xs font-bold text-neutral-700 mt-0.5">
+                      Explore rules, descriptions, and 9×9 movement preview grids for all standard chess pieces, the Prince, and crafted specials.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-3 shrink-0 relative z-10 lg:mt-auto">
+                  <button
+                    onClick={onOpenCraftTheory}
+                    className="py-3 px-5 bg-white hover:bg-neutral-100 text-black font-black text-xs sm:text-sm uppercase tracking-wider border-3 border-black shadow-[3px_3px_0px_#000000] flex items-center justify-center gap-2 shrink-0 cursor-pointer active:translate-x-0.5 active:translate-y-0.5"
+                  >
+                    <BookOpen className="w-4 h-4 text-black" />
+                    Craft Theory
+                  </button>
+                </div>
               </div>
             </div>
 
-            <button
-              onClick={() => onOpenHashiraTraining && onOpenHashiraTraining('thukuna')}
-              className="py-3 px-5 bg-amber-400 hover:bg-amber-300 text-black font-black text-xs sm:text-sm uppercase tracking-wider border-2 border-black shadow-[3px_3px_0px_#000000] flex items-center justify-center gap-2 shrink-0 cursor-pointer active:translate-x-0.5 active:translate-y-0.5"
-            >
-              <Swords className="w-4 h-4" />
-              Enter Hashira Dojo
-            </button>
-          </div>
-
-          {/* PUNISHER ROBOT SELECTOR: Premium Animated Reactor Card */}
-          <div className="punisher-reactor-card relative border-4 border-[#2727F5] p-4 sm:p-5 shadow-[6px_6px_0px_#000000] flex flex-col sm:flex-row sm:items-center justify-between gap-4 overflow-hidden">
-            <style>{`
-              @property --angle {
-                syntax: '<angle>';
-                initial-value: 0deg;
-                inherits: false;
-              }
-
-              @keyframes plasmaFlow {
-                0% { background-position: 0% 50%; }
-                50% { background-position: 100% 50%; }
-                100% { background-position: 0% 50%; }
-              }
-
-              @keyframes borderOrbit {
-                from { --angle: 0deg; }
-                to { --angle: 360deg; }
-              }
-
-              @keyframes gridDrift {
-                from { background-position: 0 0; }
-                to { background-position: 100px 100px; }
-              }
-
-              @keyframes scanSweep {
-                0% { transform: translateY(-100%); opacity: 0; }
-                10% { opacity: 1; }
-                40% { opacity: 1; }
-                50% { transform: translateY(500%); opacity: 0; }
-                100% { transform: translateY(500%); opacity: 0; }
-              }
-
-              @keyframes coreBeat {
-                0%, 100% { transform: scale(1) translate(-50%, -50%); opacity: 0.3; }
-                50% { transform: scale(1.4) translate(-50%, -50%); opacity: 0.6; }
-              }
-
-              @keyframes sparkTwinkle {
-                0%, 100% { opacity: 0; transform: scale(0.5); }
-                50% { opacity: 1; transform: scale(1); }
-              }
-
-              @keyframes glitchBurst {
-                0% { transform: translate(0); text-shadow: none; }
-                1% { transform: translate(-2px, 0); text-shadow: 2px 0 #ff0000, -2px 0 #0000ff; }
-                2% { transform: translate(2px, 0); text-shadow: -2px 0 #ff0000, 2px 0 #0000ff; }
-                3% { transform: translate(0); text-shadow: none; }
-                100% { transform: translate(0); text-shadow: none; }
-              }
-
-              @keyframes neonBreathe {
-                0%, 100% { box-shadow: 6px 6px 0px #000000, 0 0 15px rgba(39,39,245,0.4); }
-                50% { box-shadow: 6px 6px 0px #000000, 0 0 30px rgba(39,39,245,0.8); }
-              }
-
-              .punisher-reactor-card {
-                animation: neonBreathe 3s infinite ease-in-out;
-                background: #0a0a3d;
-                will-change: box-shadow;
-              }
-
-              .punisher-reactor-card::before {
-                content: '';
-                position: absolute;
-                inset: -2px;
-                padding: 3px;
-                background: conic-gradient(from var(--angle), transparent, #818cf8, #ffffff, #818cf8, transparent);
-                -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-                mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-                -webkit-mask-composite: xor;
-                mask-composite: exclude;
-                animation: borderOrbit 4s linear infinite;
-                pointer-events: none;
-                z-index: 5;
-              }
-
-              .plasma-layer {
-                background: radial-gradient(circle at 20% 30%, #2727F5, transparent 70%),
-                            radial-gradient(circle at 80% 70%, #6d28d9, transparent 70%),
-                            linear-gradient(135deg, #14146e 0%, #4c1d95 100%);
-                background-size: 300% 300%;
-                animation: plasmaFlow 10s ease-in-out infinite;
-                will-change: background-position;
-              }
-
-              .hologrid-layer {
-                background-image: repeating-linear-gradient(rgba(129,140,248,0.15) 0 1px, transparent 1px 20px),
-                                  repeating-linear-gradient(90deg, rgba(129,140,248,0.15) 0 1px, transparent 1px 20px);
-                animation: gridDrift 20s linear infinite;
-                mask-image: radial-gradient(circle, black 40%, transparent 100%);
-                will-change: background-position;
-              }
-
-              .scanline-layer {
-                background: linear-gradient(to bottom, transparent, rgba(199,210,254,0.25), transparent);
-                height: 40px;
-                animation: scanSweep 6s ease-in-out infinite;
-                will-change: transform;
-              }
-
-              .core-glow {
-                background: radial-gradient(circle, #2727F5 0%, #6d28d9 50%, transparent 100%);
-                filter: blur(40px);
-                animation: coreBeat 3s ease-in-out infinite;
-                will-change: transform, opacity;
-              }
-
-              .punisher-cont {
-                box-shadow: 4px 4px 0px #000000, 0 0 16px rgba(220, 38, 38, 0.45);
-                transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
-              }
-              .punisher-cont:hover {
-                transform: scale(1.04);
-                box-shadow: 5px 5px 0px #000000, 0 0 28px rgba(220, 38, 38, 0.85);
-              }
-
-              .glitch-text {
-                animation: glitchBurst 7s infinite;
-              }
-
-              @media (prefers-reduced-motion: reduce) {
-                .punisher-reactor-card, .punisher-reactor-card::before, .plasma-layer, .hologrid-layer, .scanline-layer, .core-glow, .glitch-text, .punisher-cont {
-                  animation: none !important;
-                }
-                .plasma-layer {
-                  background: linear-gradient(135deg, #14146e, #4c1d95) !important;
-                }
-              }
-            `}</style>
-
-            {/* Effects Wrapper (z-0) */}
-            <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none select-none">
-              <div className="absolute inset-0 plasma-layer" />
-              <div className="absolute inset-0 hologrid-layer" />
-              <div className="absolute top-0 left-0 right-0 scanline-layer" />
-              <div className="absolute top-1/2 left-1/4 w-64 h-64 core-glow -translate-x-1/2 -translate-y-1/2" />
-              
-              {/* Electric Sparks */}
-              {[...Array(8)].map((_, i) => (
-                <div 
-                  key={i}
-                  className="absolute w-1 h-1 bg-white rounded-full opacity-0"
-                  style={{
-                    top: `${Math.random() * 100}%`,
-                    left: `${Math.random() * 100}%`,
-                    animation: `sparkTwinkle ${2 + Math.random() * 3}s infinite ${Math.random() * 5}s`,
-                    boxShadow: '0 0 8px #c7d2fe'
-                  }}
-                />
-              ))}
-            </div>
-
-            {/* Content (z-10) */}
-            <div className="flex items-center gap-3.5 sm:gap-4.5 relative z-10">
-              {/* Punisher Container (punisher-cont) with enlarged intimidating Oni demon avatar */}
+            {/* Desktop Column 2 (Right Column) */}
+            <div className="contents lg:flex lg:flex-col lg:gap-4">
+              {/* Secret Players Arena Launcher Card (Square Aspect) */}
               <div 
-                id="punisher-cont"
-                className="punisher-cont w-20 h-20 sm:w-24 sm:h-24 bg-black border-3 border-red-600 flex items-center justify-center shrink-0 shadow-[4px_4px_0px_#000000] overflow-hidden relative group cursor-pointer"
-                data-container="punisher-cont"
-                onClick={onOpenPunisher}
-                title="Enter Punisher Robot Selector"
+                className="order-5 lg:order-none relative overflow-hidden bg-cover bg-center border-4 border-neutral-300 p-4 sm:p-5 shadow-[6px_6px_0px_#ffffff] dark:shadow-[6px_6px_0px_#ffffff] flex flex-col justify-between gap-4 active:scale-98 transition-all min-w-0 aspect-square"
+                style={{ backgroundImage: "url('/assets/aistudio/image_ba67a0d0.png')" }}
               >
-                {/* Ominous red radial glow backdrop */}
-                <div 
-                  aria-hidden="true" 
-                  className="absolute inset-0 bg-[radial-gradient(circle_at_center,_rgba(220,38,38,0.35)_0%,_transparent_75%)] pointer-events-none" 
-                />
-                <img 
-                  src="/assets/aistudio/image_6c6f27fb.png" 
-                  alt="Punisher Robot Demon Mask" 
-                  className="w-full h-full object-contain filter contrast-125 brightness-110 p-1.5 transition-transform duration-300 group-hover:scale-110 drop-shadow-[0_0_10px_rgba(220,38,38,0.55)]"
-                />
-              </div>
+                {/* Vignette radial overlay: circular dark edges, clear bright center */}
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_25%,rgba(0,0,0,0.85)_95%)] z-0 pointer-events-none" />
 
-              <div>
-                <div className="flex items-center gap-2 flex-wrap">
-                  <h3 className="text-sm sm:text-base font-black uppercase text-white tracking-wide glitch-text">
-                    Punisher Robot Selector
-                  </h3>
-                  <span className="text-[9px] font-mono font-black uppercase px-1.5 py-0.5 bg-black text-amber-400 border border-amber-400/40 shadow-[1px_1px_0px_#000]">
-                    RUTHLESS AI
-                  </span>
+                <div className="flex items-center gap-3.5 relative z-10 bg-black/75 p-3 border border-white/20 backdrop-blur-sm rounded-xl shadow-lg">
+                  <div className="w-12 h-12 bg-black border-2 border-white flex items-center justify-center text-amber-400 shrink-0 shadow-[2px_2px_0px_#000] relative">
+                    <Lock className="w-6 h-6 text-amber-400" />
+                    <Sparkles className="w-3.5 h-3.5 text-white absolute -top-1 -right-1 animate-pulse" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h3 className="text-sm sm:text-base font-black uppercase text-white drop-shadow-md">
+                        Play Against Secret Players
+                      </h3>
+                      <span className="text-[10px] px-2 py-0.5 bg-black text-amber-400 font-black uppercase border border-amber-400 flex items-center gap-1 shadow-sm">
+                        <ShieldCheck className="w-3 h-3 text-amber-400" />
+                        SECURED ACCESS
+                      </span>
+                    </div>
+                    <p className="text-xs font-bold text-slate-200 mt-0.5">
+                      Challenge passcode-protected custom bots (Boyfriend Bot, Girlfriend Bot & War Bot) with sweet Bengali dialogue & tactical personalities!
+                    </p>
+                  </div>
                 </div>
-                <p className="text-xs font-bold text-[#c7d2fe] mt-0.5 max-w-md">
-                  Face 7 legendary mechanical opponents. From the clumsy Joystick Wraith to the calculating Chrome Reaper. No dice, no mercy.
-                </p>
-              </div>
-            </div>
 
-            <button
-              onClick={onOpenPunisher}
-              className="relative z-10 py-3 px-5 bg-[#2727F5] hover:bg-[#4a4aff] text-white font-black text-xs sm:text-sm uppercase tracking-wider border-2 border-black shadow-[3px_3px_0px_#000000] flex items-center justify-center gap-2 shrink-0 cursor-pointer active:translate-x-0.5 active:translate-y-0.5"
-            >
-              <Zap className="w-4 h-4 fill-current" />
-              Enter Selector
-            </button>
-          </div>
-
-          {/* Instant Grandmaster Bot Challenge Card (Animated Fire Effect) */}
-          <div className="bot-fire-card text-black border-4 border-black p-4 sm:p-5 shadow-[6px_6px_0px_#000000] flex flex-col sm:flex-row sm:items-center justify-between gap-4 relative overflow-hidden transition-all duration-200">
-            <style>{`
-              @keyframes fireFlow {
-                0% { background-position: 0% 50%; }
-                50% { background-position: 100% 50%; }
-                100% { background-position: 0% 50%; }
-              }
-
-              @keyframes flameRise {
-                0% { transform: translateY(20%) scaleY(0.95) scaleX(0.98); opacity: 0.6; }
-                25% { transform: translateY(-12%) scaleY(1.15) scaleX(1.05) translateX(-6px); opacity: 0.9; }
-                50% { transform: translateY(8%) scaleY(0.9) scaleX(0.95) translateX(5px); opacity: 0.65; }
-                75% { transform: translateY(-16%) scaleY(1.2) scaleX(0.92) translateX(-3px); opacity: 0.95; }
-                100% { transform: translateY(20%) scaleY(0.95) scaleX(0.98); opacity: 0.6; }
-              }
-
-              @keyframes emberFloat {
-                0% { transform: translateY(30px) translateX(0) scale(1); opacity: 0; }
-                20% { opacity: 0.95; }
-                80% { opacity: 0.7; }
-                100% { transform: translateY(-90px) translateX(14px) scale(0.2); opacity: 0; }
-              }
-
-              @keyframes heatPulse {
-                0%, 100% { box-shadow: 6px 6px 0px #000000, 0 0 16px rgba(249,115,22,0.5); }
-                50% { box-shadow: 6px 6px 0px #000000, 0 0 32px rgba(253,224,71,0.85), inset 0 0 24px rgba(234,88,12,0.4); }
-              }
-
-              @keyframes edgeFlicker {
-                0%, 100% { opacity: 0.4; }
-                12% { opacity: 0.9; }
-                27% { opacity: 0.35; }
-                41% { opacity: 0.95; }
-                63% { opacity: 0.5; }
-                80% { opacity: 0.85; }
-              }
-
-              .bot-fire-card {
-                animation: heatPulse 2.5s infinite ease-in-out;
-                will-change: box-shadow;
-              }
-
-              .bot-fire-bg {
-                background: linear-gradient(115deg, #dc2626 0%, #ea580c 25%, #f97316 50%, #f59e0b 75%, #fde047 100%);
-                background-size: 300% 300%;
-                animation: fireFlow 6.5s ease-in-out infinite;
-                will-change: background-position;
-              }
-
-              .bot-fire-edge {
-                box-shadow: inset 0 3px 12px rgba(255, 255, 255, 0.6), inset 0 -3px 12px rgba(220, 38, 38, 0.8);
-                animation: edgeFlicker 1.8s infinite linear;
-                will-change: opacity;
-              }
-
-              .bot-flame-blob-1 {
-                background: radial-gradient(circle, rgba(253,224,71,0.85) 0%, rgba(249,115,22,0.6) 50%, transparent 80%);
-                filter: blur(14px);
-                mix-blend-mode: overlay;
-                animation: flameRise 3.2s infinite ease-in-out;
-                will-change: transform, opacity;
-              }
-
-              .bot-flame-blob-2 {
-                background: radial-gradient(circle, rgba(255,255,255,0.9) 0%, rgba(251,146,60,0.7) 45%, transparent 75%);
-                filter: blur(16px);
-                mix-blend-mode: screen;
-                animation: flameRise 4.5s infinite ease-in-out 0.6s;
-                will-change: transform, opacity;
-              }
-
-              .bot-flame-blob-3 {
-                background: radial-gradient(circle, rgba(253,224,71,0.8) 0%, rgba(234,88,12,0.65) 55%, transparent 80%);
-                filter: blur(14px);
-                mix-blend-mode: overlay;
-                animation: flameRise 5.2s infinite ease-in-out 1.2s;
-                will-change: transform, opacity;
-              }
-
-              .bot-ember-1 { animation: emberFloat 2.8s infinite ease-out 0.1s; will-change: transform, opacity; }
-              .bot-ember-2 { animation: emberFloat 3.6s infinite ease-out 0.7s; will-change: transform, opacity; }
-              .bot-ember-3 { animation: emberFloat 2.4s infinite ease-out 1.3s; will-change: transform, opacity; }
-              .bot-ember-4 { animation: emberFloat 4.1s infinite ease-out 0.4s; will-change: transform, opacity; }
-              .bot-ember-5 { animation: emberFloat 3.1s infinite ease-out 1.8s; will-change: transform, opacity; }
-              .bot-ember-6 { animation: emberFloat 2.6s infinite ease-out 0.9s; will-change: transform, opacity; }
-
-              @media (prefers-reduced-motion: reduce) {
-                .bot-fire-card {
-                  animation: none !important;
-                }
-                .bot-fire-bg {
-                  background: linear-gradient(115deg, #ea580c, #f59e0b, #fde047) !important;
-                  animation: none !important;
-                }
-                .bot-flame-blob-1, .bot-flame-blob-2, .bot-flame-blob-3,
-                .bot-ember-1, .bot-ember-2, .bot-ember-3, .bot-ember-4, .bot-ember-5, .bot-ember-6,
-                .bot-fire-edge {
-                  animation: none !important;
-                  display: none !important;
-                }
-              }
-            `}</style>
-
-            {/* Fire Effect Background Container (z-0) */}
-            <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none select-none">
-              <div className="absolute inset-0 bot-fire-bg" />
-              <div className="absolute inset-0 bot-fire-edge" />
-              <div className="absolute -bottom-8 left-[10%] w-48 h-36 rounded-full bot-flame-blob-1" />
-              <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 w-64 h-40 rounded-full bot-flame-blob-2" />
-              <div className="absolute -bottom-8 right-[10%] w-52 h-36 rounded-full bot-flame-blob-3" />
-
-              <div className="absolute bottom-1 left-[12%] w-1.5 h-1.5 rounded-full bg-amber-200 bot-ember-1" />
-              <div className="absolute bottom-2 left-[28%] w-1 h-1 rounded-full bg-yellow-300 bot-ember-2" />
-              <div className="absolute bottom-1 left-[45%] w-2 h-2 rounded-full bg-orange-300 bot-ember-3" />
-              <div className="absolute bottom-2 left-[62%] w-1.5 h-1.5 rounded-full bg-amber-300 bot-ember-4" />
-              <div className="absolute bottom-1 left-[78%] w-1 h-1 rounded-full bg-yellow-200 bot-ember-5" />
-              <div className="absolute bottom-2 left-[90%] w-2 h-2 rounded-full bg-orange-400 bot-ember-6" />
-            </div>
-
-            {/* Card Content & Text (z-10) */}
-            <div className="flex items-center gap-3.5 relative z-10 drop-shadow-[0_1px_2px_rgba(0,0,0,0.4)]">
-              <div className="w-12 h-12 bg-black border-2 border-black flex items-center justify-center text-amber-400 shrink-0 shadow-[2px_2px_0px_#000]">
-                <CyberSkull size={28} className="w-7 h-7 text-amber-400" />
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <h3 className="text-sm sm:text-base font-black uppercase text-black">Play vs Grandmaster Bot</h3>
-                  <span className="text-[10px] px-1.5 py-0.5 bg-black text-amber-400 font-black uppercase shadow-sm">
-                    Instant
-                  </span>
+                <div className="flex flex-wrap items-center gap-3 shrink-0 relative z-10 lg:mt-auto">
+                  <button
+                    onClick={() => setIsSecretArenaOpen(true)}
+                    className="py-3 px-5 bg-white hover:bg-neutral-100 text-black font-black text-xs sm:text-sm uppercase tracking-wider border-2 border-black shadow-[3px_3px_0px_#000000] flex items-center justify-center gap-2 shrink-0 cursor-pointer relative z-10"
+                  >
+                    <Lock className="w-4 h-4 text-black" />
+                    SECRET ARENA
+                  </button>
                 </div>
               </div>
-            </div>
 
-            {/* Inner Action Buttons (z-10) */}
-            <div className="flex flex-wrap items-center gap-2.5 shrink-0 relative z-10">
-              <button
-                type="button"
-                onClick={onOpenClassicBotModal || onOpenBotModal}
-                className="py-2 px-3.5 bg-neutral-900 hover:bg-black text-white font-black text-xs uppercase tracking-wider border-2 border-black shadow-[3px_3px_0px_#000000] flex flex-col items-center justify-center cursor-pointer transition-transform duration-75 active:scale-95"
-                title="Play Traditional Chess (No Prince)"
+              {/* Jujutsu Kaisen Culling Game Mode Challenge Card (Square Aspect, Sukuna Background, Right below Secret Arena on Desktop, 4th Position Vertically on Mobile) */}
+              <div 
+                className="order-4 lg:order-none relative overflow-hidden bg-cover bg-center border-4 border-red-600 p-4 sm:p-5 shadow-[6px_6px_0px_#8b0000] flex flex-col justify-between gap-4 active:scale-98 transition-all min-w-0 aspect-square"
+                style={{ backgroundImage: "url('/assets/aistudio/image_9087d774.png')" }}
               >
-                <span className="leading-tight">Play Normal Chess</span>
-                <span className="text-[9px] font-bold text-amber-300 lowercase tracking-normal leading-tight">
-                  without prince
-                </span>
-              </button>
+                {/* Vignette radial overlay: circular dark edges, clear bright center */}
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_20%,rgba(0,0,0,0.85)_95%)] z-0 pointer-events-none" />
 
-              <button
-                type="button"
-                onClick={onOpenBotModal}
-                className="py-3 px-5 bg-black hover:bg-neutral-900 text-amber-400 font-black text-xs sm:text-sm uppercase tracking-wider border-2 border-black shadow-[3px_3px_0px_#000000] flex items-center justify-center gap-2 cursor-pointer transition-transform duration-75 active:scale-95"
-              >
-                <Swords className="w-4 h-4" />
-                Play vs Bot
-              </button>
-            </div>
-          </div>
-
-          {/* Jujutsu Kaisen Culling Game Mode Challenge Card */}
-          <div className="bg-[#1a0505] text-white border-4 border-[#8b0000] p-4 sm:p-5 shadow-[6px_6px_0px_#8b0000] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-3.5">
-              <div className="w-12 h-12 bg-red-600 border-2 border-black flex items-center justify-center text-white shrink-0 shadow-[2px_2px_0px_#000]">
-                <Swords className="w-7 h-7 text-white" />
-              </div>
-              <div>
-                <div className="flex items-center gap-2 flex-wrap">
-                  <h3 className="text-sm sm:text-base font-black uppercase text-red-400">
-                    Play Culling Game Mode (Jujutsu Kaisen)
-                  </h3>
-                  <span className="text-[10px] px-1.5 py-0.5 bg-red-600 text-white font-black uppercase">
-                    88 Cross Squares
-                  </span>
+                <div className="flex items-center gap-3.5 relative z-10 bg-black/80 p-3 border border-red-500/40 backdrop-blur-sm rounded-xl shadow-lg">
+                  <div className="w-12 h-12 bg-red-600 border-2 border-black flex items-center justify-center text-white shrink-0 shadow-[2px_2px_0px_#000]">
+                    <Swords className="w-7 h-7 text-white" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h3 className="text-sm sm:text-base font-black uppercase text-red-400 drop-shadow">
+                        Play Culling Game Mode (Jujutsu Kaisen)
+                      </h3>
+                      <span className="text-[10px] px-1.5 py-0.5 bg-red-600 text-white font-black uppercase shadow-sm">
+                        88 Cross Squares
+                      </span>
+                    </div>
+                  </div>
                 </div>
-                <p className="text-xs font-bold text-slate-300 mt-0.5">
-                  Gojo & Protagonists vs Sukuna & Antagonists on an 88-square cross board with custom abilities!
-                </p>
-              </div>
-            </div>
 
-            <button
-              onClick={() => setIsCullingOpen(true)}
-              className="py-3 px-5 bg-red-600 hover:bg-red-500 text-white font-black text-xs sm:text-sm uppercase tracking-wider border-2 border-black shadow-[3px_3px_0px_#000000] flex items-center justify-center gap-2 shrink-0 cursor-pointer"
-            >
-              <Swords className="w-4 h-4" />
-              ⚔️ Culling Mode
-            </button>
-          </div>
-
-
-
-          {/* Secret Players Arena Launcher Card (Immediately After Culling Game Mode) */}
-          <div 
-            className="relative overflow-hidden bg-cover bg-center border-4 border-neutral-300 p-4 sm:p-5 shadow-[6px_6px_0px_#ffffff] dark:shadow-[6px_6px_0px_#ffffff] flex flex-col sm:flex-row sm:items-center justify-between gap-4 active:scale-98 transition-all"
-            style={{ backgroundImage: "url('/assets/aistudio/Screenshot_2026-10-24_193935_e77196b6.png')" }}
-          >
-            {/* Dark overlay for text legibility */}
-            <div className="absolute inset-0 bg-black/65 z-0 pointer-events-none" />
-
-            <div className="flex items-center gap-3.5 relative z-10">
-              <div className="w-12 h-12 bg-black border-2 border-white flex items-center justify-center text-amber-400 shrink-0 shadow-[2px_2px_0px_#000] relative">
-                <Lock className="w-6 h-6 text-amber-400" />
-                <Sparkles className="w-3.5 h-3.5 text-white absolute -top-1 -right-1 animate-pulse" />
-              </div>
-              <div>
-                <div className="flex items-center gap-2 flex-wrap">
-                  <h3 className="text-sm sm:text-base font-black uppercase text-white drop-shadow-md">
-                    Play Against Secret Players
-                  </h3>
-                  <span className="text-[10px] px-2 py-0.5 bg-black text-amber-400 font-black uppercase border border-amber-400 flex items-center gap-1 shadow-sm">
-                    <ShieldCheck className="w-3 h-3 text-amber-400" />
-                    SECURED ACCESS
-                  </span>
+                <div className="flex flex-wrap items-center gap-3 shrink-0 relative z-10 lg:mt-auto">
+                  <button
+                    onClick={() => setIsCullingOpen(true)}
+                    className="py-3 px-5 bg-red-600 hover:bg-red-500 text-white font-black text-xs sm:text-sm uppercase tracking-wider border-2 border-black shadow-[3px_3px_0px_#000000] flex items-center justify-center gap-2 shrink-0 cursor-pointer relative z-10"
+                  >
+                    <Swords className="w-4 h-4" />
+                    ⚔️ CULLING MODE
+                  </button>
                 </div>
-                <p className="text-xs font-bold text-slate-200 mt-0.5">
-                  Challenge passcode-protected custom bots (Boyfriend Bot, Girlfriend Bot & War Bot) with sweet Bengali dialogue & tactical personalities!
-                </p>
+              </div>
+
+              {/* Rose Paradise Entry Button Card */}
+              <div className="order-6 lg:order-none min-w-0">
+                <RoseParadiseEntryButton onClick={onOpenRose || (() => {})} />
               </div>
             </div>
-
-            <button
-              onClick={() => setIsSecretArenaOpen(true)}
-              className="py-3 px-5 bg-white hover:bg-neutral-100 text-black font-black text-xs sm:text-sm uppercase tracking-wider border-2 border-black shadow-[3px_3px_0px_#000000] flex items-center justify-center gap-2 shrink-0 cursor-pointer relative z-10"
-            >
-              <Lock className="w-4 h-4 text-black" />
-              SECRET ARENA
-            </button>
-          </div>
-
-          {/* NEW: Instant Grandmaster Bot with Crafted Pieces Challenge Card (Navy Blue Background) */}
-          <div className="bg-[#0f172a] text-white border-4 border-black dark:border-white p-4 sm:p-5 shadow-[6px_6px_0px_#000000] dark:shadow-[6px_6px_0px_#ffffff] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-3.5">
-              <div className="w-12 h-12 bg-amber-400 border-2 border-black flex items-center justify-center text-black shrink-0 shadow-[2px_2px_0px_#000]">
-                <Sparkles className="w-7 h-7 text-black" />
-              </div>
-              <div>
-                <div className="flex items-center gap-2 flex-wrap">
-                  <h3 className="text-sm sm:text-base font-black uppercase text-amber-400">
-                    Play vs Grandmaster Bot with Crafted Pieces
-                  </h3>
-                  <span className="text-[10px] px-1.5 py-0.5 bg-amber-400 text-black font-black uppercase">
-                    New Mode
-                  </span>
-                </div>
-                <p className="text-xs font-bold text-slate-300 mt-0.5">
-                  Custom crafted army: Bishops replaced with Communists, Knights with Priests, and a Rook with Supreme Rook. Same tactical dice rules!
-                </p>
-              </div>
-            </div>
-
-            <button
-              onClick={onOpenCraftedBotModal || onOpenBotModal}
-              className="py-3 px-5 bg-amber-400 hover:bg-amber-300 text-black font-black text-xs sm:text-sm uppercase tracking-wider border-2 border-black shadow-[3px_3px_0px_#000000] flex items-center justify-center gap-2 shrink-0 cursor-pointer"
-            >
-              <Swords className="w-4 h-4" />
-              Play vs Bot (Crafted)
-            </button>
-          </div>
-
-          <RoseParadiseEntryButton onClick={onOpenRose || (() => {})} />
-
-          {/* Craft Theory Catalog Button Card (Solid White, Highlighted) */}
-          <div className="bg-white text-black border-4 border-black dark:border-white p-4 sm:p-5 shadow-[6px_6px_0px_#000000] dark:shadow-[6px_6px_0px_#ffffff] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-3.5">
-              <div className="w-12 h-12 bg-amber-400 border-2 border-black flex items-center justify-center text-black shrink-0 shadow-[2px_2px_0px_#000]">
-                <BookOpen className="w-7 h-7 text-black" />
-              </div>
-              <div>
-                <div className="flex items-center gap-2 flex-wrap">
-                  <h3 className="text-sm sm:text-base font-black uppercase text-black">
-                    Craft Theory & Piece Encyclopedia
-                  </h3>
-                  <span className="text-[10px] px-1.5 py-0.5 bg-black text-amber-400 font-black uppercase">
-                    Guide
-                  </span>
-                </div>
-                <p className="text-xs font-bold text-neutral-700 mt-0.5">
-                  Explore rules, descriptions, and 9×9 movement preview grids for all standard chess pieces, the Prince, and crafted specials.
-                </p>
-              </div>
-            </div>
-
-            <button
-              onClick={onOpenCraftTheory}
-              className="py-3 px-5 bg-white hover:bg-neutral-100 text-black font-black text-xs sm:text-sm uppercase tracking-wider border-3 border-black shadow-[3px_3px_0px_#000000] flex items-center justify-center gap-2 shrink-0 cursor-pointer active:translate-x-0.5 active:translate-y-0.5"
-            >
-              <BookOpen className="w-4 h-4 text-black" />
-              Craft Theory
-            </button>
-          </div>
           </div>
 
           {/* Active / Ongoing Matches Section */}

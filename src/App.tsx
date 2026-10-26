@@ -43,6 +43,7 @@ import { sounds } from './utils/audio';
 import { Crown, Bot } from 'lucide-react';
 import { PunisherSelector } from './punisher/PunisherSelector';
 import { getPunisherBotMove, PunisherBotId, PUNISHER_BOTS } from './punisher/punisherBot';
+import { ChestRewardHost } from './chest/ChestRewardHost';
 
 function AppContent() {
   const { user, isLoading } = useAuth();
@@ -829,6 +830,12 @@ function AppContent() {
         onClose={() => setIsBotModalOpen(false)}
         initialGameMode={botInitialGameMode}
         onStartBotMatch={handleStartBotMatch}
+      />
+
+      {/* Global 2D Reward Chest Host */}
+      <ChestRewardHost
+        userId={user?.id}
+        onStartSecretMatch={(botConfig) => setActiveSecretBot(botConfig)}
       />
     </>
   );

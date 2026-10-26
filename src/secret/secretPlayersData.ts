@@ -1,13 +1,234 @@
 import { SecretPlayerConfig } from './types';
+import { SECRET_PLAYER_CODES } from '../chest/chestConfig';
 
 export const SECRET_PLAYERS: SecretPlayerConfig[] = [
+  {
+    id: 'lucca',
+    publicName: 'Lucca',
+    realName: 'Lucca',
+    opponentAddressingName: 'Challenger',
+    title: 'Master Tactician (1500 ELO)',
+    avatarSrc: '/secret-players/lucca.png',
+    avatarIcon: '⚔️',
+    avatarBg: 'bg-gradient-to-br from-teal-500 to-emerald-700',
+    passcode: SECRET_PLAYER_CODES.lucca,
+    themeColor: 'cyan',
+    gameMode: 'standard',
+    preferredOpenings: ['1.e4', '1.Nf3'],
+    playstyle: 'war_bot',
+    tagline: 'Calm, calculating, and striking with surgical precision.',
+    description: '1500 ELO tactical engine. Excels at center control and patient pawn structures.',
+    dialogue: {
+      onMatchStart: [
+        'Welcome to the proving grounds. Let us see your tactical depth.',
+        'Precision in every move. Make your opening count.',
+        'A good game begins with sound strategy. Good luck.',
+      ],
+      onPlayerCheck: [
+        'An aggressive check. Well positioned.',
+        'Check acknowledged. Recalculating defenses.',
+      ],
+      onBotCheck: [
+        'Check. Your king is open to tactical lines.',
+        'Check! Defend with precision.',
+      ],
+      onPlayerCapture: [
+        'Good capture. The center opens up.',
+        'A solid trade. Let us see the follow-up.',
+      ],
+      onBotCapture: [
+        'Tactical capture executed.',
+        'Piece removed from the board as calculated.',
+      ],
+      onBlunder: [
+        'An inaccuracy on the board.',
+      ],
+      onVictory: [
+        'Checkmate. A well-fought match, but precision prevailed.',
+        'Good game. Analyze the middle game for improvement.',
+      ],
+      onDefeat: [
+        'Impressive tactical victory. I concede to your strategy.',
+        'Magnificent checkmate. You outplayed my defensive lines.',
+      ],
+      onIdle: [
+        'Take your time. Strategic calculation requires focus.',
+        'The clock is running. Choose your path.',
+      ],
+    },
+  },
+  {
+    id: 'magi',
+    publicName: 'Magi',
+    realName: 'Magi',
+    opponentAddressingName: 'Challenger',
+    title: 'Arcane Grandmistress (1700 ELO)',
+    avatarSrc: '/secret-players/magi.png',
+    avatarIcon: '🔮',
+    avatarBg: 'bg-gradient-to-br from-purple-500 to-indigo-700',
+    passcode: SECRET_PLAYER_CODES.magi,
+    themeColor: 'rose',
+    gameMode: 'standard',
+    preferredOpenings: ['1.d4', '1.c4'],
+    playstyle: 'girl_friend',
+    tagline: 'Illusionary sacrifices and devastating diagonal attacks.',
+    description: '1700 ELO sharp tactician. Master of bishop pairs and king-side assaults.',
+    dialogue: {
+      onMatchStart: [
+        'Step into the arcane circle. Can you read the flow of pieces?',
+        'The board is a tapestry of fate. Show me your vision.',
+        'Let our battle be illuminating and fierce.',
+      ],
+      onPlayerCheck: [
+        'A sharp attack! You pierced the illusion.',
+        'Check! Fascinating positional counter.',
+      ],
+      onBotCheck: [
+        'Check! The diagonal belongs to me.',
+        'Checkmate net is tightening. Be careful.',
+      ],
+      onPlayerCapture: [
+        'You captured my piece! But did you see the trap?',
+        'A bold capture. The pressure mounts.',
+      ],
+      onBotCapture: [
+        'Vanished into the ether. Piece claimed.',
+        'A necessary sacrifice for positional dominion.',
+      ],
+      onBlunder: [
+        'The spirits whisper of a miscalculation.',
+      ],
+      onVictory: [
+        'The arcane trial concludes in my favor. Well played!',
+        'Checkmate! The mysteries of the diagonal are absolute.',
+      ],
+      onDefeat: [
+        'Incredible! You shattered my spells with pure chess brilliance.',
+        'You have bested the Grandmistress. Honor to your victory!',
+      ],
+      onIdle: [
+        'Ponder deeply... the board holds many secrets.',
+        'The magic is in the waiting. Reveal your next step.',
+      ],
+    },
+  },
+  {
+    id: 'toji',
+    publicName: 'Toji',
+    realName: 'Toji',
+    opponentAddressingName: 'Prey',
+    title: 'Sorcerer Killer (2000 ELO)',
+    avatarSrc: '/secret-players/toji.png',
+    avatarIcon: '🗡️',
+    avatarBg: 'bg-gradient-to-br from-red-600 to-zinc-900',
+    passcode: SECRET_PLAYER_CODES.toji,
+    themeColor: 'silver',
+    gameMode: 'standard',
+    preferredOpenings: ['1.e4', '1.g3'],
+    playstyle: 'war_bot',
+    tagline: 'Zero cursed energy. Pure physical tactical dominance.',
+    description: '2000 ELO relentless executioner. Hunts pieces ruthlessly with zero mercy.',
+    dialogue: {
+      onMatchStart: [
+        'You took the bounty? Big mistake.',
+        'No fancy tricks will save you. Just cold steel and speed.',
+        'Show me what you got before I end this.',
+      ],
+      onPlayerCheck: [
+        'A check? Annoying mosquito.',
+        'Nice try. It takes more than that to pin me.',
+      ],
+      onBotCheck: [
+        'Check. You have nowhere left to run.',
+        'Check! Cornered like prey.',
+      ],
+      onPlayerCapture: [
+        'You got a piece. Do not get cocky.',
+        'Material means nothing against pure speed.',
+      ],
+      onBotCapture: [
+        'Eliminated. One down.',
+        'Surgical strike. Your defenses are falling.',
+      ],
+      onBlunder: [
+        'Pathetic lapse in judgment.',
+      ],
+      onVictory: [
+        'Bounty collected. You were too slow.',
+        'Checkmate. Game over, kid.',
+      ],
+      onDefeat: [
+        'Tch... You actually got me. I respect the grit.',
+        'Not bad at all. You earned this win.',
+      ],
+      onIdle: [
+        'Hurry it up. I do not have all day.',
+        'Thinking will not save you. Move.',
+      ],
+    },
+  },
+  {
+    id: 'lengoku',
+    publicName: 'LenGoku',
+    realName: 'LenGoku',
+    opponentAddressingName: 'Warrior',
+    title: 'Flame Hashira (2200 ELO)',
+    avatarSrc: '/secret-players/lengoku.png',
+    avatarIcon: '🔥',
+    avatarBg: 'bg-gradient-to-br from-orange-500 to-amber-700',
+    passcode: SECRET_PLAYER_CODES.lengoku,
+    themeColor: 'amber',
+    gameMode: 'standard',
+    preferredOpenings: ['1.e4', '1.f4'],
+    playstyle: 'war_bot',
+    tagline: 'Set your heart ablaze! Unyielding offensive spirit.',
+    description: '2200 ELO apex engine. Overwhelming tactical flame that burns through defenses.',
+    dialogue: {
+      onMatchStart: [
+        'Set your heart ablaze! Let us have a glorious chess battle!',
+        'No matter how strong the storm, stand firm! Show me your passion!',
+        'Let your spirit burn brightly on every square of this board!',
+      ],
+      onPlayerCheck: [
+        'Magnificent check! Your spirit burns hot!',
+        'A valiant strike! I shall meet it head-on!',
+      ],
+      onBotCheck: [
+        'Check! Flame Breathing, First Form: Unknowing Fire!',
+        'Check! Do not back down, warrior!',
+      ],
+      onPlayerCapture: [
+        'Excellent capture! You fight with true honor!',
+        'A brilliant attack! My flames burn even brighter now!',
+      ],
+      onBotCapture: [
+        'Strike with unwavering conviction! Piece taken!',
+        'Fulfill your duty! The flame advances!',
+      ],
+      onBlunder: [
+        'Do not despair! Recover your fighting spirit!',
+      ],
+      onVictory: [
+        'A battle fought with magnificent heart! Stand proud, warrior!',
+        'Checkmate! Your spirit was fierce, and I honor your effort!',
+      ],
+      onDefeat: [
+        'Sublime! Your brilliance burned brighter than the sun! Truly outstanding victory!',
+        'I concede! You have mastered the chessboard with unmatched spirit!',
+      ],
+      onIdle: [
+        'Breathe deeply, focus your mind, and make your move!',
+        'I eagerly await your next passionate strike!',
+      ],
+    },
+  },
   {
     id: 'boy_friend',
     publicName: 'Boy Bot',
     realName: 'Babai',
     opponentAddressingName: 'Golu',
     title: 'The Devoted Companion',
-    avatarSrc: '/assets/aistudio/image_60f34245.png',
+    avatarSrc: '/secret-players/girl_bot.png',
     avatarIcon: '💖',
     avatarBg: 'bg-gradient-to-br from-rose-400 to-pink-600',
     passcode: '123456',
@@ -69,7 +290,7 @@ export const SECRET_PLAYERS: SecretPlayerConfig[] = [
     realName: 'Golu',
     opponentAddressingName: 'Babai',
     title: 'Fierce & Loving Partner',
-    avatarSrc: '/assets/aistudio/image_a38547ec.png',
+    avatarSrc: '/secret-players/girl_bot.png',
     avatarIcon: '👑',
     avatarBg: 'bg-gradient-to-br from-amber-400 to-rose-500',
     passcode: '234567',
@@ -128,6 +349,7 @@ export const SECRET_PLAYERS: SecretPlayerConfig[] = [
     realName: 'War Bot',
     opponentAddressingName: 'Mortal',
     title: 'Grandmaster War Engine',
+    avatarSrc: '/secret-players/war_bot.png',
     avatarIcon: '⚔️',
     avatarBg: 'bg-gradient-to-br from-zinc-700 via-neutral-900 to-black',
     passcode: '345678',

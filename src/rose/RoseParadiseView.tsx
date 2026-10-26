@@ -19,6 +19,7 @@ import {
 import type { RoseMatchState, RoseRole, RoseSeat, RoseSummonPieceType } from './types';
 import type { PieceColor } from '../types/game';
 import { sounds } from '../utils/audio';
+import { reportGameEnd } from '../chest/reportGameEnd';
 import {
   Heart,
   Sparkles,
@@ -254,6 +255,10 @@ export const RoseParadiseView: React.FC<RoseParadiseViewProps> = ({ onBack }) =>
         'couples_partner'
       );
       setEarnedRoseCards(cards);
+      try {
+        const myMoves = activeMatch.history ? activeMatch.history.filter((h) => h.piece.color === effectiveMyColor).length : 0;
+        reportGameEnd({ matchId: activeMatch.id, mode: 'rose', result: outcome, moves: myMoves, isTraining: false });
+      } catch {}
     }
   }, [activeMatch?.status, activeMatch, effectiveMyColor, mySeat?.role, opponentSeat?.displayName, finalizeMatch]);
 

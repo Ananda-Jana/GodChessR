@@ -4,6 +4,7 @@ import { SECRET_PLAYERS } from '../secretPlayersData';
 import { SecretPlayerCard } from './SecretPlayerCard';
 import { PasscodeGateModal } from './PasscodeGateModal';
 import { Lock, Sparkles, ShieldCheck, X } from 'lucide-react';
+import { ModeArtPanel } from '../../components/ModeArtPanel';
 
 interface SecretArenaModalProps {
   isOpen: boolean;
@@ -31,7 +32,14 @@ export const SecretArenaModal: React.FC<SecretArenaModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/85 backdrop-blur-md overflow-y-auto animate-in fade-in duration-200">
-      <div className="w-full max-w-5xl bg-[#0a0a0c] border-3 sm:border-4 border-slate-200 text-white shadow-[6px_6px_0px_#ffffff] sm:shadow-[10px_10px_0px_#ffffff] p-3 sm:p-6 relative flex flex-col my-auto max-h-[92vh] sm:max-h-[90vh]">
+      <div className="w-full max-w-7xl bg-[#0a0a0c] border-3 sm:border-4 border-slate-200 text-white shadow-[6px_6px_0px_#ffffff] sm:shadow-[10px_10px_0px_#ffffff] relative flex flex-col md:flex-row my-auto max-h-[92vh] sm:max-h-[90vh] overflow-hidden">
+        <ModeArtPanel
+          modeKey="secret-arena"
+          title="Secret Arena"
+          subtitle="Passcode-Gated Custom Bots"
+        />
+
+        <div className="flex-1 flex flex-col min-w-0 p-3 sm:p-6 overflow-y-auto">
         {/* Header */}
         <div className="flex items-start justify-between border-b-2 sm:border-b-3 border-slate-700 pb-2.5 sm:pb-4 mb-3 sm:mb-6 shrink-0">
           <div className="flex items-center gap-2.5 sm:gap-3.5">
@@ -78,6 +86,7 @@ export const SecretArenaModal: React.FC<SecretArenaModalProps> = ({
         <div className="pt-2.5 sm:pt-4 border-t-2 border-slate-800 text-center text-[10px] sm:text-[11px] font-mono text-slate-400 flex items-center justify-center gap-1.5 shrink-0">
           <Sparkles className="w-3.5 h-3.5 text-amber-400 shrink-0" />
           <span>Matches run locally with zero lag. Enter secret 6-digit PIN to unlock!</span>
+        </div>
         </div>
       </div>
 

@@ -7,7 +7,7 @@ interface RoseParadiseEntryButtonProps {
 
 export const RoseParadiseEntryButton: React.FC<RoseParadiseEntryButtonProps> = ({ onClick }) => {
   return (
-    <div className="bg-gradient-to-r from-purple-950 via-[#3b1156] to-black text-white border-4 border-[#2f2ee1] p-4 sm:p-5 shadow-[6px_6px_0px_#634adb] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div className="bg-gradient-to-r from-purple-950 via-[#3b1156] to-black text-white border-4 border-[#2f2ee1] p-4 sm:p-5 shadow-[6px_6px_0px_#634adb] flex flex-col sm:flex-row lg:flex-col sm:items-center lg:items-start justify-between gap-4 min-w-0 h-full">
       <div className="flex items-center gap-3.5">
         <div className="w-12 h-12 bg-[#2f2ee1] border-2 border-black flex items-center justify-center text-white shrink-0 shadow-[2px_2px_0px_#6755be]">
           <Heart className="w-7 h-7 text-pink-200 fill-pink-200" />
@@ -26,13 +26,15 @@ export const RoseParadiseEntryButton: React.FC<RoseParadiseEntryButtonProps> = (
           </p>
         </div>
       </div>
-      <button
-        onClick={onClick}
-        className="py-3 px-5 bg-[#2f2ee1] hover:bg-blue-700 text-white font-black text-xs sm:text-sm uppercase tracking-wider border-2 border-black shadow-[3px_3px_0px_#634adb] flex items-center justify-center gap-2 shrink-0 cursor-pointer transition-transform hover:-translate-y-0.5"
-      >
-        <Sparkles className="w-4 h-4 text-pink-200" />
-        🌹 Enter Rose Paradise
-      </button>
+      <div className="flex flex-wrap items-center gap-3 shrink-0 relative z-10 lg:mt-auto">
+        <button
+          onClick={onClick}
+          className="py-3 px-5 bg-[#2f2ee1] hover:bg-blue-700 text-white font-black text-xs sm:text-sm uppercase tracking-wider border-2 border-black shadow-[3px_3px_0px_#634adb] flex items-center justify-center gap-2 shrink-0 cursor-pointer transition-transform hover:-translate-y-0.5"
+        >
+          <Sparkles className="w-4 h-4 text-pink-200" />
+          🌹 Enter Rose Paradise
+        </button>
+      </div>
     </div>
   );
 };

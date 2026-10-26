@@ -1,0 +1,560 @@
+/**
+ * Reward Chest Keyframes and Styling
+ * Strictly namespaced: class names prefixed "chest-", keyframes prefixed "chestFx".
+ * Optimized for GPU performance: animates only transform and opacity.
+ */
+
+/* Backdrop overlay: full screen dimming */
+.chest-backdrop-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+  background-color: rgba(8, 8, 20, 0.7);
+}
+
+/* Mobile Layout (<768px): Fullscreen 100dvh with safe-area padding */
+.chest-panel-container {
+  width: 100%;
+  height: 100dvh;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  padding: env(safe-area-inset-top, 16px) 16px env(safe-area-inset-bottom, 16px) 16px;
+  background: radial-gradient(circle at center, #241a6b 0%, #0b0b14 85%);
+  overflow: hidden;
+  border-radius: 0;
+}
+
+/* Desktop Layout (>=768px): Centred modal panel, 460px wide, min(620px, 90dvh) */
+@media (min-width: 768px) {
+  .chest-panel-container {
+    width: 460px;
+    height: min(620px, 90dvh);
+    border: 4px solid #111827;
+    box-shadow: 8px 8px 0px #000000;
+    padding: 24px 20px;
+    border-radius: 0;
+  }
+}
+
+/* Clipped Background FX layer (contains sunburst, aura, glow) */
+.chest-bg-layer {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* 12-Ray Sunburst */
+.chest-sunburst {
+  width: 640px;
+  height: 640px;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  margin-top: -320px;
+  margin-left: -320px;
+  pointer-events: none;
+  animation: chestFxSunburstSpin 24s linear infinite;
+  will-change: transform;
+}
+
+.chest-sunburst-fast {
+  animation: chestFxSunburstSpin 10s linear infinite;
+}
+
+@keyframes chestFxSunburstSpin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Moving Aura: static blur wrapper + rotating conic-gradient inner */
+.chest-aura-wrapper {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 300px;
+  height: 300px;
+  margin-top: -150px;
+  margin-left: -150px;
+  filter: blur(26px);
+  pointer-events: none;
+  z-index: 2;
+  opacity: 0.55;
+  transition: opacity 300ms ease;
+}
+
+.chest-aura-inner {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: conic-gradient(from 0deg, #2727F5, #6d28d9, #818cf8, #38bdf8, #2727F5);
+  animation: chestFxAura 8s linear infinite;
+  will-change: transform;
+}
+
+.chest-aura-fast {
+  animation: chestFxAura 4s linear infinite;
+}
+
+.chest-aura-inner-resigned {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: conic-gradient(from 0deg, #331010, #1f1f2e, #441010, #1f1f2e, #331010);
+  animation: chestFxAura 12s linear infinite;
+  will-change: transform;
+}
+
+@keyframes chestFxAura {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Warm Glow behind chest (#fb923c to transparent, ~260px wide) */
+.chest-warm-glow {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 260px;
+  height: 260px;
+  margin-top: -130px;
+  margin-left: -130px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #fb923c 0%, rgba(251, 146, 60, 0.4) 40%, rgba(251, 146, 60, 0) 70%);
+  pointer-events: none;
+  z-index: 3;
+  animation: chestFxGlow 2.8s ease-in-out infinite;
+  will-change: transform, opacity;
+}
+
+.chest-warm-glow-tap1 {
+  animation: chestFxGlowTap1 2.4s ease-in-out infinite;
+}
+
+.chest-warm-glow-tap2 {
+  animation: chestFxGlowTap2 1.8s ease-in-out infinite;
+}
+
+@keyframes chestFxGlow {
+  0%, 100% {
+    transform: scale(0.95);
+    opacity: 0.45;
+  }
+  50% {
+    transform: scale(1.05);
+    opacity: 0.85;
+  }
+}
+
+@keyframes chestFxGlowTap1 {
+  0%, 100% {
+    transform: scale(1.0);
+    opacity: 0.65;
+  }
+  50% {
+    transform: scale(1.12);
+    opacity: 0.95;
+  }
+}
+
+@keyframes chestFxGlowTap2 {
+  0%, 100% {
+    transform: scale(1.05);
+    opacity: 0.8;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 1.05;
+  }
+}
+
+/* Chest Idle Floating Bob (4px up/down, 3.2s) */
+.chest-float {
+  animation: chestFxFloat 3.2s ease-in-out infinite;
+  will-change: transform;
+}
+
+@keyframes chestFxFloat {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-4px);
+  }
+}
+
+/* Floor Shadow subtle shrinking when chest bobs up */
+.chest-floor-shadow {
+  transform-origin: 120px 204px;
+  animation: chestFxShadow 3.2s ease-in-out infinite;
+  will-change: transform, opacity;
+}
+
+@keyframes chestFxShadow {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.45;
+  }
+  50% {
+    transform: scale(0.92);
+    opacity: 0.35;
+  }
+}
+
+/* Shine Sweep across chest gold bands (passes every 3s) */
+.chest-shine-band {
+  animation: chestFxShine 3s ease-in-out infinite;
+  will-change: transform;
+}
+
+@keyframes chestFxShine {
+  0% {
+    transform: translateX(-120px);
+  }
+  30%, 100% {
+    transform: translateX(280px);
+  }
+}
+
+/* Tap 1 Chest Animation */
+.chest-anim-tap1 {
+  animation: chestFxTap1Squash 350ms cubic-bezier(0.2, 0.8, 0.4, 1) forwards;
+}
+
+@keyframes chestFxTap1Squash {
+  0% {
+    transform: scale(1) rotate(0deg);
+  }
+  25% {
+    transform: scale(1.05, 0.92) rotate(-4deg);
+  }
+  60% {
+    transform: scale(0.98, 1.02) rotate(3deg);
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+  }
+}
+
+/* Tap 2 Chest Animation */
+.chest-anim-tap2 {
+  animation: chestFxTap2Squash 450ms cubic-bezier(0.2, 0.8, 0.4, 1) forwards;
+}
+
+@keyframes chestFxTap2Squash {
+  0% {
+    transform: scale(1) rotate(0deg);
+  }
+  20% {
+    transform: scale(1.08, 0.88) rotate(-6deg);
+  }
+  55% {
+    transform: scale(0.96, 1.04) rotate(5deg);
+  }
+  80% {
+    transform: scale(1.02, 0.99) rotate(-1deg);
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+  }
+}
+
+/* Tap 3 Wind-up Rattle (120ms) */
+.chest-anim-windup {
+  animation: chestFxWindupRattle 120ms linear infinite;
+}
+
+@keyframes chestFxWindupRattle {
+  0% {
+    transform: scale(0.92) translate(0, 0);
+  }
+  25% {
+    transform: scale(0.92) translate(-3px, 2px);
+  }
+  50% {
+    transform: scale(0.92) translate(3px, -2px);
+  }
+  75% {
+    transform: scale(0.92) translate(-2px, -1px);
+  }
+  100% {
+    transform: scale(0.92) translate(0, 0);
+  }
+}
+
+/* Screen White Flash */
+.chest-flash {
+  position: absolute;
+  inset: 0;
+  background-color: #ffffff;
+  pointer-events: none;
+  z-index: 60;
+  animation: chestFxFlashFade 140ms ease-out forwards;
+}
+
+@keyframes chestFxFlashFade {
+  0% {
+    opacity: 0;
+  }
+  50% {
+    opacity: 0.45;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+/* Expanding Shockwave Ring */
+.chest-shockwave {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 140px;
+  height: 140px;
+  margin-top: -70px;
+  margin-left: -70px;
+  border-radius: 50%;
+  border: 4px solid #fde047;
+  pointer-events: none;
+  z-index: 25;
+  animation: chestFxShockwaveExpand 450ms cubic-bezier(0.1, 0.9, 0.2, 1) forwards;
+}
+
+@keyframes chestFxShockwaveExpand {
+  0% {
+    transform: scale(0.2);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(2.4);
+    opacity: 0;
+  }
+}
+
+/* Reward Card Emergence Animation (650ms spring with overshoot) */
+.chest-card-rise {
+  animation: chestFxCardRiseAnim 650ms cubic-bezier(0.18, 0.9, 0.32, 1.25) forwards;
+  will-change: transform, opacity;
+}
+
+@keyframes chestFxCardRiseAnim {
+  0% {
+    transform: translateY(30px) scale(0.4) rotate(-8deg);
+    opacity: 0;
+  }
+  40% {
+    opacity: 1;
+  }
+  80% {
+    transform: translateY(-165px) scale(1.04) rotate(1deg);
+  }
+  100% {
+    transform: translateY(-155px) scale(1) rotate(0deg);
+    opacity: 1;
+  }
+}
+
+@media (max-width: 360px) {
+  @keyframes chestFxCardRiseAnim {
+    0% {
+      transform: translateY(20px) scale(0.4) rotate(-8deg);
+      opacity: 0;
+    }
+    40% {
+      opacity: 1;
+    }
+    80% {
+      transform: translateY(-135px) scale(1.04) rotate(1deg);
+    }
+    100% {
+      transform: translateY(-125px) scale(1) rotate(0deg);
+      opacity: 1;
+    }
+  }
+}
+
+/* REWARD CARD GLOW & VISUAL FX */
+/* Glow Shell wrapping the card */
+.chest-card-glow-shell {
+  position: relative;
+  padding: 3px;
+  overflow: hidden;
+  background-color: #111827;
+  box-shadow: 4px 4px 0px #111827;
+}
+
+/* Rotating blue-violet conic-gradient ring behind the card border */
+.chest-card-border-ring {
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: conic-gradient(from 0deg, #2727F5, #6d28d9, #818cf8, #38bdf8, #2727F5);
+  animation: chestFxRing 3s linear infinite;
+  will-change: transform;
+  z-index: 0;
+}
+
+@keyframes chestFxRing {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Outer soft glow layer behind card (blurred, rgba(99,102,241,0.7), pulsing opacity 0.5 to 0.9) */
+.chest-card-outer-glow {
+  position: absolute;
+  inset: -12px;
+  background: rgba(99, 102, 241, 0.7);
+  filter: blur(14px);
+  pointer-events: none;
+  z-index: -1;
+  animation: chestFxCardGlow 2.2s ease-in-out infinite;
+  will-change: opacity;
+}
+
+@keyframes chestFxCardGlow {
+  0%, 100% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 0.9;
+  }
+}
+
+/* Sheen sweep across card face (diagonal white band, opacity 0.25, every 2.5s) */
+.chest-card-sheen {
+  position: absolute;
+  top: -20%;
+  left: -120%;
+  width: 80%;
+  height: 140%;
+  background: linear-gradient(
+    115deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0) 30%,
+    rgba(255, 255, 255, 0.25) 50%,
+    rgba(255, 255, 255, 0) 70%,
+    transparent 100%
+  );
+  transform: rotate(15deg);
+  pointer-events: none;
+  z-index: 10;
+  animation: chestFxCardSheen 2.5s ease-in-out infinite;
+  will-change: transform;
+}
+
+@keyframes chestFxCardSheen {
+  0% {
+    transform: translateX(0) rotate(15deg);
+  }
+  40%, 100% {
+    transform: translateX(360%) rotate(15deg);
+  }
+}
+
+/* Burst particles */
+.chest-particle {
+  position: absolute;
+  pointer-events: none;
+  z-index: 30;
+  animation: chestFxParticleFade 650ms cubic-bezier(0.1, 0.7, 0.3, 1) forwards;
+  will-change: transform, opacity;
+}
+
+@keyframes chestFxParticleFade {
+  0% {
+    transform: translate(0, 0) scale(1);
+    opacity: 1;
+  }
+  80% {
+    opacity: 0.95;
+  }
+  100% {
+    transform: translate(var(--tx, 0px), var(--ty, -50px)) scale(0.2);
+    opacity: 0;
+  }
+}
+
+/* Helper text pulsing opacity */
+.chest-pulse {
+  animation: chestFxPulseAnim 1.8s ease-in-out infinite;
+}
+
+@keyframes chestFxPulseAnim {
+  0%, 100% {
+    opacity: 0.95;
+  }
+  50% {
+    opacity: 0.45;
+  }
+}
+
+/* PREFERS-REDUCED-MOTION: strictly respect user preference */
+@media (prefers-reduced-motion: reduce) {
+  .chest-sunburst,
+  .chest-sunburst-fast,
+  .chest-aura-inner,
+  .chest-aura-fast,
+  .chest-warm-glow,
+  .chest-warm-glow-tap1,
+  .chest-warm-glow-tap2,
+  .chest-float,
+  .chest-floor-shadow,
+  .chest-shine-band,
+  .chest-anim-tap1,
+  .chest-anim-tap2,
+  .chest-anim-windup,
+  .chest-shockwave,
+  .chest-flash,
+  .chest-card-border-ring,
+  .chest-card-outer-glow,
+  .chest-card-sheen,
+  .chest-particle {
+    animation: none !important;
+  }
+
+  .chest-warm-glow {
+    opacity: 0.65;
+    transform: scale(1);
+  }
+
+  .chest-card-outer-glow {
+    opacity: 0.7;
+  }
+
+  .chest-card-rise {
+    animation: chestFxCardFadeSimple 200ms ease-out forwards !important;
+  }
+
+  @keyframes chestFxCardFadeSimple {
+    from {
+      opacity: 0;
+      transform: translateY(-130px) scale(0.95);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(-130px) scale(1);
+    }
+  }
+}

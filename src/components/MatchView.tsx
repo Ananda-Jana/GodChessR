@@ -21,6 +21,7 @@ import {
   posToNotation,
 } from '../game/engine';
 import { CRAFTABLE_MAP } from '../game/craftables';
+import { reportGameEnd } from '../chest/reportGameEnd';
 import {
   ArrowLeft,
   Flag,
@@ -368,6 +369,12 @@ const MatchViewContent: React.FC<MatchViewContentProps> = ({
         isBotMatch ? 'grandmaster' : 'pvp_human'
       );
       setEarnedMatchCards(cards);
+      try {
+        const mode = activePunisherBotId ? 'punisher' : !isBotMatch ? 'multiplayer' : activeMatch.gameMode === 'crafted' ? 'crafted' : 'standard';
+        const myMoves = activeMatch.moveHistory.filter((m) => m.piece.color === myColor).length;
+        const isResigned = activeMatch.result?.reason === 'resignation' && activeMatch.result.winner !== myColor;
+        reportGameEnd({ matchId: activeMatch.id, mode, result: outcome, moves: myMoves, isTraining: false, userId: user.id, resigned: isResigned });
+      } catch {}
     }
   }, [
     activeMatch?.status,

@@ -6,6 +6,7 @@ import {
 import { createInitialCullingMatch } from '../game/cullingEngine';
 import { CullingMatchView } from './CullingMatchView';
 import { useAuth } from '../context/AuthContext';
+import { ModeArtPanel } from './ModeArtPanel';
 import {
   Swords,
   Bot,
@@ -376,8 +377,15 @@ export const CullingModeEntry: React.FC<CullingModeEntryProps> = ({ onBack }) =>
         )}
 
         {/* Main Banner Card */}
-        <div className="w-full bg-white dark:bg-[#0f172a] border-4 border-black dark:border-white shadow-[6px_6px_0px_#000000] dark:shadow-[6px_6px_0px_#ffffff] rounded-2xl p-5 sm:p-7 text-center">
-          <div className="inline-flex items-center gap-2 px-3 py-1 bg-amber-400 text-black border-2 border-black shadow-[2px_2px_0px_#000] text-xs font-black uppercase mb-2">
+        <div className="w-full bg-white dark:bg-[#0f172a] border-4 border-black dark:border-white shadow-[6px_6px_0px_#000000] dark:shadow-[6px_6px_0px_#ffffff] rounded-2xl flex flex-col md:flex-row overflow-hidden">
+          <ModeArtPanel
+            modeKey="culling-game"
+            title="Culling Game"
+            subtitle="88-Square Cross Battlefield"
+          />
+
+          <div className="flex-1 p-5 sm:p-7 text-center">
+            <div className="inline-flex items-center gap-2 px-3 py-1 bg-amber-400 text-black border-2 border-black shadow-[2px_2px_0px_#000] text-xs font-black uppercase mb-2">
             <Sparkles className="w-3.5 h-3.5" />
             88 Playable Cross-Board Squares • Direct Challenge Multiplayer
           </div>
@@ -690,7 +698,8 @@ export const CullingModeEntry: React.FC<CullingModeEntryProps> = ({ onBack }) =>
             </div>
           </div>
         </div>
-      </main>
+      </div>
+    </main>
     </div>
   );
 };

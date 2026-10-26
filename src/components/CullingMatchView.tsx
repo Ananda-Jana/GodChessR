@@ -19,6 +19,7 @@ import {
 import { getBestCullingBotMove } from '../game/cullingBot';
 import { sounds } from '../utils/audio';
 import { RulebookWindow } from './rulebook/RulebookWindow';
+import { reportGameEnd } from '../chest/reportGameEnd';
 
 import {
   BookOpen,
@@ -191,6 +192,10 @@ export const CullingMatchView: React.FC<CullingMatchViewProps> = ({
         isBotMatch ? 'grandmaster' : 'pvp_human'
       );
       setEarnedCullingCards(cards);
+      try {
+        const myMoves = match.history ? match.history.filter((h) => h.piece.color === userColor).length : 0;
+        reportGameEnd({ matchId: match.id, mode: 'culling', result: outcome, moves: myMoves, isTraining: false });
+      } catch {}
     }
   }, [match?.status, match, userColor, isBotMatch, finalizeMatch]);
 
