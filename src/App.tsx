@@ -50,7 +50,7 @@ import { ChestRewardHost } from './chest/ChestRewardHost';
 function AppContent() {
   const { user, isLoading } = useAuth();
   const [showAd, setShowAd] = useState(false);
-  const adImage = '/assets/aistudio/image_1e4df309.png';
+  const adImage = '/assets/aistudio/6a05a9fcfc3686e80dfcb3f94a933556_5459d7e7.jpg';
 
   useEffect(() => {
     const img = new Image();
