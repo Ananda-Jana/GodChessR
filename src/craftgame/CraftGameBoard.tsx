@@ -41,19 +41,19 @@ export const CraftGameBoard: React.FC<CraftGameBoardProps> = ({
   });
 
   return (
-    <div className="flex flex-col items-center justify-center w-full select-none">
+    <div className="flex flex-col items-center justify-center w-full select-none touch-manipulation">
       <div
-        className="relative border-4 border-black dark:border-white shadow-[6px_6px_0px_#000000] dark:shadow-[6px_6px_0px_#ffffff] bg-black overflow-hidden"
+        className="relative border-3 sm:border-4 border-black dark:border-white shadow-[4px_4px_0px_#000000] sm:shadow-[6px_6px_0px_#000000] dark:shadow-[4px_4px_0px_#ffffff] sm:dark:shadow-[6px_6px_0px_#ffffff] bg-black overflow-hidden"
         style={{
           width: '100%',
           maxWidth:
             height === 1
-              ? '600px'
+              ? 'min(96vw, 600px)'
               : height === 2
-              ? '640px'
+              ? 'min(96vw, 640px)'
               : width <= 4
-              ? '340px'
-              : 'min(92vw, 560px)',
+              ? 'min(82vw, calc(100dvh - 240px), 340px)'
+              : 'min(94vw, calc(100dvh - 220px), 540px)',
           aspectRatio: `${width} / ${height}`,
         }}
       >
@@ -82,23 +82,23 @@ export const CraftGameBoard: React.FC<CraftGameBoardProps> = ({
                   type="button"
                   disabled={!isInteractive}
                   onClick={() => onSelectSquare({ x, y })}
-                  className={`relative flex items-center justify-center p-1 sm:p-2 cursor-pointer transition-all duration-150 outline-none
+                  className={`relative flex items-center justify-center p-0.5 sm:p-1.5 md:p-2 cursor-pointer transition-all duration-150 outline-none
                     ${isLight ? 'bg-[#cbd5e1]' : 'bg-[#334155]'}
-                    ${isSelected ? '!bg-amber-400/90 ring-4 ring-amber-300 ring-inset z-20' : ''}
+                    ${isSelected ? '!bg-amber-400/90 ring-3 sm:ring-4 ring-amber-300 ring-inset z-20' : ''}
                     ${isLastMoveFrom || isLastMoveTo ? 'after:absolute after:inset-0 after:bg-amber-500/20' : ''}
-                    ${isKingChecked ? 'ring-4 ring-red-600 ring-inset bg-red-600/30 animate-pulse z-20' : ''}
+                    ${isKingChecked ? 'ring-3 sm:ring-4 ring-red-600 ring-inset bg-red-600/30 animate-pulse z-20' : ''}
                     hover:brightness-105 active:scale-95
                   `}
                   aria-label={`Square ${x},${y} ${piece ? `${piece.color} ${piece.type}` : 'empty'}`}
                 >
                   {/* Square Coordinate Indicators */}
                   {x === 0 && height > 2 && (
-                    <span className="absolute top-0.5 left-1 text-[8px] font-black uppercase text-black/40 dark:text-white/40 pointer-events-none">
+                    <span className="absolute top-0.5 left-0.5 sm:left-1 text-[7px] sm:text-[8px] font-black uppercase text-black/40 dark:text-white/40 pointer-events-none">
                       {height - y}
                     </span>
                   )}
                   {y === height - 1 && height > 2 && (
-                    <span className="absolute bottom-0.5 right-1 text-[8px] font-black uppercase text-black/40 dark:text-white/40 pointer-events-none">
+                    <span className="absolute bottom-0.5 right-0.5 sm:right-1 text-[7px] sm:text-[8px] font-black uppercase text-black/40 dark:text-white/40 pointer-events-none">
                       {String.fromCharCode(97 + x)}
                     </span>
                   )}

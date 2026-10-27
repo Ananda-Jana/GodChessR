@@ -2281,7 +2281,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 </div>
               </div>
 
-              {/* Craft Your Own Game Entry Card */}
+              {/* Custom Lane Chessing Mode Entry Card */}
               <div className="order-8 lg:order-none bg-white text-black border-4 border-black dark:border-white p-4 sm:p-5 shadow-[6px_6px_0px_#000000] dark:shadow-[6px_6px_0px_#ffffff] flex flex-col sm:flex-row lg:flex-col sm:items-center lg:items-start justify-between gap-4 min-w-0">
                 <div className="flex items-center gap-3.5">
                   <div className="w-12 h-12 bg-amber-400 border-2 border-black flex items-center justify-center text-black shrink-0 shadow-[2px_2px_0px_#000]">
@@ -2290,7 +2290,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                   <div>
                     <div className="flex items-center gap-2 flex-wrap">
                       <h3 className="text-sm sm:text-base font-black uppercase text-black">
-                        Craft Your Own Game
+                        Custom Lane Chessing Mode
                       </h3>
                       <span className="text-[10px] px-1.5 py-0.5 bg-black text-amber-400 font-black uppercase">
                         5 MODES
@@ -2308,7 +2308,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                     className="py-3 px-5 bg-amber-400 hover:bg-amber-300 text-black font-black text-xs sm:text-sm uppercase tracking-wider border-3 border-black shadow-[3px_3px_0px_#000000] flex items-center justify-center gap-2 shrink-0 cursor-pointer active:translate-x-0.5 active:translate-y-0.5"
                   >
                     <Swords className="w-4 h-4 text-black" />
-                    Craft Your Own Game
+                    Custom Lane Chessing Mode
                   </button>
                 </div>
               </div>

@@ -322,35 +322,35 @@ export const CraftGameMatchView: React.FC<CraftGameMatchViewProps> = ({
   return (
     <div className="flex flex-col h-full w-full bg-[#0a0a0f] text-white overflow-y-auto select-none">
       {/* Top Header Bar */}
-      <header className="shrink-0 h-14 px-4 bg-[#12121a] border-b-2 border-white/20 flex items-center justify-between z-30">
-        <div className="flex items-center gap-3">
+      <header className="shrink-0 h-13 sm:h-14 px-2.5 sm:px-4 bg-[#12121a] border-b-2 border-white/20 flex items-center justify-between z-30">
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
           <button
             type="button"
             onClick={onExit}
-            className="p-2 bg-white/10 hover:bg-white/20 active:scale-95 text-white border border-white/20 rounded-lg cursor-pointer transition-colors"
-            title="Return to Craft Hub"
+            className="p-1.5 sm:p-2 bg-white/10 hover:bg-white/20 active:scale-95 text-white border border-white/20 rounded-lg cursor-pointer transition-colors shrink-0"
+            title="Return to Custom Lane Hub"
           >
             <ArrowLeft className="w-4 h-4" />
           </button>
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-black uppercase tracking-wider text-amber-400">
+          <div className="min-w-0">
+            <div className="flex items-center gap-1.5 sm:gap-2">
+              <span className="text-xs sm:text-sm font-black uppercase tracking-wider text-amber-400 truncate">
                 {variant.name}
               </span>
-              <span className="text-[10px] px-1.5 py-0.2 bg-white/10 border border-white/20 font-black uppercase">
+              <span className="text-[9px] sm:text-[10px] px-1.5 py-0.2 bg-white/10 border border-white/20 font-black uppercase shrink-0">
                 {variant.badge}
               </span>
             </div>
-            <span className="text-[10px] text-zinc-400 uppercase font-mono">
+            <span className="text-[9px] sm:text-[10px] text-zinc-400 uppercase font-mono block truncate">
               {variant.width}×{variant.height} GRID • {variant.winCondition}
             </span>
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
           {/* Bot Level Badge */}
           <span
-            className={`text-[10px] font-black uppercase px-2 py-1 rounded border flex items-center gap-1 ${
+            className={`text-[9px] sm:text-[10px] font-black uppercase px-1.5 sm:px-2 py-0.5 sm:py-1 rounded border flex items-center gap-1 ${
               botLevel === 'punisher'
                 ? 'bg-red-950 text-red-300 border-red-500'
                 : botLevel === 'tactician'
@@ -365,7 +365,7 @@ export const CraftGameMatchView: React.FC<CraftGameMatchViewProps> = ({
           <button
             type="button"
             onClick={handleRestart}
-            className="p-2 bg-white/10 hover:bg-white/20 text-white border border-white/20 rounded-lg cursor-pointer transition-colors"
+            className="p-1.5 sm:p-2 bg-white/10 hover:bg-white/20 text-white border border-white/20 rounded-lg cursor-pointer transition-colors"
             title="Reset Match"
           >
             <RotateCcw className="w-4 h-4" />
@@ -374,11 +374,11 @@ export const CraftGameMatchView: React.FC<CraftGameMatchViewProps> = ({
       </header>
 
       {/* Main Playing Area */}
-      <div className="flex-1 flex flex-col items-center justify-between p-3 sm:p-5 max-w-4xl mx-auto w-full gap-3">
+      <div className="flex-1 flex flex-col items-center justify-between p-2 sm:p-4 max-w-4xl mx-auto w-full gap-2 sm:gap-3">
         {/* Opponent (Bot) Card */}
-        <div className="w-full max-w-xl flex items-center justify-between p-2.5 bg-black/60 border-2 border-white/20 rounded-xl backdrop-blur-sm">
-          <div className="flex items-center gap-2.5">
-            <div className="w-10 h-10 rounded-lg bg-zinc-900 border border-white/20 flex items-center justify-center overflow-hidden">
+        <div className="w-full max-w-xl flex items-center justify-between p-2 sm:p-2.5 bg-black/60 border-2 border-white/20 rounded-xl backdrop-blur-sm">
+          <div className="flex items-center gap-2 sm:gap-2.5">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-zinc-900 border border-white/20 flex items-center justify-center overflow-hidden shrink-0">
               <img
                 src={variant.avatar}
                 alt={botLevel}
@@ -481,13 +481,13 @@ export const CraftGameMatchView: React.FC<CraftGameMatchViewProps> = ({
         )}
 
         {/* Player Card */}
-        <div className="w-full max-w-xl flex items-center justify-between p-2.5 bg-black/60 border-2 border-white/20 rounded-xl backdrop-blur-sm">
-          <div className="flex items-center gap-2.5">
-            <div className="w-10 h-10 rounded-lg bg-amber-400 border border-black flex items-center justify-center text-black font-black">
-              <User className="w-5 h-5" />
+        <div className="w-full max-w-xl flex items-center justify-between p-2 sm:p-2.5 bg-black/60 border-2 border-white/20 rounded-xl backdrop-blur-sm">
+          <div className="flex items-center gap-2 sm:gap-2.5">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-amber-400 border border-black flex items-center justify-center text-black font-black shrink-0">
+              <User className="w-4 h-4 sm:w-5 sm:h-5" />
             </div>
             <div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5 sm:gap-2">
                 <span className="text-xs font-black uppercase text-white">
                   YOU
                 </span>
@@ -498,12 +498,12 @@ export const CraftGameMatchView: React.FC<CraftGameMatchViewProps> = ({
               <div className="flex items-center gap-1 h-5 overflow-hidden">
                 {playerColor === 'white'
                   ? capturedBlack.map((p) => (
-                      <div key={p.id} className="w-4 h-4">
+                      <div key={p.id} className="w-3.5 h-3.5 sm:w-4 sm:h-4">
                         <CraftGamePiece type={p.type} color="black" />
                       </div>
                     ))
                   : capturedWhite.map((p) => (
-                      <div key={p.id} className="w-4 h-4">
+                      <div key={p.id} className="w-3.5 h-3.5 sm:w-4 sm:h-4">
                         <CraftGamePiece type={p.type} color="white" />
                       </div>
                     ))}
@@ -513,15 +513,15 @@ export const CraftGameMatchView: React.FC<CraftGameMatchViewProps> = ({
 
           <div>
             {isPlayerTurn ? (
-              <span className="text-[11px] font-black uppercase text-amber-300 bg-amber-400/20 px-2 py-0.5 rounded border border-amber-400 flex items-center gap-1">
+              <span className="text-[10px] sm:text-[11px] font-black uppercase text-amber-300 bg-amber-400/20 px-2 py-0.5 rounded border border-amber-400 flex items-center gap-1">
                 Your Turn
               </span>
             ) : status === 'playing' ? (
-              <span className="text-[10px] font-mono text-zinc-500 uppercase">
+              <span className="text-[9px] sm:text-[10px] font-mono text-zinc-500 uppercase">
                 Opponent Turn
               </span>
             ) : (
-              <span className="text-[10px] font-mono text-zinc-400 uppercase">
+              <span className="text-[9px] sm:text-[10px] font-mono text-zinc-400 uppercase">
                 Game Over
               </span>
             )}
