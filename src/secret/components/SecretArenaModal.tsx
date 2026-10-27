@@ -31,15 +31,35 @@ export const SecretArenaModal: React.FC<SecretArenaModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/85 backdrop-blur-md overflow-y-auto animate-in fade-in duration-200">
-      <div className="w-full max-w-7xl bg-[#0a0a0c] border-3 sm:border-4 border-slate-200 text-white shadow-[6px_6px_0px_#ffffff] sm:shadow-[10px_10px_0px_#ffffff] relative flex flex-col md:flex-row my-auto max-h-[92vh] sm:max-h-[90vh] overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center p-0 md:p-4 bg-black/85 backdrop-blur-md overflow-hidden md:overflow-y-auto animate-in fade-in duration-200">
+      <div className="w-full max-w-7xl bg-[#0a0a0c] border-t-4 border-x-4 md:border-4 border-slate-200 text-white shadow-[6px_6px_0px_#ffffff] md:shadow-[10px_10px_0px_#ffffff] relative flex flex-col md:flex-row rounded-t-2xl md:rounded-none h-[94dvh] md:h-auto max-h-[94dvh] md:max-h-[90vh] overflow-hidden">
+        {/* Mobile Hero Banner (160px, md:hidden) */}
+        <div className="md:hidden relative h-40 w-full shrink-0 overflow-hidden bg-black select-none border-b-3 border-slate-700">
+          <img
+            src="/assets/aistudio/image_ba67a0d0.png"
+            alt="Secret Arena Artwork"
+            loading="lazy"
+            decoding="async"
+            className="w-full h-full object-cover object-center filter brightness-105 contrast-110"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0c] via-black/40 to-transparent pointer-events-none" />
+          <div className="absolute bottom-2.5 left-3 right-3 flex items-center justify-between pointer-events-none">
+            <span className="text-[10px] font-mono font-black uppercase px-2 py-0.5 bg-purple-600 text-white border border-white shadow-[1px_1px_0px_#fff]">
+              PASSCODE-GATED
+            </span>
+            <span className="text-[10px] font-mono font-bold text-white/90 bg-black/70 px-2 py-0.5 border border-white/20">
+              3 EXCLUSIVE CHALLENGERS
+            </span>
+          </div>
+        </div>
+
         <ModeArtPanel
           modeKey="secret-arena"
           title="Secret Arena"
           subtitle="Passcode-Gated Custom Bots"
         />
 
-        <div className="flex-1 flex flex-col min-w-0 p-3 sm:p-6 overflow-y-auto">
+        <div className="flex-1 flex flex-col min-w-0 p-3 sm:p-6 overflow-y-auto overscroll-contain">
         {/* Header */}
         <div className="flex items-start justify-between border-b-2 sm:border-b-3 border-slate-700 pb-2.5 sm:pb-4 mb-3 sm:mb-6 shrink-0">
           <div className="flex items-center gap-2.5 sm:gap-3.5">
@@ -64,10 +84,11 @@ export const SecretArenaModal: React.FC<SecretArenaModalProps> = ({
 
           <button
             onClick={onClose}
-            className="p-1.5 sm:p-2 bg-neutral-900 hover:bg-neutral-800 text-white border-2 border-white cursor-pointer shrink-0 active:translate-x-0.5 active:translate-y-0.5"
+            className="min-w-[44px] min-h-[44px] p-2 bg-neutral-900 hover:bg-neutral-800 text-white border-2 border-white flex items-center justify-center cursor-pointer shrink-0 active:translate-x-0.5 active:translate-y-0.5"
             title="Close Secret Arena"
+            aria-label="Close Secret Arena"
           >
-            <X className="w-4 h-4 sm:w-5 sm:h-5" />
+            <X className="w-5 h-5" />
           </button>
         </div>
 

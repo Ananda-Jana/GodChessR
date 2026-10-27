@@ -90,7 +90,7 @@ export const SecretPlayerCard: React.FC<SecretPlayerCardProps> = ({ player, onSe
       {/* Action Button */}
       <button
         onClick={() => onSelect(player)}
-        className="w-full mt-3 py-2.5 sm:py-3 px-3 bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500 hover:from-amber-300 hover:to-yellow-200 text-black font-black text-xs uppercase tracking-wider border-2 border-black shadow-[2px_2px_0px_#ffffff] sm:shadow-[3px_3px_0px_#ffffff] flex items-center justify-center gap-2 cursor-pointer active:translate-x-0.5 active:translate-y-0.5 transition-all shrink-0 z-10"
+        className="w-full mt-3 min-h-[44px] py-3.5 sm:py-3 px-3 bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500 hover:from-amber-300 hover:to-yellow-200 text-black font-black text-xs uppercase tracking-wider border-2 border-black shadow-[2px_2px_0px_#ffffff] sm:shadow-[3px_3px_0px_#ffffff] flex items-center justify-center gap-2 cursor-pointer active:translate-x-0.5 active:translate-y-0.5 transition-all shrink-0 z-10"
       >
         <KeyRound className="w-4 h-4 text-black shrink-0" />
         <span>Enter PIN & Challenge</span>

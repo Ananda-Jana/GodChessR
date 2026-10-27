@@ -40,14 +40,19 @@ import {
 interface HashiraTrainingViewProps {
   onBack: () => void;
   initialTrainerId?: TrainerId;
+  initialToolId?: TrainingToolId;
 }
 
-export const HashiraTrainingView: React.FC<HashiraTrainingViewProps> = ({ onBack, initialTrainerId }) => {
+export const HashiraTrainingView: React.FC<HashiraTrainingViewProps> = ({
+  onBack,
+  initialTrainerId,
+  initialToolId,
+}) => {
   // Load persistent user progress
   const [progress, setProgress] = useState(() => loadHashiraProgress());
   const [selectedRankId, setSelectedRankId] = useState<HashiraRankId>(progress.selectedRank || 'mizunoto');
   const [selectedTrainerId, setSelectedTrainerId] = useState<TrainerId>(initialTrainerId || progress.selectedTrainerId || 'thukuna');
-  const [activeTool, setActiveTool] = useState<TrainingToolId>('opening');
+  const [activeTool, setActiveTool] = useState<TrainingToolId>(initialToolId || 'opening');
 
   // Mobile Dropdown & Collapse States
   const [isMobileRankOpen, setIsMobileRankOpen] = useState(false);

@@ -76,6 +76,44 @@ const BANNER_IMAGES = [
   '/assets/aistudio/image_d336b87f.png',
 ] as const;
 
+interface DropupThumbProps {
+  src?: string;
+  alt: string;
+  fallbackIcon: React.ReactNode;
+  fallbackBgClass: string;
+}
+
+const DropupThumb: React.FC<DropupThumbProps> = ({
+  src,
+  alt,
+  fallbackIcon,
+  fallbackBgClass,
+}) => {
+  const [hasError, setHasError] = useState(false);
+
+  if (src && !hasError) {
+    return (
+      <div className="play-dropup-thumb-wrapper w-full h-full relative overflow-hidden rounded-md bg-black/40 border border-white/10">
+        <img
+          src={src}
+          alt={alt}
+          loading="lazy"
+          decoding="async"
+          onError={() => setHasError(true)}
+          className="play-dropup-thumb w-full h-full object-cover object-center"
+        />
+        <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/80 via-black/20 to-transparent pointer-events-none" />
+      </div>
+    );
+  }
+
+  return (
+    <div className={`play-dropup-fallback-badge w-full h-full flex items-center justify-center rounded-md border ${fallbackBgClass}`}>
+      {fallbackIcon}
+    </div>
+  );
+};
+
 export const Dashboard: React.FC<DashboardProps> = ({
   onOpenRules,
   onOpenBotModal,
@@ -396,81 +434,182 @@ export const Dashboard: React.FC<DashboardProps> = ({
               </button>
             </div>
 
-            {/* Scrollable list/grid of quick-access modes */}
-            <div className="grid grid-cols-2 gap-1.5 max-h-[55vh] overflow-y-auto overscroll-contain pr-0.5 relative z-10">
-              {/* All Modes */}
+            {/* Scrollable 3-column grid of quick-access game mode square tiles */}
+            <div className="grid grid-cols-3 gap-1.5 max-h-[60vh] overflow-y-auto overscroll-contain pr-0.5 relative z-10">
+              {/* Bot Match */}
               <button
                 type="button"
                 role="menuitem"
+                title="Bot Match - Instant AI game"
+                aria-label="Bot Match - Instant AI game"
                 onClick={() => {
                   setIsMobileNavDropdownOpen(false);
-                  setIsAllGameModesOpen(true);
+                  onOpenBotModal();
                 }}
-                className="play-dropup-item group"
+                className="play-dropup-item group aspect-square flex flex-col items-center justify-between p-1.5 relative overflow-hidden rounded-xl border border-white/10 bg-white/[0.04] text-center"
               >
-                <div className="w-7 h-7 rounded-lg bg-[#ef4216]/20 border border-[#ff7818]/30 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
-                  <Play className="w-3.5 h-3.5 text-[#ff9a24] fill-[#ff9a24]" />
+                <div className="w-full flex-1 relative flex items-center justify-center overflow-hidden rounded-lg mb-1 min-h-0">
+                  <DropupThumb
+                    src="/assets/aistudio/image_4aa74391.png"
+                    alt="Bot Match"
+                    fallbackBgClass="bg-amber-400/20 border-amber-400/30"
+                    fallbackIcon={<Bot className="w-5 h-5 text-amber-400" />}
+                  />
                 </div>
-                <div className="flex flex-col min-w-0">
-                  <span className="text-xs font-black uppercase text-[#fff8f0] group-hover:text-[#ffb94f] truncate">All Modes</span>
-                  <span className="text-[11px] text-zinc-300 truncate">Browse all</span>
-                </div>
+                <span className="text-[10px] sm:text-[11px] font-black uppercase text-[#fff8f0] group-hover:text-amber-300 leading-tight line-clamp-2 text-center w-full px-0.5 shrink-0">
+                  Bot Match
+                </span>
               </button>
 
-              {/* Active Matches */}
-              <a
-                href="#matches"
+              {/* Punisher Robot */}
+              <button
+                type="button"
                 role="menuitem"
-                onClick={() => setIsMobileNavDropdownOpen(false)}
-                className="play-dropup-item group"
+                title="Punisher AI - Ruthless bots"
+                aria-label="Punisher AI - Ruthless bots"
+                onClick={() => {
+                  setIsMobileNavDropdownOpen(false);
+                  if (onOpenPunisher) onOpenPunisher();
+                }}
+                className="play-dropup-item group aspect-square flex flex-col items-center justify-between p-1.5 relative overflow-hidden rounded-xl border border-white/10 bg-white/[0.04] text-center"
               >
-                <div className="w-7 h-7 rounded-lg bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
-                  <Swords className="w-3.5 h-3.5 text-emerald-400" />
+                <div className="w-full flex-1 relative flex items-center justify-center overflow-hidden rounded-lg mb-1 min-h-0">
+                  <DropupThumb
+                    src="/assets/aistudio/image_6c6f27fb.png"
+                    alt="Punisher AI"
+                    fallbackBgClass="bg-red-500/20 border-red-500/30"
+                    fallbackIcon={<Zap className="w-5 h-5 text-red-400 fill-current" />}
+                  />
                 </div>
-                <div className="flex flex-col min-w-0">
-                  <span className="text-xs font-black uppercase text-[#fff8f0] group-hover:text-emerald-300 truncate">Matches</span>
-                  <span className="text-[11px] text-zinc-300 truncate">Live games</span>
-                </div>
-                {ongoingMatches.length > 0 && (
-                  <span className="ml-auto px-1.5 py-0.2 bg-emerald-500 text-black text-[9px] font-mono font-black rounded-full">
-                    {ongoingMatches.length}
-                  </span>
-                )}
-              </a>
+                <span className="text-[10px] sm:text-[11px] font-black uppercase text-[#fff8f0] group-hover:text-red-300 leading-tight line-clamp-2 text-center w-full px-0.5 shrink-0">
+                  Punisher AI
+                </span>
+              </button>
 
-              {/* Find Players */}
-              <a
-                href="#players"
+              {/* Classic Bot */}
+              <button
+                type="button"
                 role="menuitem"
-                onClick={() => setIsMobileNavDropdownOpen(false)}
-                className="play-dropup-item group"
+                title="Classic Bot - Traditional chess"
+                aria-label="Classic Bot - Traditional chess"
+                onClick={() => {
+                  setIsMobileNavDropdownOpen(false);
+                  if (onOpenClassicBotModal) onOpenClassicBotModal();
+                  else onOpenBotModal();
+                }}
+                className="play-dropup-item group aspect-square flex flex-col items-center justify-between p-1.5 relative overflow-hidden rounded-xl border border-white/10 bg-white/[0.04] text-center"
               >
-                <div className="w-7 h-7 rounded-lg bg-sky-500/20 border border-sky-500/30 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
-                  <Users className="w-3.5 h-3.5 text-sky-400" />
+                <div className="w-full flex-1 relative flex items-center justify-center overflow-hidden rounded-lg mb-1 min-h-0">
+                  <DropupThumb
+                    src="/assets/aistudio/image_4aa74391.png"
+                    alt="Classic Bot"
+                    fallbackBgClass="bg-emerald-500/20 border-emerald-500/30"
+                    fallbackIcon={<Swords className="w-5 h-5 text-emerald-400" />}
+                  />
                 </div>
-                <div className="flex flex-col min-w-0">
-                  <span className="text-xs font-black uppercase text-[#fff8f0] group-hover:text-sky-300 truncate">Players</span>
-                  <span className="text-[11px] text-zinc-300 truncate">Find opponents</span>
+                <span className="text-[10px] sm:text-[11px] font-black uppercase text-[#fff8f0] group-hover:text-emerald-300 leading-tight line-clamp-2 text-center w-full px-0.5 shrink-0">
+                  Classic Bot
+                </span>
+              </button>
+
+              {/* Crafted Bot */}
+              <button
+                type="button"
+                role="menuitem"
+                title="Crafted Bot - Crafting rules"
+                aria-label="Crafted Bot - Crafting rules"
+                onClick={() => {
+                  setIsMobileNavDropdownOpen(false);
+                  if (onOpenCraftedBotModal) onOpenCraftedBotModal();
+                  else onOpenBotModal();
+                }}
+                className="play-dropup-item group aspect-square flex flex-col items-center justify-between p-1.5 relative overflow-hidden rounded-xl border border-white/10 bg-white/[0.04] text-center"
+              >
+                <div className="w-full flex-1 relative flex items-center justify-center overflow-hidden rounded-lg mb-1 min-h-0">
+                  <DropupThumb
+                    src="/assets/aistudio/image_4aa74391.png"
+                    alt="Crafted Bot"
+                    fallbackBgClass="bg-emerald-400/20 border-emerald-400/30"
+                    fallbackIcon={<Sparkles className="w-5 h-5 text-emerald-300" />}
+                  />
                 </div>
-              </a>
+                <span className="text-[10px] sm:text-[11px] font-black uppercase text-[#fff8f0] group-hover:text-emerald-300 leading-tight line-clamp-2 text-center w-full px-0.5 shrink-0">
+                  Crafted Bot
+                </span>
+              </button>
 
               {/* Culling Game */}
               <button
                 type="button"
                 role="menuitem"
+                title="Culling Game - 88-square arena"
+                aria-label="Culling Game - 88-square arena"
                 onClick={() => {
                   setIsMobileNavDropdownOpen(false);
                   setIsCullingOpen(true);
                 }}
-                className="play-dropup-item group"
+                className="play-dropup-item group aspect-square flex flex-col items-center justify-between p-1.5 relative overflow-hidden rounded-xl border border-white/10 bg-white/[0.04] text-center"
               >
-                <div className="w-7 h-7 rounded-lg bg-[#ef4216]/20 border border-[#ff7818]/30 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
-                  <GamepadSkull size={16} className="text-[#ff9a24]" />
+                <div className="w-full flex-1 relative flex items-center justify-center overflow-hidden rounded-lg mb-1 min-h-0">
+                  <DropupThumb
+                    src="/assets/aistudio/image_9087d774.png"
+                    alt="Culling Game"
+                    fallbackBgClass="bg-[#ef4216]/20 border-[#ff7818]/30"
+                    fallbackIcon={<GamepadSkull size={20} className="text-[#ff9a24]" />}
+                  />
                 </div>
-                <div className="flex flex-col min-w-0">
-                  <span className="text-xs font-black uppercase text-[#fff8f0] group-hover:text-[#ffb94f] truncate">Culling</span>
-                  <span className="text-[11px] text-zinc-300 truncate">88-square arena</span>
+                <span className="text-[10px] sm:text-[11px] font-black uppercase text-[#fff8f0] group-hover:text-[#ffb94f] leading-tight line-clamp-2 text-center w-full px-0.5 shrink-0">
+                  Culling Game
+                </span>
+              </button>
+
+              {/* Hashira Training */}
+              <button
+                type="button"
+                role="menuitem"
+                title="Hashira Dojo - Train w/ Thukuna"
+                aria-label="Hashira Dojo - Train w/ Thukuna"
+                onClick={() => {
+                  setIsMobileNavDropdownOpen(false);
+                  if (onOpenHashiraTraining) onOpenHashiraTraining('thukuna');
+                }}
+                className="play-dropup-item group aspect-square flex flex-col items-center justify-between p-1.5 relative overflow-hidden rounded-xl border border-white/10 bg-white/[0.04] text-center"
+              >
+                <div className="w-full flex-1 relative flex items-center justify-center overflow-hidden rounded-lg mb-1 min-h-0">
+                  <DropupThumb
+                    src="/assets/aistudio/image_e0bfff75.png"
+                    alt="Hashira Dojo"
+                    fallbackBgClass="bg-orange-500/20 border-orange-500/30"
+                    fallbackIcon={<Crown className="w-5 h-5 text-orange-400" />}
+                  />
                 </div>
+                <span className="text-[10px] sm:text-[11px] font-black uppercase text-[#fff8f0] group-hover:text-orange-300 leading-tight line-clamp-2 text-center w-full px-0.5 shrink-0">
+                  Hashira Dojo
+                </span>
+              </button>
+
+              {/* 3D Chess Arcade */}
+              <button
+                type="button"
+                role="menuitem"
+                title="3D Arcade - Annihilatic board"
+                aria-label="3D Arcade - Annihilatic board"
+                onClick={() => {
+                  setIsMobileNavDropdownOpen(false);
+                  setIs3dPreviewModalOpen(true);
+                }}
+                className="play-dropup-item group aspect-square flex flex-col items-center justify-between p-1.5 relative overflow-hidden rounded-xl border border-white/10 bg-white/[0.04] text-center"
+              >
+                <div className="w-full flex-1 relative flex items-center justify-center overflow-hidden rounded-lg mb-1 min-h-0">
+                  <DropupThumb
+                    alt="3D Arcade"
+                    fallbackBgClass="bg-purple-500/20 border-purple-500/30"
+                    fallbackIcon={<Box className="w-5 h-5 text-purple-400" />}
+                  />
+                </div>
+                <span className="text-[10px] sm:text-[11px] font-black uppercase text-[#fff8f0] group-hover:text-purple-300 leading-tight line-clamp-2 text-center w-full px-0.5 shrink-0">
+                  3D Arcade
+                </span>
               </button>
 
               {/* Rose Paradise */}
@@ -478,101 +617,127 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 <button
                   type="button"
                   role="menuitem"
+                  title="Rose Paradise - Multiplayer mode"
+                  aria-label="Rose Paradise - Multiplayer mode"
                   onClick={() => {
                     setIsMobileNavDropdownOpen(false);
                     onOpenRose();
                   }}
-                  className="play-dropup-item group"
+                  className="play-dropup-item group aspect-square flex flex-col items-center justify-between p-1.5 relative overflow-hidden rounded-xl border border-white/10 bg-white/[0.04] text-center"
                 >
-                  <div className="w-7 h-7 rounded-lg bg-rose-500/20 border border-rose-500/30 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
-                    <Heart className="w-3.5 h-3.5 text-rose-400 fill-rose-400" />
+                  <div className="w-full flex-1 relative flex items-center justify-center overflow-hidden rounded-lg mb-1 min-h-0">
+                    <DropupThumb
+                      alt="Rose Paradise"
+                      fallbackBgClass="bg-rose-500/20 border-rose-500/30"
+                      fallbackIcon={<Heart className="w-5 h-5 text-rose-400 fill-rose-400" />}
+                    />
                   </div>
-                  <div className="flex flex-col min-w-0">
-                    <span className="text-xs font-black uppercase text-[#fff8f0] group-hover:text-rose-300 truncate">Rose Paradise</span>
-                    <span className="text-[11px] text-zinc-300 truncate">Multiplayer</span>
-                  </div>
+                  <span className="text-[10px] sm:text-[11px] font-black uppercase text-[#fff8f0] group-hover:text-rose-300 leading-tight line-clamp-2 text-center w-full px-0.5 shrink-0">
+                    Rose Paradise
+                  </span>
                 </button>
               )}
 
-              {/* 3D Chess Arcade */}
+              {/* Secret Arena */}
               <button
                 type="button"
                 role="menuitem"
+                title="Secret Arena - Hidden bots"
+                aria-label="Secret Arena - Hidden bots"
                 onClick={() => {
                   setIsMobileNavDropdownOpen(false);
-                  setIs3dPreviewModalOpen(true);
+                  setIsSecretArenaOpen(true);
                 }}
-                className="play-dropup-item group"
+                className="play-dropup-item group aspect-square flex flex-col items-center justify-between p-1.5 relative overflow-hidden rounded-xl border border-white/10 bg-white/[0.04] text-center"
               >
-                <div className="w-7 h-7 rounded-lg bg-purple-500/20 border border-purple-500/30 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
-                  <Box className="w-3.5 h-3.5 text-purple-400" />
+                <div className="w-full flex-1 relative flex items-center justify-center overflow-hidden rounded-lg mb-1 min-h-0">
+                  <DropupThumb
+                    src="/assets/aistudio/image_ba67a0d0.png"
+                    alt="Secret Arena"
+                    fallbackBgClass="bg-cyan-500/20 border-cyan-500/30"
+                    fallbackIcon={<Lock className="w-5 h-5 text-cyan-400" />}
+                  />
                 </div>
-                <div className="flex flex-col min-w-0">
-                  <span className="text-xs font-black uppercase text-[#fff8f0] group-hover:text-purple-300 truncate">3D Arcade</span>
-                  <span className="text-[11px] text-zinc-300 truncate">Annihilatic board</span>
-                </div>
-              </button>
-
-              {/* Walk with Masters */}
-              <button
-                type="button"
-                role="menuitem"
-                onClick={() => {
-                  setIsMobileNavDropdownOpen(false);
-                  setIsWalkWithMastersOpen(true);
-                }}
-                className="play-dropup-item group"
-              >
-                <div className="w-7 h-7 rounded-lg bg-orange-500/20 border border-orange-500/30 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
-                  <Flame className="w-3.5 h-3.5 text-orange-400" />
-                </div>
-                <div className="flex flex-col min-w-0">
-                  <span className="text-xs font-black uppercase text-[#fff8f0] group-hover:text-orange-300 truncate">Masters</span>
-                  <span className="text-[11px] text-zinc-300 truncate">Thukuna & Gatoru</span>
-                </div>
+                <span className="text-[10px] sm:text-[11px] font-black uppercase text-[#fff8f0] group-hover:text-cyan-300 leading-tight line-clamp-2 text-center w-full px-0.5 shrink-0">
+                  Secret Arena
+                </span>
               </button>
 
               {/* Rules & Guides */}
               <button
                 type="button"
                 role="menuitem"
+                title="Rulebook - Guides & rules"
+                aria-label="Rulebook - Guides & rules"
                 onClick={() => {
                   setIsMobileNavDropdownOpen(false);
                   onOpenRules();
                 }}
-                className="play-dropup-item group"
+                className="play-dropup-item group aspect-square flex flex-col items-center justify-between p-1.5 relative overflow-hidden rounded-xl border border-white/10 bg-white/[0.04] text-center"
               >
-                <div className="w-7 h-7 rounded-lg bg-amber-400/20 border border-amber-400/30 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
-                  <BookOpen className="w-3.5 h-3.5 text-amber-400" />
+                <div className="w-full flex-1 relative flex items-center justify-center overflow-hidden rounded-lg mb-1 min-h-0">
+                  <DropupThumb
+                    alt="Rulebook"
+                    fallbackBgClass="bg-amber-400/20 border-amber-400/30"
+                    fallbackIcon={<BookOpen className="w-5 h-5 text-amber-400" />}
+                  />
                 </div>
-                <div className="flex flex-col min-w-0">
-                  <span className="text-xs font-black uppercase text-[#fff8f0] group-hover:text-zinc-200 truncate">Rules</span>
-                  <span className="text-[11px] text-zinc-300 truncate">Guides & book</span>
-                </div>
+                <span className="text-[10px] sm:text-[11px] font-black uppercase text-[#fff8f0] group-hover:text-amber-300 leading-tight line-clamp-2 text-center w-full px-0.5 shrink-0">
+                  Rulebook
+                </span>
               </button>
 
               {/* Trophies & Chests */}
               <button
                 type="button"
                 role="menuitem"
+                title="Trophy Vault - Badges & chests"
+                aria-label="Trophy Vault - Badges & chests"
                 onClick={() => {
                   setIsMobileNavDropdownOpen(false);
                   setIsTrophyRoomOpen(true);
                 }}
-                className="col-span-2 play-dropup-item group"
+                className="play-dropup-item group aspect-square flex flex-col items-center justify-between p-1.5 relative overflow-hidden rounded-xl border border-white/10 bg-white/[0.04] text-center"
               >
-                <div className="w-7 h-7 rounded-lg bg-amber-400/20 border border-amber-400/30 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
-                  <Trophy className="w-3.5 h-3.5 text-amber-400" />
+                <div className="w-full flex-1 relative flex items-center justify-center overflow-hidden rounded-lg mb-1 min-h-0">
+                  <DropupThumb
+                    alt="Trophy Vault"
+                    fallbackBgClass="bg-amber-400/20 border-amber-400/30"
+                    fallbackIcon={<Trophy className="w-5 h-5 text-amber-400" />}
+                  />
                 </div>
-                <div className="flex flex-col min-w-0">
-                  <span className="text-xs font-black uppercase text-[#fff8f0] group-hover:text-amber-300 truncate">Trophies & Chests</span>
-                  <span className="text-[11px] text-zinc-300 truncate">Trophy room & reward inventory</span>
-                </div>
+                <span className="text-[10px] sm:text-[11px] font-black uppercase text-[#fff8f0] group-hover:text-amber-300 leading-tight line-clamp-2 text-center w-full px-0.5 shrink-0">
+                  Trophy Vault
+                </span>
                 {predictorState.earnedCards.length > 0 && (
-                  <span className="ml-auto px-1.5 py-0.2 bg-amber-400 text-black text-[9px] font-mono font-black rounded-full">
+                  <span className="absolute top-1 right-1 px-1.5 py-0.2 bg-amber-400 text-black text-[9px] font-mono font-black rounded-full z-10 shadow-md">
                     {predictorState.earnedCards.length}
                   </span>
                 )}
+              </button>
+
+              {/* All Modes Modal */}
+              <button
+                type="button"
+                role="menuitem"
+                title="All Modes - Browse modal"
+                aria-label="All Modes - Browse modal"
+                onClick={() => {
+                  setIsMobileNavDropdownOpen(false);
+                  setIsAllGameModesOpen(true);
+                }}
+                className="play-dropup-item group aspect-square flex flex-col items-center justify-between p-1.5 relative overflow-hidden rounded-xl border border-white/10 bg-white/[0.04] text-center"
+              >
+                <div className="w-full flex-1 relative flex items-center justify-center overflow-hidden rounded-lg mb-1 min-h-0">
+                  <DropupThumb
+                    alt="All Modes"
+                    fallbackBgClass="bg-[#ef4216]/20 border-[#ff7818]/30"
+                    fallbackIcon={<Play className="w-5 h-5 text-[#ff9a24] fill-[#ff9a24]" />}
+                  />
+                </div>
+                <span className="text-[10px] sm:text-[11px] font-black uppercase text-[#fff8f0] group-hover:text-[#ffb94f] leading-tight line-clamp-2 text-center w-full px-0.5 shrink-0">
+                  All Modes
+                </span>
               </button>
             </div>
           </div>
@@ -848,29 +1013,72 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
         .play-dropup-item {
           min-height: 44px;
-          padding: 0.55rem 0.65rem;
+          min-width: 44px;
+          aspect-ratio: 1 / 1;
+          padding: 0.375rem;
           background: rgba(255, 255, 255, 0.03);
-          border: 1px solid rgba(255, 255, 255, 0.06);
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          border-radius: 0.75rem;
           display: flex;
+          flex-direction: column;
           align-items: center;
-          gap: 0.625rem;
-          text-align: left;
-          transition: background-color 0.18s ease, border-color 0.18s ease, transform 0.15s ease;
+          justify-content: space-between;
+          text-align: center;
+          transition: background-color 0.18s ease, border-color 0.18s ease, transform 0.15s ease, box-shadow 0.18s ease;
           color: #FFF8F0;
           cursor: pointer;
+          position: relative;
+          overflow: hidden;
           -webkit-tap-highlight-color: transparent;
         }
 
         .play-dropup-item:hover,
         .play-dropup-item:focus-visible {
           background: rgba(255, 120, 24, 0.12);
-          border-color: rgba(255, 154, 36, 0.38);
+          border-color: rgba(255, 154, 36, 0.45);
+          box-shadow: 0 4px 12px rgba(255, 120, 24, 0.15);
         }
 
         .play-dropup-item:active {
-          background: rgba(255, 120, 24, 0.20);
-          border-color: rgba(255, 154, 36, 0.55);
-          transform: scale(0.98);
+          background: rgba(255, 120, 24, 0.22);
+          border-color: rgba(255, 154, 36, 0.65);
+          transform: scale(0.96);
+        }
+
+        .play-dropup-thumb-wrapper {
+          position: relative;
+          width: 100%;
+          height: 100%;
+          border-radius: 0.5rem;
+          overflow: hidden;
+          background: #08080a;
+          box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+        }
+
+        .play-dropup-thumb {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          object-position: center;
+          display: block;
+          transition: transform 0.25s ease;
+        }
+
+        .play-dropup-fallback-badge {
+          width: 100%;
+          height: 100%;
+          border-radius: 0.5rem;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transition: transform 0.25s ease;
+        }
+
+        .play-dropup-item:hover .play-dropup-thumb,
+        .play-dropup-item:focus-visible .play-dropup-thumb,
+        .play-dropup-item:hover .play-dropup-fallback-badge,
+        .play-dropup-item:focus-visible .play-dropup-fallback-badge {
+          transform: scale(1.08);
         }
 
         @keyframes playMenuSlideUp {
@@ -900,6 +1108,12 @@ export const Dashboard: React.FC<DashboardProps> = ({
             animation: none !important;
             transform: translateY(0) !important;
             opacity: 1 !important;
+          }
+          .play-dropup-item:hover .play-dropup-thumb,
+          .play-dropup-item:focus-visible .play-dropup-thumb,
+          .play-dropup-item:hover .play-dropup-fallback-badge,
+          .play-dropup-item:focus-visible .play-dropup-fallback-badge {
+            transform: none !important;
           }
         }
 
@@ -1272,93 +1486,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
           </div>
         </div>
 
-        {/* Mobile Scrollable Mode Chip Row (lg:hidden, order-2, horizontal swipe chips) */}
-        <div className="lg:hidden order-2 w-full relative my-1">
-          <div className="mcx-chip-scroll flex items-center gap-2 overflow-x-auto py-1 px-0.5 no-scrollbar touch-pan-x">
-            <button
-              type="button"
-              onClick={() => onOpenBotModal()}
-              className="shrink-0 min-h-[40px] px-3 py-1.5 bg-zinc-900/90 hover:bg-zinc-800 active:bg-zinc-700 border border-amber-400/40 text-amber-300 font-bold text-xs uppercase tracking-wider flex items-center gap-1.5 cursor-pointer shadow-sm active:scale-95 transition-all"
-            >
-              <Bot className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-              <span>Bot Match</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => scrollToSection('modes', 'play')}
-              className="shrink-0 min-h-[40px] px-3 py-1.5 bg-zinc-900/90 hover:bg-zinc-800 active:bg-zinc-700 border border-white/15 text-zinc-100 font-bold text-xs uppercase tracking-wider flex items-center gap-1.5 cursor-pointer shadow-sm active:scale-95 transition-all"
-            >
-              <Swords className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-              <span>Classic</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => (onOpenPunisher ? onOpenPunisher() : scrollToSection('modes', 'play'))}
-              className="shrink-0 min-h-[40px] px-3 py-1.5 bg-zinc-900/90 hover:bg-zinc-800 active:bg-zinc-700 border border-red-500/40 text-red-300 font-bold text-xs uppercase tracking-wider flex items-center gap-1.5 cursor-pointer shadow-sm active:scale-95 transition-all"
-            >
-              <Flame className="w-3.5 h-3.5 text-red-400 shrink-0" />
-              <span>Punisher</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => onOpenHashiraTraining && onOpenHashiraTraining('thukuna')}
-              className="shrink-0 min-h-[40px] px-3 py-1.5 bg-zinc-900/90 hover:bg-zinc-800 active:bg-zinc-700 border border-orange-500/40 text-orange-300 font-bold text-xs uppercase tracking-wider flex items-center gap-1.5 cursor-pointer shadow-sm active:scale-95 transition-all"
-            >
-              <Crown className="w-3.5 h-3.5 text-orange-400 shrink-0" />
-              <span>Hashira</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setIsCullingOpen(true)}
-              className="shrink-0 min-h-[40px] px-3 py-1.5 bg-zinc-900/90 hover:bg-zinc-800 active:bg-zinc-700 border border-purple-500/40 text-purple-300 font-bold text-xs uppercase tracking-wider flex items-center gap-1.5 cursor-pointer shadow-sm active:scale-95 transition-all"
-            >
-              <GamepadSkull size={14} className="text-purple-400 shrink-0" />
-              <span>Culling</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setIs3dPreviewModalOpen(true)}
-              className="shrink-0 min-h-[40px] px-3 py-1.5 bg-zinc-900/90 hover:bg-zinc-800 active:bg-zinc-700 border border-purple-400/40 text-purple-300 font-bold text-xs uppercase tracking-wider flex items-center gap-1.5 cursor-pointer shadow-sm active:scale-95 transition-all"
-            >
-              <Box className="w-3.5 h-3.5 text-purple-400 shrink-0" />
-              <span>3D Arcade</span>
-            </button>
-            {onOpenRose && (
-              <button
-                type="button"
-                onClick={onOpenRose}
-                className="shrink-0 min-h-[40px] px-3 py-1.5 bg-zinc-900/90 hover:bg-zinc-800 active:bg-zinc-700 border border-rose-500/40 text-rose-300 font-bold text-xs uppercase tracking-wider flex items-center gap-1.5 cursor-pointer shadow-sm active:scale-95 transition-all"
-              >
-                <Heart className="w-3.5 h-3.5 text-rose-400 fill-rose-400 shrink-0" />
-                <span>Rose</span>
-              </button>
-            )}
-            <button
-              type="button"
-              onClick={() => onOpenCraftTheory()}
-              className="shrink-0 min-h-[40px] px-3 py-1.5 bg-zinc-900/90 hover:bg-zinc-800 active:bg-zinc-700 border border-emerald-500/40 text-emerald-300 font-bold text-xs uppercase tracking-wider flex items-center gap-1.5 cursor-pointer shadow-sm active:scale-95 transition-all"
-            >
-              <Sparkles className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-              <span>Crafted</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => scrollToSection('modes', 'play')}
-              className="shrink-0 min-h-[40px] px-3 py-1.5 bg-zinc-900/90 hover:bg-zinc-800 active:bg-zinc-700 border border-cyan-500/40 text-cyan-300 font-bold text-xs uppercase tracking-wider flex items-center gap-1.5 cursor-pointer shadow-sm active:scale-95 transition-all"
-            >
-              <Lock className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
-              <span>Secret</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setIsAllGameModesOpen(true)}
-              className="shrink-0 min-h-[40px] px-3 py-1.5 bg-amber-400 text-black font-black text-xs uppercase tracking-wider flex items-center gap-1.5 cursor-pointer shadow-sm active:scale-95 transition-all border border-amber-300"
-            >
-              <Play className="w-3.5 h-3.5 fill-black text-black shrink-0" />
-              <span>All Modes</span>
-            </button>
-          </div>
-        </div>
+        {/* Loose Mode Chips Removed for Mobile: Game modes are cleanly launched via the central PLAY slide-up menu */}
 
         {/* Mobile Resume Active Match Strip (order-3, md:hidden) */}
         {ongoingMatches.length > 0 && (

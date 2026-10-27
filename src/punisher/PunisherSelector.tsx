@@ -102,6 +102,26 @@ export const PunisherSelector: React.FC<PunisherSelectorProps> = ({ onSelect, on
 
       {/* Content Container */}
       <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain custom-scrollbar">
+        {/* Mobile Hero Banner (160px, md:hidden) */}
+        <div className="md:hidden relative h-40 w-full shrink-0 overflow-hidden bg-black select-none border-b-2 border-white/20">
+          <img
+            src="/assets/aistudio/image_4681080e.png"
+            alt="Punisher AI Artwork"
+            loading="lazy"
+            decoding="async"
+            className="w-full h-full object-cover object-center filter brightness-105 contrast-110"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent pointer-events-none" />
+          <div className="absolute bottom-2.5 left-3 right-3 flex items-center justify-between pointer-events-none">
+            <span className="text-[10px] font-mono font-black uppercase px-2 py-0.5 bg-[#2727F5] text-white border border-white shadow-[1px_1px_0px_#fff]">
+              7 AI COMBATANTS
+            </span>
+            <span className="text-[10px] font-mono font-bold text-white/90 bg-black/70 px-2 py-0.5 border border-white/20">
+              DEPTH 4-10 • TACTICAL SACRIFICE
+            </span>
+          </div>
+        </div>
+
         {/* ================= MOBILE VIEW (< md): Vertical full-width list ================= */}
         <div className="md:hidden p-3 space-y-3 pb-24">
           {ALL_PUNISHER_BOTS.map((bot) => {
@@ -113,10 +133,11 @@ export const PunisherSelector: React.FC<PunisherSelectorProps> = ({ onSelect, on
             return (
               <div
                 key={bot.id}
-                className={`w-full flex items-center justify-between gap-3 p-3 text-left relative overflow-hidden transition-colors ${
+                onClick={() => setSelectedBotDetail(bot.id as PunisherBotId)}
+                className={`w-full flex items-center justify-between gap-3 p-3 text-left relative overflow-hidden transition-all cursor-pointer active:scale-[0.99] ${
                   isBangla
                     ? 'border-3 border-red-500 bg-[#2b0808] shadow-[3px_3px_0px_#dc2626]'
-                    : 'bg-white/5 border-3 border-white/20 hover:border-[#2727F5]'
+                    : 'bg-white/5 border-3 border-white/20 hover:border-[#2727F5] active:bg-white/10'
                 }`}
               >
                 {/* Bangla Fire Background on Mobile Card */}

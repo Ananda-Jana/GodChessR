@@ -378,13 +378,33 @@ export const CullingModeEntry: React.FC<CullingModeEntryProps> = ({ onBack }) =>
 
         {/* Main Banner Card */}
         <div className="w-full bg-white dark:bg-[#0f172a] border-4 border-black dark:border-white shadow-[6px_6px_0px_#000000] dark:shadow-[6px_6px_0px_#ffffff] rounded-2xl flex flex-col md:flex-row overflow-hidden">
+          {/* Mobile Hero Banner (160px, md:hidden) */}
+          <div className="md:hidden relative h-40 w-full shrink-0 overflow-hidden bg-black select-none border-b-3 border-black dark:border-white">
+            <img
+              src="/assets/aistudio/image_9087d774.png"
+              alt="Culling Game Battlefield"
+              loading="lazy"
+              decoding="async"
+              className="w-full h-full object-cover object-center filter brightness-105 contrast-110"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent pointer-events-none" />
+            <div className="absolute bottom-2.5 left-3 right-3 flex items-center justify-between pointer-events-none">
+              <span className="text-[10px] font-mono font-black uppercase px-2 py-0.5 bg-red-600 text-white border border-white shadow-[1px_1px_0px_#fff]">
+                88-SQUARE CROSS GRID
+              </span>
+              <span className="text-[10px] font-mono font-bold text-white/90 bg-black/70 px-2 py-0.5 border border-white/20">
+                SORCERER DUEL • 1V1 & BOT
+              </span>
+            </div>
+          </div>
+
           <ModeArtPanel
             modeKey="culling-game"
             title="Culling Game"
             subtitle="88-Square Cross Battlefield"
           />
 
-          <div className="flex-1 p-5 sm:p-7 text-center">
+          <div className="flex-1 p-4 sm:p-7 text-center">
             <div className="inline-flex items-center gap-2 px-3 py-1 bg-amber-400 text-black border-2 border-black shadow-[2px_2px_0px_#000] text-xs font-black uppercase mb-2">
             <Sparkles className="w-3.5 h-3.5" />
             88 Playable Cross-Board Squares • Direct Challenge Multiplayer
@@ -412,21 +432,21 @@ export const CullingModeEntry: React.FC<CullingModeEntryProps> = ({ onBack }) =>
             </div>
             <button
               onClick={() => setShowTheory(true)}
-              className="px-4 py-2 bg-red-600 hover:bg-red-500 text-white font-black text-xs uppercase border-2 border-black shadow-[3px_3px_0px_#000] cursor-pointer whitespace-nowrap active:translate-x-0.5 active:translate-y-0.5"
+              className="w-full sm:w-auto min-h-[44px] md:min-h-0 px-4 py-2.5 sm:py-2 bg-red-600 hover:bg-red-500 text-white font-black text-xs uppercase border-2 border-black shadow-[3px_3px_0px_#000] cursor-pointer whitespace-nowrap active:translate-x-0.5 active:translate-y-0.5 flex items-center justify-center"
             >
               📖 Read the Theory Book First
             </button>
           </div>
 
           {/* Time Control & Allegiance Global Defaults */}
-          <div className="flex flex-wrap items-center justify-center gap-4 mb-6 pb-4 border-b-2 border-black/10 dark:border-white/10">
+          <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4 mb-6 pb-4 border-b-2 border-black/10 dark:border-white/10">
             <div className="flex items-center gap-2">
               <span className="text-xs font-mono font-bold uppercase text-neutral-500 dark:text-neutral-400">
                 Time Control:
               </span>
               <button
                 onClick={() => setTimeControl(120)}
-                className={`px-3 py-1 border-2 border-black font-black text-xs uppercase cursor-pointer transition-transform ${
+                className={`min-h-[44px] md:min-h-0 px-3 py-2 md:py-1 border-2 border-black font-black text-xs uppercase cursor-pointer transition-transform flex items-center justify-center ${
                   timeControl === 120
                     ? 'bg-amber-400 text-black shadow-[2px_2px_0px_#000]'
                     : 'bg-white dark:bg-[#1e293b] text-neutral-600 dark:text-neutral-300'
@@ -436,7 +456,7 @@ export const CullingModeEntry: React.FC<CullingModeEntryProps> = ({ onBack }) =>
               </button>
               <button
                 onClick={() => setTimeControl(300)}
-                className={`px-3 py-1 border-2 border-black font-black text-xs uppercase cursor-pointer transition-transform ${
+                className={`min-h-[44px] md:min-h-0 px-3 py-2 md:py-1 border-2 border-black font-black text-xs uppercase cursor-pointer transition-transform flex items-center justify-center ${
                   timeControl === 300
                     ? 'bg-amber-400 text-black shadow-[2px_2px_0px_#000]'
                     : 'bg-white dark:bg-[#1e293b] text-neutral-600 dark:text-neutral-300'
@@ -453,7 +473,7 @@ export const CullingModeEntry: React.FC<CullingModeEntryProps> = ({ onBack }) =>
               <div className="inline-flex gap-1">
                 <button
                   onClick={() => setSelectedSide('white')}
-                  className={`px-2.5 py-1 font-black text-xs uppercase border-2 border-black cursor-pointer ${
+                  className={`min-h-[44px] md:min-h-0 px-3 py-2 md:py-1 font-black text-xs uppercase border-2 border-black cursor-pointer flex items-center justify-center ${
                     selectedSide === 'white'
                       ? 'bg-white text-black shadow-[2px_2px_0px_#000]'
                       : 'bg-neutral-200 dark:bg-slate-800 text-neutral-500'
@@ -463,7 +483,7 @@ export const CullingModeEntry: React.FC<CullingModeEntryProps> = ({ onBack }) =>
                 </button>
                 <button
                   onClick={() => setSelectedSide('black')}
-                  className={`px-2.5 py-1 font-black text-xs uppercase border-2 border-black cursor-pointer ${
+                  className={`min-h-[44px] md:min-h-0 px-3 py-2 md:py-1 font-black text-xs uppercase border-2 border-black cursor-pointer flex items-center justify-center ${
                     selectedSide === 'black'
                       ? 'bg-black text-white shadow-[2px_2px_0px_#000] dark:border-white'
                       : 'bg-neutral-200 dark:bg-slate-800 text-neutral-500'
@@ -473,7 +493,7 @@ export const CullingModeEntry: React.FC<CullingModeEntryProps> = ({ onBack }) =>
                 </button>
                 <button
                   onClick={() => setSelectedSide('random')}
-                  className={`px-2.5 py-1 font-black text-xs uppercase border-2 border-black cursor-pointer ${
+                  className={`min-h-[44px] md:min-h-0 px-3 py-2 md:py-1 font-black text-xs uppercase border-2 border-black cursor-pointer flex items-center justify-center ${
                     selectedSide === 'random'
                       ? 'bg-amber-400 text-black shadow-[2px_2px_0px_#000]'
                       : 'bg-neutral-200 dark:bg-slate-800 text-neutral-500'
@@ -555,7 +575,7 @@ export const CullingModeEntry: React.FC<CullingModeEntryProps> = ({ onBack }) =>
                       <button
                         onClick={handleCreateChallenge}
                         disabled={isCreatingChallenge}
-                        className="flex-1 py-2.5 bg-amber-400 hover:bg-amber-300 text-black font-black text-xs uppercase border-2 border-black shadow-[3px_3px_0px_#000] flex items-center justify-center gap-1.5 cursor-pointer active:translate-x-0.5 active:translate-y-0.5"
+                        className="flex-1 min-h-[44px] md:min-h-0 py-3 md:py-2.5 bg-amber-400 hover:bg-amber-300 text-black font-black text-xs uppercase border-2 border-black shadow-[3px_3px_0px_#000] flex items-center justify-center gap-1.5 cursor-pointer active:translate-x-0.5 active:translate-y-0.5"
                       >
                         {isCreatingChallenge ? (
                           <Loader2 className="w-4 h-4 animate-spin" />
@@ -567,7 +587,7 @@ export const CullingModeEntry: React.FC<CullingModeEntryProps> = ({ onBack }) =>
 
                       <button
                         onClick={() => setShowTheory(true)}
-                        className="py-2.5 px-3 bg-red-600 hover:bg-red-500 text-white font-black text-xs uppercase border-2 border-black shadow-[3px_3px_0px_#000] flex items-center justify-center gap-1 cursor-pointer active:translate-x-0.5 active:translate-y-0.5 whitespace-nowrap"
+                        className="min-h-[44px] md:min-h-0 py-3 md:py-2.5 px-3.5 md:px-3 bg-red-600 hover:bg-red-500 text-white font-black text-xs uppercase border-2 border-black shadow-[3px_3px_0px_#000] flex items-center justify-center gap-1 cursor-pointer active:translate-x-0.5 active:translate-y-0.5 whitespace-nowrap"
                         title="Read theory before creating"
                       >
                         <span>📖 Codex</span>
@@ -592,7 +612,7 @@ export const CullingModeEntry: React.FC<CullingModeEntryProps> = ({ onBack }) =>
                         <button
                           onClick={() => handleJoinChallenge()}
                           disabled={isJoiningChallenge || !joinCodeInput.trim()}
-                          className="px-3 py-1.5 bg-black hover:bg-neutral-800 disabled:opacity-50 text-white font-black text-xs uppercase border-2 border-black shadow-[2px_2px_0px_#000] flex items-center gap-1 cursor-pointer"
+                          className="min-h-[44px] md:min-h-0 px-3.5 py-2 md:py-1.5 bg-black hover:bg-neutral-800 disabled:opacity-50 text-white font-black text-xs uppercase border-2 border-black shadow-[2px_2px_0px_#000] flex items-center gap-1 cursor-pointer"
                         >
                           {isJoiningChallenge ? (
                             <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -680,7 +700,7 @@ export const CullingModeEntry: React.FC<CullingModeEntryProps> = ({ onBack }) =>
               <div className="flex flex-col sm:flex-row gap-2 mt-4">
                 <button
                   onClick={handleStartBotMatch}
-                  className="flex-1 py-3 bg-black hover:bg-neutral-900 text-white font-black text-xs uppercase tracking-wider border-2 border-black shadow-[3px_3px_0px_#000] flex items-center justify-center gap-2 cursor-pointer active:translate-x-0.5 active:translate-y-0.5"
+                  className="flex-1 min-h-[44px] md:min-h-0 py-3.5 md:py-3 bg-black hover:bg-neutral-900 text-white font-black text-xs uppercase tracking-wider border-2 border-black shadow-[3px_3px_0px_#000] flex items-center justify-center gap-2 cursor-pointer active:translate-x-0.5 active:translate-y-0.5"
                 >
                   <Swords className="w-4 h-4 text-amber-400" />
                   <span>Play vs Bot</span>
@@ -688,7 +708,7 @@ export const CullingModeEntry: React.FC<CullingModeEntryProps> = ({ onBack }) =>
 
                 <button
                   onClick={() => setShowTheory(true)}
-                  className="py-3 px-3 bg-red-600 hover:bg-red-500 text-white font-black text-xs uppercase border-2 border-black shadow-[3px_3px_0px_#000] flex items-center justify-center gap-1 cursor-pointer active:translate-x-0.5 active:translate-y-0.5 whitespace-nowrap"
+                  className="min-h-[44px] md:min-h-0 py-3.5 md:py-3 px-3.5 md:px-3 bg-red-600 hover:bg-red-500 text-white font-black text-xs uppercase border-2 border-black shadow-[3px_3px_0px_#000] flex items-center justify-center gap-1 cursor-pointer active:translate-x-0.5 active:translate-y-0.5 whitespace-nowrap"
                   title="Read Theory Book"
                 >
                   <BookOpen className="w-4 h-4" />

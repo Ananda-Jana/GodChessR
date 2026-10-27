@@ -222,7 +222,7 @@ export const TrophyRoomModal: React.FC<TrophyRoomModalProps> = ({
 
   return (
     <div
-      className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center bg-black/95 backdrop-blur-sm animate-in fade-in duration-200"
+      className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center bg-black/95 backdrop-blur-sm animate-in fade-in duration-200 motion-reduce:transition-none motion-reduce:transform-none motion-reduce:animate-none"
       onClick={onClose}
     >
       <div
@@ -230,12 +230,12 @@ export const TrophyRoomModal: React.FC<TrophyRoomModalProps> = ({
         role="dialog"
         aria-modal="true"
         aria-labelledby="trophy-modal-title"
-        className="relative w-full sm:max-w-6xl h-[100dvh] sm:h-[90vh] bg-[#0a0d14] border-t-4 sm:border-4 border-white text-slate-100 sm:shadow-[12px_12px_0px_#000000] flex flex-col overflow-hidden animate-in slide-in-from-bottom-full sm:slide-in-from-bottom-0 sm:zoom-in-95 duration-300"
+        className="relative w-full sm:max-w-6xl h-[100dvh] sm:h-[90vh] bg-[#0a0d14] border-t-4 sm:border-4 border-white text-slate-100 sm:shadow-[12px_12px_0px_#000000] flex flex-col overflow-hidden animate-in slide-in-from-bottom-full sm:slide-in-from-bottom-0 sm:zoom-in-95 duration-300 motion-reduce:transition-none motion-reduce:transform-none motion-reduce:animate-none"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Fixed Header: Modern Brutalist Navigation */}
         <header className="flex items-center justify-between px-4 py-3 bg-black border-b-4 border-white shrink-0 z-30">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 min-w-0">
             <div className="w-12 h-12 bg-amber-400 border-2 border-black flex items-center justify-center shadow-[3px_3px_0px_#fff] shrink-0">
               {mainView === 'inventory' ? (
                 <Gift className="w-7 h-7 text-black" />
@@ -274,7 +274,7 @@ export const TrophyRoomModal: React.FC<TrophyRoomModalProps> = ({
             </div>
           </div>
 
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-3 shrink-0 ml-3">
             {mainView === 'trophies' && (
               <button
                 type="button"
@@ -288,9 +288,9 @@ export const TrophyRoomModal: React.FC<TrophyRoomModalProps> = ({
                     setSelectedCard(null);
                   }
                 }}
-                className="w-11 h-11 flex items-center justify-center text-slate-500 hover:text-rose-500 border-2 border-slate-900 hover:border-rose-900 transition-all active:scale-90"
-                title="Factory Reset Collection"
-                aria-label="Reset collection progress"
+                className="min-w-[44px] min-h-[44px] w-11 h-11 flex items-center justify-center text-slate-400 hover:text-rose-500 border-2 border-slate-900 hover:border-rose-900 transition-all active:scale-90 motion-reduce:transition-none motion-reduce:transform-none motion-reduce:animate-none cursor-pointer"
+                title="Factory reset progress"
+                aria-label="Factory reset progress"
               >
                 <RefreshCw className="w-5 h-5" />
               </button>
@@ -298,7 +298,7 @@ export const TrophyRoomModal: React.FC<TrophyRoomModalProps> = ({
             <button
               type="button"
               onClick={onClose}
-              className="w-11 h-11 flex items-center justify-center bg-white text-black border-2 border-black hover:bg-amber-400 transition-all cursor-pointer active:scale-90"
+              className="min-w-[44px] min-h-[44px] w-11 h-11 flex items-center justify-center bg-white text-black border-2 border-black hover:bg-amber-400 transition-all cursor-pointer active:scale-90 motion-reduce:transition-none motion-reduce:transform-none motion-reduce:animate-none"
               aria-label="Close modal"
             >
               <X className="w-7 h-7 stroke-[3]" />
@@ -307,12 +307,20 @@ export const TrophyRoomModal: React.FC<TrophyRoomModalProps> = ({
         </header>
 
         {/* Top View Selector: Trophies vs Chest Inventory */}
-        <div className="bg-neutral-950 border-b-2 border-white/20 px-4 py-2 flex items-center justify-between gap-3 shrink-0">
-          <div className="flex items-center gap-2">
+        <div
+          role="tablist"
+          aria-label="Sanctuary and Vault Views"
+          className="bg-neutral-950 border-b-2 border-white/20 px-4 py-2 flex items-center justify-between gap-3 shrink-0 flex-wrap"
+        >
+          <div className="flex items-center gap-2 flex-wrap">
             <button
               type="button"
+              role="tab"
+              aria-selected={mainView === 'trophies'}
+              aria-controls="trophies-panel"
+              id="trophies-tab"
               onClick={() => setMainView('trophies')}
-              className={`min-h-[42px] px-4 font-black uppercase text-xs flex items-center gap-2 border-2 transition-all cursor-pointer ${
+              className={`min-h-[44px] px-4 font-black uppercase text-xs flex items-center gap-2 border-2 transition-all cursor-pointer motion-reduce:transition-none motion-reduce:transform-none motion-reduce:animate-none ${
                 mainView === 'trophies'
                   ? 'bg-amber-400 text-black border-black shadow-[3px_3px_0px_#fff]'
                   : 'bg-neutral-900 text-neutral-400 border-neutral-700 hover:text-white'
@@ -324,8 +332,13 @@ export const TrophyRoomModal: React.FC<TrophyRoomModalProps> = ({
 
             <button
               type="button"
+              role="tab"
+              aria-selected={mainView === 'inventory'}
+              aria-controls="inventory-panel"
+              id="inventory-tab"
               onClick={() => setMainView('inventory')}
-              className={`min-h-[42px] px-4 font-black uppercase text-xs flex items-center gap-2 border-2 transition-all cursor-pointer ${
+              aria-label={`Chest inventory, ${pendingChestsCount} chests stored`}
+              className={`min-h-[44px] px-4 font-black uppercase text-xs flex items-center gap-2 border-2 transition-all cursor-pointer motion-reduce:transition-none motion-reduce:transform-none motion-reduce:animate-none ${
                 mainView === 'inventory'
                   ? 'bg-amber-400 text-black border-black shadow-[3px_3px_0px_#fff]'
                   : 'bg-neutral-900 text-amber-400 border-amber-400/60 hover:bg-neutral-800'
@@ -343,18 +356,31 @@ export const TrophyRoomModal: React.FC<TrophyRoomModalProps> = ({
         </div>
 
         {/* Scrollable Body: Single Column Stacking on Mobile */}
-        <div className="flex-1 flex flex-col overflow-y-auto overscroll-contain bg-[#0a0d14] scroll-smooth pb-[env(safe-area-inset-bottom,24px)]">
+        <div className="flex-1 flex flex-col overflow-y-auto overscroll-contain bg-[#0a0d14] scroll-smooth pb-[max(env(safe-area-inset-bottom,0px),16px)]">
           {mainView === 'inventory' ? (
             /* ============================================================== */
             /* ================= CHEST INVENTORY VIEW ======================= */
             /* ============================================================== */
-            <div className="flex-1 flex flex-col p-4 sm:p-6 max-w-5xl mx-auto w-full">
+            <div
+              id="inventory-panel"
+              role="tabpanel"
+              aria-labelledby="inventory-tab"
+              className="flex-1 flex flex-col p-4 sm:p-6 max-w-5xl mx-auto w-full min-w-0"
+            >
               {/* Inventory Sub-tabs */}
-              <div className="flex items-center gap-2 mb-6 border-b-2 border-neutral-800 pb-3">
+              <div
+                role="tablist"
+                aria-label="Chest Vault Sub-tabs"
+                className="flex items-center gap-2 mb-6 border-b-2 border-neutral-800 pb-3 flex-wrap"
+              >
                 <button
                   type="button"
+                  role="tab"
+                  aria-selected={inventorySubTab === 'pending'}
+                  aria-controls="pending-chests-panel"
+                  id="pending-chests-tab"
                   onClick={() => setInventorySubTab('pending')}
-                  className={`min-h-[40px] px-4 text-xs font-black uppercase flex items-center gap-2 border-2 transition-all cursor-pointer ${
+                  className={`min-h-[44px] px-4 text-xs font-black uppercase flex items-center gap-2 border-2 transition-all cursor-pointer motion-reduce:transition-none motion-reduce:transform-none motion-reduce:animate-none ${
                     inventorySubTab === 'pending'
                       ? 'bg-amber-400 text-black border-black shadow-[3px_3px_0px_#fff]'
                       : 'bg-neutral-900 text-neutral-400 border-neutral-800 hover:text-white'
@@ -366,8 +392,12 @@ export const TrophyRoomModal: React.FC<TrophyRoomModalProps> = ({
 
                 <button
                   type="button"
+                  role="tab"
+                  aria-selected={inventorySubTab === 'claimed'}
+                  aria-controls="claimed-rewards-panel"
+                  id="claimed-rewards-tab"
                   onClick={() => setInventorySubTab('claimed')}
-                  className={`min-h-[40px] px-4 text-xs font-black uppercase flex items-center gap-2 border-2 transition-all cursor-pointer ${
+                  className={`min-h-[44px] px-4 text-xs font-black uppercase flex items-center gap-2 border-2 transition-all cursor-pointer motion-reduce:transition-none motion-reduce:transform-none motion-reduce:animate-none ${
                     inventorySubTab === 'claimed'
                       ? 'bg-amber-400 text-black border-black shadow-[3px_3px_0px_#fff]'
                       : 'bg-neutral-900 text-neutral-400 border-neutral-800 hover:text-white'
@@ -380,7 +410,7 @@ export const TrophyRoomModal: React.FC<TrophyRoomModalProps> = ({
 
               {inventorySubTab === 'pending' ? (
                 /* Sub-tab 1: Chests to Open */
-                <div>
+                <div id="pending-chests-panel" role="tabpanel" aria-labelledby="pending-chests-tab">
                   <div className="flex items-center justify-between mb-4">
                     <p className="text-xs font-bold text-neutral-400 uppercase tracking-wider">
                       Stored chests ready to unlock. Click &quot;Open Chest&quot; to begin the 3-tap unlock sequence!
@@ -400,15 +430,16 @@ export const TrophyRoomModal: React.FC<TrophyRoomModalProps> = ({
                       </p>
                     </div>
                   ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div role="list" aria-label="Unopened Chests" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                       {pendingChestsList.map((chest, idx) => (
                         <div
                           key={chest.matchId || idx}
-                          className="bg-neutral-950 border-3 border-amber-400/80 p-4 shadow-[4px_4px_0px_#000] flex flex-col justify-between relative overflow-hidden group hover:border-amber-400 transition-all"
+                          role="listitem"
+                          className="bg-neutral-950 border-3 border-amber-400/80 p-4 shadow-[4px_4px_0px_#000] flex flex-col justify-between relative overflow-hidden group hover:border-amber-400 transition-all motion-reduce:transition-none motion-reduce:transform-none motion-reduce:animate-none"
                         >
                           {/* Chest Visual */}
                           <div className="flex items-center gap-3 mb-4">
-                            <div className="w-16 h-16 bg-[#16120b] border-2 border-amber-400 flex items-center justify-center shrink-0 p-1 group-hover:scale-105 transition-transform">
+                            <div className="w-16 h-16 bg-[#16120b] border-2 border-amber-400 flex items-center justify-center shrink-0 p-1 group-hover:scale-105 transition-transform motion-reduce:transition-none motion-reduce:transform-none">
                               <ChestSvg isWin={chest.isWin ?? (chest.result !== 'loss')} tapCount={0} isOpened={false} isWindup={false} isResigned={chest.isResigned} />
                             </div>
                             <div className="min-w-0">
@@ -431,7 +462,7 @@ export const TrophyRoomModal: React.FC<TrophyRoomModalProps> = ({
                           <button
                             type="button"
                             onClick={handleOpenChest}
-                            className="w-full min-h-[44px] px-3 bg-amber-400 hover:bg-amber-300 text-black font-black text-xs uppercase tracking-wider border-2 border-black shadow-[3px_3px_0px_#fff] cursor-pointer flex items-center justify-center gap-2 active:translate-x-0.5 active:translate-y-0.5 transition-all"
+                            className="w-full min-h-[44px] px-3 bg-amber-400 hover:bg-amber-300 text-black font-black text-xs uppercase tracking-wider border-2 border-black shadow-[3px_3px_0px_#fff] cursor-pointer flex items-center justify-center gap-2 active:translate-x-0.5 active:translate-y-0.5 transition-all motion-reduce:transition-none motion-reduce:transform-none motion-reduce:animate-none"
                           >
                             <Gift className="w-4 h-4 text-black shrink-0" />
                             <span>OPEN CHEST NOW</span>
@@ -443,7 +474,7 @@ export const TrophyRoomModal: React.FC<TrophyRoomModalProps> = ({
                 </div>
               ) : (
                 /* Sub-tab 2: Claimed Rewards History */
-                <div>
+                <div id="claimed-rewards-panel" role="tabpanel" aria-labelledby="claimed-rewards-tab">
                   <div className="flex items-center justify-between mb-4">
                     <p className="text-xs font-bold text-neutral-400 uppercase tracking-wider">
                       Catalog of all secret character cards and tactical boosts acquired from opened chests.
@@ -463,10 +494,11 @@ export const TrophyRoomModal: React.FC<TrophyRoomModalProps> = ({
                       </p>
                     </div>
                   ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div role="list" aria-label="Claimed Rewards" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                       {claimedRewards.map((reward) => (
                         <div
                           key={reward.id}
+                          role="listitem"
                           className="bg-neutral-950 border-3 border-white/80 p-4 shadow-[4px_4px_0px_#000] flex flex-col justify-between relative overflow-hidden"
                         >
                           <div className="flex items-start gap-3 mb-3">
@@ -529,10 +561,38 @@ export const TrophyRoomModal: React.FC<TrophyRoomModalProps> = ({
             <>
               {/* Navigation Bar: Category Tabs */}
               <nav
-                className="sticky top-0 bg-slate-950/90 backdrop-blur-md border-b-2 border-white/10 z-20 shrink-0 shadow-xl"
+                className="sticky top-0 bg-slate-950/90 backdrop-blur-md border-b-2 border-white/10 z-20 shrink-0 shadow-xl relative"
                 role="tablist"
+                aria-label="Realm Categories"
+                onKeyDown={(e) => {
+                  if (['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(e.key)) {
+                    e.preventDefault();
+                    const tabs = Array.from(e.currentTarget.querySelectorAll<HTMLButtonElement>('[role="tab"]'));
+                    if (!tabs.length) return;
+                    const modes = (['all', 'standard', 'culling', 'rose', 'crafted'] as const);
+                    const currentIndex = modes.indexOf(filterMode);
+                    let nextIndex = currentIndex;
+                    if (e.key === 'ArrowLeft') {
+                      nextIndex = currentIndex > 0 ? currentIndex - 1 : modes.length - 1;
+                    } else if (e.key === 'ArrowRight') {
+                      nextIndex = currentIndex < modes.length - 1 ? currentIndex + 1 : 0;
+                    } else if (e.key === 'Home') {
+                      nextIndex = 0;
+                    } else if (e.key === 'End') {
+                      nextIndex = modes.length - 1;
+                    }
+                    setFilterMode(modes[nextIndex]);
+                    tabs[nextIndex]?.focus();
+                  }
+                }}
               >
-                <div className="flex overflow-x-auto scrollbar-none px-4 py-3 gap-3">
+                {/* Right-edge fade overlay for mobile scroll affordance (STEP 5b) */}
+                <div
+                  className="absolute right-0 top-0 bottom-0 w-6 bg-gradient-to-l from-slate-950 to-transparent pointer-events-none z-10 lg:hidden"
+                  aria-hidden="true"
+                />
+
+                <div className="flex overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden px-4 py-3 gap-3 min-w-0 flex-nowrap">
                   {(['all', 'standard', 'culling', 'rose', 'crafted'] as const).map((m) => {
                     const isActive = filterMode === m;
                     return (
@@ -541,8 +601,9 @@ export const TrophyRoomModal: React.FC<TrophyRoomModalProps> = ({
                         key={m}
                         role="tab"
                         aria-selected={isActive}
+                        tabIndex={isActive ? 0 : -1}
                         onClick={() => setFilterMode(m)}
-                        className={`h-12 px-5 flex-shrink-0 flex items-center gap-2 font-black uppercase text-xs border-2 transition-all active:scale-95 ${
+                        className={`min-h-[48px] px-5 flex-shrink-0 flex items-center gap-2 font-black uppercase text-xs border-2 transition-all active:scale-95 motion-reduce:transition-none motion-reduce:transform-none motion-reduce:animate-none ${
                           isActive
                             ? 'bg-amber-400 text-black border-black shadow-[4px_4px_0px_#fff] -translate-y-0.5'
                             : 'bg-slate-900/50 text-slate-500 border-slate-800 hover:text-slate-300'
@@ -557,18 +618,35 @@ export const TrophyRoomModal: React.FC<TrophyRoomModalProps> = ({
                 </div>
               </nav>
 
-              <div className="flex flex-col lg:flex-row flex-1 relative">
+              <div id="trophies-panel" role="tabpanel" aria-labelledby="trophies-tab" className="flex flex-col lg:flex-row flex-1 relative min-w-0">
                 {/* Left/Detail Column: Persistent Sticky on Desktop, Top of Scroll on Mobile */}
-                <aside className="lg:w-[38%] xl:w-[32%] lg:sticky lg:top-14 h-fit bg-black/60 border-b-2 lg:border-b-0 lg:border-r-4 border-white/10 p-5 sm:p-8 flex flex-col items-center shrink-0 z-10">
+                <aside className="lg:w-[38%] xl:w-[32%] lg:sticky lg:top-14 h-fit bg-black/60 border-b-2 lg:border-b-0 lg:border-r-4 border-white/10 p-5 sm:p-8 flex flex-col items-center shrink-0 z-10 min-w-0">
+                  {/* Visually-hidden live region for screen readers when selected card changes (STEP 4b) */}
+                  <div className="sr-only" role="status" aria-live="polite" aria-atomic="true">
+                    {effectiveSelectedCard
+                      ? `Selected: ${effectiveSelectedCard.title}, ${effectiveSelectedCard.rarity}, ${isSelectedCardUnlocked ? 'Unlocked' : 'Locked'}`
+                      : 'No trophy selected'}
+                  </div>
+
                   {effectiveSelectedCard ? (
-                    <div className="w-full max-w-[340px] animate-in slide-in-from-top-4 duration-300">
+                    <div className="w-full max-w-[340px] animate-in slide-in-from-top-4 duration-300 motion-reduce:transition-none motion-reduce:transform-none motion-reduce:animate-none">
                       {/* Badge Preview Frame */}
-                      <div className="relative border-4 border-black shadow-[10px_10px_0px_#f5a623] bg-[#f5a623] aspect-square w-full mb-8 group overflow-hidden rounded-md">
+                      <div className="relative border-4 border-black shadow-[10px_10px_0px_#f5a623] bg-[#f5a623] aspect-square w-full mb-8 group overflow-hidden rounded-md max-h-[38dvh] lg:max-h-none mx-auto">
                         <canvas
                           ref={canvasRef}
                           width={600}
                           height={600}
-                          className="w-full h-full block object-contain"
+                          role="img"
+                          aria-label={
+                            effectiveSelectedCard
+                              ? `${effectiveSelectedCard.title}, ${effectiveSelectedCard.rarity} badge, ${
+                                  isSelectedCardUnlocked
+                                    ? `Serial ${effectiveSelectedCard.id.slice(-8)}, Unlocked`
+                                    : 'Status Locked'
+                                }`
+                              : 'No trophy selected'
+                          }
+                          className="w-full h-full block object-contain max-h-[38dvh] lg:max-h-none mx-auto"
                         />
                         {!isSelectedCardUnlocked && (
                           <div className="absolute inset-0 bg-black/60 backdrop-blur-[2px] flex items-center justify-center">
@@ -616,11 +694,18 @@ export const TrophyRoomModal: React.FC<TrophyRoomModalProps> = ({
                             }
                           }}
                           disabled={!isSelectedCardUnlocked}
-                          className="w-full h-14 bg-amber-400 hover:bg-amber-300 disabled:bg-slate-800 disabled:text-slate-600 disabled:border-slate-700 disabled:shadow-none text-black font-black text-xs sm:text-sm uppercase tracking-tighter border-3 border-black shadow-[6px_6px_0px_#fff] flex items-center justify-center gap-3 cursor-pointer disabled:cursor-not-allowed transition-all active:translate-x-1 active:translate-y-1"
+                          aria-describedby={!isSelectedCardUnlocked ? 'download-disabled-helper' : undefined}
+                          className="w-full min-h-[56px] py-3 px-4 bg-amber-400 hover:bg-amber-300 disabled:bg-slate-800 disabled:text-slate-400 disabled:border-slate-700 disabled:shadow-none text-black font-black text-xs sm:text-sm uppercase tracking-tighter border-3 border-black shadow-[6px_6px_0px_#fff] flex items-center justify-center gap-3 cursor-pointer disabled:cursor-not-allowed transition-all active:translate-x-1 active:translate-y-1 leading-tight motion-reduce:transition-none motion-reduce:transform-none motion-reduce:animate-none"
                         >
-                          <Download className="w-5 h-5 stroke-[3]" />
+                          <Download className="w-5 h-5 stroke-[3] shrink-0" />
                           <span>Download Identity Badge (PNG)</span>
                         </button>
+
+                        {!isSelectedCardUnlocked && (
+                          <p id="download-disabled-helper" className="text-xs font-bold text-amber-400 text-center mt-1">
+                            Unlock this trophy to download its badge
+                          </p>
+                        )}
                       </div>
                     </div>
                   ) : (
@@ -636,10 +721,10 @@ export const TrophyRoomModal: React.FC<TrophyRoomModalProps> = ({
                 </aside>
 
                 {/* Right Column: Trophy Grid */}
-                <main className="flex-1 p-4 sm:p-8 bg-[#0a0d14]">
+                <main className="flex-1 p-4 sm:p-8 bg-[#0a0d14] min-w-0">
                   {/* Sub-Filters: Rarity Horizontal Strip */}
-                  <div className="flex items-center gap-2 overflow-x-auto scrollbar-none pb-4 mb-6">
-                    <span className="text-xs font-black text-slate-500 uppercase tracking-widest mr-2 shrink-0">
+                  <div className="flex items-center gap-2 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden pb-4 mb-6 flex-wrap min-w-0">
+                    <span className="text-xs font-black text-slate-400 uppercase tracking-widest mr-2 shrink-0">
                       Filter by Tier:
                     </span>
                     {(['all', 'Legendary', 'Epic', 'Rare', 'Common'] as const).map((r) => {
@@ -648,11 +733,12 @@ export const TrophyRoomModal: React.FC<TrophyRoomModalProps> = ({
                         <button
                           type="button"
                           key={r}
+                          aria-pressed={isActive}
                           onClick={() => setFilterRarity(r)}
-                          className={`px-4 py-2 font-black uppercase text-xs border-2 transition-all active:scale-90 shrink-0 ${
+                          className={`min-h-[44px] px-4 py-2 font-black uppercase text-xs border-2 transition-all active:scale-90 shrink-0 motion-reduce:transition-none motion-reduce:transform-none motion-reduce:animate-none cursor-pointer ${
                             isActive
                               ? 'bg-white text-black border-black shadow-[3px_3px_0px_#fbbf24]'
-                              : 'bg-slate-900 text-slate-500 border-slate-800 hover:border-slate-700'
+                              : 'bg-slate-900 text-slate-400 border-slate-800 hover:border-slate-700'
                           }`}
                         >
                           {r}
@@ -662,7 +748,7 @@ export const TrophyRoomModal: React.FC<TrophyRoomModalProps> = ({
                   </div>
 
                   {filteredTrophies.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-32 text-slate-700 text-center border-4 border-dashed border-slate-900">
+                    <div className="flex flex-col items-center justify-center py-32 text-slate-400 text-center border-4 border-dashed border-slate-900">
                       <Filter className="w-12 h-12 mb-4 opacity-10" />
                       <h4 className="font-black uppercase text-sm tracking-widest">
                         No Matches in Sanctuary
@@ -673,13 +759,13 @@ export const TrophyRoomModal: React.FC<TrophyRoomModalProps> = ({
                           setFilterMode('all');
                           setFilterRarity('all');
                         }}
-                        className="mt-4 px-4 py-2 bg-slate-900 border border-slate-800 text-[10px] font-bold text-amber-500 uppercase hover:bg-slate-800 transition-colors"
+                        className="mt-4 min-h-[44px] px-4 py-2 bg-slate-900 border border-slate-800 text-xs font-bold text-amber-400 uppercase hover:bg-slate-800 transition-colors cursor-pointer"
                       >
                         Reset Realm Filters
                       </button>
                     </div>
                   ) : (
-                    <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
+                    <div role="list" aria-label="Trophies" className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
                       {filteredTrophies.map((trophy) => {
                         const isSelected = Boolean(
                           selectedCard && matchesTrophyDef(selectedCard.id, trophy.id)
@@ -687,8 +773,12 @@ export const TrophyRoomModal: React.FC<TrophyRoomModalProps> = ({
                         const isLocked = !trophy.isUnlocked;
 
                         return (
-                          <div
+                          <button
+                            type="button"
                             key={trophy.id}
+                            role="listitem"
+                            aria-pressed={isSelected}
+                            aria-label={`${trophy.title}, ${trophy.rarity} tier, ${isLocked ? 'locked' : 'unlocked'}${trophy.predictedRating && !isLocked ? `, rating ${trophy.predictedRating}` : ''}`}
                             onClick={() => {
                               if (trophy.isUnlocked && trophy.earnedInstance) {
                                 setSelectedCard(trophy.earnedInstance);
@@ -704,7 +794,7 @@ export const TrophyRoomModal: React.FC<TrophyRoomModalProps> = ({
                                 } as any);
                               }
                             }}
-                            className={`group relative p-4 border-3 transition-all flex flex-col justify-between aspect-[4/5] overflow-hidden cursor-pointer ${
+                            className={`group relative p-4 border-3 transition-all flex flex-col justify-between aspect-[4/5] overflow-hidden cursor-pointer w-full text-left motion-reduce:transition-none motion-reduce:transform-none motion-reduce:animate-none ${
                               isSelected
                                 ? 'bg-amber-400 text-black border-black shadow-[6px_6px_0px_#fff] -translate-y-1 z-10'
                                 : 'bg-amber-500/10 text-white border-amber-500/40 hover:border-amber-400 shadow-[4px_4px_0px_#000]'
@@ -721,14 +811,14 @@ export const TrophyRoomModal: React.FC<TrophyRoomModalProps> = ({
                                     ? 'bg-amber-950 text-amber-400 border-amber-800'
                                     : trophy.rarity === 'Epic'
                                     ? 'bg-purple-950 text-purple-400 border-purple-800'
-                                    : 'bg-slate-800 text-slate-400 border-slate-700'
+                                    : 'bg-slate-800 text-slate-300 border-slate-700'
                                 }`}
                               >
                                 {trophy.rarity}
                               </span>
 
                               {isLocked ? (
-                                <Lock className="w-3.5 h-3.5 text-slate-600" />
+                                <Lock className="w-3.5 h-3.5 text-slate-300" aria-hidden="true" />
                               ) : (
                                 <div
                                   className={`w-2.5 h-2.5 rounded-full border-2 ${
@@ -741,18 +831,18 @@ export const TrophyRoomModal: React.FC<TrophyRoomModalProps> = ({
                             </div>
 
                             {/* Visual Icon */}
-                            <div className="flex items-center justify-center my-4 group-hover:scale-110 transition-transform duration-300">
+                            <div className="flex items-center justify-center my-4 group-hover:scale-110 transition-transform duration-300 motion-reduce:transition-none motion-reduce:transform-none motion-reduce:animate-none">
                               {renderBadgePiece(trophy)}
                             </div>
 
                             {/* Title & Stats */}
                             <div className="mt-auto">
                               <h4
-                                className={`font-black text-[11px] sm:text-xs uppercase leading-tight line-clamp-2 mb-2 ${
+                                className={`font-black text-xs uppercase leading-tight line-clamp-2 mb-2 ${
                                   isSelected
                                     ? 'text-black'
                                     : isLocked
-                                    ? 'text-slate-500'
+                                    ? 'text-slate-300'
                                     : 'text-amber-300'
                                 }`}
                               >
@@ -762,10 +852,10 @@ export const TrophyRoomModal: React.FC<TrophyRoomModalProps> = ({
                                 <span
                                   className={`text-[11px] font-black uppercase tracking-tighter ${
                                     isSelected
-                                      ? 'text-black/70'
+                                      ? 'text-black/80'
                                       : isLocked
-                                      ? 'text-slate-600'
-                                      : 'text-slate-400'
+                                      ? 'text-slate-300'
+                                      : 'text-slate-300'
                                   }`}
                                 >
                                   {isLocked ? 'STATUS: LOCKED' : 'RANK ACQUIRED'}
@@ -784,11 +874,16 @@ export const TrophyRoomModal: React.FC<TrophyRoomModalProps> = ({
                               </div>
                             </div>
 
+                            {/* Accessible screen reader text for lock status & rarity (STEP 3e) */}
+                            <span className="sr-only">
+                              {trophy.title} is {isLocked ? 'locked' : 'unlocked'}, {trophy.rarity} tier.
+                            </span>
+
                             {/* Locked Cross-hatch Overlay */}
                             {isLocked && (
                               <div className="absolute inset-0 pointer-events-none opacity-[0.05] bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:4px_4px]" />
                             )}
-                          </div>
+                          </button>
                         );
                       })}
                     </div>

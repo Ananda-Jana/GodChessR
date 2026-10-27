@@ -14,7 +14,8 @@ import { PopupAd } from './components/PopupAd';
 import { CraftTheoryView } from './components/CraftTheoryView';
 import { RoseParadiseView } from './rose/RoseParadiseView';
 import { HashiraTrainingView } from './training/HashiraTrainingView';
-import type { TrainerId } from './training/types';
+import { HashiraDojoModal } from './components/HashiraDojoModal';
+import type { TrainerId, TrainingToolId } from './training/types';
 import { SecretMatchView } from './secret/SecretMatchView';
 import type { SecretPlayerConfig } from './secret/types';
 import { Chess3dArcadeView } from './chess3d/Chess3dArcadeView';
@@ -71,7 +72,9 @@ function AppContent() {
   const [showCraftTheory, setShowCraftTheory] = useState(false);
   const [isRoseOpen, setIsRoseOpen] = useState(false);
   const [isHashiraTrainingOpen, setIsHashiraTrainingOpen] = useState(false);
+  const [isHashiraModalOpen, setIsHashiraModalOpen] = useState(false);
   const [selectedTrainerForTraining, setSelectedTrainerForTraining] = useState<TrainerId>('thukuna');
+  const [selectedToolForTraining, setSelectedToolForTraining] = useState<TrainingToolId>('opening');
   const [botInitialGameMode, setBotInitialGameMode] = useState<'standard' | 'crafted' | 'classic'>('standard');
   const [activeSecretBot, setActiveSecretBot] = useState<SecretPlayerConfig | null>(null);
   const [active3dMatchParams, setActive3dMatchParams] = useState<{
@@ -721,6 +724,7 @@ function AppContent() {
     return (
       <HashiraTrainingView
         initialTrainerId={selectedTrainerForTraining}
+        initialToolId={selectedToolForTraining}
         onBack={() => setIsHashiraTrainingOpen(false)}
       />
     );
@@ -822,7 +826,7 @@ function AppContent() {
           onOpenRose={() => setIsRoseOpen(true)}
           onOpenHashiraTraining={(trainerId?: TrainerId) => {
             if (trainerId) setSelectedTrainerForTraining(trainerId);
-            setIsHashiraTrainingOpen(true);
+            setIsHashiraModalOpen(true);
           }}
           onOpenPunisher={() => setIsPunisherSelectorOpen(true)}
           onStartSecretMatch={(botConfig) => setActiveSecretBot(botConfig)}
@@ -856,6 +860,19 @@ function AppContent() {
         onClose={() => setIsBotModalOpen(false)}
         initialGameMode={botInitialGameMode}
         onStartBotMatch={handleStartBotMatch}
+      />
+
+      {/* Hashira Training Dojo Opening Modal */}
+      <HashiraDojoModal
+        isOpen={isHashiraModalOpen}
+        initialTrainerId={selectedTrainerForTraining}
+        onClose={() => setIsHashiraModalOpen(false)}
+        onStartTraining={(trainerId, toolId) => {
+          setSelectedTrainerForTraining(trainerId);
+          setSelectedToolForTraining(toolId);
+          setIsHashiraModalOpen(false);
+          setIsHashiraTrainingOpen(true);
+        }}
       />
 
       {/* Global 2D Reward Chest Host */}

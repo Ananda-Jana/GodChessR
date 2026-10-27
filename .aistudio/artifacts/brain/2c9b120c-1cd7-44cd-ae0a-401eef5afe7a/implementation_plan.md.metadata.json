@@ -1,0 +1,6 @@
+{
+  "summary":  "Implementation plan for redesigning the mobile layout of game-mode opening modals into near full-screen overlay panels with 160px hero banners and sticky controls, while keeping desktop views 100% pixel-identical.",
+  "updatedAt":  "2026-10-27T13:32:35.618958226Z",
+  "requestFeedback":  true,
+  "userFacing":  true
+}

@@ -70,20 +70,20 @@ export const Chess3dRulesPreviewModal: React.FC<Chess3dRulesPreviewModalProps> =
 
   return (
     <div
-      className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-5 overflow-y-auto animate-in fade-in duration-200"
+      className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-end lg:items-center justify-center p-0 lg:p-4 overflow-hidden lg:overflow-y-auto animate-in fade-in duration-200"
       role="dialog"
       aria-modal="true"
       aria-label="3D Annihilatic Chess Arcade Preview & Rules"
       onClick={onClose}
     >
       <div
-        className="w-full max-w-4xl bg-[#141519] border-2 border-[#29212F] shadow-2xl rounded-2xl flex flex-col my-auto max-h-[92vh] overflow-hidden"
+        className="w-full max-w-4xl bg-[#141519] border-t-2 border-x-2 lg:border-2 border-[#29212F] shadow-2xl rounded-t-2xl lg:rounded-2xl flex flex-col h-[94dvh] lg:h-auto max-h-[94dvh] lg:max-h-[92vh] overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Modal Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-[#29212F] bg-[#0c0d10] shrink-0">
+        <div className="flex items-center justify-between px-4 sm:px-5 py-3.5 sm:py-4 border-b border-[#29212F] bg-[#0c0d10] shrink-0">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-blue-600/20 border border-blue-500/40 flex items-center justify-center text-blue-400">
+            <div className="w-8 h-8 rounded-lg bg-blue-600/20 border border-blue-500/40 flex items-center justify-center text-blue-400 shrink-0">
               <Crown className="w-4.5 h-4.5" />
             </div>
             <div>
@@ -101,15 +101,15 @@ export const Chess3dRulesPreviewModal: React.FC<Chess3dRulesPreviewModalProps> =
           <button
             type="button"
             onClick={onClose}
-            className="w-8 h-8 rounded-lg bg-neutral-900 hover:bg-neutral-800 border border-[#29212F] text-neutral-400 hover:text-white flex items-center justify-center cursor-pointer transition-colors"
+            className="w-11 h-11 lg:w-8 lg:h-8 rounded-lg bg-neutral-900 hover:bg-neutral-800 border border-[#29212F] text-neutral-400 hover:text-white flex items-center justify-center cursor-pointer transition-colors shrink-0"
             aria-label="Close dialog"
           >
-            <X className="w-4 h-4" />
+            <X className="w-5 h-5 lg:w-4 lg:h-4" />
           </button>
         </div>
 
         {/* Modal Body: Left Preview, Right Mode Configuration */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6 min-h-0">
+        <div className="flex-1 overflow-y-auto overscroll-contain p-4 sm:p-6 grid grid-cols-1 lg:grid-cols-12 gap-5 sm:gap-6 min-h-0">
           {/* Left Column: Board & Pieces Preview */}
           <div className="lg:col-span-5 flex flex-col gap-3">
             <div className="flex items-center justify-between">
@@ -120,11 +120,11 @@ export const Chess3dRulesPreviewModal: React.FC<Chess3dRulesPreviewModalProps> =
               <span className="text-[10px] font-mono text-neutral-400">8x8 Standard Grid</span>
             </div>
 
-            {/* Interactive 3D Miniature Preview */}
-            <div className="w-full aspect-square bg-[#0b0c0e] border border-[#29212F] rounded-xl overflow-hidden p-2 flex items-center justify-center shadow-inner relative group">
+            {/* Interactive 3D Miniature Preview (160px hero on mobile, aspect-square on desktop) */}
+            <div className="w-full h-40 lg:h-auto lg:aspect-square bg-[#0b0c0e] border border-[#29212F] rounded-xl overflow-hidden p-1 lg:p-2 flex items-center justify-center shadow-inner relative group shrink-0">
               <ChessBoard3D pieces={previewPieces} background={false} width="100%" />
               <div className="absolute bottom-2 inset-x-2 py-1 px-2 rounded bg-black/80 backdrop-blur-sm text-center text-[10px] font-bold text-neutral-200 border border-white/10 pointer-events-none">
-                White Pieces vs. Black Pieces
+                3D Annihilatic Chess · FIDE 8x8 Masters
               </div>
             </div>
 
@@ -145,11 +145,11 @@ export const Chess3dRulesPreviewModal: React.FC<Chess3dRulesPreviewModalProps> =
           {/* Right Column: Mode Select & Launch Details */}
           <div className="lg:col-span-7 flex flex-col gap-4">
             {/* Tab Switcher */}
-            <div className="grid grid-cols-2 gap-2 p-1 bg-[#090a0c] border border-[#29212F] rounded-xl">
+            <div className="grid grid-cols-2 gap-2 p-1 bg-[#090a0c] border border-[#29212F] rounded-xl shrink-0">
               <button
                 type="button"
                 onClick={() => setActiveTab('bot')}
-                className={`py-2 px-3 text-xs font-black uppercase rounded-lg flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                className={`min-h-[44px] lg:min-h-0 py-2.5 lg:py-2 px-3 text-xs font-black uppercase rounded-lg flex items-center justify-center gap-2 transition-all cursor-pointer ${
                   activeTab === 'bot'
                     ? 'bg-blue-600 text-white shadow-md shadow-blue-900/30'
                     : 'text-neutral-400 hover:text-white'
@@ -161,7 +161,7 @@ export const Chess3dRulesPreviewModal: React.FC<Chess3dRulesPreviewModalProps> =
               <button
                 type="button"
                 onClick={() => setActiveTab('multiplayer')}
-                className={`py-2 px-3 text-xs font-black uppercase rounded-lg flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                className={`min-h-[44px] lg:min-h-0 py-2.5 lg:py-2 px-3 text-xs font-black uppercase rounded-lg flex items-center justify-center gap-2 transition-all cursor-pointer ${
                   activeTab === 'multiplayer'
                     ? 'bg-blue-600 text-white shadow-md shadow-blue-900/30'
                     : 'text-neutral-400 hover:text-white'
@@ -185,7 +185,7 @@ export const Chess3dRulesPreviewModal: React.FC<Chess3dRulesPreviewModalProps> =
                         key={bot.id}
                         type="button"
                         onClick={() => setSelectedBotId(bot.id)}
-                        className={`p-2.5 rounded-xl border text-left cursor-pointer transition-all ${
+                        className={`min-h-[44px] p-2.5 rounded-xl border text-left cursor-pointer transition-all ${
                           selectedBotId === bot.id
                             ? 'bg-blue-950/40 border-blue-500 shadow-[0_0_12px_rgba(59,130,246,0.3)]'
                             : 'bg-[#090a0c] border-[#29212F] hover:border-neutral-600'
@@ -226,7 +226,7 @@ export const Chess3dRulesPreviewModal: React.FC<Chess3dRulesPreviewModalProps> =
                     <button
                       type="button"
                       onClick={() => setPlayerTeam('orange')}
-                      className={`p-2.5 rounded-xl border text-center font-bold text-xs flex items-center justify-center gap-2 cursor-pointer transition-all ${
+                      className={`min-h-[44px] lg:min-h-0 p-3 lg:p-2.5 rounded-xl border text-center font-bold text-xs flex items-center justify-center gap-2 cursor-pointer transition-all ${
                         playerTeam === 'orange'
                           ? 'bg-blue-950/50 border-blue-400 text-white shadow-sm ring-1 ring-blue-500/40'
                           : 'bg-[#090a0c] border-[#29212F] text-neutral-400 hover:text-white'
@@ -238,7 +238,7 @@ export const Chess3dRulesPreviewModal: React.FC<Chess3dRulesPreviewModalProps> =
                     <button
                       type="button"
                       onClick={() => setPlayerTeam('red')}
-                      className={`p-2.5 rounded-xl border text-center font-bold text-xs flex items-center justify-center gap-2 cursor-pointer transition-all ${
+                      className={`min-h-[44px] lg:min-h-0 p-3 lg:p-2.5 rounded-xl border text-center font-bold text-xs flex items-center justify-center gap-2 cursor-pointer transition-all ${
                         playerTeam === 'red'
                           ? 'bg-blue-950/50 border-blue-400 text-white shadow-sm ring-1 ring-blue-500/40'
                           : 'bg-[#090a0c] border-[#29212F] text-neutral-400 hover:text-white'
@@ -254,7 +254,7 @@ export const Chess3dRulesPreviewModal: React.FC<Chess3dRulesPreviewModalProps> =
                 <button
                   type="button"
                   onClick={() => onStartBotMatch(selectedBotId, playerTeam)}
-                  className="mt-2 w-full py-3 px-4 bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white font-black text-sm uppercase tracking-wider rounded-xl shadow-[0_4px_16px_rgba(37,99,235,0.4)] flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-95"
+                  className="min-h-[46px] mt-2 w-full py-3.5 lg:py-3 px-4 bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white font-black text-sm uppercase tracking-wider rounded-xl shadow-[0_4px_16px_rgba(37,99,235,0.4)] flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-95"
                 >
                   <Play className="w-4 h-4 fill-white" />
                   Confirm & Enter 3D Arcade (vs. {activeBot?.name})
@@ -280,7 +280,7 @@ export const Chess3dRulesPreviewModal: React.FC<Chess3dRulesPreviewModalProps> =
                           key={tc}
                           type="button"
                           onClick={() => setTimeControl(tc)}
-                          className={`py-1.5 px-2 rounded-lg border text-xs font-bold uppercase cursor-pointer transition-colors ${
+                          className={`min-h-[44px] lg:min-h-0 py-2.5 lg:py-1.5 px-2 rounded-lg border text-xs font-bold uppercase cursor-pointer transition-colors flex items-center justify-center ${
                             timeControl === tc
                               ? 'bg-blue-600 border-blue-500 text-white shadow-sm shadow-blue-900/30'
                               : 'bg-[#141519] border-[#29212F] text-neutral-400 hover:text-white'
@@ -295,7 +295,7 @@ export const Chess3dRulesPreviewModal: React.FC<Chess3dRulesPreviewModalProps> =
                   <button
                     type="button"
                     onClick={() => onStartMultiplayerMatch(undefined, timeControl, playerTeam)}
-                    className="w-full py-2.5 px-3 bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white text-xs font-black uppercase tracking-wider rounded-lg shadow-md shadow-blue-900/30 cursor-pointer transition-all active:scale-95 flex items-center justify-center gap-1.5"
+                    className="min-h-[44px] lg:min-h-0 w-full py-3 lg:py-2.5 px-3 bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white text-xs font-black uppercase tracking-wider rounded-lg shadow-md shadow-blue-900/30 cursor-pointer transition-all active:scale-95 flex items-center justify-center gap-1.5"
                   >
                     <Crown className="w-3.5 h-3.5" />
                     Host Room with Code
@@ -321,7 +321,7 @@ export const Chess3dRulesPreviewModal: React.FC<Chess3dRulesPreviewModalProps> =
                       type="button"
                       disabled={joinCode.length < 4}
                       onClick={() => onStartMultiplayerMatch(joinCode)}
-                      className="px-4 py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-40 disabled:bg-neutral-800 text-white text-xs font-black uppercase rounded-lg border border-blue-500/40 cursor-pointer transition-all"
+                      className="min-h-[44px] lg:min-h-0 px-4 py-2.5 lg:py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-40 disabled:bg-neutral-800 text-white text-xs font-black uppercase rounded-lg border border-blue-500/40 cursor-pointer transition-all flex items-center justify-center"
                     >
                       Join
                     </button>
@@ -349,7 +349,7 @@ export const Chess3dRulesPreviewModal: React.FC<Chess3dRulesPreviewModalProps> =
                           <button
                             type="button"
                             onClick={() => onStartMultiplayerMatch(room.code)}
-                            className="py-1 px-2.5 bg-blue-600 hover:bg-blue-500 text-white text-[10px] font-black uppercase rounded cursor-pointer"
+                            className="min-h-[38px] lg:min-h-0 py-1.5 lg:py-1 px-3 lg:px-2.5 bg-blue-600 hover:bg-blue-500 text-white text-[10px] font-black uppercase rounded cursor-pointer flex items-center justify-center"
                           >
                             Join
                           </button>

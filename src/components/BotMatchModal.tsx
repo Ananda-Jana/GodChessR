@@ -51,7 +51,7 @@ export const BotMatchModal: React.FC<BotMatchModalProps> = ({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-none animate-in fade-in duration-150"
+      className="fixed inset-0 z-50 flex items-end md:items-center justify-center p-0 md:p-4 bg-black/80 backdrop-blur-none animate-in fade-in duration-150"
       onClick={onClose}
     >
       <div
@@ -59,7 +59,7 @@ export const BotMatchModal: React.FC<BotMatchModalProps> = ({
         role="dialog"
         aria-modal="true"
         aria-labelledby="bot-match-modal-title"
-        className="bg-white dark:bg-[#0a0a0c] border-4 border-black dark:border-white max-w-3xl w-full max-h-[90dvh] [max-height:90vh] shadow-[8px_8px_0px_#000000] dark:shadow-[8px_8px_0px_#ffffff] text-black dark:text-white flex flex-col md:flex-row overflow-hidden animate-in slide-in-from-bottom-4 sm:slide-in-from-bottom-0 sm:zoom-in-95 duration-150"
+        className="bg-white dark:bg-[#0a0a0c] border-t-4 border-x-4 md:border-4 border-black dark:border-white rounded-t-2xl md:rounded-none max-w-3xl w-full h-[94dvh] md:h-auto max-h-[94dvh] md:max-h-[90dvh] shadow-[0_-8px_25px_rgba(0,0,0,0.5)] md:shadow-[8px_8px_0px_#000000] dark:md:shadow-[8px_8px_0px_#ffffff] text-black dark:text-white flex flex-col md:flex-row overflow-hidden animate-in slide-in-from-bottom-4 sm:slide-in-from-bottom-0 sm:zoom-in-95 duration-150"
         onClick={(e) => e.stopPropagation()}
       >
         <ModeArtPanel
@@ -68,12 +68,12 @@ export const BotMatchModal: React.FC<BotMatchModalProps> = ({
           subtitle="Tactical AI Rival"
         />
 
-        <div className="flex-1 flex flex-col min-w-0 max-h-[90dvh] overflow-hidden">
+        <div className="flex-1 flex flex-col min-w-0 h-full max-h-[94dvh] md:max-h-[90dvh] overflow-hidden">
         
         {/* Sticky Top Header with Title and Close Button */}
-        <div className={`p-3 sm:px-4 sm:py-3 border-b-3 border-black dark:border-white flex items-center justify-between shrink-0 bg-black text-white`}>
+        <div className="p-3 sm:px-4 sm:py-3 border-b-3 border-black dark:border-white flex items-center justify-between shrink-0 bg-black text-white z-10">
           <div className="flex items-center gap-2">
-            <div className={`w-8 h-8 border-2 border-white flex items-center justify-center font-black bg-amber-400 text-black`}>
+            <div className="w-8 h-8 border-2 border-white flex items-center justify-center font-black bg-amber-400 text-black">
               <Bot className="w-5 h-5" />
             </div>
             <div>
@@ -96,8 +96,8 @@ export const BotMatchModal: React.FC<BotMatchModalProps> = ({
           </button>
         </div>
 
-        {/* Sticky Top Action Bar so mobile players do not need to scroll */}
-        <div className={`p-3 border-b-3 border-black dark:border-white shrink-0 ${
+        {/* Desktop Sticky Top Action Bar (hidden on mobile, kept exactly untouched for desktop) */}
+        <div className={`hidden md:block p-3 border-b-3 border-black dark:border-white shrink-0 ${
           gameMode === 'crafted' ? 'bg-[#1e293b]' : 'bg-amber-400'
         }`}>
           <button
@@ -109,8 +109,28 @@ export const BotMatchModal: React.FC<BotMatchModalProps> = ({
           </button>
         </div>
 
+        {/* Mobile Hero Banner (160px, md:hidden) */}
+        <div className="md:hidden relative h-40 w-full shrink-0 overflow-hidden bg-black select-none border-b-3 border-black dark:border-white">
+          <img
+            src="/assets/aistudio/image_4aa74391.png"
+            alt={gameMode === 'crafted' ? 'Crafted Pieces' : 'Grandmaster Bot'}
+            loading="lazy"
+            decoding="async"
+            className="w-full h-full object-cover object-top filter brightness-95"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0c] via-black/35 to-transparent pointer-events-none" />
+          <div className="absolute bottom-2.5 left-3 right-3 flex items-center justify-between pointer-events-none">
+            <span className="text-[10px] font-mono font-black uppercase px-2 py-0.5 bg-amber-400 text-black border border-black shadow-[1px_1px_0px_#000]">
+              {gameMode === 'crafted' ? 'CRAFTED SPECIALS' : gameMode === 'classic' ? 'FIDE CLASSIC' : 'TACTICAL RIVAL'}
+            </span>
+            <span className="text-[10px] font-mono font-bold text-white/90 bg-black/70 px-2 py-0.5 border border-white/20">
+              DEPTH {difficulty === 'grandmaster' ? '3' : '2'}
+            </span>
+          </div>
+        </div>
+
         {/* Scrollable Form Body */}
-        <div className="p-4 overflow-y-auto flex-1 flex flex-col gap-4 text-xs font-bold">
+        <div className="p-4 overflow-y-auto flex-1 flex flex-col gap-4 text-xs font-bold overscroll-contain">
 
           {/* Game Mode Choice: 3 Options Ordered (Classic Chess, Mugen Chess, Crafted Pieces) */}
           <div>
@@ -457,6 +477,19 @@ export const BotMatchModal: React.FC<BotMatchModalProps> = ({
               </button>
             </div>
           </div>
+        </div>
+
+        {/* Sticky Mobile Bottom Action Bar */}
+        <div className={`md:hidden p-3 border-t-3 border-black dark:border-white shrink-0 pb-[calc(0.75rem+env(safe-area-inset-bottom))] z-20 ${
+          gameMode === 'crafted' ? 'bg-[#1e293b]' : 'bg-amber-400'
+        }`}>
+          <button
+            onClick={() => onStartBotMatch(playerColor, difficulty, timeControl, moveSuggestions, gameMode, gameMode === 'classic' ? false : craftingAllowed, pieceTheme)}
+            className="w-full min-h-[46px] py-2.5 px-4 bg-black text-amber-400 hover:bg-neutral-900 border-2 border-black font-black text-sm uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer shadow-[3px_3px_0px_#000000] active:translate-x-0.5 active:translate-y-0.5"
+          >
+            <Swords className="w-4 h-4" />
+            Start {gameMode === 'classic' ? 'Traditional Game' : gameMode === 'crafted' ? 'Crafted Game' : 'Mugen Game'}
+          </button>
         </div>
       </div>
     </div>

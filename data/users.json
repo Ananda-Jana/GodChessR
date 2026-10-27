@@ -8,9 +8,9 @@
     "salt": "1de1d69f0a63407cad1b52d43fead865",
     "stats": {
       "wins": 0,
-      "losses": 0,
+      "losses": 1,
       "draws": 0,
-      "totalGames": 0
+      "totalGames": 1
     },
     "createdAt": 1793036537365
   },
@@ -52,10 +52,10 @@
     "passwordHash": "176749e4067e6659fcc9e0839f2816a08b917bd395a0629b4c12ce52d09c29f3fd6bfd9e58a0dc600e2c0bd26927672cb3530272b17e068d8ba773b97832f874",
     "salt": "0ee3817278cb7d865f6a8cdc9aaf002b",
     "stats": {
-      "wins": 0,
+      "wins": 1,
       "losses": 0,
       "draws": 0,
-      "totalGames": 0
+      "totalGames": 1
     },
     "createdAt": 1793036537366
   },
@@ -73,5 +73,20 @@
       "totalGames": 0
     },
     "createdAt": 1793028370924
+  },
+  {
+    "id": "usr_guest_1793104261762_zksg8",
+    "username": "MechaRuri_2071",
+    "displayName": "MechaRuri",
+    "avatarId": "/assets/aistudio/image_97317ea2.png",
+    "passwordHash": "76572313e5e035918445e4db7d22a2dd380384f0c5e3e4f31fa3251ca983648df6116b641931f6b6d3b0ff0e4621fa6641f8060d97a416611dc76a827cc35b90",
+    "salt": "45f958b18696097963c7b6d4bbd0050f",
+    "stats": {
+      "wins": 0,
+      "losses": 0,
+      "draws": 0,
+      "totalGames": 0
+    },
+    "createdAt": 1793104261763
   }
 ]
