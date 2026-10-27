@@ -23,6 +23,7 @@ export interface ChestTriggerEvent {
   userId?: string;
   resigned?: boolean;
   eloBoost?: number;
+  directOpen?: boolean;
 }
 
 type ChestListener = (event: ChestTriggerEvent) => void;
@@ -39,10 +40,11 @@ export function subscribeToChestTriggers(listener: ChestListener): () => void {
 /**
  * Instantly triggers opening of a pending chest modal for the specified user.
  */
-export function triggerChestModalNow(userId?: string): void {
+export function triggerChestModalNow(userId?: string, directOpen = true): void {
   try {
     const pendingEvent = popPendingChestEvent(userId);
     if (pendingEvent) {
+      pendingEvent.directOpen = directOpen;
       listeners.forEach((listener) => {
         try {
           listener(pendingEvent);
@@ -58,6 +60,7 @@ export function triggerChestModalNow(userId?: string): void {
 
 /**
  * Report a finished match. Completely safe, asynchronous, and non-blocking.
+ * Triggers the instant post-game chest award prompt modal.
  */
 export function reportGameEnd(report: GameEndReport): void {
   try {
@@ -78,10 +81,20 @@ export function reportGameEnd(report: GameEndReport): void {
       result: outcome,
       userId: report.userId,
       resigned: report.resigned,
+      directOpen: false, // Show prompt first with "Open Now" vs "Save to Inventory"
     };
 
-    // Store as pending first so player can open via the chest button on the game over screen
+    // Store in pending in case player saves or refreshes
     addPendingChestEvent(event, report.userId);
+
+    // Instantly notify listeners to display the post-game chest award modal
+    listeners.forEach((listener) => {
+      try {
+        listener(event);
+      } catch {
+        // Safe fail
+      }
+    });
   } catch {
     // Fail silently, never throwing into game-over flow
   }

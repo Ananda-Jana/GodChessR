@@ -46,6 +46,7 @@ import { Crown, Bot } from 'lucide-react';
 import { PunisherSelector } from './punisher/PunisherSelector';
 import { getPunisherBotMove, PunisherBotId, PUNISHER_BOTS } from './punisher/punisherBot';
 import { ChestRewardHost } from './chest/ChestRewardHost';
+import { EloStreakNotification } from './components/EloStreakNotification';
 
 function AppContent() {
   const { user, isLoading } = useAuth();
@@ -862,6 +863,9 @@ function AppContent() {
         userId={user?.id}
         onStartSecretMatch={(botConfig) => setActiveSecretBot(botConfig)}
       />
+
+      {/* Global Elo Streak Notification Banner */}
+      <EloStreakNotification />
     </>
   );
 }

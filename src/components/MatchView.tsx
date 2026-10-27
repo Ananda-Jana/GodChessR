@@ -1220,19 +1220,11 @@ const MatchViewContent: React.FC<MatchViewContentProps> = ({
                 <div className="flex flex-wrap items-center gap-2">
                   <button
                     type="button"
-                    onClick={() => triggerChestModalNow(user.id)}
-                    className="min-h-[44px] px-3.5 bg-black hover:bg-neutral-900 text-amber-400 font-black text-xs uppercase tracking-wider border-2 border-amber-400 shadow-[2px_2px_0px_#000] cursor-pointer flex items-center justify-center gap-1.5 active:translate-x-0.5 active:translate-y-0.5"
-                  >
-                    <Gift className="w-4 h-4 text-amber-400" aria-hidden="true" />
-                    OPEN CHEST
-                  </button>
-                  <button
-                    type="button"
                     onClick={() => {
                       if (displayMatchCards.length > 0) setSelectedTrophyCard(displayMatchCards[0]);
                       setIsMatchTrophyRoomOpen(true);
                     }}
-                    className="min-h-[44px] px-3 bg-amber-400 hover:bg-amber-300 text-black font-black text-xs uppercase tracking-wider border-2 border-black shadow-[2px_2px_0px_#000] cursor-pointer flex items-center justify-center gap-1.5"
+                    className="min-h-[44px] px-3.5 bg-amber-400 hover:bg-amber-300 text-black font-black text-xs uppercase tracking-wider border-2 border-black shadow-[2px_2px_0px_#000] cursor-pointer flex items-center justify-center gap-1.5"
                   >
                     <Trophy className="w-4 h-4 text-black" aria-hidden="true" />
                     Trophy Room
@@ -1359,14 +1351,6 @@ const MatchViewContent: React.FC<MatchViewContentProps> = ({
                 </button>
               </div>
               <div className="flex flex-col gap-2">
-                <button
-                  type="button"
-                  onClick={() => triggerChestModalNow(user.id)}
-                  className="w-full min-h-[44px] px-3 bg-black hover:bg-neutral-900 text-amber-400 font-black text-xs uppercase border-2 border-amber-400 shadow-[2px_2px_0px_#000] cursor-pointer flex items-center justify-center gap-2 active:translate-x-0.5 active:translate-y-0.5"
-                >
-                  <Gift className="w-4 h-4 text-amber-400 shrink-0" aria-hidden="true" />
-                  <span>OPEN CHEST</span>
-                </button>
                 <div className="flex items-center gap-2">
                   <button
                     type="button"

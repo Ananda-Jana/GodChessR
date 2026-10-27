@@ -487,14 +487,28 @@ export function registerRoseSocket(wss: WebSocketServer) {
 
         case 'rose:resync':
         case 'rose:resyncRequest': {
-          const rId = ws.roseRoomId || roomId;
+          const rId = data.matchId || ws.roseRoomId || roomId;
           let room = rId ? getRoomById(rId) : undefined;
           if (!room && user.userId) {
             const activeId = getUserActiveRoomId(user.userId);
             if (activeId) room = getRoomById(activeId);
           }
           if (room) {
+            // Prune dead/closed sockets matching Culling Game
+            for (const s of Array.from(room.sockets)) {
+              if (s.readyState !== WebSocket.OPEN) {
+                room.sockets.delete(s);
+              }
+            }
+            room.sockets.add(ws);
+            ws.roseRoomId = room.match.id;
+            if (room.hostUserId === user.userId) {
+              room.hostWs = ws;
+            } else {
+              room.guestWs = ws;
+            }
             const seat = getSeatByUserId(room.match, user.userId);
+            if (seat) seat.isConnected = true;
             ws.send(JSON.stringify({
               type: 'rose:state',
               match: room.match,

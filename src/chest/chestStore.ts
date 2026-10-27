@@ -12,12 +12,43 @@ export interface PendingChestEvent {
   userId?: string;
   resigned?: boolean;
   eloBoost?: number;
+  isWin?: boolean;
+  isResigned?: boolean;
+  directOpen?: boolean;
+}
+
+export interface ClaimableRewardInfo {
+  id: string;
+  name: string;
+  role?: string;
+  title?: string;
+  rarity?: string;
+  avatarUrl?: string;
+  avatarSrc?: string;
+  quote?: string;
+  flavor?: string;
+  tagline?: string;
+}
+
+export interface ClaimedChestReward {
+  id: string;
+  rewardId: string;
+  name: string;
+  role: string;
+  title: string;
+  rarity: string;
+  avatarUrl: string;
+  claimedAt: number;
+  matchId?: string;
+  isOwned?: boolean;
+  eloBoost?: number;
 }
 
 export interface ChestStoreData {
   unlocked: string[];
   pending: number;
   pendingEvents?: PendingChestEvent[];
+  claimedRewards?: ClaimedChestReward[];
   awardedMatchIds: string[];
   appliedBoostMatchIds?: string[];
 }
@@ -26,6 +57,7 @@ const DEFAULT_STORE_DATA: ChestStoreData = {
   unlocked: [],
   pending: 0,
   pendingEvents: [],
+  claimedRewards: [],
   awardedMatchIds: [],
   appliedBoostMatchIds: [],
 };
@@ -48,6 +80,7 @@ export function getChestStore(userId?: string): ChestStoreData {
           unlocked: Array.isArray(parsed?.unlocked) ? parsed.unlocked : [],
           pending: typeof parsed?.pending === 'number' ? Math.max(0, parsed.pending) : 0,
           pendingEvents: Array.isArray(parsed?.pendingEvents) ? parsed.pendingEvents : [],
+          claimedRewards: Array.isArray(parsed?.claimedRewards) ? parsed.claimedRewards : [],
           awardedMatchIds: Array.isArray(parsed?.awardedMatchIds) ? parsed.awardedMatchIds : [],
           appliedBoostMatchIds: Array.isArray(parsed?.appliedBoostMatchIds) ? parsed.appliedBoostMatchIds : [],
         };
@@ -69,6 +102,7 @@ export function saveChestStore(data: ChestStoreData, userId?: string): void {
     unlocked: Array.from(new Set(data.unlocked || [])),
     pending: Math.max(0, Math.min(MAX_PENDING, data.pending || 0)),
     pendingEvents: Array.isArray(data.pendingEvents) ? data.pendingEvents.slice(-MAX_PENDING) : [],
+    claimedRewards: Array.isArray(data.claimedRewards) ? data.claimedRewards.slice(-100) : [],
     awardedMatchIds: (data.awardedMatchIds || []).slice(-50),
     appliedBoostMatchIds: (data.appliedBoostMatchIds || []).slice(-50),
   };
@@ -238,3 +272,45 @@ export function pickRandomReward(userId?: string): PickedRewardResult {
     return { reward: SECRET_PLAYER_REWARDS[0], isOwned: false };
   }
 }
+
+export function recordClaimedReward(
+  reward: ClaimableRewardInfo | SecretPlayerRewardDef,
+  isOwned: boolean,
+  matchId?: string,
+  eloBoost?: number,
+  userId?: string
+): ClaimedChestReward {
+  const store = getChestStore(userId);
+  if (!store.claimedRewards) {
+    store.claimedRewards = [];
+  }
+
+  const role = ('role' in reward && reward.role) ? reward.role : ('title' in reward && reward.title ? reward.title : 'Champion');
+  const title = reward.title || reward.name;
+  const rarity = ('rarity' in reward && reward.rarity) ? reward.rarity : 'SECRET BOT';
+  const avatarUrl = ('avatarUrl' in reward && reward.avatarUrl) ? reward.avatarUrl : (('avatarSrc' in reward && reward.avatarSrc) ? reward.avatarSrc : '/secret-players/lucca.png');
+
+  const record: ClaimedChestReward = {
+    id: `claimed_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+    rewardId: reward.id,
+    name: reward.name,
+    role,
+    title,
+    rarity,
+    avatarUrl,
+    claimedAt: Date.now(),
+    matchId,
+    isOwned,
+    eloBoost,
+  };
+
+  store.claimedRewards.unshift(record);
+  saveChestStore(store, userId);
+  return record;
+}
+
+export function getClaimedRewards(userId?: string): ClaimedChestReward[] {
+  const store = getChestStore(userId);
+  return store.claimedRewards || [];
+}
+

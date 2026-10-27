@@ -97,12 +97,25 @@ export interface CardDefinition {
   getHighlight: (stats: TacticalMetrics, rating: number) => string;
 }
 
+export interface EloNotificationData {
+  id: string;
+  oldRating: number;
+  newRating: number;
+  delta: number;
+  outcome: 'win' | 'loss' | 'draw';
+  modeLabel?: string;
+  winStreak: number;
+  recentResults: ('win' | 'loss' | 'draw')[];
+  timestamp: number;
+}
+
 export interface PredictorState {
   currentRating: number;
   sessionGamesPlayed: number;
   wins: number;
   losses: number;
   draws: number;
+  recentResults?: ('win' | 'loss' | 'draw')[];
   earnedCards: AchievementCard[];
   activeMatchStats: MatchSessionStats | null;
 }

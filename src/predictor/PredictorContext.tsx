@@ -3,7 +3,7 @@
  */
 
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
-import type { AchievementCard, GameModeKey, MatchSessionStats, PlayerActionObserved, PredictorState, RatingSnapshot, TacticalMetrics } from './types';
+import type { AchievementCard, EloNotificationData, GameModeKey, MatchSessionStats, PlayerActionObserved, PredictorState, RatingSnapshot, TacticalMetrics } from './types';
 import { calculateMoveRatingUpdate, evaluateMoveQuality, INITIAL_BASELINE_RATING, applyMatchResultAdjustment } from './ratingEngine';
 import { evaluateEarnedCards } from './cardDefs';
 import type { PieceColor } from '../types/game';
@@ -25,6 +25,9 @@ interface PredictorContextValue {
   latestMatchCards: AchievementCard[];
   clearLatestMatchCards: () => void;
   applyRatingBoost: (boostAmount: number, matchId?: string) => void;
+  activeEloNotification: EloNotificationData | null;
+  dismissEloNotification: () => void;
+  triggerEloNotification: (notification: EloNotificationData) => void;
 }
 
 const defaultState: PredictorState = {
@@ -33,6 +36,7 @@ const defaultState: PredictorState = {
   wins: 0,
   losses: 0,
   draws: 0,
+  recentResults: [],
   earnedCards: [],
   activeMatchStats: null,
 };
@@ -48,6 +52,15 @@ export function PredictorProvider({ children }: { children: React.ReactNode }) {
   const stateRef = useRef<PredictorState>(defaultState);
   stateRef.current = state;
   const [latestMatchCards, setLatestMatchCards] = useState<AchievementCard[]>([]);
+  const [activeEloNotification, setActiveEloNotification] = useState<EloNotificationData | null>(null);
+
+  const dismissEloNotification = useCallback(() => {
+    setActiveEloNotification(null);
+  }, []);
+
+  const triggerEloNotification = useCallback((notification: EloNotificationData) => {
+    setActiveEloNotification(notification);
+  }, []);
 
   // Track processed action IDs to prevent double-counting
   const processedActionIds = useRef<Set<string>>(new Set());
@@ -64,6 +77,7 @@ export function PredictorProvider({ children }: { children: React.ReactNode }) {
     if (prevUserIdRef.current !== currentUserId) {
       processedActionIds.current.clear();
       setLatestMatchCards([]);
+      setActiveEloNotification(null);
 
       if (currentUserId && currentUserId !== 'guest') {
         const userKey = `mugenchessx_predictor_user_${currentUserId}`;
@@ -72,7 +86,10 @@ export function PredictorProvider({ children }: { children: React.ReactNode }) {
           if (saved) {
             const parsed = JSON.parse(saved);
             if (parsed && typeof parsed.currentRating === 'number') {
-              setState(parsed);
+              setState({
+                ...parsed,
+                recentResults: parsed.recentResults || [],
+              });
               prevUserIdRef.current = currentUserId;
               return;
             }
@@ -111,6 +128,7 @@ export function PredictorProvider({ children }: { children: React.ReactNode }) {
     processedActionIds.current.clear();
     setState(defaultState);
     setLatestMatchCards([]);
+    setActiveEloNotification(null);
   }, [currentUserId]);
 
   const clearLatestMatchCards = useCallback(() => {
@@ -230,6 +248,17 @@ export function PredictorProvider({ children }: { children: React.ReactNode }) {
 
       const updatedCards = [...newlyEarned, ...currentState.earnedCards];
 
+      const newRecentResults: ('win' | 'loss' | 'draw')[] = [
+        outcome,
+        ...(currentState.recentResults || []),
+      ].slice(0, 7);
+
+      let winStreak = 0;
+      for (const res of newRecentResults) {
+        if (res === 'win') winStreak++;
+        else break;
+      }
+
       const nextState: PredictorState = {
         ...currentState,
         currentRating: finalRating,
@@ -237,6 +266,7 @@ export function PredictorProvider({ children }: { children: React.ReactNode }) {
         wins,
         losses,
         draws,
+        recentResults: newRecentResults,
         earnedCards: updatedCards,
         activeMatchStats: null,
       };
@@ -244,6 +274,20 @@ export function PredictorProvider({ children }: { children: React.ReactNode }) {
       stateRef.current = nextState;
       setState(nextState);
       setLatestMatchCards(newlyEarned);
+
+      // Trigger Elo Streak Notification Banner!
+      setActiveEloNotification({
+        id: `elo_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+        oldRating: currentState.currentRating,
+        newRating: finalRating,
+        delta: resultDelta,
+        outcome,
+        modeLabel: mode,
+        winStreak,
+        recentResults: newRecentResults,
+        timestamp: Date.now(),
+      });
+
       return newlyEarned;
     },
     []
@@ -261,7 +305,17 @@ export function PredictorProvider({ children }: { children: React.ReactNode }) {
         }
 
         setState((prev) => {
-          const nextRating = Math.max(100, Math.min(3000, prev.currentRating + boostAmount));
+          const oldRating = prev.currentRating;
+          const nextRating = Math.max(100, Math.min(3000, oldRating + boostAmount));
+          const delta = nextRating - oldRating;
+          const newRecent = prev.recentResults || ['win'];
+
+          let winStreak = 0;
+          for (const res of newRecent) {
+            if (res === 'win') winStreak++;
+            else break;
+          }
+
           const nextState: PredictorState = {
             ...prev,
             currentRating: nextRating,
@@ -273,6 +327,20 @@ export function PredictorProvider({ children }: { children: React.ReactNode }) {
               sessionStorage.setItem(userKey, JSON.stringify(nextState));
             } catch {}
           }
+
+          // Trigger Elo Streak Notification for Rating Boost
+          setActiveEloNotification({
+            id: `boost_${Date.now()}`,
+            oldRating,
+            newRating: nextRating,
+            delta,
+            outcome: 'win',
+            modeLabel: 'Chest Reward',
+            winStreak: Math.max(1, winStreak),
+            recentResults: newRecent,
+            timestamp: Date.now(),
+          });
+
           return nextState;
         });
       } catch {}
@@ -290,6 +358,9 @@ export function PredictorProvider({ children }: { children: React.ReactNode }) {
         latestMatchCards,
         clearLatestMatchCards,
         applyRatingBoost,
+        activeEloNotification,
+        dismissEloNotification,
+        triggerEloNotification,
       }}
     >
       {children}
@@ -304,3 +375,4 @@ export function usePredictor() {
   }
   return context;
 }
+

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { ChestSvg } from './ChestSvg';
 import { RewardCard } from './RewardCard';
 import { SecretPlayerRewardDef } from './chestConfig';
-import { pickRandomReward, unlockSecretPlayer, PickedRewardResult } from './chestStore';
+import { pickRandomReward, unlockSecretPlayer, recordClaimedReward, PickedRewardResult } from './chestStore';
 import { X, Sparkles, ShieldAlert } from 'lucide-react';
 import './chest.css';
 
@@ -240,6 +240,7 @@ export const ChestModal: React.FC<ChestModalProps> = ({
           const picked = pickRandomReward(userId);
           setRewardResult(picked);
           unlockSecretPlayer(picked.reward.id, userId);
+          recordClaimedReward(picked.reward, picked.isOwned, matchId, undefined, userId);
         } else {
           const delta = resignedEloBoost;
           if (matchId && onApplyEloBoost) {
@@ -249,6 +250,22 @@ export const ChestModal: React.FC<ChestModalProps> = ({
               // Fail safe
             }
           }
+          recordClaimedReward(
+            {
+              id: 'elo_consolation',
+              name: 'Resilience Spirit',
+              role: 'Tactical Grit',
+              title: 'Resilience Honor',
+              rarity: 'Common',
+              avatarUrl: '/assets/aistudio/image_4aa74391.png',
+              quote: 'Honor remains in standing tall through defeat.',
+              flavor: `Awarded +${delta} ELO rating boost.`,
+            },
+            true,
+            matchId,
+            delta,
+            userId
+          );
         }
 
         setTimeout(() => {

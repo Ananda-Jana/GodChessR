@@ -664,16 +664,6 @@ export const CullingMatchView: React.FC<CullingMatchViewProps> = ({
               <div className="flex flex-col gap-2 w-full">
                 <button
                   onClick={() => {
-                    const uid = userColor === 'white' ? match.whitePlayer.userId : match.blackPlayer.userId;
-                    triggerChestModalNow(uid);
-                  }}
-                  className="w-full py-2.5 bg-black hover:bg-neutral-900 text-amber-400 font-black text-xs uppercase tracking-wider border-2 border-amber-400 shadow-[2px_2px_0px_#000] cursor-pointer flex items-center justify-center gap-2 active:translate-x-0.5 active:translate-y-0.5"
-                >
-                  <Gift className="w-4 h-4 text-amber-400 shrink-0" />
-                  <span>OPEN CHEST</span>
-                </button>
-                <button
-                  onClick={() => {
                     if (displayCullingCards.length > 0) {
                       setSelectedCullingCard(displayCullingCards[0]);
                     }

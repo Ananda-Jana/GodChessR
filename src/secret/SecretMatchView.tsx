@@ -7,6 +7,9 @@ import { SecretChatOverlay } from './components/SecretChatOverlay';
 import { ChessBoard } from '../components/ChessBoard';
 import { sounds } from '../utils/audio';
 import { RotateCcw, ArrowLeft, Swords, BookOpen, Trophy, Send, MessageSquare, Lock, Heart } from 'lucide-react';
+import { usePredictor } from '../predictor/PredictorContext';
+import { reportGameEnd } from '../chest/reportGameEnd';
+import { extractStandardMetrics } from '../predictor/adapters/standardAdapter';
 
 interface SecretMatchViewProps {
   botConfig: SecretPlayerConfig;
@@ -21,6 +24,7 @@ export const SecretMatchView: React.FC<SecretMatchViewProps> = ({
   onExit,
   onOpenRules,
 }) => {
+  const { finalizeMatch } = usePredictor();
   const botColor: PieceColor = playerColor === 'white' ? 'black' : 'white';
 
   const [match, setMatch] = useState<MatchState>(() => {
@@ -186,6 +190,12 @@ export const SecretMatchView: React.FC<SecretMatchViewProps> = ({
 
     if (nextMatch.status === 'completed') {
       sounds.playGameOver();
+      const metrics = extractStandardMetrics(nextMatch, playerColor);
+      const outcome = nextMatch.result?.winner === (playerColor === 'white' ? 'white' : 'black') ? 'win' : nextMatch.result?.winner === 'draw' ? 'draw' : 'loss';
+      finalizeMatch(nextMatch.id, 'standard', playerColor, outcome, metrics, botConfig.realName, 'grandmaster');
+      const myMoves = nextMatch.moveHistory.filter(m => m.piece.color === playerColor).length;
+      reportGameEnd({ matchId: nextMatch.id, mode: 'secret', result: outcome, moves: myMoves, isTraining: false });
+
       if (nextMatch.result?.winner === (playerColor === 'white' ? 'white' : 'black')) {
         addChatMessage('bot', botConfig.realName, botConfig.dialogue.onDefeat[0] || 'You won!');
       } else {

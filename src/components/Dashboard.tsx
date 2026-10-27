@@ -29,6 +29,7 @@ import {
   Users,
   Zap,
   Box,
+  Heart,
 } from 'lucide-react';
 import { posToNotation } from '../game/engine';
 import { usePredictor } from '../predictor/PredictorContext';
@@ -342,100 +343,330 @@ export const Dashboard: React.FC<DashboardProps> = ({
         </div>
       </header>
 
-      {/* Desktop Dark Glass Top Bar (hidden md:flex) */}
-      <header className="hidden md:flex items-center justify-between gap-3 sm:gap-6 px-4 sm:px-6 py-3.5 border-b border-white/10 bg-zinc-950/95 supports-[backdrop-filter]:bg-zinc-950/65 supports-[backdrop-filter]:backdrop-blur-xl supports-[backdrop-filter]:backdrop-saturate-150 shadow-lg text-white sticky top-0 z-40 relative">
-        {/* Brand Lockup Button (OctoSkull + Name, triggers About modal) */}
-        <button
-          type="button"
-          onClick={() => setIsAboutOpen(true)}
-          aria-label="About MugenChessX"
-          className="flex items-center gap-2.5 cursor-pointer rounded-lg p-1 -m-1 hover:bg-white/5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 shrink-0 text-left"
-        >
-          <OctoSkull size={30} className="shrink-0 text-white" />
-          <div className="flex flex-col">
-            <span className="text-sm sm:text-base font-black uppercase tracking-tight text-white whitespace-nowrap">
-              MugenChessX
-            </span>
-            <span className="text-[9px] sm:text-[10px] font-bold text-amber-400 uppercase tracking-wider whitespace-nowrap">
-              by ANANDA JANA
-            </span>
-          </div>
-        </button>
-
-        <nav className="hidden md:flex items-center gap-5 text-xs font-black uppercase">
-          <a href="#matches" className="text-zinc-100 hover:text-amber-400 transition-colors whitespace-nowrap">
-            Active Matches ({ongoingMatches.length})
-          </a>
-          <a href="#players" className="text-zinc-100 hover:text-amber-400 transition-colors whitespace-nowrap">
-            Find Players
-          </a>
+      {/* Desktop Dark Top Bar (hidden md:flex) - Restyled Desktop Top Navigation Bar */}
+      <style>{`
+        @media (min-width: 768px) {
+          .mcx-nav2 {
+            background-color: #0b0b0f !important;
+            border-bottom: 1px solid #1f1f28 !important;
+            height: 56px !important;
+            padding-left: 1.25rem !important;
+            padding-right: 1.25rem !important;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6) !important;
+          }
+          .mcx-nav2-brand {
+            background: transparent !important;
+            border: none !important;
+            padding: 0 !important;
+            box-shadow: none !important;
+            display: flex !important;
+            align-items: center !important;
+            gap: 0.6rem !important;
+            cursor: pointer !important;
+            text-align: left !important;
+          }
+          .mcx-nav2-brand:focus-visible {
+            outline: 2px solid #f5c518 !important;
+            outline-offset: 2px !important;
+          }
+          .mcx-nav2-hairline {
+            width: 1px !important;
+            height: 20px !important;
+            background-color: rgba(255, 255, 255, 0.12) !important;
+            flex-shrink: 0 !important;
+          }
+          .mcx-nav2-items {
+            display: flex !important;
+            align-items: center !important;
+            gap: 1.25rem !important;
+          }
+          .mcx-nav2-item {
+            position: relative !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            gap: 0.4rem !important;
+            height: 56px !important;
+            padding: 0 2px !important;
+            background: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
+            color: #b9b9c4 !important;
+            font-size: 0.75rem !important;
+            font-weight: 800 !important;
+            text-transform: uppercase !important;
+            letter-spacing: 0.06em !important;
+            text-decoration: none !important;
+            cursor: pointer !important;
+            transition: color 0.2s ease !important;
+            white-space: nowrap !important;
+          }
+          .mcx-nav2-item:hover {
+            color: #ffffff !important;
+            background: transparent !important;
+          }
+          .mcx-nav2-item::after {
+            content: '' !important;
+            position: absolute !important;
+            bottom: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            height: 3px !important;
+            background-color: #f5c518 !important;
+            transform: scaleX(0) !important;
+            transform-origin: center !important;
+            transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+            border-radius: 3px 3px 0 0 !important;
+          }
+          .mcx-nav2-item:hover::after,
+          .mcx-nav2-item.active::after {
+            transform: scaleX(1) !important;
+          }
+          .mcx-nav2-item.active {
+            color: #ffffff !important;
+          }
+          .mcx-nav2-item:focus-visible {
+            outline: 2px solid #f5c518 !important;
+            outline-offset: -2px !important;
+            border-radius: 4px !important;
+          }
+          .mcx-nav2-badge {
+            background-color: #f5c518 !important;
+            color: #000000 !important;
+            font-size: 10px !important;
+            font-weight: 900 !important;
+            padding: 1px 5px !important;
+            border-radius: 9999px !important;
+            line-height: 1 !important;
+          }
+          .mcx-nav2-profile {
+            display: flex !important;
+            align-items: center !important;
+            gap: 0.5rem !important;
+            background: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
+            padding: 0 !important;
+          }
+          .mcx-nav2-avatar {
+            width: 28px !important;
+            height: 28px !important;
+            border-radius: 50% !important;
+            overflow: hidden !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            background-color: #18181b !important;
+            flex-shrink: 0 !important;
+          }
+          .mcx-nav2-username {
+            color: #f4f4f5 !important;
+            font-size: 0.75rem !important;
+            font-weight: 800 !important;
+            text-transform: uppercase !important;
+            letter-spacing: 0.03em !important;
+          }
+          .mcx-nav2-elo {
+            color: #f5c518 !important;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
+            font-size: 0.8125rem !important;
+            font-weight: 900 !important;
+            letter-spacing: 0.02em !important;
+          }
+          .mcx-nav2-logout {
+            display: inline-flex !important;
+            align-items: center !important;
+            gap: 0.35rem !important;
+            padding: 0.4rem 0.6rem !important;
+            background: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
+            color: #71717a !important;
+            font-size: 0.75rem !important;
+            font-weight: 700 !important;
+            text-transform: uppercase !important;
+            letter-spacing: 0.05em !important;
+            cursor: pointer !important;
+            border-radius: 6px !important;
+            transition: color 0.2s ease, background-color 0.2s ease !important;
+          }
+          .mcx-nav2-logout:hover {
+            color: #ffffff !important;
+            background-color: rgba(255, 255, 255, 0.06) !important;
+          }
+          .mcx-nav2-logout:focus-visible {
+            outline: 2px solid #f5c518 !important;
+            outline-offset: 2px !important;
+          }
+        }
+      `}</style>
+      <header className="hidden md:flex items-center justify-between gap-3 sticky top-0 z-40 mcx-nav2">
+        {/* Brand Lockup Button */}
+        <div className="flex items-center gap-3 shrink-0">
           <button
-            onClick={onOpenRules}
-            className="text-zinc-100 hover:text-amber-400 transition-colors whitespace-nowrap flex items-center gap-1 cursor-pointer font-black"
+            type="button"
+            onClick={() => setIsAboutOpen(true)}
+            aria-label="About MugenChessX"
+            className="mcx-nav2-brand group"
           >
-            <BookOpen className="w-4 h-4 text-amber-400" />
-            Rules
+            <div className="w-8 h-8 rounded-lg bg-zinc-900 border border-zinc-800 flex items-center justify-center shrink-0 group-hover:border-amber-400/50 transition-colors">
+              <OctoSkull size={22} className="shrink-0 text-white group-hover:text-amber-400 transition-colors" />
+            </div>
+            <div className="flex flex-col">
+              <span className="text-sm font-black uppercase tracking-tight text-white whitespace-nowrap leading-none mb-0.5">
+                MugenChessX
+              </span>
+              <span className="text-[9px] font-bold text-amber-400 uppercase tracking-wider whitespace-nowrap leading-none">
+                by ANANDA JANA
+              </span>
+            </div>
           </button>
-        </nav>
+          <div className="mcx-nav2-hairline" />
+        </div>
 
-        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-          {/* Glassmorphic Culling Mode Launcher Button */}
+        {/* Center Navigation Links */}
+        <nav aria-label="Main Navigation" className="mcx-nav2-items overflow-x-auto scrollbar-none py-0.5">
+          {/* All Modes */}
+          <button
+            type="button"
+            onClick={() => setIsAllGameModesOpen(true)}
+            className="mcx-nav2-item active"
+            title="Browse all game modes"
+          >
+            <Play className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
+            <span>All Modes</span>
+          </button>
+
+          {/* Matches */}
+          <a
+            href="#matches"
+            className="mcx-nav2-item"
+            title="Jump to active matches"
+          >
+            <Swords className="w-3.5 h-3.5 text-zinc-400" />
+            <span>Matches</span>
+            {ongoingMatches.length > 0 && (
+              <span className="mcx-nav2-badge">
+                {ongoingMatches.length}
+              </span>
+            )}
+          </a>
+
+          {/* Players */}
+          <a
+            href="#players"
+            className="mcx-nav2-item"
+            title="Search online chess players"
+          >
+            <Users className="w-3.5 h-3.5 text-zinc-400" />
+            <span>Players</span>
+          </a>
+
+          {/* Culling */}
           <button
             type="button"
             onClick={() => setIsCullingOpen(true)}
-            aria-label="Play Culling mode"
-            title="Culling Game Mode"
-            className="p-1.5 sm:px-3 sm:py-1.5 bg-white/10 hover:bg-white/20 active:bg-white/25 backdrop-blur-md border border-white/20 hover:border-white/30 text-white text-xs font-black uppercase flex items-center gap-1.5 rounded-lg cursor-pointer transition-all active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 shrink-0 shadow-sm"
+            className="mcx-nav2-item"
+            title="Launch Culling Game 88-square battlegrounds"
           >
-            <GamepadSkull size={18} className="shrink-0" />
-            <span className="hidden sm:inline">Culling Mode</span>
+            <GamepadSkull size={16} className="text-zinc-400" />
+            <span>Culling</span>
           </button>
 
-          {/* Glassmorphic 3D Chess Arcade Launcher Button */}
+          {/* Rose */}
+          {onOpenRose && (
+            <button
+              type="button"
+              onClick={onOpenRose}
+              className="mcx-nav2-item"
+              title="Enter Rose Paradise multiplayer romance mode"
+            >
+              <Heart className="w-3.5 h-3.5 text-zinc-400" />
+              <span>Rose</span>
+            </button>
+          )}
+
+          {/* 3D Arcade */}
           <button
             type="button"
             onClick={() => setIs3dPreviewModalOpen(true)}
-            aria-label="3D Annihilatic Chess Arcade"
-            title="3D Chess Arcade"
-            className="p-1.5 sm:px-3 sm:py-1.5 bg-purple-950/40 hover:bg-purple-900/60 active:bg-purple-900 backdrop-blur-md border border-purple-500/40 hover:border-purple-400 text-white text-xs font-black uppercase flex items-center gap-1.5 rounded-lg cursor-pointer transition-all active:scale-95 shadow-sm"
+            className="mcx-nav2-item"
+            title="Open 3D Annihilatic Chess Arcade"
           >
-            <Box className="w-4 h-4 text-purple-400" />
-            <span className="hidden sm:inline">3D Arcade</span>
+            <Box className="w-3.5 h-3.5 text-zinc-400" />
+            <span>3D Arcade</span>
           </button>
 
-          <div className="flex items-center gap-2">
-            <div className="border border-white/20 p-0.5 bg-neutral-900 rounded-lg">
-              <AvatarDisplay avatarId={user.avatarId} size="sm" />
-            </div>
-            <span className="text-xs font-black uppercase text-zinc-100 hidden sm:inline">
-              {user.displayName}
-            </span>
-          </div>
-
+          {/* Masters */}
           <button
-            onClick={() => setIsTrophyRoomOpen(true)}
-            className="px-2.5 py-1.5 text-xs font-black uppercase bg-amber-400 text-black hover:bg-amber-300 border border-amber-300 rounded-lg flex items-center gap-1.5 cursor-pointer transition-colors"
-            title="Session Trophy Room"
+            type="button"
+            onClick={() => setIsWalkWithMastersOpen(true)}
+            className="mcx-nav2-item"
+            title="Train with Thukuna & Gatoru"
           >
-            <Trophy className="w-3.5 h-3.5 text-black" />
-            <span className="hidden sm:inline">Trophy Room</span>
+            <Flame className="w-3.5 h-3.5 text-zinc-400" />
+            <span>Masters</span>
+          </button>
+
+          {/* Rules */}
+          <button
+            type="button"
+            onClick={onOpenRules}
+            className="mcx-nav2-item"
+            title="Read complete chess rulebook and tactical guides"
+          >
+            <BookOpen className="w-3.5 h-3.5 text-zinc-400" />
+            <span>Rules</span>
+          </button>
+
+          {/* Trophies */}
+          <button
+            type="button"
+            onClick={() => setIsTrophyRoomOpen(true)}
+            className="mcx-nav2-item"
+            title="View trophy room & chest inventory"
+          >
+            <Trophy className="w-3.5 h-3.5 text-zinc-400" />
+            <span>Trophies</span>
             {predictorState.earnedCards.length > 0 && (
-              <span className="px-1.5 py-0.2 bg-black text-amber-300 text-[10px] font-mono rounded">
+              <span className="mcx-nav2-badge">
                 {predictorState.earnedCards.length}
               </span>
             )}
           </button>
+        </nav>
 
+        {/* Right Section: Profile & Sign Out */}
+        <div className="flex items-center gap-3 shrink-0">
+          <div className="mcx-nav2-hairline" />
+
+          {/* Profile Area */}
+          <div
+            className="mcx-nav2-profile"
+            title={`Logged in as ${user.displayName} (@${user.username}) - ${predictorState.currentRating} ELO`}
+          >
+            <div className="mcx-nav2-avatar">
+              <AvatarDisplay avatarId={user.avatarId} size="sm" className="!w-full !h-full !p-0" />
+            </div>
+            <span className="mcx-nav2-username hidden lg:inline">
+              {user.displayName}
+            </span>
+            <span className="mcx-nav2-elo">
+              {predictorState.currentRating} ELO
+            </span>
+          </div>
+
+          {/* Sign Out Button */}
           <button
+            type="button"
             onClick={() => {
               clearPredictorSession();
               logout();
             }}
-            className="px-2.5 py-1.5 text-xs font-black uppercase bg-neutral-800 hover:bg-red-600 hover:text-white border border-white/20 rounded-lg flex items-center gap-1.5 cursor-pointer transition-colors"
-            title="Sign out"
+            className="mcx-nav2-logout"
+            title="Sign out of your session"
           >
             <LogOut className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Sign Out</span>
+            <span className="hidden xl:inline">Sign Out</span>
           </button>
         </div>
       </header>

@@ -5,8 +5,9 @@ import { getChestStore, addPendingChestEvent, popPendingChestEvent } from './che
 import { getSecretPlayerById } from '../secret/secretPlayersData';
 import { SecretPlayerConfig } from '../secret/types';
 import { usePredictor } from '../predictor/PredictorContext';
+import { PostGameChestAwardModal } from './PostGameChestAwardModal';
 
-// Lazily load ChestModal so zero chest code is included in initial bundle
+// Lazily load ChestModal so zero chest opening code is included in initial bundle
 const LazyChestModal = React.lazy(() =>
   import('./ChestModal').then((m) => ({ default: m.ChestModal }))
 );
@@ -21,41 +22,23 @@ export const ChestRewardHost: React.FC<ChestRewardHostProps> = ({
   onStartSecretMatch,
 }) => {
   const [activeEvent, setActiveEvent] = useState<ChestTriggerEvent | null>(null);
-  const [isOpen, setIsOpen] = useState<boolean>(false);
+  const [phase, setPhase] = useState<'prompt' | 'open' | null>(null);
   const { applyRatingBoost } = usePredictor();
-
-  // Check and pop pending chests if available
-  const tryOpenPending = useCallback(() => {
-    try {
-      const pendingEvent = popPendingChestEvent(userId);
-      if (pendingEvent) {
-        setActiveEvent(pendingEvent);
-        setIsOpen(true);
-      }
-    } catch {
-      // Fail safely
-    }
-  }, [userId]);
-
-  // Check for pending chests on mount (e.g. when returning to Dashboard)
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      tryOpenPending();
-    }, 400);
-    return () => clearTimeout(timer);
-  }, [tryOpenPending]);
 
   // Subscribe to game end chest triggers
   useEffect(() => {
     const unsubscribe = subscribeToChestTriggers((event) => {
       try {
-        if (isOpen) {
-          // If modal is currently displayed, store as pending
+        if (phase !== null) {
+          // If a chest modal is already active on screen, queue as pending
           addPendingChestEvent(event, event.userId || userId);
         } else {
-          popPendingChestEvent(event.userId || userId);
           setActiveEvent(event);
-          setIsOpen(true);
+          if (event.directOpen) {
+            setPhase('open');
+          } else {
+            setPhase('prompt');
+          }
         }
       } catch {
         // Safe fail
@@ -65,29 +48,36 @@ export const ChestRewardHost: React.FC<ChestRewardHostProps> = ({
     return () => {
       unsubscribe();
     };
-  }, [isOpen, userId]);
+  }, [phase, userId]);
 
-  const handleClose = (wasOpened: boolean) => {
+  const handleOpenNow = () => {
+    if (!activeEvent) return;
+    // Consume from pending since it is being opened now
+    popPendingChestEvent(activeEvent.userId || userId);
+    setPhase('open');
+  };
+
+  const handleSaveToInventory = () => {
+    if (activeEvent) {
+      addPendingChestEvent(activeEvent, activeEvent.userId || userId);
+    }
+    setPhase(null);
+    setActiveEvent(null);
+  };
+
+  const handleChestModalClose = (wasOpened: boolean) => {
     const closedEvent = activeEvent;
-    setIsOpen(false);
+    setPhase(null);
     setActiveEvent(null);
 
     if (!wasOpened && closedEvent) {
-      // Closed before tap 3: re-queue into pending
+      // Closed before tap 3 completed: re-queue into pending
       addPendingChestEvent(closedEvent, userId);
-    } else {
-      // Opened successfully: if there are pending chests, show next after brief 400ms pause
-      const store = getChestStore(userId);
-      if (store.pending > 0 || (store.pendingEvents && store.pendingEvents.length > 0)) {
-        setTimeout(() => {
-          tryOpenPending();
-        }, 400);
-      }
     }
   };
 
   const handlePlaySecretPlayer = (reward: SecretPlayerRewardDef) => {
-    setIsOpen(false);
+    setPhase(null);
     setActiveEvent(null);
 
     try {
@@ -100,21 +90,35 @@ export const ChestRewardHost: React.FC<ChestRewardHostProps> = ({
     }
   };
 
-  if (!isOpen || !activeEvent) return null;
+  if (!phase || !activeEvent) return null;
 
   return (
-    <Suspense fallback={null}>
-      <LazyChestModal
-        isOpen={isOpen}
+    <>
+      {/* Phase 1: Standalone Post-Game Award Modal with "Open Now" or "Save to Inventory" */}
+      <PostGameChestAwardModal
+        isOpen={phase === 'prompt'}
         result={activeEvent.result}
-        resigned={activeEvent.resigned}
-        matchId={activeEvent.matchId}
-        initialEloBoost={activeEvent.eloBoost}
-        onApplyEloBoost={applyRatingBoost}
-        onClose={handleClose}
-        onPlaySecretPlayer={handlePlaySecretPlayer}
-        userId={userId}
+        mode={activeEvent.mode}
+        onOpenNow={handleOpenNow}
+        onSaveToInventory={handleSaveToInventory}
       />
-    </Suspense>
+
+      {/* Phase 2: Interactive 3-Tap Chest Unlocking Modal */}
+      {phase === 'open' && (
+        <Suspense fallback={null}>
+          <LazyChestModal
+            isOpen={true}
+            result={activeEvent.result}
+            resigned={activeEvent.resigned}
+            matchId={activeEvent.matchId}
+            initialEloBoost={activeEvent.eloBoost}
+            onApplyEloBoost={applyRatingBoost}
+            onClose={handleChestModalClose}
+            onPlaySecretPlayer={handlePlaySecretPlayer}
+            userId={userId}
+          />
+        </Suspense>
+      )}
+    </>
   );
 };

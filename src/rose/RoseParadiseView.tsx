@@ -786,21 +786,25 @@ export const RoseParadiseView: React.FC<RoseParadiseViewProps> = ({ onBack }) =>
       </header>
 
       {statusMessage && (
-        <div className="z-10 mb-4 p-3 bg-amber-400 text-black border-2 border-black font-black text-xs uppercase flex items-center gap-2 shadow-[3px_3px_0px_#000] animate-in fade-in">
-          <Loader2 className="w-4 h-4 animate-spin shrink-0" />
-          <span>{statusMessage}</span>
+        <div className="z-10 max-w-5xl mx-auto w-full px-2 mb-3">
+          <div className="p-3 bg-amber-400 text-black border-2 border-black font-black text-xs uppercase flex items-center gap-2 shadow-[3px_3px_0px_#000] animate-in fade-in">
+            <Loader2 className="w-4 h-4 animate-spin shrink-0" />
+            <span>{statusMessage}</span>
+          </div>
         </div>
       )}
 
       {socketError && (
-        <div className="z-10 mb-4 p-3 brutal-card border-red-500 bg-red-950 text-red-200 text-xs sm:text-sm font-black uppercase flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <ShieldAlert className="w-4 h-4 shrink-0 text-red-400" />
-            <span>⚠️ {socketError}</span>
+        <div className="z-10 max-w-5xl mx-auto w-full px-2 mb-3">
+          <div className="p-3 brutal-card border-red-500 bg-red-950 text-red-200 text-xs sm:text-sm font-black uppercase flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <ShieldAlert className="w-4 h-4 shrink-0 text-red-400" />
+              <span>⚠️ {socketError}</span>
+            </div>
+            <button onClick={() => setSocketError(null)} className="text-xs underline hover:text-white cursor-pointer">
+              Dismiss
+            </button>
           </div>
-          <button onClick={() => setSocketError(null)} className="text-xs underline hover:text-white cursor-pointer">
-            Dismiss
-          </button>
         </div>
       )}
 
@@ -986,9 +990,9 @@ export const RoseParadiseView: React.FC<RoseParadiseViewProps> = ({ onBack }) =>
                       <div className="flex gap-2">
                         <input
                           type="text"
-                          placeholder="e.g. ROSE-XXXXXX or XXXXXX"
+                          placeholder="e.g. ROSE8X2 or 8X2"
                           value={joinCodeInput}
-                          maxLength={12}
+                          maxLength={10}
                           onChange={(e) => setJoinCodeInput(e.target.value.toUpperCase())}
                           onKeyDown={(e) => {
                             if (e.key === 'Enter' && joinCodeInput.trim() && !isJoiningChallenge) {

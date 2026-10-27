@@ -19,15 +19,15 @@ const roomsByCode = new Map<string, string>(); // code (uppercase) -> roomId
 const userActiveRoom = new Map<string, string>(); // userId -> roomId
 
 export function generateRoseCode(): string {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // Unambiguous characters
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // Unambiguous characters matching Culling Game
   for (let attempts = 0; attempts < 100; attempts++) {
-    let code = 'ROSE-';
-    for (let i = 0; i < 6; i++) {
+    let code = 'ROSE';
+    for (let i = 0; i < 3; i++) {
       code += chars.charAt(Math.floor(Math.random() * chars.length));
     }
     if (!roomsByCode.has(code)) return code;
   }
-  return `ROSE-${Date.now().toString(36).slice(-6).toUpperCase()}`;
+  return `ROSE${Date.now().toString(36).slice(-3).toUpperCase()}`;
 }
 
 export function normalizeRoseCode(rawCode: string): string {

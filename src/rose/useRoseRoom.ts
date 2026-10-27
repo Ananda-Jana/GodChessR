@@ -15,6 +15,9 @@ export interface RoseChatMessage {
 export function useRoseRoom() {
   const { user, token } = useAuth();
   const [match, setMatch] = useState<RoseMatchState | null>(null);
+  const matchRef = useRef<RoseMatchState | null>(null);
+  matchRef.current = match;
+
   const [myColor, setMyColor] = useState<PieceColor | null>(null);
   const [myRole, setMyRole] = useState<RoseRole | null>(null);
   const [publicRooms, setPublicRooms] = useState<PublicRoseRoom[]>([]);
@@ -35,6 +38,7 @@ export function useRoseRoom() {
   const connect = useCallback(() => {
     if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) return;
 
+    let isMounted = true;
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const wsUrl = `${protocol}//${window.location.host}/ws`;
     const ws = new WebSocket(wsUrl);
@@ -44,10 +48,19 @@ export function useRoseRoom() {
       if (token) {
         ws.send(JSON.stringify({ type: 'auth', token }));
       }
-      // Request active room resync & list open rooms for lobby
-      ws.send(JSON.stringify({ type: 'rose:resync' }));
-      ws.send(JSON.stringify({ type: 'rose:list_challenges' }));
-      ws.send(JSON.stringify({ type: 'rose:list_rooms' }));
+      // Re-associate socket with any active match matching Culling Game resync logic
+      if (matchRef.current) {
+        ws.send(
+          JSON.stringify({
+            type: 'rose:resync',
+            matchId: matchRef.current.id,
+            userId: user?.id,
+          })
+        );
+      } else {
+        ws.send(JSON.stringify({ type: 'rose:list_challenges' }));
+        ws.send(JSON.stringify({ type: 'rose:list_rooms' }));
+      }
     };
 
     ws.onmessage = (event) => {
@@ -71,12 +84,11 @@ export function useRoseRoom() {
             break;
 
           case 'rose:match_started':
-            setStatusMessage('Partner joined! Launching romantic duel...');
+            setStatusMessage('Opponent joined! Launching game...');
             setIsJoiningChallenge(false);
             setJoiningCode(null);
             setIsCreatingChallenge(false);
             setIsWaitingForPartner(false);
-            setHostedCode(null);
             setPendingMove(false);
             setError(null);
             sounds.playChallenge();
@@ -86,6 +98,7 @@ export function useRoseRoom() {
               setMatch(data.match);
               if (data.yourColor) setMyColor(data.yourColor);
               if (data.yourRole) setMyRole(data.yourRole);
+              setHostedCode(null);
               setStatusMessage(null);
             }, 300);
             break;
@@ -156,22 +169,23 @@ export function useRoseRoom() {
       setIsCreatingChallenge(false);
       setIsJoiningChallenge(false);
       setJoiningCode(null);
-      reconnectTimeoutRef.current = setTimeout(connect, 3000);
+      if (isMounted) {
+        reconnectTimeoutRef.current = setTimeout(connect, 3000);
+      }
     };
 
     ws.onerror = () => {
       setIsCreatingChallenge(false);
       setIsJoiningChallenge(false);
       setJoiningCode(null);
-      ws.close();
     };
-  }, [token]);
+  }, [token, user?.id]);
 
   useEffect(() => {
     connect();
     return () => {
       if (reconnectTimeoutRef.current) clearTimeout(reconnectTimeoutRef.current);
-      if (wsRef.current) {
+      if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN && !matchRef.current) {
         wsRef.current.close();
         wsRef.current = null;
       }
