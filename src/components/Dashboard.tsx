@@ -52,6 +52,7 @@ import type { PunisherBotId } from '../chess3d/chess3dBot';
 import type { Team as Team3D, TimeControl3D } from '../chess3d/types';
 
 interface DashboardProps {
+  onExitPreGameViews?: () => void;
   onOpenRules: () => void;
   onOpenBotModal: () => void;
   onOpenClassicBotModal?: () => void;
@@ -123,6 +124,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
   onOpenRose,
   onOpenHashiraTraining,
   onOpenPunisher,
+  onExitPreGameViews,
   onStartSecretMatch,
   onStart3dMatch,
   lastCompletedMatch,
@@ -159,6 +161,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
     }
   }, [user]);
   const [isCullingOpen, setIsCullingOpen] = useState(false);
+  const [isCullingMatchActive, setIsCullingMatchActive] = useState(false);
   const [isSecretArenaOpen, setIsSecretArenaOpen] = useState(false);
   const [isAboutOpen, setIsAboutOpen] = useState(false);
   const [isAllGameModesOpen, setIsAllGameModesOpen] = useState(false);
@@ -172,8 +175,17 @@ export const Dashboard: React.FC<DashboardProps> = ({
   const [isMobileNavDropdownOpen, setIsMobileNavDropdownOpen] = useState(false);
   const [isHighlightsExpanded, setIsHighlightsExpanded] = useState(false);
   const [activeBottomTab, setActiveBottomTab] = useState<'play' | 'matches' | 'players' | null>(null);
-  const [isGameModeEntered, setIsGameModeEntered] = useState(false);
-  const [isNavExpanded, setIsNavExpanded] = useState(false);
+
+  const handleCloseAllPreGameViews = () => {
+    setIsCullingOpen(false);
+    setIsSecretArenaOpen(false);
+    setIs3dPreviewModalOpen(false);
+    setIsAllGameModesOpen(false);
+    setChallengeModalTarget(null);
+    setIsWalkWithMastersOpen(false);
+    setIsMobileNavDropdownOpen(false);
+    onExitPreGameViews?.();
+  };
 
   const profilePillRef = useRef<HTMLButtonElement | null>(null);
   const sheetCloseRef = useRef<HTMLButtonElement | null>(null);
@@ -292,10 +304,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
   if (!user) return null;
 
-  if (isCullingOpen) {
-    return <CullingModeEntry onBack={() => setIsCullingOpen(false)} />;
-  }
-
   const ongoingMatches = activeMatches.filter((m) => m.status === 'active');
   const pastMatches = activeMatches.filter((m) => m.status === 'completed');
 
@@ -313,7 +321,16 @@ export const Dashboard: React.FC<DashboardProps> = ({
         <div className="absolute inset-0 bg-black/65 backdrop-brightness-75" />
       </div>
 
-      {/* Redesigned Mobile Top Bar (md:hidden, sticky, h-12, glassmorphic) */}
+      {isCullingOpen ? (
+        <div className="relative z-10 flex-1 min-h-screen">
+          <CullingModeEntry
+            onBack={() => setIsCullingOpen(false)}
+            onMatchActiveChange={setIsCullingMatchActive}
+          />
+        </div>
+      ) : (
+        <>
+          {/* Redesigned Mobile Top Bar (md:hidden, sticky, h-12, glassmorphic) */}
       <header className="md:hidden flex items-center justify-between px-3 h-12 sticky top-0 z-40 bg-zinc-950/95 supports-[backdrop-filter]:bg-zinc-950/80 supports-[backdrop-filter]:backdrop-blur-xl border-b border-white/10 text-white relative">
         {/* Mobile Brand Button */}
         <div className="flex items-center gap-2 shrink-0">
@@ -402,7 +419,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
         <>
           {/* Invisible click-outside dismisser (transparent, not a dimming modal overlay) */}
           <div
-            className="md:hidden fixed inset-0 z-40 bg-transparent"
+            className="md:hidden fixed inset-0 z-[115] bg-transparent"
             onClick={() => setIsMobileNavDropdownOpen(false)}
             aria-hidden="true"
           />
@@ -411,7 +428,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
           <div
             role="menu"
             aria-label="Quick Access Game Modes"
-            className="play-dropup-menu md:hidden fixed bottom-[calc(4.75rem+env(safe-area-inset-bottom))] inset-x-3 max-w-sm mx-auto z-50 flex flex-col"
+            className="play-dropup-menu md:hidden fixed bottom-[calc(4.75rem+env(safe-area-inset-bottom))] inset-x-3 max-w-sm mx-auto z-[120] flex flex-col"
           >
             {/* Downward pointer caret matching menu surface */}
             <div className="play-dropup-caret" aria-hidden="true" />
@@ -452,7 +469,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
               >
                 <div className="w-full flex-1 relative flex items-center justify-center overflow-hidden rounded-lg mb-1 min-h-0">
                   <DropupThumb
-                    src="/assets/aistudio/image_4aa74391.png"
+                    src="/assets/aistudio/image_53255c02.png"
                     alt="Bot Match"
                     fallbackBgClass="bg-amber-400/20 border-amber-400/30"
                     fallbackIcon={<Bot className="w-5 h-5 text-amber-400" />}
@@ -503,7 +520,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
               >
                 <div className="w-full flex-1 relative flex items-center justify-center overflow-hidden rounded-lg mb-1 min-h-0">
                   <DropupThumb
-                    src="/assets/aistudio/image_4aa74391.png"
+                    src="/assets/aistudio/image_80f7eb8b.png"
                     alt="Classic Bot"
                     fallbackBgClass="bg-emerald-500/20 border-emerald-500/30"
                     fallbackIcon={<Swords className="w-5 h-5 text-emerald-400" />}
@@ -2684,61 +2701,40 @@ export const Dashboard: React.FC<DashboardProps> = ({
           )}
         </div>
       </main>
+        </>
+      )}
 
       {/* Fixed Bottom Tab Bar (Mobile only, md:hidden) */}
-      {isGameModeEntered && !isNavExpanded ? (
-        <button
-          type="button"
-          onClick={() => setIsNavExpanded(true)}
-          aria-label="Expand Bottom Navigation"
-          className="md:hidden fixed bottom-4 left-4 z-40 w-11 h-11 bg-black border-2 border-white rounded-lg shadow-[3px_3px_0px_#fff] flex items-center justify-center text-white cursor-pointer active:translate-x-0.5 active:translate-y-0.5"
-        >
-          <Play className="w-5 h-5 text-amber-400 fill-amber-400" />
-        </button>
-      ) : (
-        <nav
-          aria-label="Mobile Navigation"
-          className="md:hidden fixed bottom-0 left-0 right-0 z-40 overflow-visible bg-zinc-950/95 supports-[backdrop-filter]:bg-zinc-950/80 supports-[backdrop-filter]:backdrop-blur-xl border-t border-white/10 text-white pb-[env(safe-area-inset-bottom)] relative"
-        >
-          {isGameModeEntered && isNavExpanded && (
-            <div className="absolute -top-10 right-3">
-              <button
-                type="button"
-                onClick={() => {
-                  setIsNavExpanded(false);
-                  setIsMobileNavDropdownOpen(false);
-                }}
-                className="px-2.5 py-1 bg-black border-2 border-white text-white text-[10px] font-black uppercase rounded shadow-[2px_2px_0px_#fff] flex items-center gap-1 cursor-pointer"
-              >
-                <span>Collapse</span>
-                <X className="w-3.5 h-3.5" />
-              </button>
-            </div>
-          )}
-          <div className="grid grid-cols-[1fr_1fr_auto_1fr_1fr] h-16 max-w-md mx-auto items-center px-1 overflow-visible">
-            {/* Tab 1: Modes */}
-            <button
-              type="button"
-              onClick={() => {
-                scrollToSection('modes', 'play');
-                setIsGameModeEntered(false);
-                setIsNavExpanded(false);
-              }}
-              aria-label="Jump to Game Modes"
-              className={`min-h-[48px] w-full flex flex-col items-center justify-center gap-0.5 transition-colors cursor-pointer relative box-border ${
-                activeBottomTab === 'play'
-                  ? 'border-t-[3px] border-amber-400 font-bold text-amber-400'
-                  : 'border-t-[3px] border-transparent font-semibold text-zinc-100 hover:text-white'
-              }`}
-            >
-              <LayoutGrid className="w-5 h-5" />
-              <span className="text-[11px] uppercase tracking-tight">Modes</span>
-            </button>
+      <nav
+        aria-label="Mobile Navigation"
+        className="md:hidden fixed bottom-0 left-0 right-0 z-[110] overflow-visible bg-zinc-950/95 supports-[backdrop-filter]:bg-zinc-950/80 supports-[backdrop-filter]:backdrop-blur-xl border-t border-white/10 text-white pb-[env(safe-area-inset-bottom)]"
+      >
+        <div className="grid grid-cols-[1fr_1fr_auto_1fr_1fr] h-16 max-w-md mx-auto items-center px-1 overflow-visible">
+          {/* Tab 1: Modes */}
+          <button
+            type="button"
+            onClick={() => {
+              handleCloseAllPreGameViews();
+              scrollToSection('modes', 'play');
+            }}
+            aria-label="Jump to Game Modes"
+            className={`min-h-[48px] w-full flex flex-col items-center justify-center gap-0.5 transition-colors cursor-pointer relative box-border ${
+              activeBottomTab === 'play'
+                ? 'border-t-[3px] border-amber-400 font-bold text-amber-400'
+                : 'border-t-[3px] border-transparent font-semibold text-zinc-100 hover:text-white'
+            }`}
+          >
+            <LayoutGrid className="w-5 h-5" />
+            <span className="text-[11px] uppercase tracking-tight">Modes</span>
+          </button>
 
           {/* Tab 2: Matches */}
           <button
             type="button"
-            onClick={() => scrollToSection('matches', 'matches')}
+            onClick={() => {
+              handleCloseAllPreGameViews();
+              scrollToSection('matches', 'matches');
+            }}
             aria-label="Jump to Active Matches"
             className={`min-h-[48px] w-full flex flex-col items-center justify-center gap-0.5 transition-colors cursor-pointer relative box-border ${
               activeBottomTab === 'matches'
@@ -2762,11 +2758,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
             <button
               type="button"
               onClick={() => {
-                setIsMobileNavDropdownOpen((prev) => {
-                  const next = !prev;
-                  if (next) setIsGameModeEntered(true);
-                  return next;
-                });
+                handleCloseAllPreGameViews();
+                setIsMobileNavDropdownOpen((prev) => !prev);
               }}
               aria-label="Toggle Quick Access Game Modes Menu"
               aria-expanded={isMobileNavDropdownOpen}
@@ -2798,7 +2791,12 @@ export const Dashboard: React.FC<DashboardProps> = ({
           {/* Tab 4: Hashira Dojo */}
           <button
             type="button"
-            onClick={() => onOpenHashiraTraining && onOpenHashiraTraining('thukuna')}
+            onClick={() => {
+              handleCloseAllPreGameViews();
+              if (onOpenHashiraTraining) {
+                onOpenHashiraTraining('thukuna');
+              }
+            }}
             aria-label="Open Hashira Dojo"
             className="min-h-[48px] w-full flex flex-col items-center justify-center gap-0.5 border-t-[3px] border-transparent font-semibold text-zinc-100 hover:text-white transition-colors cursor-pointer relative box-border"
           >
@@ -2809,7 +2807,10 @@ export const Dashboard: React.FC<DashboardProps> = ({
           {/* Tab 5: Trophy Room */}
           <button
             type="button"
-            onClick={() => setIsTrophyRoomOpen(true)}
+            onClick={() => {
+              handleCloseAllPreGameViews();
+              setIsTrophyRoomOpen(true);
+            }}
             aria-label="Open Trophy Room"
             className="min-h-[48px] w-full flex flex-col items-center justify-center gap-0.5 border-t-[3px] border-transparent font-semibold text-zinc-100 hover:text-white transition-colors cursor-pointer relative box-border"
           >
@@ -2825,7 +2826,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
           </button>
         </div>
       </nav>
-      )}
 
       {/* Mobile Profile Bottom Sheet Drawer (Mobile only, md:hidden) */}
       {isMobileProfileOpen && (

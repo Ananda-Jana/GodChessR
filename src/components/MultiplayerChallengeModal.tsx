@@ -111,7 +111,7 @@ export const MultiplayerChallengeModal: React.FC<MultiplayerChallengeModalProps>
         </div>
 
         {/* Scrollable Body */}
-        <div className="p-4 overflow-y-auto flex-1 flex flex-col gap-4 text-xs font-bold">
+        <div className="p-4 pb-28 pb-[calc(7rem+env(safe-area-inset-bottom))] overflow-y-auto flex-1 flex flex-col gap-4 text-xs font-bold">
           {/* Mode Category Choice */}
           <div>
             <label className="block text-[11px] font-black uppercase tracking-wider mb-1.5">

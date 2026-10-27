@@ -457,7 +457,7 @@ export const HashiraDojoModal: React.FC<HashiraDojoModalProps> = ({
           </div>
 
           {/* Mobile Sticky Bottom Action Bar (md:hidden) */}
-          <div className="md:hidden p-3 border-t-3 border-black dark:border-white bg-[#0a0a0c] shrink-0 pb-[calc(0.75rem+env(safe-area-inset-bottom))] space-y-2">
+          <div className="md:hidden p-3 border-t-3 border-black dark:border-white bg-[#0a0a0c] shrink-0 pb-[calc(4.75rem+env(safe-area-inset-bottom))] space-y-2">
             <button
               type="button"
               onClick={() => handleLaunch()}

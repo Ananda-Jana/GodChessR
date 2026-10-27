@@ -134,7 +134,7 @@ export const PunisherSelector: React.FC<PunisherSelectorProps> = ({ onSelect, on
         </div>
 
         {/* ================= MOBILE VIEW (< md): Vertical full-width list ================= */}
-        <div className="md:hidden p-3 space-y-3 pb-24">
+        <div className="md:hidden p-3 space-y-3 pb-32 pb-[calc(8rem+env(safe-area-inset-bottom))]">
           {ALL_PUNISHER_BOTS.map((bot) => {
             const config = PUNISHER_BOTS[bot.id as PunisherBotId];
             const Icon = resolveBotFace(bot.id);
@@ -349,22 +349,22 @@ export const PunisherSelector: React.FC<PunisherSelectorProps> = ({ onSelect, on
         </div>
       </div>
 
-      {/* ================= MOBILE BOTTOM SHEET DETAIL MODAL ================= */}
+      {/* ================= MOBILE CENTERED DETAIL MODAL ================= */}
       <AnimatePresence>
         {selectedBotDetail && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[120] bg-black/80 backdrop-blur-md flex items-end justify-center md:hidden"
+            className="fixed inset-0 z-[120] bg-black/80 backdrop-blur-md flex items-center justify-center p-4 md:hidden"
             onClick={() => setSelectedBotDetail(null)}
           >
             <motion.div
-              initial={{ y: "100%" }}
-              animate={{ y: 0 }}
-              exit={{ y: "100%" }}
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
               transition={{ type: "spring", damping: 25, stiffness: 250 }}
-              className="w-full max-h-[85dvh] bg-[#090912] border-t-4 border-x-4 border-white p-5 flex flex-col justify-between relative shadow-[0_-8px_32px_rgba(0,0,0,0.9)] overflow-hidden"
+              className="w-full max-w-sm max-h-[85dvh] bg-[#090912] border-4 border-white p-5 flex flex-col justify-between relative shadow-[8px_8px_0px_#fff] overflow-hidden rounded-none"
               onClick={(e) => e.stopPropagation()}
             >
               {/* Top Handle & Close */}

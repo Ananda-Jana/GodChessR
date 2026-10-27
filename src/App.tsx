@@ -829,6 +829,11 @@ function AppContent() {
             setIsHashiraModalOpen(true);
           }}
           onOpenPunisher={() => setIsPunisherSelectorOpen(true)}
+          onExitPreGameViews={() => {
+            setIsPunisherSelectorOpen(false);
+            setIsBotModalOpen(false);
+            setIsHashiraModalOpen(false);
+          }}
           onStartSecretMatch={(botConfig) => setActiveSecretBot(botConfig)}
           onStart3dMatch={(params) => setActive3dMatchParams(params)}
           lastCompletedMatch={lastCompletedMatch}

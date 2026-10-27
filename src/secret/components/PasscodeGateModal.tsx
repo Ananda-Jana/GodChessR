@@ -54,7 +54,7 @@ export const PasscodeGateModal: React.FC<PasscodeGateModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-md animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-[100] sticky top-0 left-0 w-full h-dvh min-h-dvh flex items-center justify-center p-3 sm:p-4 bg-black/90 backdrop-blur-md animate-in fade-in duration-200">
       <div
         className={`w-full max-w-xs sm:max-w-sm bg-[#0a0a0c] border-3 sm:border-4 border-slate-200 text-white shadow-[6px_6px_0px_#ffffff] sm:shadow-[8px_8px_0px_#ffffff] p-4 sm:p-6 relative flex flex-col items-center gap-4 sm:gap-5 ${
           isShaking ? 'animate-shake border-red-500 shadow-[6px_6px_0px_#ef4444]' : ''

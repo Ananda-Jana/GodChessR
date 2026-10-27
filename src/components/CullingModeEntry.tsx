@@ -28,6 +28,7 @@ const CullingTheoryView = lazy(() => import('./CullingTheoryView'));
 
 interface CullingModeEntryProps {
   onBack: () => void;
+  onMatchActiveChange?: (isActive: boolean) => void;
 }
 
 interface PublicChallenge {
@@ -39,12 +40,16 @@ interface PublicChallenge {
   createdAt: number;
 }
 
-export const CullingModeEntry: React.FC<CullingModeEntryProps> = ({ onBack }) => {
+export const CullingModeEntry: React.FC<CullingModeEntryProps> = ({ onBack, onMatchActiveChange }) => {
   const { user, token } = useAuth();
 
   const [activeMatch, setActiveMatch] = useState<CullingMatchState | null>(null);
   const activeMatchRef = useRef<CullingMatchState | null>(null);
   activeMatchRef.current = activeMatch;
+
+  useEffect(() => {
+    onMatchActiveChange?.(Boolean(activeMatch));
+  }, [activeMatch, onMatchActiveChange]);
 
   const [isBotMatch, setIsBotMatch] = useState(false);
   const [userColor, setUserColor] = useState<CullingPieceColor>('white');
@@ -351,7 +356,7 @@ export const CullingModeEntry: React.FC<CullingModeEntryProps> = ({ onBack }) =>
       </header>
 
       {/* Main Mode Lobby */}
-      <main className="flex-1 max-w-5xl w-full mx-auto p-3 sm:p-5 flex flex-col items-center justify-center gap-5">
+      <main className="flex-1 max-w-5xl w-full mx-auto p-3 sm:p-5 flex flex-col items-center justify-center gap-5 pb-28 pb-[calc(7rem+env(safe-area-inset-bottom))]">
         {/* Error Banner */}
         {errorMessage && (
           <div className="w-full bg-red-600 text-white border-2 border-black p-3 font-bold text-xs uppercase flex items-center justify-between shadow-[3px_3px_0px_#000] animate-in fade-in">

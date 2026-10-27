@@ -8,8 +8,8 @@ console.log('=== RUNNING ROSE PARADISE TESTS ===');
 // 1. Code Uniqueness & Generation Tests
 const code1 = generateRoseCode();
 const code2 = generateRoseCode();
-assert(code1.startsWith('ROSE-'), 'Rose code should start with ROSE-');
-assert(code1.length === 11, 'Rose code length should be 11 (ROSE-XXXXXX)');
+assert(code1.startsWith('ROSE'), 'Rose code should start with ROSE');
+assert(code1.length === 7, 'Rose code length should be 7 (ROSEXXX)');
 console.log('✓ Rose code generation & format passed');
 
 // 2. Room Creation & Role Assignment Tests

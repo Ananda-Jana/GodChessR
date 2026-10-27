@@ -51,7 +51,7 @@ export const BotMatchModal: React.FC<BotMatchModalProps> = ({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end md:items-center justify-center p-0 md:p-4 bg-black/80 backdrop-blur-none animate-in fade-in duration-150"
+      className="fixed inset-0 z-50 flex items-end md:items-center justify-center p-0 md:p-4 bg-black/80 backdrop-blur-none overflow-y-auto animate-in fade-in duration-150"
       onClick={onClose}
     >
       <div
@@ -59,87 +59,107 @@ export const BotMatchModal: React.FC<BotMatchModalProps> = ({
         role="dialog"
         aria-modal="true"
         aria-labelledby="bot-match-modal-title"
-        className="bg-white dark:bg-[#0a0a0c] border-t-4 border-x-4 md:border-4 border-black dark:border-white rounded-t-2xl md:rounded-none max-w-3xl w-full h-[94dvh] md:h-auto max-h-[94dvh] md:max-h-[90dvh] shadow-[0_-8px_25px_rgba(0,0,0,0.5)] md:shadow-[8px_8px_0px_#000000] dark:md:shadow-[8px_8px_0px_#ffffff] text-black dark:text-white flex flex-col md:flex-row overflow-hidden animate-in slide-in-from-bottom-4 sm:slide-in-from-bottom-0 sm:zoom-in-95 duration-150"
+        className="bg-white dark:bg-[#0a0a0c] border-t-4 border-x-4 md:border-4 border-black dark:border-white rounded-t-2xl md:rounded-none max-w-3xl w-full h-[94dvh] md:h-auto max-h-[94dvh] md:max-h-[90dvh] shadow-[0_-8px_25px_rgba(0,0,0,0.5)] md:shadow-[8px_8px_0px_#000000] dark:md:shadow-[8px_8px_0px_#ffffff] text-black dark:text-white flex flex-col md:flex-row relative animate-in slide-in-from-bottom-4 sm:slide-in-from-bottom-0 sm:zoom-in-95 duration-150"
         onClick={(e) => e.stopPropagation()}
       >
-        <ModeArtPanel
-          modeKey={gameMode === 'crafted' ? 'crafted-pieces' : 'grandmaster-bot'}
-          title={gameMode === 'crafted' ? 'Crafted Army' : 'Grandmaster Bot'}
-          subtitle="Tactical AI Rival"
-        />
-
-        <div className="flex-1 flex flex-col min-w-0 h-full max-h-[94dvh] md:max-h-[90dvh] overflow-hidden">
-        
-        {/* Sticky Top Header with Title, Back, and Close Button */}
-        <div className="p-3 sm:px-4 sm:py-3 border-b-3 border-black dark:border-white flex items-center justify-between shrink-0 bg-black text-white z-10">
-          <div className="flex items-center gap-2 sm:gap-3">
-            <button
-              type="button"
-              onClick={onClose}
-              className="min-w-[40px] min-h-[40px] px-2.5 py-1.5 bg-neutral-900 hover:bg-neutral-800 border-2 border-white text-white flex items-center justify-center rounded-lg gap-1.5 shadow-[2px_2px_0px_#fff] text-xs font-bold uppercase cursor-pointer"
-              aria-label="Back"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              <span className="hidden sm:inline">Back</span>
-            </button>
-            <div className="w-8 h-8 border-2 border-white flex items-center justify-center font-black bg-amber-400 text-black">
-              <Bot className="w-5 h-5" />
-            </div>
-            <div>
-              <h3 id="bot-match-modal-title" className="text-sm sm:text-base font-black uppercase tracking-tight flex items-center gap-1.5">
-                {gameMode === 'classic'
-                  ? 'Play vs Bot (Traditional Chess)'
-                  : gameMode === 'crafted'
-                  ? 'Play vs Bot (Crafted Pieces)'
-                  : 'Play vs Bot (Mugen Chess)'}
-                <Sparkles className="w-4 h-4 text-amber-500" />
-              </h3>
-            </div>
-          </div>
+        {/* Mobile Floating Action Buttons */}
+        <div className="md:hidden absolute top-3 left-3 right-3 z-20 flex items-center justify-between pointer-events-none">
           <button
+            type="button"
             onClick={onClose}
-            className="min-w-[40px] min-h-[40px] p-2 bg-red-600 hover:bg-red-700 active:translate-x-0.5 active:translate-y-0.5 border-2 border-black text-white flex items-center justify-center shadow-[2px_2px_0px_#000] rounded-lg cursor-pointer"
+            className="pointer-events-auto min-w-[40px] min-h-[40px] px-2.5 py-1.5 bg-neutral-900/90 hover:bg-neutral-800 border-2 border-white text-white flex items-center justify-center rounded-lg gap-1.5 shadow-[2px_2px_0px_#fff] text-xs font-bold uppercase cursor-pointer"
+            aria-label="Back"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span>Back</span>
+          </button>
+          <button
+            type="button"
+            onClick={onClose}
+            className="pointer-events-auto min-w-[40px] min-h-[40px] p-2 bg-red-600 hover:bg-red-700 border-2 border-black text-white flex items-center justify-center shadow-[2px_2px_0px_#000] rounded-lg cursor-pointer"
             aria-label="Close"
           >
             <X className="w-4 h-4 text-white stroke-[2.5]" />
           </button>
         </div>
 
-        {/* Desktop Sticky Top Action Bar (hidden on mobile, kept exactly untouched for desktop) */}
-        <div className={`hidden md:block p-3 border-b-3 border-black dark:border-white shrink-0 ${
-          gameMode === 'crafted' ? 'bg-[#1e293b]' : 'bg-amber-400'
-        }`}>
-          <button
-            onClick={() => onStartBotMatch(playerColor, difficulty, timeControl, moveSuggestions, gameMode, gameMode === 'classic' ? false : craftingAllowed, pieceTheme)}
-            className="w-full py-2.5 px-4 bg-black text-amber-400 hover:bg-neutral-900 border-2 border-black font-black text-xs sm:text-sm uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer shadow-[3px_3px_0px_#000000]"
-          >
-            <Swords className="w-4 h-4" />
-            Start {gameMode === 'classic' ? 'Traditional Game' : gameMode === 'crafted' ? 'Crafted Game' : 'Mugen Game'} Now
-          </button>
-        </div>
+        <ModeArtPanel
+          modeKey={gameMode === 'crafted' ? 'crafted-pieces' : gameMode === 'classic' ? 'classic-bot' : 'grandmaster-bot'}
+          title={gameMode === 'crafted' ? 'Crafted Army' : gameMode === 'classic' ? 'Classic Bot' : 'Grandmaster Bot'}
+          subtitle="Tactical AI Rival"
+        />
 
-        {/* Mobile Hero Banner (160px, md:hidden) */}
-        <div className="md:hidden relative h-40 w-full shrink-0 overflow-hidden bg-black select-none border-b-3 border-black dark:border-white">
-          <img
-            src="/assets/aistudio/image_4aa74391.png"
-            alt={gameMode === 'crafted' ? 'Crafted Pieces' : 'Grandmaster Bot'}
-            loading="lazy"
-            decoding="async"
-            className="w-full h-full object-cover object-top filter brightness-95"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0c] via-black/35 to-transparent pointer-events-none" />
-          <div className="absolute bottom-2.5 left-3 right-3 flex items-center justify-between pointer-events-none">
-            <span className="text-[10px] font-mono font-black uppercase px-2 py-0.5 bg-amber-400 text-black border border-black shadow-[1px_1px_0px_#000]">
-              {gameMode === 'crafted' ? 'CRAFTED SPECIALS' : gameMode === 'classic' ? 'FIDE CLASSIC' : 'TACTICAL RIVAL'}
-            </span>
-            <span className="text-[10px] font-mono font-bold text-white/90 bg-black/70 px-2 py-0.5 border border-white/20">
-              DEPTH {difficulty === 'grandmaster' ? '3' : '2'}
-            </span>
+        <div className="flex-1 flex flex-col min-w-0 md:h-full md:max-h-[90dvh] md:overflow-hidden p-3 sm:p-4 pb-28 pb-[calc(7rem+env(safe-area-inset-bottom))]">
+          {/* Mobile Hero Banner (160px, md:hidden) */}
+          <div className="md:hidden relative h-40 w-full shrink-0 overflow-hidden bg-black select-none border-b-3 border-black dark:border-white mb-3">
+            <img
+              src={gameMode === 'crafted' ? '/assets/aistudio/image_4aa74391.png' : gameMode === 'classic' ? '/assets/aistudio/image_80f7eb8b.png' : '/assets/aistudio/image_53255c02.png'}
+              alt={gameMode === 'crafted' ? 'Crafted Pieces' : gameMode === 'classic' ? 'Classic Bot' : 'Grandmaster Bot'}
+              loading="lazy"
+              decoding="async"
+              className="w-full h-full object-cover object-top filter brightness-95"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0c] via-black/35 to-transparent pointer-events-none" />
+            <div className="absolute bottom-2.5 left-3 right-3 flex items-center justify-between pointer-events-none">
+              <span className="text-[10px] font-mono font-black uppercase px-2 py-0.5 bg-amber-400 text-black border border-black shadow-[1px_1px_0px_#000]">
+                {gameMode === 'crafted' ? 'CRAFTED SPECIALS' : gameMode === 'classic' ? 'FIDE CLASSIC' : 'TACTICAL RIVAL'}
+              </span>
+              <span className="text-[10px] font-mono font-bold text-white/90 bg-black/70 px-2 py-0.5 border border-white/20">
+                DEPTH {difficulty === 'grandmaster' ? '3' : '2'}
+              </span>
+            </div>
           </div>
-        </div>
 
-        {/* Scrollable Form Body */}
-        <div className="p-4 overflow-y-auto flex-1 flex flex-col gap-4 text-xs font-bold overscroll-contain">
+          {/* Header Bar */}
+          <div className="p-3 sm:px-4 sm:py-3 border-b-3 border-black dark:border-white flex items-center justify-between shrink-0 bg-black text-white z-10 mb-3">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <button
+                type="button"
+                onClick={onClose}
+                className="hidden md:flex min-w-[40px] min-h-[40px] px-2.5 py-1.5 bg-neutral-900 hover:bg-neutral-800 border-2 border-white text-white items-center justify-center rounded-lg gap-1.5 shadow-[2px_2px_0px_#fff] text-xs font-bold uppercase cursor-pointer"
+                aria-label="Back"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                <span className="hidden sm:inline">Back</span>
+              </button>
+              <div className="w-8 h-8 border-2 border-white flex items-center justify-center font-black bg-amber-400 text-black">
+                <Bot className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 id="bot-match-modal-title" className="text-sm sm:text-base font-black uppercase tracking-tight flex items-center gap-1.5">
+                  {gameMode === 'classic'
+                    ? 'Play vs Bot (Traditional Chess)'
+                    : gameMode === 'crafted'
+                    ? 'Play vs Bot (Crafted Pieces)'
+                    : 'Play vs Bot (Mugen Chess)'}
+                  <Sparkles className="w-4 h-4 text-amber-500" />
+                </h3>
+              </div>
+            </div>
+            <button
+              onClick={onClose}
+              className="hidden md:flex min-w-[40px] min-h-[40px] p-2 bg-red-600 hover:bg-red-700 active:translate-x-0.5 active:translate-y-0.5 border-2 border-black text-white items-center justify-center shadow-[2px_2px_0px_#000] rounded-lg cursor-pointer"
+              aria-label="Close"
+            >
+              <X className="w-4 h-4 text-white stroke-[2.5]" />
+            </button>
+          </div>
+
+          {/* Desktop Sticky Top Action Bar (hidden on mobile, kept exactly untouched for desktop) */}
+          <div className={`hidden md:block p-3 border-b-3 border-black dark:border-white shrink-0 mb-3 ${
+            gameMode === 'crafted' ? 'bg-[#1e293b]' : 'bg-amber-400'
+          }`}>
+            <button
+              onClick={() => onStartBotMatch(playerColor, difficulty, timeControl, moveSuggestions, gameMode, gameMode === 'classic' ? false : craftingAllowed, pieceTheme)}
+              className="w-full py-2.5 px-4 bg-black text-amber-400 hover:bg-neutral-900 border-2 border-black font-black text-xs sm:text-sm uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer shadow-[3px_3px_0px_#000000]"
+            >
+              <Swords className="w-4 h-4" />
+              Start {gameMode === 'classic' ? 'Traditional Game' : gameMode === 'crafted' ? 'Crafted Game' : 'Mugen Game'} Now
+            </button>
+          </div>
+
+          {/* Form Body */}
+          <div className="p-1 md:p-4 md:overflow-y-auto flex-1 flex flex-col gap-4 text-xs font-bold">
 
           {/* Game Mode Choice: 3 Options Ordered (Classic Chess, Mugen Chess, Crafted Pieces) */}
           <div>
@@ -489,7 +509,7 @@ export const BotMatchModal: React.FC<BotMatchModalProps> = ({
         </div>
 
         {/* Sticky Mobile Bottom Action Bar */}
-        <div className={`md:hidden p-3 border-t-3 border-black dark:border-white shrink-0 pb-[calc(0.75rem+env(safe-area-inset-bottom))] z-20 ${
+        <div className={`md:hidden p-3 border-t-3 border-black dark:border-white shrink-0 pb-[calc(4.75rem+env(safe-area-inset-bottom))] z-20 ${
           gameMode === 'crafted' ? 'bg-[#1e293b]' : 'bg-amber-400'
         }`}>
           <button
