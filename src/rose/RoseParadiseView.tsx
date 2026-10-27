@@ -105,6 +105,7 @@ export const RoseParadiseView: React.FC<RoseParadiseViewProps> = ({ onBack }) =>
     hostedCode,
     isCreatingChallenge,
     isJoiningChallenge,
+    isQueueing,
     joiningCode,
     statusMessage,
     error: socketError,
@@ -112,6 +113,8 @@ export const RoseParadiseView: React.FC<RoseParadiseViewProps> = ({ onBack }) =>
     reactions: socketReactions,
     chatMessages: socketChatMessages,
     createRoom,
+    joinQueue,
+    cancelQueue,
     joinRoom,
     cancelRoom,
     sendMove: socketSendMove,
@@ -876,8 +879,27 @@ export const RoseParadiseView: React.FC<RoseParadiseViewProps> = ({ onBack }) =>
                   </button>
                 </div>
 
-                {/* If user is currently hosting a challenge room */}
-                {hostedCode ? (
+                {/* If user is currently searching in matchmaking queue */}
+                {isQueueing ? (
+                  <div className="bg-rose-950 text-white p-4 border-2 border-rose-400 shadow-[3px_3px_0px_#f43f5e] mb-4 text-center animate-in fade-in">
+                    <div className="flex items-center justify-center gap-2 mb-1">
+                      <Loader2 className="w-5 h-5 animate-spin text-amber-300" />
+                      <span className="text-xs font-mono font-black uppercase tracking-wider text-amber-300">
+                        Searching for Partner in Queue...
+                      </span>
+                    </div>
+                    <p className="text-[11px] font-mono text-neutral-300 my-2">
+                      Looking for another Rose Paradise player... The match starts as soon as a partner is found!
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => cancelQueue()}
+                      className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white font-black text-[11px] uppercase border border-white cursor-pointer mt-1"
+                    >
+                      Cancel Search
+                    </button>
+                  </div>
+                ) : hostedCode ? (
                   <div className="bg-amber-400 text-black p-4 border-2 border-black shadow-[3px_3px_0px_#000] mb-4 text-center animate-in fade-in">
                     <span className="text-[10px] font-mono font-black uppercase tracking-wider block mb-1">
                       Waiting for Partner to Join…
@@ -952,12 +974,12 @@ export const RoseParadiseView: React.FC<RoseParadiseViewProps> = ({ onBack }) =>
                       </div>
                     </div>
 
-                    {/* Create Room Button Row */}
+                    {/* Create Room & Quick Match Button Row */}
                     <div className="mb-4 flex flex-col sm:flex-row gap-2">
                       <button
                         type="button"
                         onClick={() => createRoom(selectedRole)}
-                        disabled={isCreatingChallenge}
+                        disabled={isCreatingChallenge || isQueueing}
                         className="flex-1 py-2.5 bg-amber-400 hover:bg-amber-300 text-black font-black text-xs uppercase border-2 border-white shadow-[3px_3px_0px_#fff] flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50 active:translate-x-0.5 active:translate-y-0.5"
                       >
                         {isCreatingChallenge ? (
@@ -970,15 +992,16 @@ export const RoseParadiseView: React.FC<RoseParadiseViewProps> = ({ onBack }) =>
 
                       <button
                         type="button"
-                        onClick={() => {
-                          setIsAutoTriggeredRulebook(false);
-                          setRulebookSubTab('movement_book');
-                          setShowRulebook(true);
-                        }}
-                        className="py-2.5 px-3 bg-red-600 hover:bg-red-500 text-white font-black text-xs uppercase border-2 border-white shadow-[3px_3px_0px_#fff] flex items-center justify-center gap-1 cursor-pointer active:translate-x-0.5 active:translate-y-0.5 whitespace-nowrap"
-                        title="Read theory before creating"
+                        onClick={() => joinQueue(selectedRole)}
+                        disabled={isCreatingChallenge || isQueueing}
+                        className="flex-1 py-2.5 bg-rose-600 hover:bg-rose-500 text-white font-black text-xs uppercase border-2 border-white shadow-[3px_3px_0px_#f43f5e] flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50 active:translate-x-0.5 active:translate-y-0.5"
                       >
-                        <span>📖 Codex</span>
+                        {isQueueing ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Users className="w-4 h-4" />
+                        )}
+                        <span>Quick Match</span>
                       </button>
                     </div>
 

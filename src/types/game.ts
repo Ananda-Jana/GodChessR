@@ -174,6 +174,7 @@ export interface UserProfile {
   username: string;
   displayName: string;
   avatarId: string;
+  bio?: string;
   stats: {
     wins: number;
     losses: number;

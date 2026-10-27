@@ -109,7 +109,16 @@ export const Dashboard: React.FC<DashboardProps> = ({
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [editName, setEditName] = useState(user?.displayName || '');
   const [editAvatar, setEditAvatar] = useState(user?.avatarId || 'avatar_prince');
+  const [editBio, setEditBio] = useState(user?.bio || '');
   const [sentNotice, setSentNotice] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (user) {
+      setEditName(user.displayName || '');
+      setEditAvatar(user.avatarId || 'avatar_prince');
+      setEditBio(user.bio || '');
+    }
+  }, [user]);
   const [isCullingOpen, setIsCullingOpen] = useState(false);
   const [isSecretArenaOpen, setIsSecretArenaOpen] = useState(false);
   const [isAboutOpen, setIsAboutOpen] = useState(false);
@@ -121,6 +130,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
   // Mobile navigation & bottom sheet states
   const [isMobileProfileOpen, setIsMobileProfileOpen] = useState(false);
+  const [isMobileNavDropdownOpen, setIsMobileNavDropdownOpen] = useState(false);
   const [isHighlightsExpanded, setIsHighlightsExpanded] = useState(false);
   const [activeBottomTab, setActiveBottomTab] = useState<'play' | 'matches' | 'players' | null>(null);
 
@@ -235,7 +245,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
   const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
-    await updateProfile(editName, editAvatar);
+    await updateProfile(editName, editAvatar, editBio);
     setIsEditingProfile(false);
   };
 
@@ -264,16 +274,18 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
       {/* Redesigned Mobile Top Bar (md:hidden, sticky, h-12, glassmorphic) */}
       <header className="md:hidden flex items-center justify-between px-3 h-12 sticky top-0 z-40 bg-zinc-950/95 supports-[backdrop-filter]:bg-zinc-950/80 supports-[backdrop-filter]:backdrop-blur-xl border-b border-white/10 text-white relative">
-        {/* Mobile Brand Button (Icon-only on mobile view to avoid text clipping/overflow) */}
-        <button
-          type="button"
-          onClick={() => setIsAboutOpen(true)}
-          aria-label="About MugenChessX"
-          title="About MugenChessX"
-          className="p-1 rounded-lg hover:bg-white/10 active:bg-white/15 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 shrink-0 cursor-pointer"
-        >
-          <OctoSkull size={26} className="text-white hover:text-amber-400 transition-colors shrink-0" />
-        </button>
+        {/* Mobile Brand Button */}
+        <div className="flex items-center gap-2 shrink-0">
+          <button
+            type="button"
+            onClick={() => setIsAboutOpen(true)}
+            aria-label="About MugenChessX"
+            title="About MugenChessX"
+            className="p-1 rounded-lg hover:bg-white/10 active:bg-white/15 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 shrink-0 cursor-pointer"
+          >
+            <OctoSkull size={26} className="text-white hover:text-amber-400 transition-colors shrink-0" />
+          </button>
+        </div>
 
         {/* Mobile Top Navigation Action Icons (Borderless clean icon buttons, no square box frames) */}
         <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
@@ -324,27 +336,551 @@ export const Dashboard: React.FC<DashboardProps> = ({
             </span>
           </button>
 
-          {/* Mobile Profile Trigger (Avatar + Live ELO, sleek borderless pill) */}
+          {/* Mobile Profile Trigger (Circular Avatar Badge, ELO hidden in top bar) */}
           <button
             ref={profilePillRef}
             type="button"
             onClick={() => setIsMobileProfileOpen(true)}
             aria-label="Open profile and statistics"
             aria-expanded={isMobileProfileOpen}
-            className="p-1 px-1.5 rounded-lg hover:bg-white/10 active:bg-white/15 flex items-center gap-1.5 text-white cursor-pointer active:scale-95 transition-all shrink-0"
+            className="w-9 h-9 p-0.5 rounded-full border-2 border-amber-400 hover:border-amber-300 active:scale-95 transition-all cursor-pointer shrink-0 bg-neutral-900 overflow-hidden flex items-center justify-center shadow-[0_0_8px_rgba(251,191,36,0.25)]"
+            style={{ borderRadius: '9999px', WebkitBorderRadius: '9999px' }}
           >
-            <div className="w-5 h-5 rounded-full overflow-hidden border border-amber-400 flex items-center justify-center bg-neutral-900 shrink-0">
-              <AvatarDisplay avatarId={user.avatarId} size="sm" />
-            </div>
-            <span className="font-mono text-xs font-bold text-amber-300 whitespace-nowrap">
-              {predictorState.currentRating} ELO
-            </span>
+            <AvatarDisplay
+              avatarId={user.avatarId}
+              size="sm"
+              isGuest={Boolean(user.id?.startsWith('usr_guest') || user.username?.toLowerCase().includes('mecharuri'))}
+              className="!w-full !h-full !p-0 !rounded-full"
+            />
           </button>
         </div>
       </header>
 
-      {/* Desktop Dark Top Bar (hidden md:flex) - Restyled Desktop Top Navigation Bar */}
+      {/* Mobile Quick-Access Game Modes Drop-Up Menu (md:hidden, fiery glass styling, NOT a modal) */}
+      {isMobileNavDropdownOpen && (
+        <>
+          {/* Invisible click-outside dismisser (transparent, not a dimming modal overlay) */}
+          <div
+            className="md:hidden fixed inset-0 z-40 bg-transparent"
+            onClick={() => setIsMobileNavDropdownOpen(false)}
+            aria-hidden="true"
+          />
+
+          {/* Drop-up Menu Card smoothly sliding up directly above the PLAY button */}
+          <div
+            role="menu"
+            aria-label="Quick Access Game Modes"
+            className="play-dropup-menu md:hidden fixed bottom-[calc(4.75rem+env(safe-area-inset-bottom))] inset-x-3 max-w-sm mx-auto z-50 flex flex-col"
+          >
+            {/* Downward pointer caret matching menu surface */}
+            <div className="play-dropup-caret" aria-hidden="true" />
+
+            {/* Menu Header */}
+            <div className="flex items-center justify-between pb-2 mb-2 border-b border-white/[0.08] px-1 shrink-0 relative z-10">
+              <div className="flex items-center gap-2">
+                <div className="w-5 h-5 rounded-lg bg-[#ef4216]/20 border border-[#ff7818]/40 flex items-center justify-center">
+                  <Sparkles className="w-3 h-3 text-[#ff9a24]" />
+                </div>
+                <span className="text-xs font-black text-[#fff8f0] uppercase tracking-wider">
+                  Quick Access Modes
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsMobileNavDropdownOpen(false)}
+                className="text-zinc-400 hover:text-white p-1 rounded-lg hover:bg-white/10 active:scale-95 transition-all cursor-pointer"
+                aria-label="Close Modes Menu"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Scrollable list/grid of quick-access modes */}
+            <div className="grid grid-cols-2 gap-1.5 max-h-[55vh] overflow-y-auto overscroll-contain pr-0.5 relative z-10">
+              {/* All Modes */}
+              <button
+                type="button"
+                onClick={() => {
+                  setIsMobileNavDropdownOpen(false);
+                  setIsAllGameModesOpen(true);
+                }}
+                className="play-dropup-item group"
+              >
+                <div className="w-7 h-7 rounded-lg bg-[#ef4216]/20 border border-[#ff7818]/30 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                  <Play className="w-3.5 h-3.5 text-[#ff9a24] fill-[#ff9a24]" />
+                </div>
+                <div className="flex flex-col min-w-0">
+                  <span className="text-[11px] font-black uppercase text-[#fff8f0] group-hover:text-[#ffb94f] truncate">All Modes</span>
+                  <span className="text-[9px] text-zinc-400 truncate">Browse all</span>
+                </div>
+              </button>
+
+              {/* Active Matches */}
+              <a
+                href="#matches"
+                onClick={() => setIsMobileNavDropdownOpen(false)}
+                className="play-dropup-item group"
+              >
+                <div className="w-7 h-7 rounded-lg bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                  <Swords className="w-3.5 h-3.5 text-emerald-400" />
+                </div>
+                <div className="flex flex-col min-w-0">
+                  <span className="text-[11px] font-black uppercase text-[#fff8f0] group-hover:text-emerald-300 truncate">Matches</span>
+                  <span className="text-[9px] text-zinc-400 truncate">Live games</span>
+                </div>
+                {ongoingMatches.length > 0 && (
+                  <span className="ml-auto px-1.5 py-0.2 bg-emerald-500 text-black text-[9px] font-mono font-black rounded-full">
+                    {ongoingMatches.length}
+                  </span>
+                )}
+              </a>
+
+              {/* Find Players */}
+              <a
+                href="#players"
+                onClick={() => setIsMobileNavDropdownOpen(false)}
+                className="play-dropup-item group"
+              >
+                <div className="w-7 h-7 rounded-lg bg-sky-500/20 border border-sky-500/30 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                  <Users className="w-3.5 h-3.5 text-sky-400" />
+                </div>
+                <div className="flex flex-col min-w-0">
+                  <span className="text-[11px] font-black uppercase text-[#fff8f0] group-hover:text-sky-300 truncate">Players</span>
+                  <span className="text-[9px] text-zinc-400 truncate">Find opponents</span>
+                </div>
+              </a>
+
+              {/* Culling Game */}
+              <button
+                type="button"
+                onClick={() => {
+                  setIsMobileNavDropdownOpen(false);
+                  setIsCullingOpen(true);
+                }}
+                className="play-dropup-item group"
+              >
+                <div className="w-7 h-7 rounded-lg bg-[#ef4216]/20 border border-[#ff7818]/30 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                  <GamepadSkull size={16} className="text-[#ff9a24]" />
+                </div>
+                <div className="flex flex-col min-w-0">
+                  <span className="text-[11px] font-black uppercase text-[#fff8f0] group-hover:text-[#ffb94f] truncate">Culling</span>
+                  <span className="text-[9px] text-zinc-400 truncate">88-square arena</span>
+                </div>
+              </button>
+
+              {/* Rose Paradise */}
+              {onOpenRose && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsMobileNavDropdownOpen(false);
+                    onOpenRose();
+                  }}
+                  className="play-dropup-item group"
+                >
+                  <div className="w-7 h-7 rounded-lg bg-rose-500/20 border border-rose-500/30 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                    <Heart className="w-3.5 h-3.5 text-rose-400 fill-rose-400" />
+                  </div>
+                  <div className="flex flex-col min-w-0">
+                    <span className="text-[11px] font-black uppercase text-[#fff8f0] group-hover:text-rose-300 truncate">Rose Paradise</span>
+                    <span className="text-[9px] text-zinc-400 truncate">Multiplayer</span>
+                  </div>
+                </button>
+              )}
+
+              {/* 3D Chess Arcade */}
+              <button
+                type="button"
+                onClick={() => {
+                  setIsMobileNavDropdownOpen(false);
+                  setIs3dPreviewModalOpen(true);
+                }}
+                className="play-dropup-item group"
+              >
+                <div className="w-7 h-7 rounded-lg bg-purple-500/20 border border-purple-500/30 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                  <Box className="w-3.5 h-3.5 text-purple-400" />
+                </div>
+                <div className="flex flex-col min-w-0">
+                  <span className="text-[11px] font-black uppercase text-[#fff8f0] group-hover:text-purple-300 truncate">3D Arcade</span>
+                  <span className="text-[9px] text-zinc-400 truncate">Annihilatic board</span>
+                </div>
+              </button>
+
+              {/* Walk with Masters */}
+              <button
+                type="button"
+                onClick={() => {
+                  setIsMobileNavDropdownOpen(false);
+                  setIsWalkWithMastersOpen(true);
+                }}
+                className="play-dropup-item group"
+              >
+                <div className="w-7 h-7 rounded-lg bg-orange-500/20 border border-orange-500/30 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                  <Flame className="w-3.5 h-3.5 text-orange-400" />
+                </div>
+                <div className="flex flex-col min-w-0">
+                  <span className="text-[11px] font-black uppercase text-[#fff8f0] group-hover:text-orange-300 truncate">Masters</span>
+                  <span className="text-[9px] text-zinc-400 truncate">Thukuna & Gatoru</span>
+                </div>
+              </button>
+
+              {/* Rules & Guides */}
+              <button
+                type="button"
+                onClick={() => {
+                  setIsMobileNavDropdownOpen(false);
+                  onOpenRules();
+                }}
+                className="play-dropup-item group"
+              >
+                <div className="w-7 h-7 rounded-lg bg-amber-400/20 border border-amber-400/30 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                  <BookOpen className="w-3.5 h-3.5 text-amber-400" />
+                </div>
+                <div className="flex flex-col min-w-0">
+                  <span className="text-[11px] font-black uppercase text-[#fff8f0] group-hover:text-zinc-200 truncate">Rules</span>
+                  <span className="text-[9px] text-zinc-400 truncate">Guides & book</span>
+                </div>
+              </button>
+
+              {/* Trophies & Chests */}
+              <button
+                type="button"
+                onClick={() => {
+                  setIsMobileNavDropdownOpen(false);
+                  setIsTrophyRoomOpen(true);
+                }}
+                className="col-span-2 play-dropup-item group"
+              >
+                <div className="w-7 h-7 rounded-lg bg-amber-400/20 border border-amber-400/30 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                  <Trophy className="w-3.5 h-3.5 text-amber-400" />
+                </div>
+                <div className="flex flex-col min-w-0">
+                  <span className="text-[11px] font-black uppercase text-[#fff8f0] group-hover:text-amber-300 truncate">Trophies & Chests</span>
+                  <span className="text-[9px] text-zinc-400 truncate">Trophy room & reward inventory</span>
+                </div>
+                {predictorState.earnedCards.length > 0 && (
+                  <span className="ml-auto px-1.5 py-0.2 bg-amber-400 text-black text-[9px] font-mono font-black rounded-full">
+                    {predictorState.earnedCards.length}
+                  </span>
+                )}
+              </button>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Desktop Dark Top Bar (hidden md:flex) & Mobile Play Fiery Glass Styling */}
       <style>{`
+        /* Mobile PLAY Button Fiery Glass Styling */
+        .play-glass-wrapper {
+          position: relative;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          flex-shrink: 0;
+        }
+
+        html body nav button.play-glass-button,
+        button.play-glass-button,
+        .play-glass-button {
+          position: relative;
+          width: 52px;
+          height: 52px;
+          border-radius: 20px !important;
+          -webkit-border-radius: 20px !important;
+          -webkit-mask-image: -webkit-radial-gradient(white, black);
+          mask-image: radial-gradient(white, black);
+          box-sizing: border-box;
+          background: linear-gradient(180deg, #0A0808 0%, #100A09 45%, #1A0908 72%, #3B100B 100%);
+          border: 1px solid rgba(255, 226, 200, 0.18);
+          isolation: isolate;
+          overflow: hidden !important;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          user-select: none;
+          -webkit-tap-highlight-color: transparent;
+          box-shadow: 0 4px 12px rgba(255, 76, 18, 0.24),
+                      0 10px 24px rgba(255, 91, 20, 0.20),
+                      0 18px 34px rgba(255, 104, 24, 0.10),
+                      inset 0 1px 1px rgba(255, 255, 255, 0.12);
+          animation: playAmbientBreath 3.2s ease-in-out infinite;
+          transition: transform 0.15s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        html body nav button.play-glass-button:active,
+        button.play-glass-button:active {
+          transform: scale(0.95);
+        }
+
+        html body nav button.play-glass-button:focus-visible,
+        button.play-glass-button:focus-visible {
+          outline: 2px solid #FF9A24;
+          outline-offset: 2px;
+        }
+
+        html body nav button.play-glass-button.play-glass-active,
+        .play-glass-active {
+          border-color: rgba(255, 154, 36, 0.55) !important;
+          box-shadow: 0 4px 14px rgba(255, 76, 18, 0.38),
+                      0 10px 28px rgba(255, 91, 20, 0.32),
+                      0 20px 42px rgba(255, 104, 24, 0.20),
+                      inset 0 1px 1px rgba(255, 255, 255, 0.18) !important;
+        }
+
+        /* Lower molten-glass inner layer */
+        html body nav button.play-glass-button span.play-glass-molten,
+        .play-glass-molten {
+          position: absolute;
+          inset: 0;
+          border-radius: 20px !important;
+          -webkit-border-radius: 20px !important;
+          pointer-events: none;
+          background: linear-gradient(180deg, transparent 0%, rgba(239,66,22,0.10) 55%, rgba(255,120,24,0.65) 86%, rgba(255,240,204,0.95) 100%);
+          opacity: 0.95;
+        }
+
+        /* Corner bloom layer */
+        html body nav button.play-glass-button span.play-glass-corner-bloom,
+        .play-glass-corner-bloom {
+          position: absolute;
+          inset: 0;
+          border-radius: 20px !important;
+          -webkit-border-radius: 20px !important;
+          pointer-events: none;
+          background: radial-gradient(circle at 8% 100%, rgba(239, 66, 22, 0.55) 0%, transparent 45%),
+                      radial-gradient(circle at 92% 100%, rgba(239, 66, 22, 0.55) 0%, transparent 45%);
+        }
+
+        /* Animated molten flow traveling across lower interior */
+        .play-glass-flow {
+          position: absolute;
+          bottom: -4px;
+          left: 0;
+          right: 0;
+          height: 24px;
+          border-radius: 50%;
+          background: radial-gradient(ellipse 65% 100% at 50% 100%, rgba(255, 185, 79, 0.5) 0%, rgba(255, 120, 24, 0.6) 40%, rgba(239, 66, 22, 0.35) 75%, transparent 100%);
+          filter: blur(4px);
+          pointer-events: none;
+          animation: playMoltenFlow 4.8s ease-in-out infinite;
+        }
+
+        /* Fine bright lower glass rim */
+        .play-glass-rim {
+          position: absolute;
+          bottom: 0;
+          left: 8px;
+          right: 8px;
+          height: 1px;
+          background: linear-gradient(90deg, rgba(239,66,22,0.2) 0%, #FF9A24 25%, #FFF0CC 50%, #FF9A24 75%, rgba(239,66,22,0.2) 100%);
+          box-shadow: 0 -1px 3px rgba(255, 240, 204, 0.8), 0 0 6px rgba(255, 120, 24, 0.9);
+          pointer-events: none;
+        }
+
+        /* Top specular reflection */
+        .play-glass-specular {
+          position: absolute;
+          top: 0;
+          left: 8px;
+          right: 8px;
+          height: 1px;
+          background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.28) 50%, transparent 100%);
+          pointer-events: none;
+        }
+
+        /* Diagonal glass gleam sweep */
+        html body nav button.play-glass-button span.play-glass-gleam,
+        .play-glass-gleam {
+          position: absolute;
+          inset: 0;
+          border-radius: 20px !important;
+          -webkit-border-radius: 20px !important;
+          pointer-events: none;
+          overflow: hidden;
+        }
+          pointer-events: none;
+          overflow: hidden;
+        }
+
+        .play-glass-gleam::after {
+          content: '';
+          position: absolute;
+          top: -50%;
+          bottom: -50%;
+          width: 22px;
+          background: linear-gradient(115deg, transparent 0%, rgba(255, 255, 255, 0.16) 50%, transparent 100%);
+          transform: translateX(-60px) rotate(25deg);
+          animation: playGlassGleam 3.8s ease-in-out infinite;
+        }
+
+        /* Crisp PLAY Typography */
+        .play-glass-label {
+          position: relative;
+          z-index: 2;
+          font-family: inherit;
+          font-size: 12px;
+          font-weight: 850;
+          letter-spacing: 1.2px;
+          text-transform: uppercase;
+          line-height: 1;
+          color: #FFF8F0;
+          text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9);
+          pointer-events: none;
+        }
+
+        /* Keyframes */
+        @keyframes playGlassGleam {
+          0% {
+            transform: translateX(-60px) rotate(25deg);
+            opacity: 0;
+          }
+          10% {
+            opacity: 0.15;
+          }
+          32% {
+            transform: translateX(160px) rotate(25deg);
+            opacity: 0.15;
+          }
+          42%, 100% {
+            transform: translateX(160px) rotate(25deg);
+            opacity: 0;
+          }
+        }
+
+        @keyframes playMoltenFlow {
+          0% {
+            transform: translateX(-24%) scaleX(0.85);
+            opacity: 0.8;
+          }
+          50% {
+            transform: translateX(24%) scaleX(1.15);
+            opacity: 1;
+          }
+          100% {
+            transform: translateX(-24%) scaleX(0.85);
+            opacity: 0.8;
+          }
+        }
+
+        @keyframes playAmbientBreath {
+          0%, 100% {
+            box-shadow: 0 4px 12px rgba(255, 76, 18, 0.22),
+                        0 8px 20px rgba(255, 91, 20, 0.18),
+                        0 16px 30px rgba(255, 104, 24, 0.08),
+                        inset 0 1px 1px rgba(255, 255, 255, 0.12);
+          }
+          50% {
+            box-shadow: 0 5px 15px rgba(255, 76, 18, 0.32),
+                        0 11px 26px rgba(255, 91, 20, 0.26),
+                        0 20px 38px rgba(255, 104, 24, 0.14),
+                        inset 0 1px 1px rgba(255, 255, 255, 0.15);
+          }
+        }
+
+        /* Fiery glass drop-up menu */
+        .play-dropup-menu {
+          background: rgba(10, 8, 8, 0.94);
+          backdrop-filter: blur(18px) saturate(125%);
+          -webkit-backdrop-filter: blur(18px) saturate(125%);
+          border: 1px solid rgba(255, 226, 200, 0.16);
+          border-radius: 20px;
+          box-shadow: 0 12px 32px rgba(0, 0, 0, 0.48),
+                      0 5px 20px rgba(255, 76, 18, 0.12),
+                      inset 0 1px 0 rgba(255, 255, 255, 0.10);
+          padding: 0.75rem;
+          color: #FFF8F0;
+          animation: playMenuSlideUp 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+          overflow: hidden;
+          position: fixed;
+          left: 0.75rem;
+          right: 0.75rem;
+          max-width: 24rem;
+          margin-left: auto;
+          margin-right: auto;
+        }
+
+        .play-dropup-menu::before {
+          content: '';
+          position: absolute;
+          bottom: 0;
+          left: 0;
+          right: 0;
+          height: 24px;
+          background: linear-gradient(180deg, transparent 0%, rgba(239, 66, 22, 0.08) 60%, rgba(255, 120, 24, 0.18) 100%);
+          pointer-events: none;
+        }
+
+        .play-dropup-caret {
+          position: absolute;
+          bottom: -6px;
+          left: 50%;
+          transform: translateX(-50%) rotate(45deg);
+          width: 12px;
+          height: 12px;
+          background: #0A0808;
+          border-right: 1px solid rgba(255, 226, 200, 0.16);
+          border-bottom: 1px solid rgba(255, 226, 200, 0.16);
+          pointer-events: none;
+        }
+
+        .play-dropup-item {
+          padding: 0.55rem 0.65rem;
+          border-radius: 12px;
+          background: rgba(255, 255, 255, 0.03);
+          border: 1px solid rgba(255, 255, 255, 0.06);
+          display: flex;
+          align-items: center;
+          gap: 0.625rem;
+          text-align: left;
+          transition: background-color 0.18s ease, border-color 0.18s ease, transform 0.15s ease;
+          color: #FFF8F0;
+          cursor: pointer;
+          -webkit-tap-highlight-color: transparent;
+        }
+
+        .play-dropup-item:hover,
+        .play-dropup-item:focus-visible {
+          background: rgba(255, 120, 24, 0.12);
+          border-color: rgba(255, 154, 36, 0.38);
+        }
+
+        .play-dropup-item:active {
+          background: rgba(255, 120, 24, 0.20);
+          border-color: rgba(255, 154, 36, 0.55);
+          transform: scale(0.98);
+        }
+
+        @keyframes playMenuSlideUp {
+          0% {
+            opacity: 0;
+            transform: translateY(10px);
+          }
+          100% {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          .play-glass-button {
+            animation: none !important;
+          }
+          .play-glass-gleam::after {
+            animation: none !important;
+            display: none !important;
+          }
+          .play-glass-flow {
+            animation: none !important;
+          }
+          .play-dropup-menu {
+            animation: none !important;
+            transform: translateY(0) !important;
+            opacity: 1 !important;
+          }
+        }
+
         @media (min-width: 768px) {
           .mcx-nav2 {
             background-color: #0b0b0f !important;
@@ -645,7 +1181,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
             title={`Logged in as ${user.displayName} (@${user.username}) - ${predictorState.currentRating} ELO`}
           >
             <div className="mcx-nav2-avatar">
-              <AvatarDisplay avatarId={user.avatarId} size="sm" className="!w-full !h-full !p-0" />
+              <AvatarDisplay avatarId={user.avatarId} isGuest={Boolean(user.id?.startsWith('usr_guest') || user.username?.toLowerCase().includes('mecharuri'))} size="sm" className="!w-full !h-full !p-0" />
             </div>
             <span className="mcx-nav2-username hidden lg:inline">
               {user.displayName}
@@ -783,32 +1319,46 @@ export const Dashboard: React.FC<DashboardProps> = ({
           </div>
 
           {/* User Profile Card (Desktop only, hidden on mobile) */}
-          <div className="hidden md:block bg-white dark:bg-[#0a0a0c] border-3 border-black dark:border-white p-5 shadow-[5px_5px_0px_#000000] dark:shadow-[5px_5px_0px_#ffffff]">
+          <div className="hidden md:block bg-white dark:bg-[#0a0a0c] border-3 border-black dark:border-white p-6 shadow-[5px_5px_0px_#000000] dark:shadow-[5px_5px_0px_#ffffff]">
             <div className="flex items-start justify-between">
-              <div className="flex items-center gap-3">
-                <div className="border-2 border-black dark:border-white p-0.5 bg-neutral-100 dark:bg-neutral-900">
-                  <AvatarDisplay avatarId={user.avatarId} size="lg" />
+              <div className="flex items-center gap-3.5">
+                <div className="border-2 border-black dark:border-amber-400 p-1 bg-neutral-100 dark:bg-neutral-900 rounded-xl shrink-0">
+                  <AvatarDisplay
+                    avatarId={user.avatarId}
+                    isGuest={Boolean(user.id?.startsWith('usr_guest') || user.username?.toLowerCase().includes('mecharuri'))}
+                    size="lg"
+                  />
                 </div>
                 <div>
                   <h3 className="text-base font-black uppercase">{user.displayName}</h3>
                   <p className="text-xs text-neutral-600 dark:text-neutral-400 font-mono">@{user.username}</p>
+                  {user.bio ? (
+                    <p className="text-xs text-neutral-700 dark:text-amber-300/90 font-mono italic mt-1 max-w-xs">
+                      "{user.bio}"
+                    </p>
+                  ) : (
+                    <p className="text-[11px] text-neutral-500 font-mono italic mt-1">
+                      No description written yet.
+                    </p>
+                  )}
                 </div>
               </div>
               <button
                 onClick={() => {
                   setEditName(user.displayName);
                   setEditAvatar(user.avatarId);
+                  setEditBio(user.bio || '');
                   setIsEditingProfile(!isEditingProfile);
                 }}
                 className="text-xs font-black uppercase text-amber-600 dark:text-amber-400 hover:underline cursor-pointer"
               >
-                {isEditingProfile ? 'Cancel' : 'Edit'}
+                {isEditingProfile ? 'Cancel' : 'Edit Profile'}
               </button>
             </div>
 
             {/* Profile Edit Mode */}
             {isEditingProfile ? (
-              <form onSubmit={handleSaveProfile} className="mt-4 pt-4 border-t-2 border-black dark:border-white flex flex-col gap-3">
+              <form onSubmit={handleSaveProfile} className="mt-4 pt-4 border-t-2 border-black dark:border-white flex flex-col gap-3.5">
                 <div>
                   <label className="block text-xs font-black uppercase mb-1">Display Name</label>
                   <input
@@ -818,26 +1368,41 @@ export const Dashboard: React.FC<DashboardProps> = ({
                     className="w-full px-3 py-2 bg-neutral-100 dark:bg-[#141416] border-2 border-black dark:border-white text-xs font-bold text-black dark:text-white focus:outline-none"
                   />
                 </div>
+
                 <div>
-                  <label className="block text-xs font-black uppercase mb-1.5">Avatar</label>
-                  <div className="grid grid-cols-6 gap-1.5">
+                  <label className="block text-xs font-black uppercase mb-1">Player Description / Bio</label>
+                  <textarea
+                    value={editBio}
+                    onChange={(e) => setEditBio(e.target.value)}
+                    placeholder="Write a custom description or motto..."
+                    rows={2}
+                    className="w-full px-3 py-2 bg-neutral-100 dark:bg-[#141416] border-2 border-black dark:border-white text-xs font-mono text-black dark:text-white focus:outline-none resize-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-black uppercase mb-1.5">Choose Avatar</label>
+                  <div className="grid grid-cols-4 sm:grid-cols-6 gap-2 max-h-56 overflow-y-auto p-1.5 border border-neutral-300 dark:border-neutral-800 rounded-lg">
                     {AVATAR_OPTIONS.map((av) => (
                       <button
                         key={av.id}
                         type="button"
                         onClick={() => setEditAvatar(av.id)}
-                        className={`p-1 border border-black dark:border-white flex justify-center cursor-pointer ${
-                          editAvatar === av.id ? 'bg-amber-400 shadow-[2px_2px_0px_#000]' : 'opacity-60'
+                        className={`p-1.5 border-2 rounded-lg flex flex-col items-center justify-center cursor-pointer transition-all ${
+                          editAvatar === av.id ? 'bg-amber-400 border-black shadow-[2px_2px_0px_#000] text-black' : 'border-neutral-700 bg-neutral-900/40 opacity-70 hover:opacity-100 text-white'
                         }`}
+                        title={av.name}
                       >
                         <AvatarDisplay avatarId={av.id} size="sm" />
+                        <span className="text-[9px] font-black uppercase mt-1 truncate w-full text-center leading-none">{av.name}</span>
                       </button>
                     ))}
                   </div>
                 </div>
+
                 <button
                   type="submit"
-                  className="mt-1 py-2 px-3 bg-amber-400 hover:bg-amber-300 text-black font-black text-xs uppercase border-2 border-black shadow-[2px_2px_0px_#000] cursor-pointer"
+                  className="mt-1 py-2.5 px-4 bg-amber-400 hover:bg-amber-300 text-black font-black text-xs uppercase border-2 border-black shadow-[2px_2px_0px_#000] cursor-pointer"
                 >
                   Save Profile
                 </button>
@@ -1884,7 +2449,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
         aria-label="Mobile Navigation"
         className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-zinc-950/95 supports-[backdrop-filter]:bg-zinc-950/80 supports-[backdrop-filter]:backdrop-blur-xl border-t border-white/10 text-white pb-[env(safe-area-inset-bottom)]"
       >
-        <div className="grid grid-cols-5 h-16 max-w-md mx-auto">
+        <div className="grid grid-cols-[1fr_1fr_auto_1fr_1fr] h-16 max-w-md mx-auto items-center px-1">
           {/* Tab 1: Play */}
           <button
             type="button"
@@ -1918,18 +2483,38 @@ export const Dashboard: React.FC<DashboardProps> = ({
             <span className="text-[11px] uppercase tracking-tight">Matches</span>
           </button>
 
-          {/* Tab 3: Players */}
-          <button
-            type="button"
-            onClick={() => scrollToSection('players', 'players')}
-            aria-label="Jump to Find Players"
-            className={`min-h-[44px] min-w-[44px] flex flex-col items-center justify-center gap-1 transition-colors cursor-pointer ${
-              activeBottomTab === 'players' ? 'text-amber-400 font-black' : 'text-neutral-400 hover:text-white'
-            }`}
-          >
-            <Users className="w-5 h-5" />
-            <span className="text-[11px] uppercase tracking-tight">Players</span>
-          </button>
+          {/* Tab 3: PLAY Button (Fiery Molten Glass Keycap with text PLAY) */}
+          <div className="play-glass-wrapper px-1">
+            <button
+              type="button"
+              onClick={() => setIsMobileNavDropdownOpen((prev) => !prev)}
+              aria-label="Toggle Quick Access Game Modes Menu"
+              aria-expanded={isMobileNavDropdownOpen}
+              style={{ borderRadius: '20px', WebkitBorderRadius: '20px', overflow: 'hidden' }}
+              className={`play-glass-button ${isMobileNavDropdownOpen ? 'play-glass-active' : ''}`}
+            >
+              {/* Layer 1: Lower molten-glass inner layer */}
+              <span className="play-glass-molten" style={{ borderRadius: '20px', WebkitBorderRadius: '20px' }} aria-hidden="true" />
+
+              {/* Layer 2: Corner bloom */}
+              <span className="play-glass-corner-bloom" style={{ borderRadius: '20px', WebkitBorderRadius: '20px' }} aria-hidden="true" />
+
+              {/* Layer 3: Moving molten light flow */}
+              <span className="play-glass-flow" aria-hidden="true" />
+
+              {/* Layer 4: Bright lower glass rim */}
+              <span className="play-glass-rim" aria-hidden="true" />
+
+              {/* Layer 5: Top specular highlight */}
+              <span className="play-glass-specular" aria-hidden="true" />
+
+              {/* Layer 6: Diagonal glass gleam sweep */}
+              <span className="play-glass-gleam" style={{ borderRadius: '20px', WebkitBorderRadius: '20px' }} aria-hidden="true" />
+
+              {/* Crisp PLAY Label */}
+              <span className="play-glass-label">PLAY</span>
+            </button>
+          </div>
 
           {/* Tab 4: Hashira Dojo */}
           <button
@@ -1979,20 +2564,33 @@ export const Dashboard: React.FC<DashboardProps> = ({
             role="dialog"
             aria-modal="true"
             aria-label="Player Profile and Statistics"
-            className="md:hidden fixed inset-x-0 bottom-0 z-50 max-h-[85vh] overflow-y-auto overscroll-contain bg-zinc-950 border-t-2 border-amber-400 rounded-t-3xl shadow-2xl p-5 pb-[calc(1.5rem+env(safe-area-inset-bottom))] text-white animate-in slide-in-from-bottom duration-200"
+            className="md:hidden fixed inset-x-0 bottom-0 z-50 max-h-[92vh] max-w-lg mx-auto overflow-y-auto overscroll-contain bg-zinc-950 border-t-3 border-amber-400 rounded-t-3xl shadow-2xl p-6 pb-[calc(2rem+env(safe-area-inset-bottom))] text-white animate-in slide-in-from-bottom duration-200"
           >
             {/* Grab handle */}
             <div className="w-12 h-1.5 bg-neutral-700 rounded-full mx-auto mb-4" />
 
             {/* Profile Drawer Header */}
             <div className="flex items-start justify-between mb-4">
-              <div className="flex items-center gap-3">
-                <div className="border-2 border-amber-400 p-0.5 bg-neutral-900 rounded-lg">
-                  <AvatarDisplay avatarId={user.avatarId} size="lg" />
+              <div className="flex items-center gap-3.5">
+                <div className="border-2 border-amber-400 p-1 bg-neutral-900 rounded-xl shrink-0">
+                  <AvatarDisplay
+                    avatarId={user.avatarId}
+                    isGuest={Boolean(user.id?.startsWith('usr_guest') || user.username?.toLowerCase().includes('mecharuri'))}
+                    size="lg"
+                  />
                 </div>
                 <div>
-                  <h3 className="text-base font-black uppercase text-white">{user.displayName}</h3>
+                  <h3 className="text-base sm:text-lg font-black uppercase text-white">{user.displayName}</h3>
                   <p className="text-xs text-neutral-400 font-mono">@{user.username}</p>
+                  {user.bio ? (
+                    <p className="text-xs text-amber-300/90 font-mono italic mt-1 max-w-[200px] break-words">
+                      "{user.bio}"
+                    </p>
+                  ) : (
+                    <p className="text-[11px] text-neutral-500 font-mono italic mt-1">
+                      No bio written yet.
+                    </p>
+                  )}
                 </div>
               </div>
 
@@ -2002,9 +2600,10 @@ export const Dashboard: React.FC<DashboardProps> = ({
                   onClick={() => {
                     setEditName(user.displayName);
                     setEditAvatar(user.avatarId);
+                    setEditBio(user.bio || '');
                     setIsEditingProfile(!isEditingProfile);
                   }}
-                  className="text-xs font-black uppercase px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-amber-300 border border-white/10 cursor-pointer min-h-[44px] flex items-center justify-center active:scale-95"
+                  className="text-xs font-black uppercase px-3 py-1.5 rounded-lg bg-amber-400 hover:bg-amber-300 text-black border border-amber-300 cursor-pointer min-h-[44px] flex items-center justify-center active:scale-95 shadow-[2px_2px_0px_#000]"
                 >
                   {isEditingProfile ? 'Cancel' : 'Edit'}
                 </button>
@@ -2025,7 +2624,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
             {/* Profile Edit Mode Form or Stats Grid */}
             {isEditingProfile ? (
-              <form onSubmit={handleSaveProfile} className="pt-3 border-t border-white/10 flex flex-col gap-3">
+              <form onSubmit={handleSaveProfile} className="pt-3 border-t border-white/10 flex flex-col gap-3.5">
                 <div>
                   <label className="block text-xs font-black uppercase mb-1 text-neutral-300">Display Name</label>
                   <input
@@ -2035,26 +2634,40 @@ export const Dashboard: React.FC<DashboardProps> = ({
                     className="w-full px-3 py-2 bg-neutral-900 border border-white/20 rounded-lg text-xs font-bold text-white focus:outline-none focus:border-amber-400"
                   />
                 </div>
+
                 <div>
-                  <label className="block text-xs font-black uppercase mb-1.5 text-neutral-300">Avatar</label>
-                  <div className="grid grid-cols-6 gap-1.5">
+                  <label className="block text-xs font-black uppercase mb-1 text-neutral-300">Player Description / Bio</label>
+                  <textarea
+                    value={editBio}
+                    onChange={(e) => setEditBio(e.target.value)}
+                    placeholder="Write a custom description or motto..."
+                    rows={2}
+                    className="w-full px-3 py-2 bg-neutral-900 border border-white/20 rounded-lg text-xs font-mono text-white focus:outline-none focus:border-amber-400 resize-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-black uppercase mb-1.5 text-neutral-300">Choose Profile Avatar</label>
+                  <div className="grid grid-cols-4 sm:grid-cols-6 gap-2 max-h-56 overflow-y-auto p-1.5 border border-neutral-800 rounded-lg">
                     {AVATAR_OPTIONS.map((av) => (
                       <button
                         key={av.id}
                         type="button"
                         onClick={() => setEditAvatar(av.id)}
-                        className={`p-1 border rounded-lg flex justify-center cursor-pointer ${
-                          editAvatar === av.id ? 'bg-amber-400 border-amber-300' : 'border-white/10 opacity-60'
+                        className={`p-1.5 border rounded-lg flex flex-col items-center justify-center cursor-pointer transition-all ${
+                          editAvatar === av.id ? 'bg-amber-400 border-amber-300 text-black shadow-md' : 'border-white/10 bg-neutral-900/60 text-white opacity-70 hover:opacity-100'
                         }`}
                       >
                         <AvatarDisplay avatarId={av.id} size="sm" />
+                        <span className="text-[9px] font-black uppercase mt-1 truncate w-full text-center leading-none">{av.name}</span>
                       </button>
                     ))}
                   </div>
                 </div>
+
                 <button
                   type="submit"
-                  className="mt-2 py-2.5 px-4 bg-amber-400 hover:bg-amber-300 text-black font-black text-xs uppercase rounded-xl border border-black cursor-pointer shadow-md active:scale-98"
+                  className="mt-2 py-3 px-4 bg-amber-400 hover:bg-amber-300 text-black font-black text-xs uppercase rounded-xl border border-black cursor-pointer shadow-md active:scale-98"
                 >
                   Save Profile
                 </button>

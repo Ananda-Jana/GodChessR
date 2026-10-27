@@ -1,126 +1,75 @@
-# Post-Game Reward Chest Modal & Trophy Room Chest Inventory
+# Mobile Dashboard PLAY Button & Drop-Up Menu Refinement
 
-Decouple the chest opening prompt from the post-game red game-over box into a dedicated, instant post-match modal with animated chest presentation and Open/Save options, and add a dedicated Chest Inventory tab inside the Trophy Room featuring unopened chest management and historical chest reward output logs.
+A targeted UI refinement for the mobile dashboard (`md:hidden`) bottom navigation bar and its quick access drop-up menu. This update modifies the central `PLAY` button to be square-shaped with `20px` rounded squircle corners, applies `20px` border-radius across its CSS layers, and ensures the drop-up menu is horizontally centered on the mobile viewport.
 
----
+## User Review & Critical Decisions
 
-### User Review & Critical Decisions
+> [!IMPORTANT] All changes are strictly UI-only and constrained exclusively to `/src/components/Dashboard.tsx`. No other files, components, or game logic are touched.
 
-> [!IMPORTANT]
-> The following design decisions were confirmed via Phase 1 clarification:
-> - **Post-Game Modal Presentation**: Dedicated prompt popup with animated chest artwork, featuring "Open Now" and "Save to Inventory" action buttons immediately after game completion.
-> - **Trophy Room Integration**: A clean top navigation tab alongside the main Trophies view ("Trophy Showcase" and "Chest Inventory").
-> - **Chest Inventory Organization**: Two focused sub-tabs: "Chests to Open" (unopened stored chests with one-click opening) and "Claimed Rewards History" (all cards and rewards unlocked from chests).
-> - **Game-Over Box Clean-up**: Remove the small "OPEN CHEST" button from the red game-over badges box in `MatchView` and `CullingMatchView` so it no longer mimics badge items.
+- **Square-Shaped PLAY Button**: Changed from wide rectangular (`112px × 50px`) to a square squircle (`52px × 52px`).
+- **20px Border Radius Discipline**: All button wrapper layers (`.play-glass-button`, `.play-glass-molten`, `.play-glass-corner-bloom`, `.play-glass-gleam`) updated to `border-radius: 20px`.
+- **Centered Drop-Up Menu**: Positioned smoothly at the horizontal center of the mobile screen (`left-1/2 -translate-x-1/2 w-[92vw] max-w-sm`).
 
 ---
 
 ## 1. Overview & Core Concept
 
-Currently, after completing a game, a small "OPEN CHEST" button is placed inside the red game-over notification box alongside small achievement badge cards, creating visual confusion and forcing players to hunt for their earned chest.
-
-This update introduces:
-1. **Instant Post-Match Chest Award Modal**: Immediately upon match conclusion, an attractive modal presents the earned chest with a breathing/shaking chest animation and two clear choices: **"Open Chest Now"** or **"Save to Inventory"**.
-2. **Persistent Chest Inventory in Trophy Room**: Players who choose to save their chest can access it anytime from the Trophy Room via a dedicated top tab. The inventory contains:
-   - **Chests to Open**: Visual cards of stored chests ready to be unlocked.
-   - **Claimed Rewards History**: A gallery of unlocked secret characters, Elo boosts, and special cards obtained from previous chest openings.
+- **What It Does**: Refines the mobile bottom navigation bar's central trigger into a square fiery-glass keycap with smooth `20px` bent corners and centers the drop-up quick access menu when opened.
+- **Scope**: Mobile responsive view only (`md:hidden`), strictly within `/src/components/Dashboard.tsx`.
+- **Key Value**: Clean, balanced visual ergonomics on mobile touch screens with responsive centering.
 
 ---
 
 ## 2. User Experience & Visual Design
 
-### Key User Flows
-
-```
-[ Match Concludes ]
-        │
-        ▼
-[ Instant Post-Game Chest Award Modal ]
-   ┌─────────────────────────────────────────────────────────┐
-   │                  CHEST REWARD EARNED!                   │
-   │                                                         │
-   │                [ Animated Chest Visual ]                │
-   │                  "Victory / Match Loot"                 │
-   │                                                         │
-   │   [ OPEN CHEST NOW (Primary) ]   [ SAVE FOR LATER ]     │
-   └─────────────────────────────────────────────────────────┘
-        │                                   │
-        ▼ (Open Now)                        ▼ (Save for Later)
-[ 3-Tap Chest Reveal Modal ]        [ Saved to Chest Inventory ]
-        │                                   │
-        ▼                                   ▼
-[ Reward Added to History ]         [ View in Trophy Room Tab ]
-```
-
-### UI & Styling Guidelines
-- **Brutalist Theme Alignment**: High-contrast black (`#000000`), deep panel surfaces (`#0a0a0c`), crisp borders (`border-3 border-white/black`), and warm amber accents (`#fbbf24`).
-- **Post-Game Modal**: Clean modal with pulsing chest SVG, glowing particle aura, and large tactile buttons (min-height 48px, bold uppercase text).
-- **Trophy Room Tabs**: Segmented tab control in the modal header (`Trophies (X)` vs `Chest Inventory (Y)`), adhering to zero-pill discipline with clean functional buttons.
+- **PLAY Button Styling**:
+  - Dimensions: `52px × 52px` square.
+  - Corner Radius: `20px` border radius across all glass and glow layers.
+  - Fiery Glass Aesthetic: Dark translucent upper body (`#0A0808` to `#100A09`), fiery molten amber/red bottom illumination (`#EF4216`, `#FF7818`), warm-white rim highlight (`#FFF0CC`), and top specular glass reflection.
+  - Label: Clean, crisp `PLAY` typography in `#FFF8F0`, 12px, weight 850, letter-spacing 1.2px, uppercase.
+  - Animations:
+    - `playGlassGleam`: Continuous diagonal glass gleam sweep.
+    - `playMoltenFlow`: Moving molten light flow across the lower interior.
+    - `playAmbientBreath`: Soft ambient breathing external glow.
+- **Centered Drop-Up Menu**:
+  - Horizontal Position: `left-1/2 -translate-x-1/2 w-[92vw] max-w-sm` anchored directly above the central PLAY button.
+  - Downward Caret Pointer: Centered at `left-1/2 -translate-x-1/2`.
+  - Non-Modal Behavior: Smooth upward slide-in (`playMenuSlideUp`) with transparent click-outside dismisser.
+  - Preserved Menu Items: All 9 quick-access modes (All Modes, Matches, Players, Culling, Rose Paradise, 3D Arcade, Masters, Rules, Trophies & Chests) remain completely intact.
 
 ---
 
-## 3. Key Technical Decisions & Data Strategy
+## 3. Key Product Decisions & Trade-Offs
 
-### Technical Architecture Diagram
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                       Client Store Layer                        │
-│                                                                 │
-│  src/chest/chestStore.ts                                        │
-│  ├── pendingEvents: PendingChestEvent[]                         │
-│  ├── claimedRewards: ClaimedChestReward[]                       │
-│  └── Storage persistence with memory fallback                   │
-└────────────────┬───────────────────────────────┬────────────────┘
-                 │                               │
-                 ▼                               ▼
-┌────────────────────────────────┐ ┌──────────────────────────────┐
-│       Game-End Triggers        │ │      Trophy Room Modal       │
-│                                │ │                              │
-│ src/chest/reportGameEnd.ts     │ │ src/components/              │
-│ ├── Instantly emits event      │ │ TrophyRoomModal.tsx          │
-│ └── Triggers PostGameChestAward│ │ ├── Top Tab: Trophies        │
-│                                │ │ └── Top Tab: Chest Inventory │
-│ src/chest/ChestRewardHost.tsx  │ │     ├── Unopened Chests      │
-│ ├── PostGameChestAwardModal    │ │     └── Claimed History Cards│
-│ └── Interactive ChestModal     │ └──────────────────────────────┘
-└────────────────────────────────┘
-```
-
-### Component & State Mapping
-
-1. **`src/chest/chestStore.ts`**:
-   - Extend `ChestStoreData` with `claimedRewards: ClaimedChestReward[]`.
-   - Add `recordClaimedReward(reward, isOwned, matchId)` to log opened rewards into persistent storage.
-   - Retain existing `addPendingChestEvent` and `popPendingChestEvent` for seamless backward compatibility.
-
-2. **`src/chest/PostGameChestAwardModal.tsx` (New Component)**:
-   - Dedicated prompt modal triggered immediately upon match completion.
-   - Shows animated chest SVG with ambient particle glow and match summary context.
-   - Actions:
-     - `onOpenNow()`: Launches the interactive 3-tap chest unlocking modal.
-     - `onSaveForLater()`: Closes modal and confirms the chest is safely saved to the Trophy Room Chest Inventory.
-
-3. **`src/chest/ChestRewardHost.tsx`**:
-   - Hosts both the `PostGameChestAwardModal` (first phase prompt) and the interactive `ChestModal` (second phase tap-to-open sequence).
-   - Records rewarded items into `claimedRewards` upon successful chest unlocking.
-
-4. **`src/components/TrophyRoomModal.tsx`**:
-   - Add top segmented navigation: `[ Trophy Showcase (X/Y) ]` and `[ Chest Inventory (Z) ]`.
-   - When "Chest Inventory" is active, display:
-     - Sub-tab 1: **Chests to Open** (grid of stored unopened chests with an "Open Now" button).
-     - Sub-tab 2: **Claimed Rewards History** (grid of all unlocked character cards, with rarity, unlock date, and stats).
-
-5. **`src/components/MatchView.tsx` & `src/components/CullingMatchView.tsx`**:
-   - Remove the small "OPEN CHEST" button embedded in the red game-over box.
-   - Ensure `reportGameEnd` smoothly triggers the standalone modal immediately upon match completion without breaking board inspection or game analysis.
+- **Decision 1: Square Proportion (`52px × 52px`)**:
+  - *Chosen Approach*: `52px × 52px` square size with `20px` border radius.
+  - *Why*: Fits naturally in the 5-column mobile navigation bar grid without crowding adjacent tab items, fulfilling the user's request for a square button with bent corners.
+- **Decision 2: Strict Single-File Scope**:
+  - *Chosen Approach*: Touch only `/src/components/Dashboard.tsx`.
+  - *Why*: Fulfills the explicit user mandate to avoid touching any other file or game logic.
 
 ---
 
-## 4. Verification & Testing Plan
+## 4. Technical Architecture & Data Strategy
 
-1. **Immediate Trigger Verification**: Complete or resign a match in Standard Chess, Culling Game, Rose Paradise, and Bot mode; verify the new standalone chest award modal pops up immediately.
-2. **"Open Now" Path**: Click "Open Chest Now" and verify the 3-tap unlocking animation sequence executes properly, awards cards/Elo, and saves the output to history.
-3. **"Save for Later" Path**: Click "Save to Inventory" and verify the chest is stored in `chestStore`.
-4. **Trophy Room Inventory**: Open Trophy Room, switch to "Chest Inventory", verify unopened chests are displayed with functioning "Open" buttons, and verify all previously claimed cards appear in "Claimed Rewards History".
-5. **Clean Build**: Run `compile_applet` and `lint_applet` to ensure 0 TypeScript and bundle errors.
+```
+[ MOBILE VIEWPORT (375px - 430px) ]
+
++-------------------------------------------------------+
+|  DROP-UP QUICK ACCESS MENU (Centered: left-1/2)       |
+|  bg: rgba(10,8,8,0.94) | border: 20px radius          |
+|  [All Modes]  [Matches]  [Players]  [Culling]  ...    |
++-------------------------------------------------------+
+                           /\ (Centered Caret)
++-------------------------------------------------------+
+| FIXED BOTTOM NAVIGATION BAR (h-16)                    |
+| [Play]   [Matches]   [  PLAY  ]   [Hashira]  [Trophies]|
+|                       (52x52px                        |
+|                       20px radius)                    |
++-------------------------------------------------------+
+```
+
+- **CSS Updates**:
+  - Update `.play-glass-button` width and height from `112px / 50px` to `52px / 52px`.
+  - Update `border-radius: 20px` in `.play-glass-button`, `.play-glass-molten`, `.play-glass-corner-bloom`, `.play-glass-gleam`.
+  - Ensure `.play-dropup-menu` has `left-1/2 -translate-x-1/2` centering on the screen.

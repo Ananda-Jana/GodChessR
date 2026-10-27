@@ -110,7 +110,7 @@ async function startServer() {
       id: userId,
       username,
       displayName: 'MechaRuri',
-      avatarId: 'avatar_prince',
+      avatarId: '/assets/aistudio/image_97317ea2.png',
       passwordHash: hash,
       salt,
       stats: {
@@ -173,7 +173,7 @@ async function startServer() {
 
   // Auth: Update Profile
   app.put('/api/auth/profile', authMiddleware, (req: AuthenticatedRequest, res) => {
-    const { displayName, avatarId } = req.body;
+    const { displayName, avatarId, bio } = req.body;
     const user = db.findUserById(req.user!.id);
     if (!user) {
       return res.status(404).json({ error: 'User not found.' });
@@ -184,6 +184,9 @@ async function startServer() {
     }
     if (avatarId && typeof avatarId === 'string') {
       user.avatarId = avatarId;
+    }
+    if (typeof bio === 'string') {
+      user.bio = bio.trim();
     }
 
     db.saveUser(user);

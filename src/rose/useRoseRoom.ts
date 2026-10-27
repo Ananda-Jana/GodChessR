@@ -26,6 +26,7 @@ export function useRoseRoom() {
   const [isCreatingChallenge, setIsCreatingChallenge] = useState(false);
   const [isJoiningChallenge, setIsJoiningChallenge] = useState(false);
   const [joiningCode, setJoiningCode] = useState<string | null>(null);
+  const [isQueueing, setIsQueueing] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pendingMove, setPendingMove] = useState(false);
@@ -83,12 +84,18 @@ export function useRoseRoom() {
             setError(null);
             break;
 
+          case 'rose:queued':
+            setIsQueueing(true);
+            setStatusMessage('Searching for Rose Partner in matchmaking queue...');
+            break;
+
           case 'rose:match_started':
             setStatusMessage('Opponent joined! Launching game...');
             setIsJoiningChallenge(false);
             setJoiningCode(null);
             setIsCreatingChallenge(false);
             setIsWaitingForPartner(false);
+            setIsQueueing(false);
             setPendingMove(false);
             setError(null);
             sounds.playChallenge();
@@ -131,6 +138,7 @@ export function useRoseRoom() {
             setIsWaitingForPartner(false);
             setIsCreatingChallenge(false);
             setIsJoiningChallenge(false);
+            setIsQueueing(false);
             setJoiningCode(null);
             setStatusMessage(null);
             setHostedCode(null);
@@ -140,6 +148,7 @@ export function useRoseRoom() {
             setError(data.message || 'Operation failed');
             setIsCreatingChallenge(false);
             setIsJoiningChallenge(false);
+            setIsQueueing(false);
             setJoiningCode(null);
             setStatusMessage(null);
             setPendingMove(false);
@@ -168,6 +177,7 @@ export function useRoseRoom() {
       wsRef.current = null;
       setIsCreatingChallenge(false);
       setIsJoiningChallenge(false);
+      setIsQueueing(false);
       setJoiningCode(null);
       if (isMounted) {
         reconnectTimeoutRef.current = setTimeout(connect, 3000);
@@ -177,6 +187,7 @@ export function useRoseRoom() {
     ws.onerror = () => {
       setIsCreatingChallenge(false);
       setIsJoiningChallenge(false);
+      setIsQueueing(false);
       setJoiningCode(null);
     };
   }, [token, user?.id]);
@@ -215,6 +226,32 @@ export function useRoseRoom() {
       token,
     });
   }, [send, user, token]);
+
+  const joinQueue = useCallback((role: RoseRole) => {
+    setError(null);
+    setStatusMessage('Searching for Rose Partner in queue...');
+    if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
+      setError('Connecting to game server...');
+      return;
+    }
+    setIsQueueing(true);
+    send({
+      type: 'rose:join_queue',
+      role,
+      userId: user?.id,
+      displayName: user?.displayName,
+      avatarId: user?.avatarId,
+      token,
+    });
+  }, [send, user, token]);
+
+  const cancelQueue = useCallback(() => {
+    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+      send({ type: 'rose:cancel_queue' });
+    }
+    setIsQueueing(false);
+    setStatusMessage(null);
+  }, [send]);
 
   const joinRoom = useCallback((code: string) => {
     const cleanCode = code.trim().toUpperCase();
@@ -256,6 +293,7 @@ export function useRoseRoom() {
     }
     setIsCreatingChallenge(false);
     setIsJoiningChallenge(false);
+    setIsQueueing(false);
     setJoiningCode(null);
     setIsWaitingForPartner(false);
     setStatusMessage(null);
@@ -322,6 +360,7 @@ export function useRoseRoom() {
     setIsWaitingForPartner(false);
     setIsCreatingChallenge(false);
     setIsJoiningChallenge(false);
+    setIsQueueing(false);
     setJoiningCode(null);
     setStatusMessage(null);
     setError(null);
@@ -338,6 +377,7 @@ export function useRoseRoom() {
     isWaitingForPartner,
     isCreatingChallenge,
     isJoiningChallenge,
+    isQueueing,
     joiningCode,
     statusMessage,
     error,
@@ -347,6 +387,8 @@ export function useRoseRoom() {
     chatMessages,
     setChatMessages,
     createRoom,
+    joinQueue,
+    cancelQueue,
     joinRoom,
     cancelRoom,
     sendMove,

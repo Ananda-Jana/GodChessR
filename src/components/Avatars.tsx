@@ -10,6 +10,84 @@ export interface AvatarOption {
 
 export const AVATAR_OPTIONS: AvatarOption[] = [
   {
+    id: 'avatar_oni_cyber',
+    name: 'Cyber Hannya',
+    color: 'from-amber-500 to-rose-700',
+    image: '/assets/aistudio/image_97317ea2.png',
+    svg: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="w-full h-full">
+        <path d="M12 2L15 5C17 8 17 12 15 15H9C7 12 7 8 9 5L12 2Z" fill="currentColor" fillOpacity="0.2" strokeLinecap="round" strokeLinejoin="round"/>
+        <path d="M12 7V11M10 9H14" strokeLinecap="round"/>
+        <path d="M6 19H18V21H6V19Z" fill="currentColor"/>
+      </svg>
+    ),
+  },
+  {
+    id: 'avatar_oni_flame',
+    name: 'Flame Skull',
+    color: 'from-purple-600 to-yellow-500',
+    image: '/assets/aistudio/image_6328ad3f.png',
+    svg: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="w-full h-full">
+        <path d="M12 2L15 5C17 8 17 12 15 15H9C7 12 7 8 9 5L12 2Z" fill="currentColor" fillOpacity="0.2" strokeLinecap="round" strokeLinejoin="round"/>
+        <path d="M12 7V11M10 9H14" strokeLinecap="round"/>
+        <path d="M6 19H18V21H6V19Z" fill="currentColor"/>
+      </svg>
+    ),
+  },
+  {
+    id: 'avatar_oni_buddha',
+    name: 'Buddha Split',
+    color: 'from-cyan-500 to-rose-600',
+    image: '/assets/aistudio/image_6715c510.png',
+    svg: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="w-full h-full">
+        <path d="M12 2L15 5C17 8 17 12 15 15H9C7 12 7 8 9 5L12 2Z" fill="currentColor" fillOpacity="0.2" strokeLinecap="round" strokeLinejoin="round"/>
+        <path d="M12 7V11M10 9H14" strokeLinecap="round"/>
+        <path d="M6 19H18V21H6V19Z" fill="currentColor"/>
+      </svg>
+    ),
+  },
+  {
+    id: 'avatar_oni_tengu',
+    name: 'Tengu Flame',
+    color: 'from-red-600 to-amber-600',
+    image: '/assets/aistudio/image_60f34245.png',
+    svg: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="w-full h-full">
+        <path d="M12 2L15 5C17 8 17 12 15 15H9C7 12 7 8 9 5L12 2Z" fill="currentColor" fillOpacity="0.2" strokeLinecap="round" strokeLinejoin="round"/>
+        <path d="M12 7V11M10 9H14" strokeLinecap="round"/>
+        <path d="M6 19H18V21H6V19Z" fill="currentColor"/>
+      </svg>
+    ),
+  },
+  {
+    id: 'avatar_oni_tiger',
+    name: 'Floral Tiger',
+    color: 'from-blue-600 to-amber-500',
+    image: '/assets/aistudio/image_746959ec.png',
+    svg: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="w-full h-full">
+        <path d="M12 2L15 5C17 8 17 12 15 15H9C7 12 7 8 9 5L12 2Z" fill="currentColor" fillOpacity="0.2" strokeLinecap="round" strokeLinejoin="round"/>
+        <path d="M12 7V11M10 9H14" strokeLinecap="round"/>
+        <path d="M6 19H18V21H6V19Z" fill="currentColor"/>
+      </svg>
+    ),
+  },
+  {
+    id: 'avatar_oni_tribal',
+    name: 'Tribal Demon',
+    color: 'from-purple-800 to-red-600',
+    image: '/assets/aistudio/image_e0bfff75.png',
+    svg: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="w-full h-full">
+        <path d="M12 2L15 5C17 8 17 12 15 15H9C7 12 7 8 9 5L12 2Z" fill="currentColor" fillOpacity="0.2" strokeLinecap="round" strokeLinejoin="round"/>
+        <path d="M12 7V11M10 9H14" strokeLinecap="round"/>
+        <path d="M6 19H18V21H6V19Z" fill="currentColor"/>
+      </svg>
+    ),
+  },
+  {
     id: 'avatar_prince',
     name: 'Gatoru Luchha',
     color: 'from-amber-500 to-amber-700',
@@ -91,14 +169,24 @@ export const AvatarDisplay: React.FC<{
   avatarId: string;
   size?: 'sm' | 'md' | 'lg' | 'xl';
   className?: string;
+  isGuest?: boolean;
 }> = ({
   avatarId,
   size = 'md',
   className = '',
+  isGuest = false,
 }) => {
   const isDirectImage = Boolean(avatarId && (avatarId.startsWith('/') || avatarId.startsWith('http') || avatarId.endsWith('.png') || avatarId.endsWith('.jpg')));
-  const avatar = AVATAR_OPTIONS.find((a) => a.id === avatarId) || AVATAR_OPTIONS[0];
-  const imageSrc = isDirectImage ? avatarId : (avatar?.image || '/assets/aistudio/gatoru_luchha_avatar.jpg');
+  const avatar = AVATAR_OPTIONS.find((a) => a.id === avatarId);
+
+  let imageSrc = '/assets/aistudio/image_97317ea2.png';
+  if (isDirectImage) {
+    imageSrc = avatarId;
+  } else if (avatar?.image) {
+    imageSrc = avatar.image;
+  } else if (!isGuest && avatarId === 'avatar_prince') {
+    imageSrc = '/assets/aistudio/gatoru_luchha_avatar.jpg';
+  }
 
   const sizeClasses = {
     sm: 'w-7 h-7 p-0.5',
@@ -110,13 +198,13 @@ export const AvatarDisplay: React.FC<{
   if (imageSrc) {
     return (
       <div
-        className={`${sizeClasses} rounded-xl overflow-hidden bg-zinc-900 border border-white/20 shadow-sm flex items-center justify-center shrink-0 ${className}`}
+        className={`${sizeClasses} overflow-hidden bg-zinc-900 border border-white/20 shadow-sm flex items-center justify-center shrink-0 ${className}`}
         title={avatar?.name || 'Player Avatar'}
       >
         <img
           src={imageSrc}
           alt={avatar?.name || 'Avatar'}
-          className="w-full h-full object-cover rounded-lg"
+          className="w-full h-full object-cover rounded-inherit"
           onError={(e) => {
             // fallback if needed
             (e.currentTarget as HTMLElement).style.display = 'none';

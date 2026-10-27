@@ -655,5 +655,30 @@ html.dark .chess-piece-shadow::after {
   animation: flameWaveLoss 3s infinite ease-in-out;
 }
 
+/* ==================== MOBILE DASHBOARD PLAY BUTTON FIERY GLASS STYLING ==================== */
+html body nav button.play-glass-button,
+html body button.play-glass-button,
+button.play-glass-button,
+.play-glass-button {
+  border-radius: 20px !important;
+  -webkit-border-radius: 20px !important;
+  -moz-border-radius: 20px !important;
+  -webkit-mask-image: -webkit-radial-gradient(white, black);
+  mask-image: radial-gradient(white, black);
+  overflow: hidden !important;
+}
+
+html body nav button.play-glass-button span.play-glass-molten,
+.play-glass-molten,
+html body nav button.play-glass-button span.play-glass-corner-bloom,
+.play-glass-corner-bloom,
+html body nav button.play-glass-button span.play-glass-gleam,
+.play-glass-gleam {
+  border-radius: 20px !important;
+  -webkit-border-radius: 20px !important;
+  -moz-border-radius: 20px !important;
+}
+
+
 
 

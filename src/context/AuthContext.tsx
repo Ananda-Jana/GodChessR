@@ -10,7 +10,7 @@ interface AuthContextType {
   register: (username: string, displayName: string, password: string, avatarId: string) => Promise<boolean>;
   loginGuest: () => Promise<boolean>;
   logout: () => void;
-  updateProfile: (displayName: string, avatarId: string) => Promise<boolean>;
+  updateProfile: (displayName: string, avatarId: string, bio?: string) => Promise<boolean>;
   clearError: () => void;
 }
 
@@ -120,7 +120,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUser(null);
   };
 
-  const updateProfile = async (displayName: string, avatarId: string): Promise<boolean> => {
+  const updateProfile = async (displayName: string, avatarId: string, bio?: string): Promise<boolean> => {
+    if (!user) return false;
+    if (user.id?.startsWith('usr_guest') || user.username?.toLowerCase().includes('mecharuri')) {
+      const updated = {
+        ...user,
+        displayName: displayName.trim() || user.displayName,
+        avatarId: avatarId || user.avatarId,
+        bio: bio !== undefined ? bio.trim() : user.bio,
+      };
+      setUser(updated);
+      try {
+        localStorage.setItem(`dice_guest_profile_${user.id}`, JSON.stringify(updated));
+      } catch {}
+      return true;
+    }
     if (!token) return false;
     try {
       const res = await fetch('/api/auth/profile', {
@@ -129,7 +143,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ displayName, avatarId }),
+        body: JSON.stringify({ displayName, avatarId, bio }),
       });
       if (res.ok) {
         const data = await res.json();
