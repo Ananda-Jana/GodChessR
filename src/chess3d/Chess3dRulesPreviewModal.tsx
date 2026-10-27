@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Bot, Users, Swords, Play, Shield, Sparkles, Clock, Crown, ChevronRight } from 'lucide-react';
+import { X, Bot, Users, Swords, Play, Shield, Sparkles, Clock, Crown, ChevronRight, ArrowLeft } from 'lucide-react';
 import { ChessBoard3D } from './3dchessboard';
 import { createInitialPieces } from './chess3dEngine';
 import { PUNISHER_BOTS, type PunisherBotId } from './chess3dBot';
@@ -82,7 +82,16 @@ export const Chess3dRulesPreviewModal: React.FC<Chess3dRulesPreviewModalProps> =
       >
         {/* Modal Header */}
         <div className="flex items-center justify-between px-4 sm:px-5 py-3.5 sm:py-4 border-b border-[#29212F] bg-[#0c0d10] shrink-0">
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-2.5 sm:gap-3.5">
+            <button
+              type="button"
+              onClick={onClose}
+              className="min-w-[40px] min-h-[40px] px-2.5 py-1.5 bg-neutral-900 hover:bg-neutral-800 border-2 border-white text-white flex items-center justify-center rounded-lg gap-1.5 shadow-[2px_2px_0px_#fff] text-xs font-bold uppercase cursor-pointer"
+              aria-label="Back"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span className="hidden sm:inline">Back</span>
+            </button>
             <div className="w-8 h-8 rounded-lg bg-blue-600/20 border border-blue-500/40 flex items-center justify-center text-blue-400 shrink-0">
               <Crown className="w-4.5 h-4.5" />
             </div>
@@ -101,10 +110,10 @@ export const Chess3dRulesPreviewModal: React.FC<Chess3dRulesPreviewModalProps> =
           <button
             type="button"
             onClick={onClose}
-            className="w-11 h-11 lg:w-8 lg:h-8 rounded-lg bg-neutral-900 hover:bg-neutral-800 border border-[#29212F] text-neutral-400 hover:text-white flex items-center justify-center cursor-pointer transition-colors shrink-0"
+            className="min-w-[40px] min-h-[40px] p-2 bg-red-600 hover:bg-red-700 active:translate-x-0.5 active:translate-y-0.5 border-2 border-black text-white flex items-center justify-center shadow-[2px_2px_0px_#000] rounded-lg cursor-pointer shrink-0"
             aria-label="Close dialog"
           >
-            <X className="w-5 h-5 lg:w-4 lg:h-4" />
+            <X className="w-4 h-4 text-white stroke-[2.5]" />
           </button>
         </div>
 

@@ -12,6 +12,7 @@ import {
   Trophy,
   Award,
   Crosshair,
+  ArrowLeft,
 } from 'lucide-react';
 import { ModeArtPanel } from './ModeArtPanel';
 import {
@@ -202,7 +203,16 @@ export const HashiraDojoModal: React.FC<HashiraDojoModalProps> = ({
         <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
           {/* Header */}
           <div className="px-4 md:px-6 py-3.5 md:py-4 border-b-3 border-black dark:border-white bg-[#0e1015] flex items-center justify-between shrink-0">
-            <div className="flex items-center gap-2.5">
+            <div className="flex items-center gap-2.5 sm:gap-3.5">
+              <button
+                type="button"
+                onClick={onClose}
+                className="min-w-[40px] min-h-[40px] px-2.5 py-1.5 bg-neutral-900 hover:bg-neutral-800 border-2 border-white text-white flex items-center justify-center rounded-lg gap-1.5 shadow-[2px_2px_0px_#fff] text-xs font-bold uppercase cursor-pointer"
+                aria-label="Back"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                <span className="hidden sm:inline">Back</span>
+              </button>
               <div className="w-8 h-8 md:w-9 md:h-9 bg-amber-400 text-black border-2 border-black flex items-center justify-center shadow-[2px_2px_0px_#000] shrink-0">
                 <Flame className="w-4 h-4 md:w-5 md:h-5 fill-black" />
               </div>
@@ -224,11 +234,11 @@ export const HashiraDojoModal: React.FC<HashiraDojoModalProps> = ({
             <button
               type="button"
               onClick={onClose}
-              className="min-w-[44px] min-h-[44px] p-2 bg-neutral-900 hover:bg-neutral-800 text-white border-2 border-white flex items-center justify-center cursor-pointer shrink-0 active:translate-x-0.5 active:translate-y-0.5 transition-transform shadow-[2px_2px_0px_#fff]"
+              className="min-w-[40px] min-h-[40px] p-2 bg-red-600 hover:bg-red-700 active:translate-x-0.5 active:translate-y-0.5 border-2 border-black text-white flex items-center justify-center shadow-[2px_2px_0px_#000] rounded-lg cursor-pointer shrink-0"
               aria-label="Close Hashira Dojo Modal"
               title="Close"
             >
-              <X className="w-5 h-5 text-white" />
+              <X className="w-4 h-4 text-white stroke-[2.5]" />
             </button>
           </div>
 

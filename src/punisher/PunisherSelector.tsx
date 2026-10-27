@@ -11,7 +11,7 @@ import {
 } from './ChessBotFaces_with_Gestures';
 import { BANGLA_BOT_ENTRY, resolveBotFace } from './BanglaBotFaces';
 import { PUNISHER_BOTS, PunisherBotId } from './punisherBot';
-import { X, Sword, Target, Shield, Zap, Cpu, Flame } from 'lucide-react';
+import { X, Sword, Target, Shield, Zap, Cpu, Flame, ArrowLeft } from 'lucide-react';
 import { ModeArtPanel } from '../components/ModeArtPanel';
 
 interface PunisherSelectorProps {
@@ -86,17 +86,28 @@ export const PunisherSelector: React.FC<PunisherSelectorProps> = ({ onSelect, on
     >
       {/* Sticky Header */}
       <div className="h-16 px-4 md:px-6 flex items-center justify-between border-b-4 border-white bg-black shrink-0 z-20">
-        <h2 className="text-lg md:text-2xl font-black italic tracking-tighter text-white flex items-center gap-2.5">
-          <Cpu className="w-6 h-6 md:w-8 md:h-8 text-[#2727F5]" />
-          PUNISHER BOT SELECTOR
-        </h2>
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={onClose}
+            className="min-w-[40px] min-h-[40px] px-2.5 py-1.5 bg-neutral-900 hover:bg-neutral-800 border-2 border-white text-white flex items-center justify-center rounded-lg gap-1.5 shadow-[2px_2px_0px_#fff] text-xs font-bold uppercase cursor-pointer"
+            aria-label="Back"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span className="hidden sm:inline">Back</span>
+          </button>
+          <h2 className="text-base md:text-2xl font-black italic tracking-tighter text-white flex items-center gap-2.5">
+            <Cpu className="w-5 h-5 md:w-8 md:h-8 text-[#2727F5]" />
+            PUNISHER BOT SELECTOR
+          </h2>
+        </div>
         <button 
           type="button"
           onClick={onClose}
-          className="min-w-[44px] min-h-[44px] p-2 hover:bg-white/10 transition-colors border-2 border-white flex items-center justify-center cursor-pointer shadow-[2px_2px_0px_#fff]"
+          className="min-w-[40px] min-h-[40px] p-2 bg-red-600 hover:bg-red-700 active:translate-x-0.5 active:translate-y-0.5 border-2 border-black text-white flex items-center justify-center shadow-[2px_2px_0px_#000] rounded-lg cursor-pointer"
           aria-label="Close selector"
         >
-          <X className="w-5 h-5 text-white" />
+          <X className="w-4 h-4 text-white stroke-[2.5]" />
         </button>
       </div>
 

@@ -3,7 +3,7 @@ import { SecretPlayerConfig } from '../types';
 import { SECRET_PLAYERS } from '../secretPlayersData';
 import { SecretPlayerCard } from './SecretPlayerCard';
 import { PasscodeGateModal } from './PasscodeGateModal';
-import { Lock, Sparkles, ShieldCheck, X } from 'lucide-react';
+import { Lock, Sparkles, ShieldCheck, X, ArrowLeft } from 'lucide-react';
 import { ModeArtPanel } from '../../components/ModeArtPanel';
 
 interface SecretArenaModalProps {
@@ -61,8 +61,17 @@ export const SecretArenaModal: React.FC<SecretArenaModalProps> = ({
 
         <div className="flex-1 flex flex-col min-w-0 p-3 sm:p-6 overflow-y-auto overscroll-contain">
         {/* Header */}
-        <div className="flex items-start justify-between border-b-2 sm:border-b-3 border-slate-700 pb-2.5 sm:pb-4 mb-3 sm:mb-6 shrink-0">
+        <div className="flex items-center justify-between border-b-2 sm:border-b-3 border-slate-700 pb-2.5 sm:pb-4 mb-3 sm:mb-6 shrink-0">
           <div className="flex items-center gap-2.5 sm:gap-3.5">
+            <button
+              type="button"
+              onClick={onClose}
+              className="min-w-[40px] min-h-[40px] px-2.5 py-1.5 bg-neutral-900 hover:bg-neutral-800 border-2 border-white text-white flex items-center justify-center rounded-lg gap-1.5 shadow-[2px_2px_0px_#fff] text-xs font-bold uppercase cursor-pointer"
+              aria-label="Back"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span className="hidden sm:inline">Back</span>
+            </button>
             <div className="w-9 h-9 sm:w-12 sm:h-12 bg-gradient-to-br from-slate-200 via-neutral-400 to-zinc-900 border-2 border-white flex items-center justify-center text-black font-black shadow-[2px_2px_0px_#fff] sm:shadow-[3px_3px_0px_#fff] shrink-0">
               <Lock className="w-4 h-4 sm:w-6 sm:h-6 text-black" />
             </div>
@@ -84,11 +93,11 @@ export const SecretArenaModal: React.FC<SecretArenaModalProps> = ({
 
           <button
             onClick={onClose}
-            className="min-w-[44px] min-h-[44px] p-2 bg-neutral-900 hover:bg-neutral-800 text-white border-2 border-white flex items-center justify-center cursor-pointer shrink-0 active:translate-x-0.5 active:translate-y-0.5"
+            className="min-w-[40px] min-h-[40px] p-2 bg-red-600 hover:bg-red-700 active:translate-x-0.5 active:translate-y-0.5 border-2 border-black text-white flex items-center justify-center shadow-[2px_2px_0px_#000] rounded-lg cursor-pointer shrink-0"
             title="Close Secret Arena"
             aria-label="Close Secret Arena"
           >
-            <X className="w-5 h-5" />
+            <X className="w-4 h-4 text-white stroke-[2.5]" />
           </button>
         </div>
 

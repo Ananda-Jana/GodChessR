@@ -172,6 +172,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
   const [isMobileNavDropdownOpen, setIsMobileNavDropdownOpen] = useState(false);
   const [isHighlightsExpanded, setIsHighlightsExpanded] = useState(false);
   const [activeBottomTab, setActiveBottomTab] = useState<'play' | 'matches' | 'players' | null>(null);
+  const [isGameModeEntered, setIsGameModeEntered] = useState(false);
+  const [isNavExpanded, setIsNavExpanded] = useState(false);
 
   const profilePillRef = useRef<HTMLButtonElement | null>(null);
   const sheetCloseRef = useRef<HTMLButtonElement | null>(null);
@@ -2684,25 +2686,54 @@ export const Dashboard: React.FC<DashboardProps> = ({
       </main>
 
       {/* Fixed Bottom Tab Bar (Mobile only, md:hidden) */}
-      <nav
-        aria-label="Mobile Navigation"
-        className="md:hidden fixed bottom-0 left-0 right-0 z-40 overflow-visible bg-zinc-950/95 supports-[backdrop-filter]:bg-zinc-950/80 supports-[backdrop-filter]:backdrop-blur-xl border-t border-white/10 text-white pb-[env(safe-area-inset-bottom)]"
-      >
-        <div className="grid grid-cols-[1fr_1fr_auto_1fr_1fr] h-16 max-w-md mx-auto items-center px-1 overflow-visible">
-          {/* Tab 1: Modes */}
-          <button
-            type="button"
-            onClick={() => scrollToSection('modes', 'play')}
-            aria-label="Jump to Game Modes"
-            className={`min-h-[48px] w-full flex flex-col items-center justify-center gap-0.5 transition-colors cursor-pointer relative box-border ${
-              activeBottomTab === 'play'
-                ? 'border-t-[3px] border-amber-400 font-bold text-amber-400'
-                : 'border-t-[3px] border-transparent font-semibold text-zinc-100 hover:text-white'
-            }`}
-          >
-            <LayoutGrid className="w-5 h-5" />
-            <span className="text-[11px] uppercase tracking-tight">Modes</span>
-          </button>
+      {isGameModeEntered && !isNavExpanded ? (
+        <button
+          type="button"
+          onClick={() => setIsNavExpanded(true)}
+          aria-label="Expand Bottom Navigation"
+          className="md:hidden fixed bottom-4 left-4 z-40 w-11 h-11 bg-black border-2 border-white rounded-lg shadow-[3px_3px_0px_#fff] flex items-center justify-center text-white cursor-pointer active:translate-x-0.5 active:translate-y-0.5"
+        >
+          <Play className="w-5 h-5 text-amber-400 fill-amber-400" />
+        </button>
+      ) : (
+        <nav
+          aria-label="Mobile Navigation"
+          className="md:hidden fixed bottom-0 left-0 right-0 z-40 overflow-visible bg-zinc-950/95 supports-[backdrop-filter]:bg-zinc-950/80 supports-[backdrop-filter]:backdrop-blur-xl border-t border-white/10 text-white pb-[env(safe-area-inset-bottom)] relative"
+        >
+          {isGameModeEntered && isNavExpanded && (
+            <div className="absolute -top-10 right-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsNavExpanded(false);
+                  setIsMobileNavDropdownOpen(false);
+                }}
+                className="px-2.5 py-1 bg-black border-2 border-white text-white text-[10px] font-black uppercase rounded shadow-[2px_2px_0px_#fff] flex items-center gap-1 cursor-pointer"
+              >
+                <span>Collapse</span>
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          )}
+          <div className="grid grid-cols-[1fr_1fr_auto_1fr_1fr] h-16 max-w-md mx-auto items-center px-1 overflow-visible">
+            {/* Tab 1: Modes */}
+            <button
+              type="button"
+              onClick={() => {
+                scrollToSection('modes', 'play');
+                setIsGameModeEntered(false);
+                setIsNavExpanded(false);
+              }}
+              aria-label="Jump to Game Modes"
+              className={`min-h-[48px] w-full flex flex-col items-center justify-center gap-0.5 transition-colors cursor-pointer relative box-border ${
+                activeBottomTab === 'play'
+                  ? 'border-t-[3px] border-amber-400 font-bold text-amber-400'
+                  : 'border-t-[3px] border-transparent font-semibold text-zinc-100 hover:text-white'
+              }`}
+            >
+              <LayoutGrid className="w-5 h-5" />
+              <span className="text-[11px] uppercase tracking-tight">Modes</span>
+            </button>
 
           {/* Tab 2: Matches */}
           <button
@@ -2730,7 +2761,13 @@ export const Dashboard: React.FC<DashboardProps> = ({
           <div className={`play-glass-wrapper px-1 ${isMobileNavDropdownOpen ? 'play-glass-wrapper-active' : ''}`}>
             <button
               type="button"
-              onClick={() => setIsMobileNavDropdownOpen((prev) => !prev)}
+              onClick={() => {
+                setIsMobileNavDropdownOpen((prev) => {
+                  const next = !prev;
+                  if (next) setIsGameModeEntered(true);
+                  return next;
+                });
+              }}
               aria-label="Toggle Quick Access Game Modes Menu"
               aria-expanded={isMobileNavDropdownOpen}
               className={`play-glass-button ${isMobileNavDropdownOpen ? 'play-glass-active' : ''}`}
@@ -2788,6 +2825,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
           </button>
         </div>
       </nav>
+      )}
 
       {/* Mobile Profile Bottom Sheet Drawer (Mobile only, md:hidden) */}
       {isMobileProfileOpen && (

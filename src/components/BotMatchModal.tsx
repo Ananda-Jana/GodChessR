@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Bot, Sparkles, X, Swords, Sun, Moon, Palette } from 'lucide-react';
+import { Bot, Sparkles, X, Swords, Sun, Moon, Palette, ArrowLeft } from 'lucide-react';
 import { PieceColor, PieceTheme } from '../types/game';
 import { useTheme } from '../context/ThemeContext';
 import { ChessPiece } from './ChessPiece';
@@ -70,9 +70,18 @@ export const BotMatchModal: React.FC<BotMatchModalProps> = ({
 
         <div className="flex-1 flex flex-col min-w-0 h-full max-h-[94dvh] md:max-h-[90dvh] overflow-hidden">
         
-        {/* Sticky Top Header with Title and Close Button */}
+        {/* Sticky Top Header with Title, Back, and Close Button */}
         <div className="p-3 sm:px-4 sm:py-3 border-b-3 border-black dark:border-white flex items-center justify-between shrink-0 bg-black text-white z-10">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <button
+              type="button"
+              onClick={onClose}
+              className="min-w-[40px] min-h-[40px] px-2.5 py-1.5 bg-neutral-900 hover:bg-neutral-800 border-2 border-white text-white flex items-center justify-center rounded-lg gap-1.5 shadow-[2px_2px_0px_#fff] text-xs font-bold uppercase cursor-pointer"
+              aria-label="Back"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span className="hidden sm:inline">Back</span>
+            </button>
             <div className="w-8 h-8 border-2 border-white flex items-center justify-center font-black bg-amber-400 text-black">
               <Bot className="w-5 h-5" />
             </div>
@@ -89,10 +98,10 @@ export const BotMatchModal: React.FC<BotMatchModalProps> = ({
           </div>
           <button
             onClick={onClose}
-            className="w-11 h-11 flex items-center justify-center border-2 border-white hover:bg-white hover:text-black transition-colors cursor-pointer focus-visible:ring-4 focus-visible:ring-amber-400 outline-none"
+            className="min-w-[40px] min-h-[40px] p-2 bg-red-600 hover:bg-red-700 active:translate-x-0.5 active:translate-y-0.5 border-2 border-black text-white flex items-center justify-center shadow-[2px_2px_0px_#000] rounded-lg cursor-pointer"
             aria-label="Close"
           >
-            <X className="w-5 h-5" />
+            <X className="w-4 h-4 text-white stroke-[2.5]" />
           </button>
         </div>
 
