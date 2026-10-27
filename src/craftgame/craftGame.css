@@ -1,0 +1,37 @@
+/* Scoped CSS for Craft Your Own Game mode */
+
+.cg-board-wrapper {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
+@keyframes cgFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.cg-fade-in {
+  animation: cgFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes cgPulseTarget {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.9;
+  }
+  50% {
+    transform: scale(1.12);
+    opacity: 1;
+  }
+}
+
+.cg-pulse-target {
+  animation: cgPulseTarget 1.2s infinite ease-in-out;
+}

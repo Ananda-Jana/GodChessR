@@ -52,6 +52,7 @@ import { Chess3dEntryCard } from '../chess3d/Chess3dEntryCard';
 import { Chess3dRulesPreviewModal } from '../chess3d/Chess3dRulesPreviewModal';
 import type { PunisherBotId } from '../chess3d/chess3dBot';
 import type { Team as Team3D, TimeControl3D } from '../chess3d/types';
+import { CraftGameHub } from '../craftgame/CraftGameHub';
 
 interface DashboardProps {
   onExitPreGameViews?: () => void;
@@ -172,6 +173,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
   const [challengeModalTarget, setChallengeModalTarget] = useState<{ id: string; name: string } | null>(null);
   const [isWalkWithMastersOpen, setIsWalkWithMastersOpen] = useState(false);
   const [is3dPreviewModalOpen, setIs3dPreviewModalOpen] = useState(false);
+  const [isCraftGameHubOpen, setIsCraftGameHubOpen] = useState(false);
 
   // Mobile navigation & bottom sheet states
   const [isMobileProfileOpen, setIsMobileProfileOpen] = useState(false);
@@ -185,6 +187,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
     setIs3dPreviewModalOpen(false);
     setIsAllGameModesOpen(false);
     setIsStoreOpen(false);
+    setIsCraftGameHubOpen(false);
     setChallengeModalTarget(null);
     setIsWalkWithMastersOpen(false);
     setIsMobileNavDropdownOpen(false);
@@ -2278,34 +2281,34 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 </div>
               </div>
 
-              {/* Craft Theory Catalog Button Card (Solid White, Highlighted) */}
+              {/* Craft Your Own Game Entry Card */}
               <div className="order-8 lg:order-none bg-white text-black border-4 border-black dark:border-white p-4 sm:p-5 shadow-[6px_6px_0px_#000000] dark:shadow-[6px_6px_0px_#ffffff] flex flex-col sm:flex-row lg:flex-col sm:items-center lg:items-start justify-between gap-4 min-w-0">
                 <div className="flex items-center gap-3.5">
                   <div className="w-12 h-12 bg-amber-400 border-2 border-black flex items-center justify-center text-black shrink-0 shadow-[2px_2px_0px_#000]">
-                    <BookOpen className="w-7 h-7 text-black" />
+                    <Swords className="w-7 h-7 text-black" />
                   </div>
                   <div>
                     <div className="flex items-center gap-2 flex-wrap">
                       <h3 className="text-sm sm:text-base font-black uppercase text-black">
-                        Craft Theory & Piece Encyclopedia
+                        Craft Your Own Game
                       </h3>
                       <span className="text-[10px] px-1.5 py-0.5 bg-black text-amber-400 font-black uppercase">
-                        Guide
+                        5 MODES
                       </span>
                     </div>
                     <p className="text-xs font-bold text-neutral-700 mt-0.5">
-                      Explore rules, descriptions, and 9×9 movement preview grids for all standard chess pieces, the Prince, and crafted specials.
+                      Micro Chess (3×3), Speed Chess (4×4), Rank War (8×2), One Lane (8×1), and custom 8×8 officer laboratory!
                     </p>
                   </div>
                 </div>
 
                 <div className="flex flex-wrap items-center gap-3 shrink-0 relative z-10 lg:mt-auto">
                   <button
-                    onClick={onOpenCraftTheory}
-                    className="py-3 px-5 bg-white hover:bg-neutral-100 text-black font-black text-xs sm:text-sm uppercase tracking-wider border-3 border-black shadow-[3px_3px_0px_#000000] flex items-center justify-center gap-2 shrink-0 cursor-pointer active:translate-x-0.5 active:translate-y-0.5"
+                    onClick={() => setIsCraftGameHubOpen(true)}
+                    className="py-3 px-5 bg-amber-400 hover:bg-amber-300 text-black font-black text-xs sm:text-sm uppercase tracking-wider border-3 border-black shadow-[3px_3px_0px_#000000] flex items-center justify-center gap-2 shrink-0 cursor-pointer active:translate-x-0.5 active:translate-y-0.5"
                   >
-                    <BookOpen className="w-4 h-4 text-black" />
-                    Craft Theory
+                    <Swords className="w-4 h-4 text-black" />
+                    Craft Your Own Game
                   </button>
                 </div>
               </div>
@@ -3111,6 +3114,12 @@ export const Dashboard: React.FC<DashboardProps> = ({
           applyRatingBoost(-amt);
         }}
         onOpenSecretArena={() => setIsSecretArenaOpen(true)}
+      />
+
+      {/* Craft Your Own Game Hub Modal */}
+      <CraftGameHub
+        isOpen={isCraftGameHubOpen}
+        onClose={() => setIsCraftGameHubOpen(false)}
       />
     </div>
   );
