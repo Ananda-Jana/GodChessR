@@ -30,6 +30,7 @@ import {
   Zap,
   Box,
   Heart,
+  LayoutGrid,
 } from 'lucide-react';
 import { posToNotation } from '../game/engine';
 import { usePredictor } from '../predictor/PredictorContext';
@@ -281,7 +282,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
             onClick={() => setIsAboutOpen(true)}
             aria-label="About MugenChessX"
             title="About MugenChessX"
-            className="p-1 rounded-lg hover:bg-white/10 active:bg-white/15 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 shrink-0 cursor-pointer"
+            className="min-w-[44px] min-h-[44px] inline-flex items-center justify-center p-1 rounded-lg hover:bg-white/10 active:bg-white/15 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 shrink-0 cursor-pointer"
           >
             <OctoSkull size={26} className="text-white hover:text-amber-400 transition-colors shrink-0" />
           </button>
@@ -295,7 +296,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
             onClick={() => setIsWalkWithMastersOpen(true)}
             aria-label="Walk with Masters (Train with Thukuna & Gatoru)"
             title="Walk with Masters"
-            className="p-1.5 rounded-lg hover:bg-white/10 active:bg-white/15 text-white cursor-pointer transition-all active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 shrink-0 group relative"
+            className="min-w-[44px] min-h-[44px] inline-flex items-center justify-center p-1.5 rounded-lg hover:bg-white/10 active:bg-white/15 text-white cursor-pointer transition-all active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 shrink-0 group relative"
           >
             <Flame className="w-5 h-5 text-amber-400 group-hover:scale-110 transition-transform shrink-0" />
           </button>
@@ -306,7 +307,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
             onClick={onOpenRules}
             aria-label="Open rulebook"
             title="Rules"
-            className="p-1.5 rounded-lg hover:bg-white/10 active:bg-white/15 text-white cursor-pointer transition-all active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 shrink-0"
+            className="min-w-[44px] min-h-[44px] inline-flex items-center justify-center p-1.5 rounded-lg hover:bg-white/10 active:bg-white/15 text-white cursor-pointer transition-all active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 shrink-0"
           >
             <BookOpen className="w-5 h-5 text-amber-400 shrink-0" />
           </button>
@@ -317,7 +318,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
             onClick={() => setIsCullingOpen(true)}
             aria-label="Play Culling mode"
             title="Culling"
-            className="p-1.5 rounded-lg hover:bg-white/10 active:bg-white/15 text-white cursor-pointer transition-all active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 shrink-0"
+            className="min-w-[44px] min-h-[44px] inline-flex items-center justify-center p-1.5 rounded-lg hover:bg-white/10 active:bg-white/15 text-white cursor-pointer transition-all active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 shrink-0"
           >
             <GamepadSkull size={20} className="text-zinc-200 hover:text-white shrink-0" />
           </button>
@@ -328,10 +329,10 @@ export const Dashboard: React.FC<DashboardProps> = ({
             onClick={() => setIs3dPreviewModalOpen(true)}
             aria-label="3D Annihilatic Chess Arcade"
             title="3D Chess Arcade"
-            className="p-1.5 rounded-lg hover:bg-purple-950/50 active:bg-purple-900/60 text-purple-400 cursor-pointer transition-all active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400 shrink-0 relative group"
+            className="min-w-[44px] min-h-[44px] inline-flex items-center justify-center p-1.5 rounded-lg hover:bg-purple-950/50 active:bg-purple-900/60 text-purple-400 cursor-pointer transition-all active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400 shrink-0 relative group"
           >
             <Box className="w-5 h-5 text-purple-400 group-hover:scale-110 transition-transform shrink-0" />
-            <span className="absolute -bottom-0.5 -right-0.5 text-[7px] font-black font-mono px-0.5 rounded bg-purple-600 text-white leading-none py-0.5">
+            <span className="absolute -bottom-0.5 -right-0.5 text-[10px] font-black font-mono px-1 rounded bg-purple-600 text-white leading-none py-0.5">
               3D
             </span>
           </button>
@@ -343,14 +344,14 @@ export const Dashboard: React.FC<DashboardProps> = ({
             onClick={() => setIsMobileProfileOpen(true)}
             aria-label="Open profile and statistics"
             aria-expanded={isMobileProfileOpen}
-            className="w-9 h-9 p-0.5 rounded-full border-2 border-amber-400 hover:border-amber-300 active:scale-95 transition-all cursor-pointer shrink-0 bg-neutral-900 overflow-hidden flex items-center justify-center shadow-[0_0_8px_rgba(251,191,36,0.25)]"
+            className="min-w-[44px] min-h-[44px] inline-flex items-center justify-center p-0.5 rounded-full border-2 border-amber-400 hover:border-amber-300 active:scale-95 transition-all cursor-pointer shrink-0 bg-neutral-900 overflow-hidden shadow-[0_0_8px_rgba(251,191,36,0.25)]"
             style={{ borderRadius: '9999px', WebkitBorderRadius: '9999px' }}
           >
             <AvatarDisplay
               avatarId={user.avatarId}
               size="sm"
               isGuest={Boolean(user.id?.startsWith('usr_guest') || user.username?.toLowerCase().includes('mecharuri'))}
-              className="!w-full !h-full !p-0 !rounded-full"
+              className="!w-7 !h-7 !p-0 !rounded-full"
             />
           </button>
         </div>
@@ -388,7 +389,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
               <button
                 type="button"
                 onClick={() => setIsMobileNavDropdownOpen(false)}
-                className="text-zinc-400 hover:text-white p-1 rounded-lg hover:bg-white/10 active:scale-95 transition-all cursor-pointer"
+                className="text-zinc-400 hover:text-white min-w-[44px] min-h-[44px] inline-flex items-center justify-center rounded-lg hover:bg-white/10 active:scale-95 transition-all cursor-pointer"
                 aria-label="Close Modes Menu"
               >
                 <X className="w-4 h-4" />
@@ -400,6 +401,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
               {/* All Modes */}
               <button
                 type="button"
+                role="menuitem"
                 onClick={() => {
                   setIsMobileNavDropdownOpen(false);
                   setIsAllGameModesOpen(true);
@@ -410,14 +412,15 @@ export const Dashboard: React.FC<DashboardProps> = ({
                   <Play className="w-3.5 h-3.5 text-[#ff9a24] fill-[#ff9a24]" />
                 </div>
                 <div className="flex flex-col min-w-0">
-                  <span className="text-[11px] font-black uppercase text-[#fff8f0] group-hover:text-[#ffb94f] truncate">All Modes</span>
-                  <span className="text-[9px] text-zinc-400 truncate">Browse all</span>
+                  <span className="text-xs font-black uppercase text-[#fff8f0] group-hover:text-[#ffb94f] truncate">All Modes</span>
+                  <span className="text-[11px] text-zinc-300 truncate">Browse all</span>
                 </div>
               </button>
 
               {/* Active Matches */}
               <a
                 href="#matches"
+                role="menuitem"
                 onClick={() => setIsMobileNavDropdownOpen(false)}
                 className="play-dropup-item group"
               >
@@ -425,8 +428,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
                   <Swords className="w-3.5 h-3.5 text-emerald-400" />
                 </div>
                 <div className="flex flex-col min-w-0">
-                  <span className="text-[11px] font-black uppercase text-[#fff8f0] group-hover:text-emerald-300 truncate">Matches</span>
-                  <span className="text-[9px] text-zinc-400 truncate">Live games</span>
+                  <span className="text-xs font-black uppercase text-[#fff8f0] group-hover:text-emerald-300 truncate">Matches</span>
+                  <span className="text-[11px] text-zinc-300 truncate">Live games</span>
                 </div>
                 {ongoingMatches.length > 0 && (
                   <span className="ml-auto px-1.5 py-0.2 bg-emerald-500 text-black text-[9px] font-mono font-black rounded-full">
@@ -438,6 +441,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
               {/* Find Players */}
               <a
                 href="#players"
+                role="menuitem"
                 onClick={() => setIsMobileNavDropdownOpen(false)}
                 className="play-dropup-item group"
               >
@@ -445,14 +449,15 @@ export const Dashboard: React.FC<DashboardProps> = ({
                   <Users className="w-3.5 h-3.5 text-sky-400" />
                 </div>
                 <div className="flex flex-col min-w-0">
-                  <span className="text-[11px] font-black uppercase text-[#fff8f0] group-hover:text-sky-300 truncate">Players</span>
-                  <span className="text-[9px] text-zinc-400 truncate">Find opponents</span>
+                  <span className="text-xs font-black uppercase text-[#fff8f0] group-hover:text-sky-300 truncate">Players</span>
+                  <span className="text-[11px] text-zinc-300 truncate">Find opponents</span>
                 </div>
               </a>
 
               {/* Culling Game */}
               <button
                 type="button"
+                role="menuitem"
                 onClick={() => {
                   setIsMobileNavDropdownOpen(false);
                   setIsCullingOpen(true);
@@ -463,8 +468,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
                   <GamepadSkull size={16} className="text-[#ff9a24]" />
                 </div>
                 <div className="flex flex-col min-w-0">
-                  <span className="text-[11px] font-black uppercase text-[#fff8f0] group-hover:text-[#ffb94f] truncate">Culling</span>
-                  <span className="text-[9px] text-zinc-400 truncate">88-square arena</span>
+                  <span className="text-xs font-black uppercase text-[#fff8f0] group-hover:text-[#ffb94f] truncate">Culling</span>
+                  <span className="text-[11px] text-zinc-300 truncate">88-square arena</span>
                 </div>
               </button>
 
@@ -472,6 +477,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
               {onOpenRose && (
                 <button
                   type="button"
+                  role="menuitem"
                   onClick={() => {
                     setIsMobileNavDropdownOpen(false);
                     onOpenRose();
@@ -482,8 +488,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
                     <Heart className="w-3.5 h-3.5 text-rose-400 fill-rose-400" />
                   </div>
                   <div className="flex flex-col min-w-0">
-                    <span className="text-[11px] font-black uppercase text-[#fff8f0] group-hover:text-rose-300 truncate">Rose Paradise</span>
-                    <span className="text-[9px] text-zinc-400 truncate">Multiplayer</span>
+                    <span className="text-xs font-black uppercase text-[#fff8f0] group-hover:text-rose-300 truncate">Rose Paradise</span>
+                    <span className="text-[11px] text-zinc-300 truncate">Multiplayer</span>
                   </div>
                 </button>
               )}
@@ -491,6 +497,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
               {/* 3D Chess Arcade */}
               <button
                 type="button"
+                role="menuitem"
                 onClick={() => {
                   setIsMobileNavDropdownOpen(false);
                   setIs3dPreviewModalOpen(true);
@@ -501,14 +508,15 @@ export const Dashboard: React.FC<DashboardProps> = ({
                   <Box className="w-3.5 h-3.5 text-purple-400" />
                 </div>
                 <div className="flex flex-col min-w-0">
-                  <span className="text-[11px] font-black uppercase text-[#fff8f0] group-hover:text-purple-300 truncate">3D Arcade</span>
-                  <span className="text-[9px] text-zinc-400 truncate">Annihilatic board</span>
+                  <span className="text-xs font-black uppercase text-[#fff8f0] group-hover:text-purple-300 truncate">3D Arcade</span>
+                  <span className="text-[11px] text-zinc-300 truncate">Annihilatic board</span>
                 </div>
               </button>
 
               {/* Walk with Masters */}
               <button
                 type="button"
+                role="menuitem"
                 onClick={() => {
                   setIsMobileNavDropdownOpen(false);
                   setIsWalkWithMastersOpen(true);
@@ -519,14 +527,15 @@ export const Dashboard: React.FC<DashboardProps> = ({
                   <Flame className="w-3.5 h-3.5 text-orange-400" />
                 </div>
                 <div className="flex flex-col min-w-0">
-                  <span className="text-[11px] font-black uppercase text-[#fff8f0] group-hover:text-orange-300 truncate">Masters</span>
-                  <span className="text-[9px] text-zinc-400 truncate">Thukuna & Gatoru</span>
+                  <span className="text-xs font-black uppercase text-[#fff8f0] group-hover:text-orange-300 truncate">Masters</span>
+                  <span className="text-[11px] text-zinc-300 truncate">Thukuna & Gatoru</span>
                 </div>
               </button>
 
               {/* Rules & Guides */}
               <button
                 type="button"
+                role="menuitem"
                 onClick={() => {
                   setIsMobileNavDropdownOpen(false);
                   onOpenRules();
@@ -537,14 +546,15 @@ export const Dashboard: React.FC<DashboardProps> = ({
                   <BookOpen className="w-3.5 h-3.5 text-amber-400" />
                 </div>
                 <div className="flex flex-col min-w-0">
-                  <span className="text-[11px] font-black uppercase text-[#fff8f0] group-hover:text-zinc-200 truncate">Rules</span>
-                  <span className="text-[9px] text-zinc-400 truncate">Guides & book</span>
+                  <span className="text-xs font-black uppercase text-[#fff8f0] group-hover:text-zinc-200 truncate">Rules</span>
+                  <span className="text-[11px] text-zinc-300 truncate">Guides & book</span>
                 </div>
               </button>
 
               {/* Trophies & Chests */}
               <button
                 type="button"
+                role="menuitem"
                 onClick={() => {
                   setIsMobileNavDropdownOpen(false);
                   setIsTrophyRoomOpen(true);
@@ -555,8 +565,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
                   <Trophy className="w-3.5 h-3.5 text-amber-400" />
                 </div>
                 <div className="flex flex-col min-w-0">
-                  <span className="text-[11px] font-black uppercase text-[#fff8f0] group-hover:text-amber-300 truncate">Trophies & Chests</span>
-                  <span className="text-[9px] text-zinc-400 truncate">Trophy room & reward inventory</span>
+                  <span className="text-xs font-black uppercase text-[#fff8f0] group-hover:text-amber-300 truncate">Trophies & Chests</span>
+                  <span className="text-[11px] text-zinc-300 truncate">Trophy room & reward inventory</span>
                 </div>
                 {predictorState.earnedCards.length > 0 && (
                   <span className="ml-auto px-1.5 py-0.2 bg-amber-400 text-black text-[9px] font-mono font-black rounded-full">
@@ -578,6 +588,16 @@ export const Dashboard: React.FC<DashboardProps> = ({
           align-items: center;
           justify-content: center;
           flex-shrink: 0;
+          background: transparent;
+          overflow: visible;
+          filter: drop-shadow(0 4px 10px rgba(255, 76, 18, 0.28))
+                  drop-shadow(0 10px 22px rgba(255, 91, 20, 0.22));
+          animation: playWrapperBreath 3.2s ease-in-out infinite;
+        }
+
+        .play-glass-wrapper-active {
+          filter: drop-shadow(0 4px 12px rgba(255, 76, 18, 0.42))
+                  drop-shadow(0 12px 26px rgba(255, 91, 20, 0.34)) !important;
         }
 
         html body nav button.play-glass-button,
@@ -586,15 +606,16 @@ export const Dashboard: React.FC<DashboardProps> = ({
           position: relative;
           width: 52px;
           height: 52px;
-          border-radius: 20px !important;
-          -webkit-border-radius: 20px !important;
-          -webkit-mask-image: -webkit-radial-gradient(white, black);
-          mask-image: radial-gradient(white, black);
           box-sizing: border-box;
+          -webkit-appearance: none;
+          appearance: none;
           background: linear-gradient(180deg, #0A0808 0%, #100A09 45%, #1A0908 72%, #3B100B 100%);
+          background-clip: padding-box;
           border: 1px solid rgba(255, 226, 200, 0.18);
           isolation: isolate;
           overflow: hidden !important;
+          -webkit-clip-path: inset(0 round 20px);
+          clip-path: inset(0 round 20px);
           cursor: pointer;
           display: flex;
           align-items: center;
@@ -616,8 +637,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
         html body nav button.play-glass-button:focus-visible,
         button.play-glass-button:focus-visible {
-          outline: 2px solid #FF9A24;
-          outline-offset: 2px;
+          outline: none !important;
+          border-color: #FF9A24 !important;
         }
 
         html body nav button.play-glass-button.play-glass-active,
@@ -634,8 +655,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
         .play-glass-molten {
           position: absolute;
           inset: 0;
-          border-radius: 20px !important;
-          -webkit-border-radius: 20px !important;
           pointer-events: none;
           background: linear-gradient(180deg, transparent 0%, rgba(239,66,22,0.10) 55%, rgba(255,120,24,0.65) 86%, rgba(255,240,204,0.95) 100%);
           opacity: 0.95;
@@ -646,8 +665,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
         .play-glass-corner-bloom {
           position: absolute;
           inset: 0;
-          border-radius: 20px !important;
-          -webkit-border-radius: 20px !important;
           pointer-events: none;
           background: radial-gradient(circle at 8% 100%, rgba(239, 66, 22, 0.55) 0%, transparent 45%),
                       radial-gradient(circle at 92% 100%, rgba(239, 66, 22, 0.55) 0%, transparent 45%);
@@ -660,7 +677,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
           left: 0;
           right: 0;
           height: 24px;
-          border-radius: 50%;
           background: radial-gradient(ellipse 65% 100% at 50% 100%, rgba(255, 185, 79, 0.5) 0%, rgba(255, 120, 24, 0.6) 40%, rgba(239, 66, 22, 0.35) 75%, transparent 100%);
           filter: blur(4px);
           pointer-events: none;
@@ -671,8 +687,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
         .play-glass-rim {
           position: absolute;
           bottom: 0;
-          left: 8px;
-          right: 8px;
+          left: 14px;
+          right: 14px;
           height: 1px;
           background: linear-gradient(90deg, rgba(239,66,22,0.2) 0%, #FF9A24 25%, #FFF0CC 50%, #FF9A24 75%, rgba(239,66,22,0.2) 100%);
           box-shadow: 0 -1px 3px rgba(255, 240, 204, 0.8), 0 0 6px rgba(255, 120, 24, 0.9);
@@ -683,8 +699,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
         .play-glass-specular {
           position: absolute;
           top: 0;
-          left: 8px;
-          right: 8px;
+          left: 14px;
+          right: 14px;
           height: 1px;
           background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.28) 50%, transparent 100%);
           pointer-events: none;
@@ -695,11 +711,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
         .play-glass-gleam {
           position: absolute;
           inset: 0;
-          border-radius: 20px !important;
-          -webkit-border-radius: 20px !important;
-          pointer-events: none;
-          overflow: hidden;
-        }
           pointer-events: none;
           overflow: hidden;
         }
@@ -779,13 +790,23 @@ export const Dashboard: React.FC<DashboardProps> = ({
           }
         }
 
+        @keyframes playWrapperBreath {
+          0%, 100% {
+            filter: drop-shadow(0 4px 10px rgba(255, 76, 18, 0.24))
+                    drop-shadow(0 8px 18px rgba(255, 91, 20, 0.18));
+          }
+          50% {
+            filter: drop-shadow(0 5px 14px rgba(255, 76, 18, 0.36))
+                    drop-shadow(0 11px 24px rgba(255, 91, 20, 0.28));
+          }
+        }
+
         /* Fiery glass drop-up menu */
         .play-dropup-menu {
           background: rgba(10, 8, 8, 0.94);
           backdrop-filter: blur(18px) saturate(125%);
           -webkit-backdrop-filter: blur(18px) saturate(125%);
           border: 1px solid rgba(255, 226, 200, 0.16);
-          border-radius: 20px;
           box-shadow: 0 12px 32px rgba(0, 0, 0, 0.48),
                       0 5px 20px rgba(255, 76, 18, 0.12),
                       inset 0 1px 0 rgba(255, 255, 255, 0.10);
@@ -826,8 +847,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
         }
 
         .play-dropup-item {
+          min-height: 44px;
           padding: 0.55rem 0.65rem;
-          border-radius: 12px;
           background: rgba(255, 255, 255, 0.03);
           border: 1px solid rgba(255, 255, 255, 0.06);
           display: flex;
@@ -864,6 +885,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
         }
 
         @media (prefers-reduced-motion: reduce) {
+          .play-glass-wrapper,
           .play-glass-button {
             animation: none !important;
           }
@@ -1208,15 +1230,16 @@ export const Dashboard: React.FC<DashboardProps> = ({
       </header>
 
       {/* Main Content Area */}
-      <main className="relative z-10 flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 flex flex-col lg:grid lg:grid-cols-12 gap-6 pb-24 md:pb-6">
+      <main className="relative z-10 flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 flex flex-col lg:grid lg:grid-cols-12 gap-6 pb-[calc(4rem+env(safe-area-inset-bottom,0px)+1rem)] md:pb-6">
 
         {/* Latest Edition Banner (Mobile) */}
-        <div className="lg:hidden order-2 w-full aspect-[3/2] relative overflow-hidden border-2 border-black dark:border-white shadow-[4px_4px_0px_#000000] bg-black">
+        <div className="lg:hidden order-2 w-full aspect-[16/10] relative overflow-hidden border-2 border-black dark:border-white shadow-[4px_4px_0px_#000000] bg-black">
           {BANNER_IMAGES.map((src, idx) => (
             <img
               key={src}
               src={src}
-              alt="Featured Edition Banner"
+              alt={idx === bannerIndex ? "Featured game banner" : ""}
+              aria-hidden={idx !== bannerIndex ? true : undefined}
               className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-700 ease-in-out pointer-events-none ${
                 idx === bannerIndex ? 'opacity-100' : 'opacity-0'
               }`}
@@ -1231,7 +1254,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
             <button
               type="button"
               onClick={() => setIsAllGameModesOpen(true)}
-              className="w-full py-2 px-3 rounded-xl backdrop-blur-md bg-black/60 hover:bg-black/75 active:bg-black/85 border border-white/30 hover:border-amber-400 text-white font-black text-xs uppercase tracking-wider flex items-center justify-between shadow-[0_8px_20px_rgba(0,0,0,0.6)] cursor-pointer transition-all active:scale-95 group/btn focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400"
+              className="w-full min-h-[48px] py-2 px-3 rounded-xl backdrop-blur-md bg-black/60 hover:bg-black/75 active:bg-black/85 border border-white/30 hover:border-amber-400 text-white font-black text-xs uppercase tracking-wider flex items-center justify-between shadow-[0_8px_20px_rgba(0,0,0,0.6)] cursor-pointer transition-all active:scale-95 group/btn focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400"
               aria-label="Chess Play Now - View all game modes"
             >
               <div className="flex items-center gap-2">
@@ -1242,9 +1265,97 @@ export const Dashboard: React.FC<DashboardProps> = ({
                   Chess Play Now
                 </span>
               </div>
-              <span className="text-[9px] px-1.5 py-0.5 rounded bg-white/15 text-white/90 font-mono font-bold border border-white/20 uppercase">
+              <span className="text-xs px-1.5 py-0.5 rounded bg-white/15 text-white/90 font-mono font-bold border border-white/20 uppercase">
                 All Modes
               </span>
+            </button>
+          </div>
+        </div>
+
+        {/* Mobile Scrollable Mode Chip Row (lg:hidden, order-2, horizontal swipe chips) */}
+        <div className="lg:hidden order-2 w-full relative my-1">
+          <div className="mcx-chip-scroll flex items-center gap-2 overflow-x-auto py-1 px-0.5 no-scrollbar touch-pan-x">
+            <button
+              type="button"
+              onClick={() => onOpenBotModal()}
+              className="shrink-0 min-h-[40px] px-3 py-1.5 bg-zinc-900/90 hover:bg-zinc-800 active:bg-zinc-700 border border-amber-400/40 text-amber-300 font-bold text-xs uppercase tracking-wider flex items-center gap-1.5 cursor-pointer shadow-sm active:scale-95 transition-all"
+            >
+              <Bot className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+              <span>Bot Match</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => scrollToSection('modes', 'play')}
+              className="shrink-0 min-h-[40px] px-3 py-1.5 bg-zinc-900/90 hover:bg-zinc-800 active:bg-zinc-700 border border-white/15 text-zinc-100 font-bold text-xs uppercase tracking-wider flex items-center gap-1.5 cursor-pointer shadow-sm active:scale-95 transition-all"
+            >
+              <Swords className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+              <span>Classic</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => (onOpenPunisher ? onOpenPunisher() : scrollToSection('modes', 'play'))}
+              className="shrink-0 min-h-[40px] px-3 py-1.5 bg-zinc-900/90 hover:bg-zinc-800 active:bg-zinc-700 border border-red-500/40 text-red-300 font-bold text-xs uppercase tracking-wider flex items-center gap-1.5 cursor-pointer shadow-sm active:scale-95 transition-all"
+            >
+              <Flame className="w-3.5 h-3.5 text-red-400 shrink-0" />
+              <span>Punisher</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => onOpenHashiraTraining && onOpenHashiraTraining('thukuna')}
+              className="shrink-0 min-h-[40px] px-3 py-1.5 bg-zinc-900/90 hover:bg-zinc-800 active:bg-zinc-700 border border-orange-500/40 text-orange-300 font-bold text-xs uppercase tracking-wider flex items-center gap-1.5 cursor-pointer shadow-sm active:scale-95 transition-all"
+            >
+              <Crown className="w-3.5 h-3.5 text-orange-400 shrink-0" />
+              <span>Hashira</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setIsCullingOpen(true)}
+              className="shrink-0 min-h-[40px] px-3 py-1.5 bg-zinc-900/90 hover:bg-zinc-800 active:bg-zinc-700 border border-purple-500/40 text-purple-300 font-bold text-xs uppercase tracking-wider flex items-center gap-1.5 cursor-pointer shadow-sm active:scale-95 transition-all"
+            >
+              <GamepadSkull size={14} className="text-purple-400 shrink-0" />
+              <span>Culling</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setIs3dPreviewModalOpen(true)}
+              className="shrink-0 min-h-[40px] px-3 py-1.5 bg-zinc-900/90 hover:bg-zinc-800 active:bg-zinc-700 border border-purple-400/40 text-purple-300 font-bold text-xs uppercase tracking-wider flex items-center gap-1.5 cursor-pointer shadow-sm active:scale-95 transition-all"
+            >
+              <Box className="w-3.5 h-3.5 text-purple-400 shrink-0" />
+              <span>3D Arcade</span>
+            </button>
+            {onOpenRose && (
+              <button
+                type="button"
+                onClick={onOpenRose}
+                className="shrink-0 min-h-[40px] px-3 py-1.5 bg-zinc-900/90 hover:bg-zinc-800 active:bg-zinc-700 border border-rose-500/40 text-rose-300 font-bold text-xs uppercase tracking-wider flex items-center gap-1.5 cursor-pointer shadow-sm active:scale-95 transition-all"
+              >
+                <Heart className="w-3.5 h-3.5 text-rose-400 fill-rose-400 shrink-0" />
+                <span>Rose</span>
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => onOpenCraftTheory()}
+              className="shrink-0 min-h-[40px] px-3 py-1.5 bg-zinc-900/90 hover:bg-zinc-800 active:bg-zinc-700 border border-emerald-500/40 text-emerald-300 font-bold text-xs uppercase tracking-wider flex items-center gap-1.5 cursor-pointer shadow-sm active:scale-95 transition-all"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+              <span>Crafted</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => scrollToSection('modes', 'play')}
+              className="shrink-0 min-h-[40px] px-3 py-1.5 bg-zinc-900/90 hover:bg-zinc-800 active:bg-zinc-700 border border-cyan-500/40 text-cyan-300 font-bold text-xs uppercase tracking-wider flex items-center gap-1.5 cursor-pointer shadow-sm active:scale-95 transition-all"
+            >
+              <Lock className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+              <span>Secret</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setIsAllGameModesOpen(true)}
+              className="shrink-0 min-h-[40px] px-3 py-1.5 bg-amber-400 text-black font-black text-xs uppercase tracking-wider flex items-center gap-1.5 cursor-pointer shadow-sm active:scale-95 transition-all border border-amber-300"
+            >
+              <Play className="w-3.5 h-3.5 fill-black text-black shrink-0" />
+              <span>All Modes</span>
             </button>
           </div>
         </div>
@@ -1577,7 +1688,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 <AlertCircle className="w-4 h-4 shrink-0 text-white" />
                 <span>{matchError}</span>
               </div>
-              <button onClick={clearMatchError} className="p-1 hover:bg-black text-white cursor-pointer">
+              <button onClick={clearMatchError} aria-label="Dismiss error" className="p-1 hover:bg-black text-white cursor-pointer">
                 <X className="w-4 h-4" />
               </button>
             </div>
@@ -2447,20 +2558,22 @@ export const Dashboard: React.FC<DashboardProps> = ({
       {/* Fixed Bottom Tab Bar (Mobile only, md:hidden) */}
       <nav
         aria-label="Mobile Navigation"
-        className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-zinc-950/95 supports-[backdrop-filter]:bg-zinc-950/80 supports-[backdrop-filter]:backdrop-blur-xl border-t border-white/10 text-white pb-[env(safe-area-inset-bottom)]"
+        className="md:hidden fixed bottom-0 left-0 right-0 z-40 overflow-visible bg-zinc-950/95 supports-[backdrop-filter]:bg-zinc-950/80 supports-[backdrop-filter]:backdrop-blur-xl border-t border-white/10 text-white pb-[env(safe-area-inset-bottom)]"
       >
-        <div className="grid grid-cols-[1fr_1fr_auto_1fr_1fr] h-16 max-w-md mx-auto items-center px-1">
-          {/* Tab 1: Play */}
+        <div className="grid grid-cols-[1fr_1fr_auto_1fr_1fr] h-16 max-w-md mx-auto items-center px-1 overflow-visible">
+          {/* Tab 1: Modes */}
           <button
             type="button"
             onClick={() => scrollToSection('modes', 'play')}
-            aria-label="Jump to Play Game Modes"
-            className={`min-h-[44px] min-w-[44px] flex flex-col items-center justify-center gap-1 transition-colors cursor-pointer ${
-              activeBottomTab === 'play' ? 'text-amber-400 font-black' : 'text-neutral-400 hover:text-white'
+            aria-label="Jump to Game Modes"
+            className={`min-h-[48px] w-full flex flex-col items-center justify-center gap-0.5 transition-colors cursor-pointer relative box-border ${
+              activeBottomTab === 'play'
+                ? 'border-t-[3px] border-amber-400 font-bold text-amber-400'
+                : 'border-t-[3px] border-transparent font-semibold text-zinc-100 hover:text-white'
             }`}
           >
-            <Swords className="w-5 h-5" />
-            <span className="text-[11px] uppercase tracking-tight">Play</span>
+            <LayoutGrid className="w-5 h-5" />
+            <span className="text-[11px] uppercase tracking-tight">Modes</span>
           </button>
 
           {/* Tab 2: Matches */}
@@ -2468,14 +2581,16 @@ export const Dashboard: React.FC<DashboardProps> = ({
             type="button"
             onClick={() => scrollToSection('matches', 'matches')}
             aria-label="Jump to Active Matches"
-            className={`min-h-[44px] min-w-[44px] flex flex-col items-center justify-center gap-1 transition-colors cursor-pointer relative ${
-              activeBottomTab === 'matches' ? 'text-amber-400 font-black' : 'text-neutral-400 hover:text-white'
+            className={`min-h-[48px] w-full flex flex-col items-center justify-center gap-0.5 transition-colors cursor-pointer relative box-border ${
+              activeBottomTab === 'matches'
+                ? 'border-t-[3px] border-amber-400 font-bold text-amber-400'
+                : 'border-t-[3px] border-transparent font-semibold text-zinc-100 hover:text-white'
             }`}
           >
             <div className="relative">
-              <Play className="w-5 h-5" />
+              <Clock className="w-5 h-5" />
               {ongoingMatches.length > 0 && (
-                <span className="absolute -top-1.5 -right-2.5 px-1.5 py-0.2 bg-amber-400 text-black text-[9px] font-mono font-black rounded-full leading-tight">
+                <span className="absolute -top-1.5 -right-2.5 px-1.5 py-0.2 bg-amber-400 text-black text-[10px] font-mono font-black rounded-full leading-tight">
                   {ongoingMatches.length}
                 </span>
               )}
@@ -2484,20 +2599,19 @@ export const Dashboard: React.FC<DashboardProps> = ({
           </button>
 
           {/* Tab 3: PLAY Button (Fiery Molten Glass Keycap with text PLAY) */}
-          <div className="play-glass-wrapper px-1">
+          <div className={`play-glass-wrapper px-1 ${isMobileNavDropdownOpen ? 'play-glass-wrapper-active' : ''}`}>
             <button
               type="button"
               onClick={() => setIsMobileNavDropdownOpen((prev) => !prev)}
               aria-label="Toggle Quick Access Game Modes Menu"
               aria-expanded={isMobileNavDropdownOpen}
-              style={{ borderRadius: '20px', WebkitBorderRadius: '20px', overflow: 'hidden' }}
               className={`play-glass-button ${isMobileNavDropdownOpen ? 'play-glass-active' : ''}`}
             >
               {/* Layer 1: Lower molten-glass inner layer */}
-              <span className="play-glass-molten" style={{ borderRadius: '20px', WebkitBorderRadius: '20px' }} aria-hidden="true" />
+              <span className="play-glass-molten" aria-hidden="true" />
 
               {/* Layer 2: Corner bloom */}
-              <span className="play-glass-corner-bloom" style={{ borderRadius: '20px', WebkitBorderRadius: '20px' }} aria-hidden="true" />
+              <span className="play-glass-corner-bloom" aria-hidden="true" />
 
               {/* Layer 3: Moving molten light flow */}
               <span className="play-glass-flow" aria-hidden="true" />
@@ -2509,7 +2623,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
               <span className="play-glass-specular" aria-hidden="true" />
 
               {/* Layer 6: Diagonal glass gleam sweep */}
-              <span className="play-glass-gleam" style={{ borderRadius: '20px', WebkitBorderRadius: '20px' }} aria-hidden="true" />
+              <span className="play-glass-gleam" aria-hidden="true" />
 
               {/* Crisp PLAY Label */}
               <span className="play-glass-label">PLAY</span>
@@ -2521,7 +2635,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
             type="button"
             onClick={() => onOpenHashiraTraining && onOpenHashiraTraining('thukuna')}
             aria-label="Open Hashira Dojo"
-            className="min-h-[44px] min-w-[44px] flex flex-col items-center justify-center gap-1 text-neutral-400 hover:text-amber-400 transition-colors cursor-pointer"
+            className="min-h-[48px] w-full flex flex-col items-center justify-center gap-0.5 border-t-[3px] border-transparent font-semibold text-zinc-100 hover:text-white transition-colors cursor-pointer relative box-border"
           >
             <Flame className="w-5 h-5 text-amber-500" />
             <span className="text-[11px] uppercase tracking-tight">Hashira</span>
@@ -2532,12 +2646,12 @@ export const Dashboard: React.FC<DashboardProps> = ({
             type="button"
             onClick={() => setIsTrophyRoomOpen(true)}
             aria-label="Open Trophy Room"
-            className="min-h-[44px] min-w-[44px] flex flex-col items-center justify-center gap-1 text-neutral-400 hover:text-amber-400 transition-colors cursor-pointer relative"
+            className="min-h-[48px] w-full flex flex-col items-center justify-center gap-0.5 border-t-[3px] border-transparent font-semibold text-zinc-100 hover:text-white transition-colors cursor-pointer relative box-border"
           >
             <div className="relative">
               <Trophy className="w-5 h-5 text-amber-400" />
               {predictorState.earnedCards.length > 0 && (
-                <span className="absolute -top-1.5 -right-2.5 px-1 py-0.2 bg-amber-400 text-black text-[9px] font-mono font-black rounded-full leading-tight">
+                <span className="absolute -top-1.5 -right-2.5 px-1 py-0.2 bg-amber-400 text-black text-[10px] font-mono font-black rounded-full leading-tight">
                   {predictorState.earnedCards.length}
                 </span>
               )}

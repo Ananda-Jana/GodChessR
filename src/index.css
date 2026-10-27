@@ -1,3 +1,4 @@
+@layer play, properties, theme, base, components, utilities;
 @import "tailwindcss";
 
 :root {
@@ -37,7 +38,7 @@ html.dark {
 }
 
 @layer base {
-  * {
+  *:not(.play-glass-button):not(.play-glass-button *) {
     border-radius: 0px !important;
   }
 
@@ -56,6 +57,9 @@ html.dark {
 
   button, input, select, textarea {
     font-family: inherit;
+  }
+
+  button:not(.play-glass-button), input, select, textarea {
     border-radius: 0px !important;
   }
 }
@@ -656,29 +660,56 @@ html.dark .chess-piece-shadow::after {
 }
 
 /* ==================== MOBILE DASHBOARD PLAY BUTTON FIERY GLASS STYLING ==================== */
-html body nav button.play-glass-button,
-html body button.play-glass-button,
-button.play-glass-button,
+@layer play {
+  .play-glass-button {
+    border-radius: 20px !important;
+  }
+
+  .play-glass-molten,
+  .play-glass-corner-bloom,
+  .play-glass-gleam {
+    border-radius: 19px !important;
+  }
+
+  .play-glass-flow {
+    border-radius: 50% !important;
+  }
+
+  .play-glass-button::before,
+  .play-glass-button::after {
+    border-radius: inherit !important;
+  }
+
+  .play-dropup-menu {
+    border-radius: 20px !important;
+  }
+
+  .play-dropup-item {
+    border-radius: 12px !important;
+  }
+}
+
+.play-glass-wrapper {
+  background: transparent;
+  overflow: visible;
+  filter: drop-shadow(0 4px 10px rgba(255, 76, 18, 0.28))
+          drop-shadow(0 10px 22px rgba(255, 91, 20, 0.22));
+}
+
 .play-glass-button {
-  border-radius: 20px !important;
-  -webkit-border-radius: 20px !important;
-  -moz-border-radius: 20px !important;
-  -webkit-mask-image: -webkit-radial-gradient(white, black);
-  mask-image: radial-gradient(white, black);
-  overflow: hidden !important;
+  -webkit-appearance: none;
+  appearance: none;
+  background-clip: padding-box;
+  overflow: hidden;
+  -webkit-clip-path: inset(0 round 20px);
+  clip-path: inset(0 round 20px);
 }
 
-html body nav button.play-glass-button span.play-glass-molten,
-.play-glass-molten,
-html body nav button.play-glass-button span.play-glass-corner-bloom,
-.play-glass-corner-bloom,
-html body nav button.play-glass-button span.play-glass-gleam,
-.play-glass-gleam {
-  border-radius: 20px !important;
-  -webkit-border-radius: 20px !important;
-  -moz-border-radius: 20px !important;
+@layer play {
+  .mcx-chip-scroll {
+    scrollbar-width: none;
+  }
+  .mcx-chip-scroll::-webkit-scrollbar {
+    display: none;
+  }
 }
-
-
-
-
