@@ -298,7 +298,7 @@ export function PredictorProvider({ children }: { children: React.ReactNode }) {
   const applyRatingBoost = useCallback(
     (boostAmount: number, matchId?: string) => {
       try {
-        if (!boostAmount || boostAmount <= 0) return;
+        if (!boostAmount || boostAmount === 0) return;
         if (matchId) {
           if (appliedRatingMatchIdsRef.current.has(matchId)) return;
           appliedRatingMatchIdsRef.current.add(matchId);
@@ -306,7 +306,7 @@ export function PredictorProvider({ children }: { children: React.ReactNode }) {
 
         setState((prev) => {
           const oldRating = prev.currentRating;
-          const nextRating = Math.max(100, Math.min(3000, oldRating + boostAmount));
+          const nextRating = Math.max(50, Math.min(3000, oldRating + boostAmount));
           const delta = nextRating - oldRating;
           const newRecent = prev.recentResults || ['win'];
 
@@ -328,15 +328,15 @@ export function PredictorProvider({ children }: { children: React.ReactNode }) {
             } catch {}
           }
 
-          // Trigger Elo Streak Notification for Rating Boost
+          // Trigger Elo Streak Notification for Rating Adjustment (Boost or Deduction)
           setActiveEloNotification({
             id: `boost_${Date.now()}`,
             oldRating,
             newRating: nextRating,
             delta,
-            outcome: 'win',
-            modeLabel: 'Chest Reward',
-            winStreak: Math.max(1, winStreak),
+            outcome: delta >= 0 ? 'win' : 'loss',
+            modeLabel: delta >= 0 ? 'Chest Reward' : 'Mugen Store',
+            winStreak: delta >= 0 ? Math.max(1, winStreak) : 0,
             recentResults: newRecent,
             timestamp: Date.now(),
           });

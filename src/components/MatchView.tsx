@@ -22,6 +22,7 @@ import {
 } from '../game/engine';
 import { CRAFTABLE_MAP } from '../game/craftables';
 import { reportGameEnd, triggerChestModalNow } from '../chest/reportGameEnd';
+import { addGems } from '../economy/mugenStore';
 import {
   ArrowLeft,
   Flag,
@@ -375,6 +376,9 @@ const MatchViewContent: React.FC<MatchViewContentProps> = ({
         const myMoves = activeMatch.moveHistory.filter((m) => m.piece.color === myColor).length;
         const isResigned = activeMatch.result?.reason === 'resignation' && activeMatch.result.winner !== myColor;
         reportGameEnd({ matchId: activeMatch.id, mode, result: outcome, moves: myMoves, isTraining: false, userId: user.id, resigned: isResigned });
+        if (outcome === 'win' || outcome === 'draw') {
+          addGems(user.id, outcome === 'win' ? 600 : 300);
+        }
       } catch {}
     }
   }, [

@@ -9,7 +9,7 @@ export const CHEST_ENABLED = true;
 export const MIN_MOVES = 0;
 
 // Maximum pending chests accumulated if closed before opening
-export const MAX_PENDING = 3;
+export const MAX_PENDING = 12;
 
 // Presentation delay (ms) so player sees the game-over screen first
 export const REPORT_DELAY_MS = 1200;

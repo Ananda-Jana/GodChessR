@@ -31,10 +31,12 @@ import {
   Box,
   Heart,
   LayoutGrid,
+  ShoppingBag,
 } from 'lucide-react';
 import { posToNotation } from '../game/engine';
 import { usePredictor } from '../predictor/PredictorContext';
 import { TrophyRoomModal } from './TrophyRoomModal';
+import { MugenGemStore } from '../economy/MugenGemStore';
 import type { TrainerId } from '../training/types';
 import { TRAINER_PROFILES } from '../training/data';
 import { SecretArenaModal } from '../secret/components/SecretArenaModal';
@@ -140,8 +142,9 @@ export const Dashboard: React.FC<DashboardProps> = ({
     clearMatchError,
   } = useSocket();
 
-  const { state: predictorState, clearPredictorSession } = usePredictor();
+  const { state: predictorState, clearPredictorSession, applyRatingBoost } = usePredictor();
   const [isTrophyRoomOpen, setIsTrophyRoomOpen] = useState(false);
+  const [isStoreOpen, setIsStoreOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [players, setPlayers] = useState<UserProfile[]>([]);
   const [activeMatches, setActiveMatches] = useState<MatchState[]>([]);
@@ -181,6 +184,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
     setIsSecretArenaOpen(false);
     setIs3dPreviewModalOpen(false);
     setIsAllGameModesOpen(false);
+    setIsStoreOpen(false);
     setChallengeModalTarget(null);
     setIsWalkWithMastersOpen(false);
     setIsMobileNavDropdownOpen(false);
@@ -1327,20 +1331,16 @@ export const Dashboard: React.FC<DashboardProps> = ({
             <span>All Modes</span>
           </button>
 
-          {/* Matches */}
-          <a
-            href="#matches"
+          {/* Store */}
+          <button
+            type="button"
+            onClick={() => setIsStoreOpen(true)}
             className="mcx-nav2-item"
-            title="Jump to active matches"
+            title="Open Mugen Gem Store"
           >
-            <Swords className="w-3.5 h-3.5 text-zinc-400" />
-            <span>Matches</span>
-            {ongoingMatches.length > 0 && (
-              <span className="mcx-nav2-badge">
-                {ongoingMatches.length}
-              </span>
-            )}
-          </a>
+            <ShoppingBag className="w-3.5 h-3.5 text-amber-400" />
+            <span>Store</span>
+          </button>
 
           {/* Players */}
           <a
@@ -2728,29 +2728,22 @@ export const Dashboard: React.FC<DashboardProps> = ({
             <span className="text-[11px] uppercase tracking-tight">Modes</span>
           </button>
 
-          {/* Tab 2: Matches */}
+          {/* Tab 2: Store */}
           <button
             type="button"
             onClick={() => {
               handleCloseAllPreGameViews();
-              scrollToSection('matches', 'matches');
+              setIsStoreOpen(true);
             }}
-            aria-label="Jump to Active Matches"
+            aria-label="Open Mugen Gem Store"
             className={`min-h-[48px] w-full flex flex-col items-center justify-center gap-0.5 transition-colors cursor-pointer relative box-border ${
-              activeBottomTab === 'matches'
+              isStoreOpen
                 ? 'border-t-[3px] border-amber-400 font-bold text-amber-400'
                 : 'border-t-[3px] border-transparent font-semibold text-zinc-100 hover:text-white'
             }`}
           >
-            <div className="relative">
-              <Clock className="w-5 h-5" />
-              {ongoingMatches.length > 0 && (
-                <span className="absolute -top-1.5 -right-2.5 px-1.5 py-0.2 bg-amber-400 text-black text-[10px] font-mono font-black rounded-full leading-tight">
-                  {ongoingMatches.length}
-                </span>
-              )}
-            </div>
-            <span className="text-[11px] uppercase tracking-tight">Matches</span>
+            <ShoppingBag className="w-5 h-5 text-amber-400" />
+            <span className="text-[11px] uppercase tracking-tight">Store</span>
           </button>
 
           {/* Tab 3: PLAY Button (Fiery Molten Glass Keycap with text PLAY) */}
@@ -3106,6 +3099,18 @@ export const Dashboard: React.FC<DashboardProps> = ({
           setIs3dPreviewModalOpen(false);
           onStart3dMatch?.({ roomCode, timeControl, playerTeam: team });
         }}
+      />
+
+      {/* Mugen Gem Store Modal */}
+      <MugenGemStore
+        isOpen={isStoreOpen}
+        onClose={() => setIsStoreOpen(false)}
+        userId={user?.id ?? 'guest'}
+        currentElo={predictorState.currentRating}
+        onEloDeduct={(amt) => {
+          applyRatingBoost(-amt);
+        }}
+        onOpenSecretArena={() => setIsSecretArenaOpen(true)}
       />
     </div>
   );

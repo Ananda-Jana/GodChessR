@@ -20,6 +20,7 @@ import { getBestCullingBotMove } from '../game/cullingBot';
 import { sounds } from '../utils/audio';
 import { RulebookWindow } from './rulebook/RulebookWindow';
 import { reportGameEnd, triggerChestModalNow } from '../chest/reportGameEnd';
+import { addGems } from '../economy/mugenStore';
 
 import {
   BookOpen,
@@ -198,6 +199,9 @@ export const CullingMatchView: React.FC<CullingMatchViewProps> = ({
         const uid = userColor === 'white' ? match.whitePlayer.userId : match.blackPlayer.userId;
         const isResigned = Boolean(match.winReason?.toLowerCase().includes('resign') && match.winner !== userColor);
         reportGameEnd({ matchId: match.id, mode: 'culling', result: outcome, moves: myMoves, isTraining: false, userId: uid, resigned: isResigned });
+        if (outcome === 'win' || outcome === 'draw') {
+          addGems(uid, outcome === 'win' ? 600 : 300);
+        }
       } catch {}
     }
   }, [match?.status, match, userColor, isBotMatch, finalizeMatch]);

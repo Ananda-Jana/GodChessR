@@ -208,6 +208,7 @@ export const ChestModal: React.FC<ChestModalProps> = ({
   const executeTap = useCallback(
     (targetTap: number) => {
       if (targetTap === 1) {
+        if (navigator.vibrate) navigator.vibrate(40);
         setIsAnimating(true);
         setTapCount(1);
         playChestSound('tap1');
@@ -220,6 +221,7 @@ export const ChestModal: React.FC<ChestModalProps> = ({
           }
         }, 360);
       } else if (targetTap === 2) {
+        if (navigator.vibrate) navigator.vibrate([40, 20, 40]);
         setIsAnimating(true);
         setTapCount(2);
         playChestSound('tap2');
@@ -232,6 +234,7 @@ export const ChestModal: React.FC<ChestModalProps> = ({
           }
         }, 460);
       } else if (targetTap === 3) {
+        if (navigator.vibrate) navigator.vibrate([60, 30, 60, 30, 120]);
         setIsAnimating(true);
         setTapCount(3);
         setIsWindup(true);
@@ -280,6 +283,7 @@ export const ChestModal: React.FC<ChestModalProps> = ({
           setTimeout(() => setShowShockwave(false), 460);
 
           setTimeout(() => {
+            if (navigator.vibrate) navigator.vibrate([80, 40, 80, 40, 200]);
             setShowCard(true);
             playChestSound('card');
 

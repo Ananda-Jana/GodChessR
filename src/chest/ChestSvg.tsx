@@ -9,24 +9,25 @@ interface ChestSvgProps {
 }
 
 export const ChestSvg: React.FC<ChestSvgProps> = ({
-  isWin,
+  isWin: _isWin,
   tapCount,
   isOpened,
   isWindup,
   isResigned = false,
 }) => {
-  // Color specifications:
-  // Win ("VICTORY"): body crimson #dc2626, lower half #991b1b, plank grooves #7f1d1d. Gold trim #fbbf24.
-  // Loss ("CONSOLATION"): body deep ember maroon #9a3412, shade #7c2d12. Bronze trim #d97706.
-  // Resigned ("RESIGNED"): body stone #57534e, shade #44403c. Iron trim #78716c.
-  const bodyMain = isResigned ? '#57534e' : isWin ? '#dc2626' : '#9a3412';
-  const bodyShade = isResigned ? '#44403c' : isWin ? '#991b1b' : '#7c2d12';
-  const grooveColor = isResigned ? '#292524' : isWin ? '#7f1d1d' : '#571804';
-  const bandMain = isResigned ? '#78716c' : isWin ? '#fbbf24' : '#d97706';
-  const bandShade = isResigned ? '#57534e' : isWin ? '#f59e0b' : '#b45309';
-  const bandHighlight = isResigned ? '#a8a29e' : isWin ? '#fde68a' : '#fcd34d';
-  const outline = isResigned ? '#1c1917' : isWin ? '#3b0d0d' : '#2a0f06';
-  const innerDiscColor = isResigned ? '#292524' : isWin ? '#7f1d1d' : '#451004';
+  // Color palette: Warm wooden treasure chest with gold bands & shield lock
+  const woodBodyMain = '#b5541a';
+  const woodBodyShadow = '#8b3a10';
+  const woodHighlight = '#c9692a';
+  const woodDeepShadow = '#6b2a09';
+  const goldBandMain = '#e8971e';
+  const goldBandHighlight = '#f5c842';
+  const goldBandShadow = '#b5700f';
+  const lockPlateMain = '#d4861a';
+  const lockPlateHighlight = '#f0b830';
+  const lockKeyhole = '#3a1f06';
+  const outline = '#3a1f06';
+  const cornerStuds = '#e8971a';
 
   // Lid rotation around back hinge (left corner: 34px, 105px)
   let lidTransform = 'rotate(0deg)';
@@ -45,15 +46,12 @@ export const ChestSvg: React.FC<ChestSvgProps> = ({
       xmlns="http://www.w3.org/2000/svg"
     >
       <defs>
-        {/* ClipPath for shine sweep across gold/iron bands and central lock ring */}
+        {/* ClipPath for shine sweep across gold elements */}
         <clipPath id="chestGoldClips">
-          <rect x="64" y="105" width="26" height="88" rx="2" />
-          <rect x="150" y="105" width="26" height="88" rx="2" />
-          <rect x="23" y="132" width="13" height="22" rx="4" />
-          <rect x="204" y="132" width="13" height="22" rx="4" />
-          <circle cx="120" cy="105" r="24" />
-          <path d="M 64 105 C 64 54, 90 54, 90 105 Z" />
-          <path d="M 150 105 C 150 54, 176 54, 176 105 Z" />
+          <rect x="28" y="112" width="184" height="20" />
+          <rect x="58" y="52" width="22" height="150" />
+          <rect x="160" y="52" width="22" height="150" />
+          <path d="M 120 92 L 107 98 L 107 112 Q 107 122 120 126 Q 133 122 133 112 L 133 98 Z" />
         </clipPath>
 
         {/* Inner cavity glow when opened */}
@@ -84,20 +82,16 @@ export const ChestSvg: React.FC<ChestSvgProps> = ({
 
       {/* Inside the Base */}
       <g id="chest-cavity">
-        <rect
-          x="34"
-          y="105"
-          width="172"
-          height="88"
-          rx="16"
+        <path
+          d="M 30 118 L 30 185 Q 30 200 46 200 L 194 200 Q 210 200 210 185 L 210 118 Z"
           fill="#1c1917"
           stroke={outline}
-          strokeWidth="5"
+          strokeWidth="4"
         />
         {(tapCount >= 2 || isOpened) && (
           <ellipse
             cx="120"
-            cy="135"
+            cy="145"
             rx="68"
             ry="26"
             fill="url(#chestInnerGlowNew)"
@@ -109,92 +103,70 @@ export const ChestSvg: React.FC<ChestSvgProps> = ({
 
       {/* BASE EXTERIOR */}
       <g id="chest-base">
-        <rect
-          x="34"
-          y="105"
-          width="172"
-          height="88"
-          rx="16"
-          fill={bodyMain}
-          stroke={outline}
-          strokeWidth="5"
-        />
-
+        {/* BODY (lower half, rounded rect) */}
         <path
-          d="M 35 150 L 205 150 L 205 177 C 205 186, 196 193, 187 193 L 53 193 C 44 193, 35 186, 35 177 Z"
-          fill={bodyShade}
+          d="M 30 118 L 30 185 Q 30 200 46 200 L 194 200 Q 210 200 210 185 L 210 118 Z"
+          fill={woodBodyShadow}
+          stroke={outline}
+          strokeWidth="4"
         />
 
-        <line x1="36" y1="134" x2="204" y2="134" stroke={grooveColor} strokeWidth="4" />
-        <line x1="36" y1="165" x2="204" y2="165" stroke={grooveColor} strokeWidth="4" />
-
+        {/* BODY UPPER (plank face, lighter) */}
         <path
-          d="M 42 110 Q 56 110 60 115 Q 52 126 42 124 Z"
-          fill="#ffffff"
-          opacity="0.2"
+          d="M 30 118 L 210 118 L 210 155 L 30 155 Z"
+          fill={woodBodyMain}
+          stroke="none"
         />
 
-        {/* Left Band */}
+        {/* PLANK GROOVES on body (horizontal lines suggesting wood planks) */}
+        <line x1="30" y1="136" x2="210" y2="136" stroke={woodDeepShadow} strokeWidth="3" />
+        <line x1="30" y1="154" x2="210" y2="154" stroke={woodDeepShadow} strokeWidth="3" />
+        <line x1="30" y1="172" x2="210" y2="172" stroke={woodDeepShadow} strokeWidth="3" />
+
+        {/* LEFT VERTICAL BAND (gold, lower half) */}
         <rect
-          x="64"
-          y="105"
-          width="26"
-          height="88"
-          fill={bandMain}
+          x="58"
+          y="118"
+          width="22"
+          height="82"
+          fill={goldBandMain}
           stroke={outline}
-          strokeWidth="5"
+          strokeWidth="3.5"
         />
-        <rect x="65" y="106" width="6" height="85" fill={bandShade} />
-        <rect x="83" y="106" width="5" height="85" fill={bandHighlight} />
-        <circle cx="77" cy="120" r="3" fill={bandHighlight} stroke={outline} strokeWidth="1.5" />
-        <circle cx="77" cy="148" r="3" fill={bandHighlight} stroke={outline} strokeWidth="1.5" />
-        <circle cx="77" cy="178" r="3" fill={bandHighlight} stroke={outline} strokeWidth="1.5" />
+        <rect x="59" y="119" width="6" height="80" fill={goldBandHighlight} />
+        <rect x="72" y="119" width="5" height="80" fill={goldBandShadow} />
 
-        {/* Right Band */}
+        {/* RIGHT VERTICAL BAND (gold, lower half) */}
         <rect
-          x="150"
-          y="105"
-          width="26"
-          height="88"
-          fill={bandMain}
+          x="160"
+          y="118"
+          width="22"
+          height="82"
+          fill={goldBandMain}
           stroke={outline}
-          strokeWidth="5"
+          strokeWidth="3.5"
         />
-        <rect x="151" y="106" width="6" height="85" fill={bandShade} />
-        <rect x="169" y="106" width="5" height="85" fill={bandHighlight} />
-        <circle cx="163" cy="120" r="3" fill={bandHighlight} stroke={outline} strokeWidth="1.5" />
-        <circle cx="163" cy="148" r="3" fill={bandHighlight} stroke={outline} strokeWidth="1.5" />
-        <circle cx="163" cy="178" r="3" fill={bandHighlight} stroke={outline} strokeWidth="1.5" />
+        <rect x="161" y="119" width="6" height="80" fill={goldBandHighlight} />
+        <rect x="173" y="119" width="5" height="80" fill={goldBandShadow} />
 
-        {/* Side Clasps */}
-        <g id="left-clasp">
-          <rect
-            x="23"
-            y="132"
-            width="13"
-            height="22"
-            rx="4"
-            fill={bandMain}
-            stroke={outline}
-            strokeWidth="4"
-          />
-          <rect x="23" y="133" width="3" height="20" rx="1" fill={bandHighlight} />
-          <rect x="30" y="139" width="4" height="8" rx="1" fill={outline} />
-        </g>
-        <g id="right-clasp">
-          <rect
-            x="204"
-            y="132"
-            width="13"
-            height="22"
-            rx="4"
-            fill={bandMain}
-            stroke={outline}
-            strokeWidth="4"
-          />
-          <rect x="213" y="133" width="3" height="20" rx="1" fill={bandHighlight} />
-          <rect x="206" y="139" width="4" height="8" rx="1" fill={outline} />
-        </g>
+        {/* GOLD CENTER BAND (horizontal, spans full width at mid-body) */}
+        <rect
+          x="28"
+          y="112"
+          width="184"
+          height="20"
+          fill={goldBandMain}
+          stroke={outline}
+          strokeWidth="4"
+        />
+        <rect x="29" y="113" width="182" height="5" fill={goldBandHighlight} />
+        <rect x="29" y="127" width="182" height="4" fill={goldBandShadow} />
+
+        {/* CORNER STUDS (4 rivets at corners of body) */}
+        <circle cx="42" cy="120" r="5" fill={cornerStuds} stroke={outline} strokeWidth="2" />
+        <circle cx="198" cy="120" r="5" fill={cornerStuds} stroke={outline} strokeWidth="2" />
+        <circle cx="42" cy="192" r="5" fill={cornerStuds} stroke={outline} strokeWidth="2" />
+        <circle cx="198" cy="192" r="5" fill={cornerStuds} stroke={outline} strokeWidth="2" />
       </g>
 
       {/* LID GROUP */}
@@ -206,75 +178,93 @@ export const ChestSvg: React.FC<ChestSvgProps> = ({
           transition: isWindup ? 'none' : 'transform 450ms cubic-bezier(0.18, 0.9, 0.32, 1.2)',
         }}
       >
+        {/* Lid body */}
         <path
-          d="M 34 105 C 34 50, 206 50, 206 105 Z"
-          fill={bodyMain}
+          d="M 30 118 L 30 75 Q 30 52 120 48 Q 210 52 210 75 L 210 118 Z"
+          fill={woodBodyMain}
           stroke={outline}
-          strokeWidth="5"
-        />
-
-        <rect x="35" y="99" width="170" height="6" fill={bodyShade} />
-
-        <path
-          d="M 42 85 C 65 62, 175 62, 198 85"
-          fill="none"
-          stroke={grooveColor}
           strokeWidth="4"
         />
+
+        {/* Lid shadow (lower curve of lid) */}
+        <path
+          d="M 30 110 Q 120 106 210 110 L 210 118 L 30 118 Z"
+          fill={woodBodyShadow}
+        />
+
+        {/* Lid highlight (upper curve) */}
+        <path
+          d="M 38 80 Q 120 58 202 80 Q 120 68 38 80 Z"
+          fill={woodHighlight}
+          opacity="0.6"
+        />
+
+        {/* Lid plank grooves */}
+        <path
+          d="M 38 105 Q 120 101 202 105"
+          stroke={woodDeepShadow}
+          strokeWidth="3"
+          fill="none"
+        />
+        <path
+          d="M 40 90 Q 120 84 200 90"
+          stroke={woodDeepShadow}
+          strokeWidth="3"
+          fill="none"
+        />
+
+        {/* Left Vertical Band (upper, on lid) */}
+        <rect
+          x="58"
+          y="52"
+          width="22"
+          height="66"
+          fill={goldBandMain}
+          stroke={outline}
+          strokeWidth="3.5"
+        />
+        <rect x="59" y="53" width="6" height="64" fill={goldBandHighlight} />
+        <rect x="72" y="53" width="5" height="64" fill={goldBandShadow} />
+
+        {/* Right Vertical Band (upper, on lid) */}
+        <rect
+          x="160"
+          y="52"
+          width="22"
+          height="66"
+          fill={goldBandMain}
+          stroke={outline}
+          strokeWidth="3.5"
+        />
+        <rect x="161" y="53" width="6" height="64" fill={goldBandHighlight} />
+        <rect x="173" y="53" width="5" height="64" fill={goldBandShadow} />
 
         {/* Crack Line across lid if resigned */}
         {isResigned && (
           <path
             d="M 90 65 L 105 78 L 98 88 L 115 98"
             fill="none"
-            stroke="#1c1917"
+            stroke={outline}
             strokeWidth="3.5"
             strokeLinecap="round"
           />
         )}
 
-        {/* Left Lid Band */}
-        <path
-          d="M 64 105 C 64 54, 90 54, 90 105 Z"
-          fill={bandMain}
-          stroke={outline}
-          strokeWidth="5"
-        />
-        <path d="M 65 104 C 65 58, 71 58, 71 104 Z" fill={bandShade} />
-        <path d="M 83 104 C 83 58, 89 58, 89 104 Z" fill={bandHighlight} />
-        <circle cx="77" cy="78" r="3" fill={bandHighlight} stroke={outline} strokeWidth="1.5" />
-
-        {/* Right Lid Band */}
-        <path
-          d="M 150 105 C 150 54, 176 54, 176 105 Z"
-          fill={bandMain}
-          stroke={outline}
-          strokeWidth="5"
-        />
-        <path d="M 151 104 C 151 58, 157 58, 157 104 Z" fill={bandShade} />
-        <path d="M 169 104 C 169 58, 175 58, 175 104 Z" fill={bandHighlight} />
-        <circle cx="163" cy="78" r="3" fill={bandHighlight} stroke={outline} strokeWidth="1.5" />
-
-        <path
-          d="M 48 92 C 55 68, 100 58, 120 58 C 95 63, 58 75, 48 92 Z"
-          fill="#ffffff"
-          opacity="0.2"
-        />
-
+        {/* Tap count indicator line on lid if tapCount === 1 */}
         {tapCount === 1 && (
           <line
             x1="36"
-            y1="105"
+            y1="116"
             x2="204"
-            y2="105"
-            stroke={isResigned ? '#ef4444' : '#fde047'}
+            y2="116"
+            stroke={isResigned ? '#ef4444' : goldBandHighlight}
             strokeWidth="3.5"
             strokeLinecap="round"
           />
         )}
       </g>
 
-      {/* LOCK RING */}
+      {/* LOCK SHIELD */}
       <g
         id="chest-lock"
         style={{
@@ -283,40 +273,32 @@ export const ChestSvg: React.FC<ChestSvgProps> = ({
           transition: 'transform 450ms cubic-bezier(0.18, 0.9, 0.32, 1.2)',
         }}
       >
-        <circle
-          cx="120"
-          cy="105"
-          r="24"
-          fill={bandMain}
-          stroke={outline}
-          strokeWidth="5"
-        />
+        {/* Shield body */}
         <path
-          d="M 103 98 A 20 20 0 0 1 125 87"
-          stroke={bandHighlight}
-          strokeWidth="3.5"
-          fill="none"
-          strokeLinecap="round"
-        />
-        <path
-          d="M 137 112 A 20 20 0 0 1 115 123"
-          stroke={bandShade}
-          strokeWidth="3.5"
-          fill="none"
-          strokeLinecap="round"
-        />
-
-        <circle
-          cx="120"
-          cy="105"
-          r="14"
-          fill={innerDiscColor}
+          d="M 120 92 L 107 98 L 107 112 Q 107 122 120 126 Q 133 122 133 112 L 133 98 Z"
+          fill={lockPlateMain}
           stroke={outline}
           strokeWidth="3.5"
         />
-
-        <circle cx="120" cy="102" r="3" fill="#111827" />
-        <polygon points="118,102 122,102 123,111 117,111" fill="#111827" />
+        {/* Shield left highlight */}
+        <path
+          d="M 120 92 L 107 98 L 107 112 Q 107 119 113 123 Q 107 118 107 112 L 107 98 Z"
+          fill={lockPlateHighlight}
+          opacity="0.7"
+        />
+        {/* Keyhole */}
+        <circle
+          cx="120"
+          cy="107"
+          r="5"
+          fill={lockKeyhole}
+          stroke={lockKeyhole}
+          strokeWidth="1"
+        />
+        <polygon
+          points="117,111 123,111 122,120 118,120"
+          fill={lockKeyhole}
+        />
       </g>
 
       {!isResigned && (

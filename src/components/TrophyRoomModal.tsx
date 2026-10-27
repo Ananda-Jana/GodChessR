@@ -214,6 +214,7 @@ export const TrophyRoomModal: React.FC<TrophyRoomModalProps> = ({
   };
 
   const handleOpenChest = () => {
+    onClose();
     triggerChestModalNow(user?.id, true);
     setTimeout(() => {
       setStoreTick((t) => t + 1);
