@@ -1,11 +1,3 @@
-/**
- * Jujutsu Kaisen Culling Game AI Bot
- * 
- * Implements a high-performance two-ply Minimax engine with Alpha-Beta pruning,
- * character-specific material valuations, 10x10 cross-board piece-square tables,
- * and tactical capture/shooting evaluation.
- */
-
 import type {
   CullingPos,
   CullingPieceColor,
@@ -13,6 +5,7 @@ import type {
   CullingBoard,
   CullingMove,
   CullingMatchState,
+  CullingBoardSize,
 } from '../types/cullingGame.ts';
 import {
   isValidCullingPos,
@@ -42,47 +35,58 @@ export const CULLING_PIECE_VALUES: Record<CullingPieceType, number> = {
   culling_swarm: 50,
 };
 
-// 10x10 Cross-Board Positional Table (White perspective: y=0 bottom arm, y=9 top arm)
-const CENTER_CONTROL_TABLE_10X10: number[][] = [
-  // y=0: Bottom arm (B0..G0)
-  [ 0,  0,  5, 10, 10, 10, 10,  5,  0,  0],
-  // y=1: Rank 1 (A1..H1)
-  [ 0, -5,  0,  5,  5,  5,  5,  0, -5,  0],
-  // y=2: Rank 2 (L2, A2..H2, R2)
-  [ 5,  0, 10, 15, 15, 15, 15, 10,  0,  5],
-  // y=3: Rank 3
-  [ 5,  5, 15, 25, 25, 25, 25, 15,  5,  5],
-  // y=4: Rank 4 (Center clash)
-  [10, 10, 20, 35, 40, 40, 35, 20, 10, 10],
-  // y=5: Rank 5 (Center clash)
-  [10, 10, 20, 35, 40, 40, 35, 20, 10, 10],
-  // y=6: Rank 6
-  [ 5,  5, 15, 25, 25, 25, 25, 15,  5,  5],
-  // y=7: Rank 7
-  [ 5,  0, 10, 15, 15, 15, 15, 10,  0,  5],
-  // y=8: Rank 8 (A8..H8)
-  [ 0, -5,  0,  5,  5,  5,  5,  0, -5,  0],
-  // y=9: Top arm (B9..G9)
-  [ 0,  0,  5, 10, 10, 10, 10,  5,  0,  0],
+// 7x7 Board Positional Table (White perspective: y=0 bottom rank, y=6 top rank)
+const CENTER_CONTROL_TABLE_7X7: number[][] = [
+  // y=0: Rank 1 (A1..G1)
+  [ 0, -5,  0,  5,  0, -5,  0],
+  // y=1: Rank 2 (A2..G2)
+  [ 5,  5, 10, 15, 10,  5,  5],
+  // y=2: Rank 3
+  [ 5, 10, 20, 25, 20, 10,  5],
+  // y=3: Rank 4 (Center clash)
+  [10, 20, 30, 40, 30, 20, 10],
+  // y=4: Rank 5
+  [ 5, 10, 20, 25, 20, 10,  5],
+  // y=5: Rank 6
+  [ 5,  5, 10, 15, 10,  5,  5],
+  // y=6: Rank 7 (A7..G7)
+  [ 0, -5,  0,  5,  0, -5,  0],
+];
+
+// 8x8 Board Positional Table (White perspective: y=0 bottom rank, y=7 top rank)
+const CENTER_CONTROL_TABLE_8X8: number[][] = [
+  [ 0, -5,  0,  5,  5,  0, -5,  0],
+  [ 5,  5, 10, 15, 15, 10,  5,  5],
+  [ 5, 10, 20, 25, 25, 20, 10,  5],
+  [10, 20, 35, 40, 40, 35, 20, 10],
+  [10, 20, 35, 40, 40, 35, 20, 10],
+  [ 5, 10, 20, 25, 25, 20, 10,  5],
+  [ 5,  5, 10, 15, 15, 10,  5,  5],
+  [ 0, -5,  0,  5,  5,  0, -5,  0],
 ];
 
 /**
  * Static evaluation of a Culling Board state
  * Positive values favor White, negative values favor Black
  */
-export function evaluateCullingBoard(board: CullingBoard, turnCount: number): number {
+export function evaluateCullingBoard(board: CullingBoard, turnCount: number, boardSize?: CullingBoardSize): number {
   let whiteMaterial = 0;
   let blackMaterial = 0;
   let whitePositional = 0;
   let blackPositional = 0;
 
-  for (let y = 0; y < 10; y++) {
-    for (let x = 0; x < 10; x++) {
+  const is8x8 = boardSize === '8x8' || board.length === 8;
+  const dim = is8x8 ? 8 : 7;
+  const table = is8x8 ? CENTER_CONTROL_TABLE_8X8 : CENTER_CONTROL_TABLE_7X7;
+  const maxIdx = dim - 1;
+
+  for (let y = 0; y < dim; y++) {
+    for (let x = 0; x < dim; x++) {
       const piece = board[y][x];
       if (!piece) continue;
 
       const baseVal = CULLING_PIECE_VALUES[piece.type] || 100;
-      const posVal = CENTER_CONTROL_TABLE_10X10[y][x] || 0;
+      const posVal = table[y][x] || 0;
 
       // Special state adjustments
       let bonus = 0;
@@ -91,7 +95,7 @@ export function evaluateCullingBoard(board: CullingBoard, turnCount: number): nu
 
       // Pawn advancement bonus
       if (piece.type === 'culling_pawn') {
-        const advancement = piece.color === 'white' ? (y - 1) * 15 : (8 - y) * 15;
+        const advancement = piece.color === 'white' ? (y - 1) * 15 : (maxIdx - 1 - y) * 15;
         bonus += advancement;
       }
 
@@ -100,7 +104,7 @@ export function evaluateCullingBoard(board: CullingBoard, turnCount: number): nu
         whitePositional += posVal;
       } else {
         blackMaterial += baseVal + bonus;
-        blackPositional += CENTER_CONTROL_TABLE_10X10[9 - y][x] || 0;
+        blackPositional += table[maxIdx - y][x] || 0;
       }
     }
   }
@@ -140,10 +144,11 @@ function compareMovesForOrdering(a: CullingMove, b: CullingMove): number {
 const transpositionTable = new Map<string, { score: number; depth: number }>();
 const MAX_TT_SIZE = 40000;
 
-function computeBoardKey(board: CullingBoard, turn: CullingPieceColor): string {
+function computeBoardKey(board: CullingBoard, turn: CullingPieceColor, boardSize?: CullingBoardSize): string {
   let s = turn[0];
-  for (let y = 1; y <= 8; y++) {
-    for (let x = 1; x <= 8; x++) {
+  const dim = boardSize === '8x8' || board.length === 8 ? 8 : 7;
+  for (let y = 0; y < dim; y++) {
+    for (let x = 0; x < dim; x++) {
       const p = board[y][x];
       if (p) s += `${x}${y}${p.type[8] || p.type[0]}${p.color[0]}`;
     }
@@ -159,13 +164,15 @@ function minimax(
   depth: number,
   alpha: number,
   beta: number,
-  isMaximizing: boolean
+  isMaximizing: boolean,
+  boardSize?: CullingBoardSize
 ): { score: number; bestMove: CullingMove | null } {
+  const size = boardSize || match.boardSize || (match.board.length === 8 ? '8x8' : '7x7');
   if (depth === 0 || match.status === 'completed') {
-    return { score: evaluateCullingBoard(match.board, match.turnCount), bestMove: null };
+    return { score: evaluateCullingBoard(match.board, match.turnCount, size), bestMove: null };
   }
 
-  const key = computeBoardKey(match.board, match.turn);
+  const key = computeBoardKey(match.board, match.turn, size);
   const cached = transpositionTable.get(key);
   if (cached && cached.depth >= depth) {
     return { score: cached.score, bestMove: null };
@@ -190,11 +197,12 @@ function minimax(
       const nextMatch: CullingMatchState = {
         ...match,
         board: nextBoard,
+        boardSize: size,
         turn: 'black',
         turnCount: match.turnCount + 1,
       };
 
-      const { score } = minimax(nextMatch, depth - 1, alpha, beta, false);
+      const { score } = minimax(nextMatch, depth - 1, alpha, beta, false, size);
       if (score > maxEval) {
         maxEval = score;
         bestMove = move;
@@ -213,11 +221,12 @@ function minimax(
       const nextMatch: CullingMatchState = {
         ...match,
         board: nextBoard,
+        boardSize: size,
         turn: 'white',
         turnCount: match.turnCount + 1,
       };
 
-      const { score } = minimax(nextMatch, depth - 1, alpha, beta, true);
+      const { score } = minimax(nextMatch, depth - 1, alpha, beta, true, size);
       if (score < minEval) {
         minEval = score;
         bestMove = move;
@@ -238,10 +247,12 @@ function minimax(
 export function getBestCullingBotMove(
   match: CullingMatchState,
   botColor: CullingPieceColor,
-  depth: number = 2
+  depth: number = 2,
+  size?: CullingBoardSize
 ): CullingMove | null {
   transpositionTable.clear();
+  const boardSize = size || match.boardSize || (match.board.length === 8 ? '8x8' : '7x7');
   const isMaximizing = botColor === 'white';
-  const { bestMove } = minimax(match, depth, -Infinity, Infinity, isMaximizing);
+  const { bestMove } = minimax(match, depth, -Infinity, Infinity, isMaximizing, boardSize);
   return bestMove;
 }

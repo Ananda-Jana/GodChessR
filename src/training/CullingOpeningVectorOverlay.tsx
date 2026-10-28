@@ -100,10 +100,10 @@ export const CullingOpeningVectorOverlay: React.FC<CullingOpeningVectorOverlayPr
 }) => {
   if (!arrows || arrows.length === 0) return null;
 
-  // Convert (x, y) board coordinate (x=0..9, y=0..9) to normalized 1000x1000 SVG pixel center
+  // Convert (x, y) board coordinate (x=0..6, y=0..6) to normalized 1000x1000 SVG pixel center
   const getCenter = (x: number, y: number) => ({
-    cx: x * 100 + 50,
-    cy: (9 - y) * 100 + 50,
+    cx: x * (1000 / 7) + (1000 / 14),
+    cy: (6 - y) * (1000 / 7) + (1000 / 14),
   });
 
   return (

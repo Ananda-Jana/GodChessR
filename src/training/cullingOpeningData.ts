@@ -16,8 +16,25 @@ import type { CullingOpeningLesson } from './types';
 import type { CullingBoard, CullingPiece, CullingPieceColor, CullingPieceType } from '../types/cullingGame';
 import { createInitialCullingBoard } from '../game/cullingEngine';
 
+function mX(x: number): number {
+  if (x <= 0) return 0;
+  if (x >= 8) return 6;
+  return x - 1;
+}
+
+function mY(y: number): number {
+  if (y <= 0) return 0;
+  if (y >= 8) return 6;
+  return y - 1;
+}
+
+function mPos(pos: { x: number; y: number }): { x: number; y: number } {
+  if (!pos) return pos;
+  return { x: mX(pos.x), y: mY(pos.y) };
+}
+
 function createEmptyCullingGrid(): CullingBoard {
-  return Array.from({ length: 10 }, () => Array<CullingPiece | null>(10).fill(null));
+  return Array.from({ length: 7 }, () => Array<CullingPiece | null>(7).fill(null));
 }
 
 function putPiece(
@@ -29,13 +46,19 @@ function putPiece(
   idSuffix: string,
   extra?: Partial<CullingPiece>
 ): void {
-  board[y][x] = {
+  const nx = mX(x);
+  const ny = mY(y);
+  board[ny][nx] = {
     id: `${color[0]}_${type}_${idSuffix}`,
     type,
     color,
     hasMoved: extra?.hasMoved ?? true,
     ...extra,
   };
+}
+
+function clearCell(board: CullingBoard, y: number, x: number): void {
+  board[mY(y)][mX(x)] = null;
 }
 
 /**
@@ -45,15 +68,15 @@ function putPiece(
  */
 export const createLesson7Board = (): CullingBoard => {
   const b = createInitialCullingBoard();
-  b[2][6] = null; // F2 pawn traded earlier
-  b[1][6] = null; // Mechamaru moved from F1
-  b[2][5] = null; // E2 pawn advanced to E4
+  clearCell(b, 2, 6); // F2 pawn traded earlier
+  clearCell(b, 1, 6); // Mechamaru moved from F1
+  clearCell(b, 2, 5); // E2 pawn advanced to E4
   putPiece(b, 5, 4, 'culling_pawn', 'white', 'e4');
   putPiece(b, 6, 2, 'culling_mechamaru', 'white', 'f2');
-  b[8][6] = null; // Naoya moved from F8
-  b[7][5] = null; // Black E7 pawn traded earlier
+  clearCell(b, 8, 6); // Naoya moved from F8
+  clearCell(b, 7, 5); // Black E7 pawn traded earlier
   putPiece(b, 6, 4, 'culling_naoya', 'black', 'f4');
-  b[7][4] = null;
+  clearCell(b, 7, 4);
   putPiece(b, 4, 6, 'culling_pawn', 'black', 'd6');
   return b;
 };
@@ -65,24 +88,24 @@ export const createLesson7Board = (): CullingBoard => {
  */
 const createMidLesson1Board = (): CullingBoard => {
   const b = createInitialCullingBoard();
-  b[2][2] = null; putPiece(b, 2, 3, 'culling_pawn', 'white', 'b3');
-  b[2][3] = null; putPiece(b, 3, 3, 'culling_pawn', 'white', 'c3');
-  b[2][4] = null; putPiece(b, 4, 3, 'culling_pawn', 'white', 'd3');
-  b[2][5] = null; putPiece(b, 5, 3, 'culling_pawn', 'white', 'e3');
-  b[2][6] = null;
-  b[2][7] = null; putPiece(b, 7, 3, 'culling_pawn', 'white', 'g3');
-  b[1][7] = null; putPiece(b, 6, 3, 'culling_yuji', 'white', 'f3');
-  b[1][6] = null; putPiece(b, 6, 2, 'culling_mechamaru', 'white', 'f2');
+  clearCell(b, 2, 2); putPiece(b, 2, 3, 'culling_pawn', 'white', 'b3');
+  clearCell(b, 2, 3); putPiece(b, 3, 3, 'culling_pawn', 'white', 'c3');
+  clearCell(b, 2, 4); putPiece(b, 4, 3, 'culling_pawn', 'white', 'd3');
+  clearCell(b, 2, 5); putPiece(b, 5, 3, 'culling_pawn', 'white', 'e3');
+  clearCell(b, 2, 6);
+  clearCell(b, 2, 7); putPiece(b, 7, 3, 'culling_pawn', 'white', 'g3');
+  clearCell(b, 1, 7); putPiece(b, 6, 3, 'culling_yuji', 'white', 'f3');
+  clearCell(b, 1, 6); putPiece(b, 6, 2, 'culling_mechamaru', 'white', 'f2');
 
-  b[7][2] = null; putPiece(b, 2, 6, 'culling_pawn', 'black', 'b6');
-  b[7][3] = null; putPiece(b, 3, 6, 'culling_pawn', 'black', 'c6');
-  b[7][4] = null; putPiece(b, 4, 6, 'culling_pawn', 'black', 'd6');
-  b[7][5] = null; putPiece(b, 5, 6, 'culling_pawn', 'black', 'e6');
-  b[7][6] = null;
-  b[7][7] = null; putPiece(b, 7, 6, 'culling_pawn', 'black', 'g6');
-  b[8][6] = null; putPiece(b, 6, 5, 'culling_naoya', 'black', 'f5');
-  b[8][2] = null; putPiece(b, 2, 7, 'culling_kenjaku', 'black', 'b7');
-  b[8][5] = null; putPiece(b, 5, 7, 'culling_reggie', 'black', 'e7');
+  clearCell(b, 7, 2); putPiece(b, 2, 6, 'culling_pawn', 'black', 'b6');
+  clearCell(b, 7, 3); putPiece(b, 3, 6, 'culling_pawn', 'black', 'c6');
+  clearCell(b, 7, 4); putPiece(b, 4, 6, 'culling_pawn', 'black', 'd6');
+  clearCell(b, 7, 5); putPiece(b, 5, 6, 'culling_pawn', 'black', 'e6');
+  clearCell(b, 7, 6);
+  clearCell(b, 7, 7); putPiece(b, 7, 6, 'culling_pawn', 'black', 'g6');
+  clearCell(b, 8, 6); putPiece(b, 6, 5, 'culling_naoya', 'black', 'f5');
+  clearCell(b, 8, 2); putPiece(b, 2, 7, 'culling_kenjaku', 'black', 'b7');
+  clearCell(b, 8, 5); putPiece(b, 5, 7, 'culling_reggie', 'black', 'e7');
   return b;
 };
 
@@ -93,24 +116,24 @@ const createMidLesson1Board = (): CullingBoard => {
  */
 const createMidLesson2Board = (): CullingBoard => {
   const b = createInitialCullingBoard();
-  b[2][2] = null; putPiece(b, 2, 3, 'culling_pawn', 'white', 'b3');
-  b[2][3] = null; putPiece(b, 3, 3, 'culling_pawn', 'white', 'c3');
-  b[2][4] = null; putPiece(b, 4, 4, 'culling_pawn', 'white', 'd4');
-  b[2][5] = null; putPiece(b, 5, 2, 'culling_mechamaru', 'white', 'e2');
-  b[1][6] = null;
-  b[2][6] = null; putPiece(b, 6, 3, 'culling_pawn', 'white', 'f3');
-  b[2][7] = null; putPiece(b, 7, 3, 'culling_pawn', 'white', 'g3');
-  b[1][4] = null; putPiece(b, 4, 2, 'culling_nanami', 'white', 'd2');
-  b[1][7] = null; putPiece(b, 7, 2, 'culling_yuji', 'white', 'g2');
+  clearCell(b, 2, 2); putPiece(b, 2, 3, 'culling_pawn', 'white', 'b3');
+  clearCell(b, 2, 3); putPiece(b, 3, 3, 'culling_pawn', 'white', 'c3');
+  clearCell(b, 2, 4); putPiece(b, 4, 4, 'culling_pawn', 'white', 'd4');
+  clearCell(b, 2, 5); putPiece(b, 5, 2, 'culling_mechamaru', 'white', 'e2');
+  clearCell(b, 1, 6);
+  clearCell(b, 2, 6); putPiece(b, 6, 3, 'culling_pawn', 'white', 'f3');
+  clearCell(b, 2, 7); putPiece(b, 7, 3, 'culling_pawn', 'white', 'g3');
+  clearCell(b, 1, 4); putPiece(b, 4, 2, 'culling_nanami', 'white', 'd2');
+  clearCell(b, 1, 7); putPiece(b, 7, 2, 'culling_yuji', 'white', 'g2');
 
-  b[7][2] = null; putPiece(b, 2, 6, 'culling_pawn', 'black', 'b6');
-  b[7][3] = null; putPiece(b, 3, 5, 'culling_pawn', 'black', 'c5');
-  b[7][4] = null;
-  b[7][5] = null; putPiece(b, 5, 4, 'culling_pawn', 'black', 'e4');
-  b[7][6] = null; putPiece(b, 6, 6, 'culling_pawn', 'black', 'f6');
-  b[7][7] = null; putPiece(b, 7, 6, 'culling_pawn', 'black', 'g6');
-  b[8][3] = null; putPiece(b, 3, 7, 'culling_uraume', 'black', 'c7');
-  b[8][5] = null; putPiece(b, 5, 7, 'culling_reggie', 'black', 'e7');
+  clearCell(b, 7, 2); putPiece(b, 2, 6, 'culling_pawn', 'black', 'b6');
+  clearCell(b, 7, 3); putPiece(b, 3, 5, 'culling_pawn', 'black', 'c5');
+  clearCell(b, 7, 4);
+  clearCell(b, 7, 5); putPiece(b, 5, 4, 'culling_pawn', 'black', 'e4');
+  clearCell(b, 7, 6); putPiece(b, 6, 6, 'culling_pawn', 'black', 'f6');
+  clearCell(b, 7, 7); putPiece(b, 7, 6, 'culling_pawn', 'black', 'g6');
+  clearCell(b, 8, 3); putPiece(b, 3, 7, 'culling_uraume', 'black', 'c7');
+  clearCell(b, 8, 5); putPiece(b, 5, 7, 'culling_reggie', 'black', 'e7');
   return b;
 };
 
@@ -121,20 +144,20 @@ const createMidLesson2Board = (): CullingBoard => {
  */
 const createMidLesson3Board = (): CullingBoard => {
   const b = createInitialCullingBoard();
-  b[2][2] = null; putPiece(b, 2, 3, 'culling_pawn', 'white', 'b3');
-  b[2][3] = null; putPiece(b, 3, 3, 'culling_pawn', 'white', 'c3');
-  b[2][4] = null; putPiece(b, 4, 2, 'culling_nanami', 'white', 'd2');
-  b[1][4] = null;
-  b[2][5] = null; putPiece(b, 5, 3, 'culling_pawn', 'white', 'e3');
-  b[2][6] = null; putPiece(b, 6, 3, 'culling_pawn', 'white', 'f3');
-  b[2][7] = null; putPiece(b, 7, 4, 'culling_pawn', 'white', 'g4');
-  b[1][7] = null; putPiece(b, 7, 2, 'culling_yuji', 'white', 'g2');
-  b[1][6] = null; putPiece(b, 6, 2, 'culling_mechamaru', 'white', 'f2');
+  clearCell(b, 2, 2); putPiece(b, 2, 3, 'culling_pawn', 'white', 'b3');
+  clearCell(b, 2, 3); putPiece(b, 3, 3, 'culling_pawn', 'white', 'c3');
+  clearCell(b, 2, 4); putPiece(b, 4, 2, 'culling_nanami', 'white', 'd2');
+  clearCell(b, 1, 4);
+  clearCell(b, 2, 5); putPiece(b, 5, 3, 'culling_pawn', 'white', 'e3');
+  clearCell(b, 2, 6); putPiece(b, 6, 3, 'culling_pawn', 'white', 'f3');
+  clearCell(b, 2, 7); putPiece(b, 7, 4, 'culling_pawn', 'white', 'g4');
+  clearCell(b, 1, 7); putPiece(b, 7, 2, 'culling_yuji', 'white', 'g2');
+  clearCell(b, 1, 6); putPiece(b, 6, 2, 'culling_mechamaru', 'white', 'f2');
 
-  b[8][2] = null; putPiece(b, 5, 5, 'culling_kenjaku', 'black', 'e5');
-  b[7][2] = null; putPiece(b, 2, 6, 'culling_pawn', 'black', 'b6');
-  b[7][3] = null; putPiece(b, 3, 6, 'culling_pawn', 'black', 'c6');
-  b[7][5] = null;
+  clearCell(b, 8, 2); putPiece(b, 5, 5, 'culling_kenjaku', 'black', 'e5');
+  clearCell(b, 7, 2); putPiece(b, 2, 6, 'culling_pawn', 'black', 'b6');
+  clearCell(b, 7, 3); putPiece(b, 3, 6, 'culling_pawn', 'black', 'c6');
+  clearCell(b, 7, 5);
   return b;
 };
 
@@ -145,21 +168,21 @@ const createMidLesson3Board = (): CullingBoard => {
  */
 const createMidLesson4Board = (): CullingBoard => {
   const b = createInitialCullingBoard();
-  b[2][2] = null; putPiece(b, 2, 3, 'culling_pawn', 'white', 'b3');
-  b[2][3] = null; putPiece(b, 3, 3, 'culling_pawn', 'white', 'c3');
-  b[2][4] = null; putPiece(b, 4, 3, 'culling_pawn', 'white', 'd3');
+  clearCell(b, 2, 2); putPiece(b, 2, 3, 'culling_pawn', 'white', 'b3');
+  clearCell(b, 2, 3); putPiece(b, 3, 3, 'culling_pawn', 'white', 'c3');
+  clearCell(b, 2, 4); putPiece(b, 4, 3, 'culling_pawn', 'white', 'd3');
   // E2 pawn remains on (5,2)
-  b[2][6] = null;
-  b[2][7] = null; putPiece(b, 7, 3, 'culling_pawn', 'white', 'g3');
-  b[1][7] = null; putPiece(b, 7, 2, 'culling_yuji', 'white', 'g2');
+  clearCell(b, 2, 6);
+  clearCell(b, 2, 7); putPiece(b, 7, 3, 'culling_pawn', 'white', 'g3');
+  clearCell(b, 1, 7); putPiece(b, 7, 2, 'culling_yuji', 'white', 'g2');
 
-  b[7][2] = null; putPiece(b, 2, 6, 'culling_pawn', 'black', 'b6');
-  b[7][3] = null; putPiece(b, 3, 6, 'culling_pawn', 'black', 'c6');
-  b[7][4] = null; putPiece(b, 4, 6, 'culling_pawn', 'black', 'd6');
-  b[7][5] = null; putPiece(b, 5, 6, 'culling_pawn', 'black', 'e6');
-  b[7][6] = null;
-  b[7][7] = null; putPiece(b, 7, 6, 'culling_pawn', 'black', 'g6');
-  b[8][6] = null; putPiece(b, 6, 4, 'culling_naoya', 'black', 'f4');
+  clearCell(b, 7, 2); putPiece(b, 2, 6, 'culling_pawn', 'black', 'b6');
+  clearCell(b, 7, 3); putPiece(b, 3, 6, 'culling_pawn', 'black', 'c6');
+  clearCell(b, 7, 4); putPiece(b, 4, 6, 'culling_pawn', 'black', 'd6');
+  clearCell(b, 7, 5); putPiece(b, 5, 6, 'culling_pawn', 'black', 'e6');
+  clearCell(b, 7, 6);
+  clearCell(b, 7, 7); putPiece(b, 7, 6, 'culling_pawn', 'black', 'g6');
+  clearCell(b, 8, 6); putPiece(b, 6, 4, 'culling_naoya', 'black', 'f4');
   return b;
 };
 
@@ -170,24 +193,24 @@ const createMidLesson4Board = (): CullingBoard => {
  */
 const createMidLesson5Board = (): CullingBoard => {
   const b = createInitialCullingBoard();
-  b[2][2] = null; putPiece(b, 1, 3, 'culling_pawn', 'white', 'a3');
-  b[2][3] = null; putPiece(b, 3, 3, 'culling_pawn', 'white', 'c3');
-  b[2][4] = null;
-  b[2][5] = null; putPiece(b, 5, 3, 'culling_pawn', 'white', 'e3');
-  b[2][6] = null; putPiece(b, 6, 3, 'culling_pawn', 'white', 'f3');
-  b[2][7] = null; putPiece(b, 7, 3, 'culling_pawn', 'white', 'g3');
-  b[1][2] = null; putPiece(b, 2, 2, 'culling_hakari', 'white', 'b2');
-  b[1][4] = null; putPiece(b, 4, 2, 'culling_nanami', 'white', 'd2');
-  b[1][7] = null; putPiece(b, 7, 2, 'culling_yuji', 'white', 'g2');
+  clearCell(b, 2, 2); putPiece(b, 1, 3, 'culling_pawn', 'white', 'a3');
+  clearCell(b, 2, 3); putPiece(b, 3, 3, 'culling_pawn', 'white', 'c3');
+  clearCell(b, 2, 4);
+  clearCell(b, 2, 5); putPiece(b, 5, 3, 'culling_pawn', 'white', 'e3');
+  clearCell(b, 2, 6); putPiece(b, 6, 3, 'culling_pawn', 'white', 'f3');
+  clearCell(b, 2, 7); putPiece(b, 7, 3, 'culling_pawn', 'white', 'g3');
+  clearCell(b, 1, 2); putPiece(b, 2, 2, 'culling_hakari', 'white', 'b2');
+  clearCell(b, 1, 4); putPiece(b, 4, 2, 'culling_nanami', 'white', 'd2');
+  clearCell(b, 1, 7); putPiece(b, 7, 2, 'culling_yuji', 'white', 'g2');
 
-  b[8][5] = null; putPiece(b, 4, 5, 'culling_reggie', 'black', 'd5');
-  b[7][2] = null; putPiece(b, 2, 6, 'culling_pawn', 'black', 'b6');
-  b[7][3] = null; putPiece(b, 3, 6, 'culling_pawn', 'black', 'c6');
-  b[7][4] = null;
-  b[7][5] = null; putPiece(b, 5, 6, 'culling_pawn', 'black', 'e6');
-  b[7][6] = null; putPiece(b, 6, 6, 'culling_pawn', 'black', 'f6');
-  b[7][7] = null; putPiece(b, 7, 6, 'culling_pawn', 'black', 'g6');
-  b[8][2] = null; putPiece(b, 2, 7, 'culling_kenjaku', 'black', 'b7');
+  clearCell(b, 8, 5); putPiece(b, 4, 5, 'culling_reggie', 'black', 'd5');
+  clearCell(b, 7, 2); putPiece(b, 2, 6, 'culling_pawn', 'black', 'b6');
+  clearCell(b, 7, 3); putPiece(b, 3, 6, 'culling_pawn', 'black', 'c6');
+  clearCell(b, 7, 4);
+  clearCell(b, 7, 5); putPiece(b, 5, 6, 'culling_pawn', 'black', 'e6');
+  clearCell(b, 7, 6); putPiece(b, 6, 6, 'culling_pawn', 'black', 'f6');
+  clearCell(b, 7, 7); putPiece(b, 7, 6, 'culling_pawn', 'black', 'g6');
+  clearCell(b, 8, 2); putPiece(b, 2, 7, 'culling_kenjaku', 'black', 'b7');
   return b;
 };
 
@@ -198,28 +221,28 @@ const createMidLesson5Board = (): CullingBoard => {
  */
 const createMidLesson6Board = (): CullingBoard => {
   const b = createInitialCullingBoard();
-  b[2][2] = null; putPiece(b, 2, 3, 'culling_pawn', 'white', 'b3');
-  b[2][3] = null; putPiece(b, 1, 3, 'culling_pawn', 'white', 'a3');
-  b[2][4] = null; putPiece(b, 4, 3, 'culling_pawn', 'white', 'd3');
-  b[2][5] = null; putPiece(b, 5, 3, 'culling_pawn', 'white', 'e3');
-  b[2][6] = null; putPiece(b, 6, 3, 'culling_pawn', 'white', 'f3');
-  b[2][7] = null; putPiece(b, 7, 3, 'culling_pawn', 'white', 'g3');
-  b[1][3] = null; putPiece(b, 3, 3, 'culling_maki', 'white', 'c3');
-  b[1][2] = null; putPiece(b, 2, 2, 'culling_hakari', 'white', 'b2');
-  b[1][4] = null; putPiece(b, 4, 2, 'culling_nanami', 'white', 'd2');
-  b[1][7] = null; putPiece(b, 7, 2, 'culling_yuji', 'white', 'g2');
+  clearCell(b, 2, 2); putPiece(b, 2, 3, 'culling_pawn', 'white', 'b3');
+  clearCell(b, 2, 3); putPiece(b, 1, 3, 'culling_pawn', 'white', 'a3');
+  clearCell(b, 2, 4); putPiece(b, 4, 3, 'culling_pawn', 'white', 'd3');
+  clearCell(b, 2, 5); putPiece(b, 5, 3, 'culling_pawn', 'white', 'e3');
+  clearCell(b, 2, 6); putPiece(b, 6, 3, 'culling_pawn', 'white', 'f3');
+  clearCell(b, 2, 7); putPiece(b, 7, 3, 'culling_pawn', 'white', 'g3');
+  clearCell(b, 1, 3); putPiece(b, 3, 3, 'culling_maki', 'white', 'c3');
+  clearCell(b, 1, 2); putPiece(b, 2, 2, 'culling_hakari', 'white', 'b2');
+  clearCell(b, 1, 4); putPiece(b, 4, 2, 'culling_nanami', 'white', 'd2');
+  clearCell(b, 1, 7); putPiece(b, 7, 2, 'culling_yuji', 'white', 'g2');
 
-  b[7][2] = null; putPiece(b, 1, 6, 'culling_pawn', 'black', 'a6');
-  b[7][3] = null; putPiece(b, 3, 5, 'culling_pawn', 'black', 'c5');
-  b[7][4] = null;
-  b[7][5] = null; putPiece(b, 5, 6, 'culling_pawn', 'black', 'e6');
-  b[7][6] = null; putPiece(b, 6, 6, 'culling_pawn', 'black', 'f6');
-  b[7][7] = null; putPiece(b, 7, 6, 'culling_pawn', 'black', 'g6');
-  b[8][5] = null; putPiece(b, 2, 5, 'culling_reggie', 'black', 'b5');
-  b[8][3] = null; putPiece(b, 3, 6, 'culling_uraume', 'black', 'c6');
-  b[8][4] = null; putPiece(b, 5, 8, 'culling_yorozu', 'black', 'e8', { pandaCore: 'panda' });
-  b[8][6] = null;
-  b[8][7] = null;
+  clearCell(b, 7, 2); putPiece(b, 1, 6, 'culling_pawn', 'black', 'a6');
+  clearCell(b, 7, 3); putPiece(b, 3, 5, 'culling_pawn', 'black', 'c5');
+  clearCell(b, 7, 4);
+  clearCell(b, 7, 5); putPiece(b, 5, 6, 'culling_pawn', 'black', 'e6');
+  clearCell(b, 7, 6); putPiece(b, 6, 6, 'culling_pawn', 'black', 'f6');
+  clearCell(b, 7, 7); putPiece(b, 7, 6, 'culling_pawn', 'black', 'g6');
+  clearCell(b, 8, 5); putPiece(b, 2, 5, 'culling_reggie', 'black', 'b5');
+  clearCell(b, 8, 3); putPiece(b, 3, 6, 'culling_uraume', 'black', 'c6');
+  clearCell(b, 8, 4); putPiece(b, 5, 8, 'culling_yorozu', 'black', 'e8', { pandaCore: 'panda' });
+  clearCell(b, 8, 6);
+  clearCell(b, 8, 7);
   putPiece(b, 7, 8, 'culling_naoya', 'black', 'g8');
   putPiece(b, 8, 7, 'culling_kurourushi', 'black', 'h7');
   return b;
@@ -285,7 +308,7 @@ const createMidLesson8Board = (): CullingBoard => {
   return b;
 };
 
-export const CULLING_OPENING_LESSONS: CullingOpeningLesson[] = [
+const RAW_CULLING_OPENING_LESSONS: CullingOpeningLesson[] = [
   // =========================================================================
   // OPENING DOJO CURRICULUM (Lessons 1 - 8: 8 Steps Each)
   // =========================================================================
@@ -3109,3 +3132,29 @@ export const CULLING_OPENING_LESSONS: CullingOpeningLesson[] = [
     ],
   },
 ];
+
+function mapLessonPositions(lesson: CullingOpeningLesson): CullingOpeningLesson {
+  return {
+    ...lesson,
+    patternHighlights: lesson.patternHighlights?.map(mPos),
+    steps: lesson.steps.map((step) => ({
+      ...step,
+      from: mPos(step.from),
+      to: mPos(step.to),
+      vectorArrows: step.vectorArrows?.map((arrow) => ({
+        ...arrow,
+        from: mPos(arrow.from),
+        to: mPos(arrow.to),
+      })),
+      opponentResponse: step.opponentResponse
+        ? {
+            ...step.opponentResponse,
+            from: mPos(step.opponentResponse.from),
+            to: mPos(step.opponentResponse.to),
+          }
+        : undefined,
+    })),
+  };
+}
+
+export const CULLING_OPENING_LESSONS: CullingOpeningLesson[] = RAW_CULLING_OPENING_LESSONS.map(mapLessonPositions);

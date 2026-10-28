@@ -29,55 +29,49 @@ export type CullingPieceType =
   | 'culling_swarm';
 
 export interface CullingPos {
-  x: number; // 0 to 9: 0 = Left arm, 1..8 = Columns A..H, 9 = Right arm
-  y: number; // 0 to 9: 0 = Bottom arm (B0..G0), 1..8 = Ranks 1..8, 9 = Top arm (B9..G9)
+  x: number; // 0 to 6: Files A through G
+  y: number; // 0 to 6: Ranks 1 through 7
 }
 
-export type CullingSquare = string; // e.g., 'B0', 'H1', 'A8', 'L3', 'R4'
+export type CullingSquare = string; // e.g., 'A1', 'G7'
+
+export type CullingBoardSize = '7x7' | '8x8';
+
+export interface CullingMatchConfig {
+  boardSize?: CullingBoardSize;
+  timeControl?: 120 | 300;
+  preferredSide?: 'white' | 'black' | 'random';
+}
 
 /**
- * Returns true if (x, y) is one of the 88 valid playable squares on the cross-shaped board.
- * Four outer corners are void cells.
+ * Returns true if (x, y) is one of the valid playable squares on the board.
+ * - 7x7 board: x in 0..6, y in 0..6 (49 squares)
+ * - 8x8 board: x in 0..7, y in 0..7 (64 squares)
  */
-export function isValidCullingPos(x: number, y: number): boolean {
-  if (x < 0 || x > 9 || y < 0 || y > 9) return false;
-
-  // Center 8x8 (columns A..H = 1..8, rows 1..8)
-  if (x >= 1 && x <= 8 && y >= 1 && y <= 8) return true;
-
-  // Top arm: B9..G9 (columns B..G = 2..7, row 9)
-  if (y === 9 && x >= 2 && x <= 7) return true;
-
-  // Bottom arm: B0..G0 (columns B..G = 2..7, row 0)
-  if (y === 0 && x >= 2 && x <= 7) return true;
-
-  // Left arm: L2..L7 (column 0, rows 2..7)
-  if (x === 0 && y >= 2 && y <= 7) return true;
-
-  // Right arm: R2..R7 (column 9, rows 2..7)
-  if (x === 9 && y >= 2 && y <= 7) return true;
-
-  return false;
+export function isValidCullingPos(x: number, y: number, boardSize: CullingBoardSize = '7x7'): boolean {
+  const maxIdx = boardSize === '8x8' ? 7 : 6;
+  return x >= 0 && x <= maxIdx && y >= 0 && y <= maxIdx;
 }
 
-export const TOTAL_PLAYABLE_SQUARES = 88;
+export const TOTAL_PLAYABLE_SQUARES = 49;
 
-const FILES = ['L', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'R'];
+export const FILES = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
 
-export function posToCullingSquare(pos: CullingPos): CullingSquare {
-  if (!isValidCullingPos(pos.x, pos.y)) return 'VOID';
+export function posToCullingSquare(pos: CullingPos, boardSize: CullingBoardSize = '7x7'): CullingSquare {
+  if (!isValidCullingPos(pos.x, pos.y, boardSize)) return 'VOID';
   const fileLetter = FILES[pos.x];
-  return `${fileLetter}${pos.y}`;
+  return `${fileLetter}${pos.y + 1}`;
 }
 
-export function cullingSquareToPos(sq: CullingSquare): CullingPos | null {
+export function cullingSquareToPos(sq: CullingSquare, boardSize: CullingBoardSize = '7x7'): CullingPos | null {
   if (!sq || sq.length < 2 || sq === 'VOID') return null;
   const fileChar = sq[0].toUpperCase();
   const rank = parseInt(sq.slice(1), 10);
   const x = FILES.indexOf(fileChar);
   if (x === -1 || isNaN(rank)) return null;
-  const pos = { x, y: rank };
-  return isValidCullingPos(pos.x, pos.y) ? pos : null;
+  const y = rank - 1;
+  const pos = { x, y };
+  return isValidCullingPos(pos.x, pos.y, boardSize) ? pos : null;
 }
 
 export type CullingRole =
@@ -140,11 +134,11 @@ export interface CullingPiece {
   hasMoved: boolean;
   // Character specific state
   pandaCore?: 'panda' | 'gorilla'; // Reused as Shell Intact ('panda') vs Broken ('gorilla') for Bulwarks
-  contractShield?: boolean; // Deprecated, kept for backward compatibility
+  contractShield?: boolean;
   specialUsed?: boolean; // Domain Step used for Sovereigns (Gojo / Sukuna)
-  cooldown?: number; // Deprecated, kept for backward compatibility
-  isRestricted?: boolean; // Deprecated, kept for backward compatibility
-  restrictedUntilTurn?: number; // Deprecated, kept for backward compatibility
+  cooldown?: number;
+  isRestricted?: boolean;
+  restrictedUntilTurn?: number;
 }
 
 export type CullingSpecialAction =
@@ -200,7 +194,7 @@ export const CULLING_ROSTER: Record<CullingPieceType, CullingCharacterInfo> = {
     role: 'Sovereign',
     mobilityDescription: 'Moves/captures 1 step in all 8 directions.',
     activeAbility: 'Domain Step (Once per game): Move to an empty square exactly 2 away straight or diagonally, jumping pieces. Unusable while in check; landing square must not be attacked.',
-    initialPos: { x: 8, y: 1 }, // H1
+    initialPos: { x: 6, y: 0 }, // G1
   },
   culling_yuji: {
     type: 'culling_yuji',
@@ -209,7 +203,7 @@ export const CULLING_ROSTER: Record<CullingPieceType, CullingCharacterInfo> = {
     role: 'Vanguard',
     mobilityDescription: 'Slides up to 3 squares in all 8 directions (no leaping).',
     activeAbility: 'Black Flash: A capture of an enemy at exactly distance 2 in a straight line strikes in place (Yuji does not move; target is removed). Distance-1 and 3 captures move normally.',
-    initialPos: { x: 7, y: 1 }, // G1
+    initialPos: { x: 5, y: 0 }, // F1
   },
   culling_mechamaru: {
     type: 'culling_mechamaru',
@@ -218,7 +212,7 @@ export const CULLING_ROSTER: Record<CullingPieceType, CullingCharacterInfo> = {
     role: 'Artillery',
     mobilityDescription: 'Moves/captures 1 step in all 8 directions.',
     activeAbility: 'Ranged Strike: Removes an enemy exactly 2 squares away in 8 directions if the middle square is empty; Mechamaru does not move.',
-    initialPos: { x: 6, y: 1 }, // F1
+    initialPos: { x: 4, y: 0 }, // E1
   },
   culling_panda: {
     type: 'culling_panda',
@@ -227,7 +221,7 @@ export const CULLING_ROSTER: Record<CullingPieceType, CullingCharacterInfo> = {
     role: 'Bulwark',
     mobilityDescription: 'Moves/captures as a knight (8 L-jumps, leaps freely).',
     passiveAbility: 'Shell: The first capture attempt on Panda fails; attacker stays on its square, shell breaks, and the turn is spent.',
-    initialPos: { x: 5, y: 1 }, // E1
+    initialPos: { x: 3, y: 0 }, // D1
   },
   culling_nanami: {
     type: 'culling_nanami',
@@ -236,7 +230,7 @@ export const CULLING_ROSTER: Record<CullingPieceType, CullingCharacterInfo> = {
     role: 'Warden',
     mobilityDescription: 'Slides up to 3 squares orthogonally (no leaping).',
     passiveAbility: 'Ratio Field: Any enemy piece in the 8 adjacent squares is restricted to moving/capturing 1 square max, and Artillery strikes are disabled for it.',
-    initialPos: { x: 4, y: 1 }, // D1
+    initialPos: { x: 2, y: 0 }, // C1
   },
   culling_maki: {
     type: 'culling_maki',
@@ -245,7 +239,7 @@ export const CULLING_ROSTER: Record<CullingPieceType, CullingCharacterInfo> = {
     role: 'Skirmisher',
     mobilityDescription: 'Moves/captures 1 step in all 8 directions, OR hops exactly 2 squares orthogonally (leaping over anything).',
     passiveAbility: 'Heavenly Restriction: Ignores restriction from the Warden Ratio Field.',
-    initialPos: { x: 3, y: 1 }, // C1
+    initialPos: { x: 1, y: 0 }, // B1
   },
   culling_hakari: {
     type: 'culling_hakari',
@@ -254,7 +248,7 @@ export const CULLING_ROSTER: Record<CullingPieceType, CullingCharacterInfo> = {
     role: 'Rusher',
     mobilityDescription: 'Slides up to 2 squares diagonally (no leaping), or steps 1 square orthogonally.',
     passiveAbility: 'Jackpot: After capturing, earns one extra non-capturing 1-square step with this piece to an unattacked square keeping Sovereign safe.',
-    initialPos: { x: 2, y: 1 }, // B1
+    initialPos: { x: 0, y: 0 }, // A1
   },
   culling_sukuna: {
     type: 'culling_sukuna',
@@ -263,7 +257,7 @@ export const CULLING_ROSTER: Record<CullingPieceType, CullingCharacterInfo> = {
     role: 'Sovereign',
     mobilityDescription: 'Moves/captures 1 step in all 8 directions.',
     activeAbility: 'Domain Step (Once per game): Move to an empty square exactly 2 away straight or diagonally, jumping pieces. Unusable while in check; landing square must not be attacked.',
-    initialPos: { x: 1, y: 8 }, // A8
+    initialPos: { x: 0, y: 6 }, // A7
   },
   culling_kenjaku: {
     type: 'culling_kenjaku',
@@ -272,7 +266,7 @@ export const CULLING_ROSTER: Record<CullingPieceType, CullingCharacterInfo> = {
     role: 'Vanguard',
     mobilityDescription: 'Slides up to 3 squares in all 8 directions (no leaping).',
     activeAbility: 'Black Flash: A capture of an enemy at exactly distance 2 in a straight line strikes in place (Kenjaku does not move; target is removed). Distance-1 and 3 captures move normally.',
-    initialPos: { x: 2, y: 8 }, // B8
+    initialPos: { x: 1, y: 6 }, // B7
   },
   culling_uraume: {
     type: 'culling_uraume',
@@ -281,7 +275,7 @@ export const CULLING_ROSTER: Record<CullingPieceType, CullingCharacterInfo> = {
     role: 'Artillery',
     mobilityDescription: 'Moves/captures 1 step in all 8 directions.',
     activeAbility: 'Ranged Strike: Removes an enemy exactly 2 squares away in 8 directions if the middle square is empty; Uraume does not move.',
-    initialPos: { x: 3, y: 8 }, // C8
+    initialPos: { x: 2, y: 6 }, // C7
   },
   culling_yorozu: {
     type: 'culling_yorozu',
@@ -290,7 +284,7 @@ export const CULLING_ROSTER: Record<CullingPieceType, CullingCharacterInfo> = {
     role: 'Bulwark',
     mobilityDescription: 'Moves/captures as a knight (8 L-jumps, leaps freely).',
     passiveAbility: 'Shell: The first capture attempt on Yorozu fails; attacker stays on its square, shell breaks, and the turn is spent.',
-    initialPos: { x: 4, y: 8 }, // D8
+    initialPos: { x: 3, y: 6 }, // D7
   },
   culling_reggie: {
     type: 'culling_reggie',
@@ -299,7 +293,7 @@ export const CULLING_ROSTER: Record<CullingPieceType, CullingCharacterInfo> = {
     role: 'Warden',
     mobilityDescription: 'Slides up to 3 squares orthogonally (no leaping).',
     passiveAbility: 'Ratio Field: Any enemy piece in the 8 adjacent squares is restricted to moving/capturing 1 square max, and Artillery strikes are disabled for it.',
-    initialPos: { x: 5, y: 8 }, // E8
+    initialPos: { x: 4, y: 6 }, // E7
   },
   culling_naoya: {
     type: 'culling_naoya',
@@ -308,7 +302,7 @@ export const CULLING_ROSTER: Record<CullingPieceType, CullingCharacterInfo> = {
     role: 'Skirmisher',
     mobilityDescription: 'Moves/captures 1 step in all 8 directions, OR hops exactly 2 squares orthogonally (leaping over anything).',
     passiveAbility: 'Heavenly Restriction: Ignores restriction from the Warden Ratio Field.',
-    initialPos: { x: 6, y: 8 }, // F8
+    initialPos: { x: 5, y: 6 }, // F7
   },
   culling_kurourushi: {
     type: 'culling_kurourushi',
@@ -317,15 +311,15 @@ export const CULLING_ROSTER: Record<CullingPieceType, CullingCharacterInfo> = {
     role: 'Rusher',
     mobilityDescription: 'Slides up to 2 squares diagonally (no leaping), or steps 1 square orthogonally.',
     passiveAbility: 'Jackpot: After capturing, earns one extra non-capturing 1-square step with this piece to an unattacked square keeping Sovereign safe.',
-    initialPos: { x: 7, y: 8 }, // G8
+    initialPos: { x: 6, y: 6 }, // G7
   },
   culling_pawn: {
     type: 'culling_pawn',
     name: 'Culling Pawn',
-    team: 'white', // Color determined by piece instance
+    team: 'white',
     role: 'Pawn',
-    mobilityDescription: 'Steps 1 square forward; captures 1 square diagonally forward. Promotes to Warden (Nanami/Reggie) on the far edge of each file.',
-    initialPos: { x: 2, y: 2 },
+    mobilityDescription: 'Steps 1 square forward; captures 1 square diagonally forward. Promotes to Warden (Nanami/Reggie) on the far edge.',
+    initialPos: { x: 1, y: 1 },
   },
   culling_swarm: {
     type: 'culling_swarm',
@@ -340,6 +334,7 @@ export const CULLING_ROSTER: Record<CullingPieceType, CullingCharacterInfo> = {
 export interface CullingMatchState {
   id: string;
   board: CullingBoard;
+  boardSize?: CullingBoardSize;
   turn: CullingPieceColor;
   turnCount: number;
   status: 'waiting' | 'active' | 'completed';
@@ -364,21 +359,20 @@ export interface CullingMatchState {
   lastTurnStartTime: number;
   history: CullingMove[];
   lastMove?: CullingMove;
-  hakariBonusPending?: boolean; // General Rusher Jackpot pending flag
-  jackpotPiecePos?: CullingPos; // Track square of Rusher entitled to bonus step
+  hakariBonusPending?: boolean;
+  jackpotPiecePos?: CullingPos;
   makiChainPending?: boolean;
   domainActiveUntilTurn?: { color: CullingPieceColor; untilTurn: number; center: CullingPos };
   rulebookPausedUntil?: number;
-  halfmoveClock?: number; // 30-move rule counter (60 halfmoves without capture or pawn move)
-  positionHistory?: string[]; // Board FEN-like signatures for threefold repetition detection
+  halfmoveClock?: number;
+  positionHistory?: string[];
   createdAt: number;
   updatedAt: number;
-  // Performance optimization: cached king positions (maintained incrementally)
   whiteKingPos?: CullingPos;
   blackKingPos?: CullingPos;
-  // Incremental material tracking
   whiteMaterial?: number;
   blackMaterial?: number;
-  whiteCaptureCount?: number; // pieces captured by white
-  blackCaptureCount?: number; // pieces captured by black
+  whiteCaptureCount?: number;
+  blackCaptureCount?: number;
 }
+

@@ -55,6 +55,7 @@ import { Chess3dRulesPreviewModal } from '../chess3d/Chess3dRulesPreviewModal';
 import type { PunisherBotId } from '../chess3d/chess3dBot';
 import type { Team as Team3D, TimeControl3D } from '../chess3d/types';
 import { CraftGameHub } from '../craftgame/CraftGameHub';
+import bannerHeroImage from '../assets/banner-hero.png';
 
 interface DashboardProps {
   onExitPreGameViews?: () => void;
@@ -529,8 +530,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
           backgroundImage: "url('/assets/aistudio/image_1fd5a868.png')",
         }}
       >
-        {/* Darkened overlay for readability */}
-        <div className="absolute inset-0 bg-black/65 backdrop-brightness-75" />
+        {/* Darkened overlay for readability (increased darkness >80%) */}
+        <div className="absolute inset-0 bg-black/88 backdrop-brightness-50" />
       </div>
 
       {isCullingOpen ? (
@@ -1700,43 +1701,27 @@ export const Dashboard: React.FC<DashboardProps> = ({
       {/* Main Content Area */}
       <main className="relative z-10 flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 flex flex-col lg:grid lg:grid-cols-12 gap-6 pb-[calc(4rem+env(safe-area-inset-bottom,0px)+1rem)] md:pb-6">
 
-        {/* Latest Edition Banner (Mobile) */}
-        <div className="lg:hidden order-2 w-full aspect-[16/10] relative overflow-hidden border-2 border-black dark:border-white shadow-[4px_4px_0px_#000000] bg-black">
-          {BANNER_IMAGES.map((src, idx) => (
-            <img
-              key={src}
-              src={src}
-              alt={idx === bannerIndex ? "Featured game banner" : ""}
-              aria-hidden={idx !== bannerIndex ? true : undefined}
-              className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-700 ease-in-out pointer-events-none ${
-                idx === bannerIndex ? 'opacity-100' : 'opacity-0'
-              }`}
-            />
-          ))}
+        {/* Mobile Banner */}
+        <div 
+          onClick={() => setIsAllGameModesOpen(true)}
+          className="block md:hidden w-[calc(100%+2rem)] -ml-4 -mr-4 -mt-4 mb-4 border-b-4 border-black relative overflow-hidden cursor-pointer hover:opacity-95 transition-opacity"
+        >
+          <img
+            src={bannerHeroImage}
+            alt="MugenChessX"
+            className="block w-full h-[138px] sm:h-[156px] object-cover object-center"
+          />
+          {/* Child 1: Gradient Fade Overlay */}
+          <div className="absolute inset-x-0 bottom-0 h-[55%] bg-gradient-to-b from-transparent to-black/90 pointer-events-none z-10" />
 
-          {/* Subtle bottom gradient to ensure text readability */}
-          <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/80 via-black/30 to-transparent pointer-events-none z-10" />
-
-          {/* Fixed Glassmorphic Chess Play Now Button (Mobile) */}
-          <div className="absolute inset-x-3 bottom-3 z-20">
-            <button
-              type="button"
-              onClick={() => setIsAllGameModesOpen(true)}
-              className="w-full min-h-[48px] py-2 px-3 rounded-xl backdrop-blur-md bg-black/60 hover:bg-black/75 active:bg-black/85 border border-white/30 hover:border-amber-400 text-white font-black text-xs uppercase tracking-wider flex items-center justify-between shadow-[0_8px_20px_rgba(0,0,0,0.6)] cursor-pointer transition-all active:scale-95 group/btn focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400"
-              aria-label="Chess Play Now - View all game modes"
-            >
-              <div className="flex items-center gap-2">
-                <div className="w-5 h-5 rounded-lg bg-amber-400/20 border border-amber-400/60 flex items-center justify-center shrink-0">
-                  <Play className="w-2.5 h-2.5 fill-amber-400 text-amber-400 group-hover/btn:scale-110 transition-transform" />
-                </div>
-                <span className="font-black tracking-wide text-white group-hover/btn:text-amber-300 transition-colors">
-                  Chess Play Now
-                </span>
-              </div>
-              <span className="text-xs px-1.5 py-0.5 rounded bg-white/15 text-white/90 font-mono font-bold border border-white/20 uppercase">
-                All Modes
-              </span>
-            </button>
+          {/* Child 2: Text Block */}
+          <div className="absolute bottom-0 left-0 pb-3 pl-3 z-20 pointer-events-none">
+            <div className="font-light uppercase text-white text-base leading-tight tracking-[0.25em]">
+              MUGEN CHESS X
+            </div>
+            <div className="text-[11px] text-amber-400 uppercase tracking-widest font-bold mt-0.5">
+              ALL GAME MODES
+            </div>
           </div>
         </div>
 
@@ -1767,7 +1752,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
         {/* Left Column: Profile Card & Outgoing Challenges (4 cols) */}
         <div className="order-5 lg:order-1 lg:col-span-4 flex flex-col gap-6">
           {/* Latest Edition Banner (Desktop Left Sidebar) */}
-          <div className="hidden lg:block w-full aspect-[3/2] relative overflow-hidden border-3 border-black dark:border-white shadow-[5px_5px_0px_#000000] dark:shadow-[5px_5px_0px_#ffffff] bg-black">
+          <div className="hidden lg:block w-full aspect-[3/2] relative overflow-hidden border-3 border-black shadow-[5px_5px_0px_#000000] bg-black">
             {BANNER_IMAGES.map((src, idx) => (
               <img
                 key={src}
@@ -2063,6 +2048,30 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
         {/* Right / Center Column: Active Matches & Find Players (8 cols) */}
         <div className="order-4 lg:order-2 lg:col-span-8 flex flex-col gap-6">
+          {/* Desktop Banner */}
+          <div 
+            onClick={() => setIsAllGameModesOpen(true)}
+            className="hidden md:block w-full border-4 border-black relative mb-4 cursor-pointer hover:opacity-95 transition-opacity"
+          >
+            <img
+              src={bannerHeroImage}
+              alt="MugenChessX"
+              className="block w-full h-[156px] object-cover object-center"
+            />
+            {/* Child 1: Gradient Fade Overlay */}
+            <div className="absolute inset-x-0 bottom-0 h-[55%] bg-gradient-to-b from-transparent to-black/90 pointer-events-none z-10" />
+
+            {/* Child 2: Text Block */}
+            <div className="absolute bottom-0 left-0 pb-3 pl-3 z-20 pointer-events-none">
+              <div className="font-light uppercase text-white text-lg leading-tight tracking-[0.25em]">
+                MUGEN CHESS X
+              </div>
+              <div className="text-xs text-amber-400 uppercase tracking-widest font-bold mt-0.5">
+                ALL GAME MODES
+              </div>
+            </div>
+          </div>
+
           {/* Notifications / Errors */}
           {matchError && (
             <div className="bg-red-500 text-white border-3 border-black p-3 text-xs font-black uppercase flex items-center justify-between shadow-[3px_3px_0px_#000]">

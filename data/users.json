@@ -4,15 +4,15 @@
     "username": "alice",
     "displayName": "Alice Champion",
     "avatarId": "avatar_queen",
-    "passwordHash": "60cd3c3bfcdfbbbe53c03e62c9cd51fbf8f90f6efbd3ecf0bfdbb73665bd2ac044de8013b7e47bdee04d99bdd40965e5c7dff29474401f60d45aacafbb61edab",
-    "salt": "ddf00be79b96b4f29fd6f1a7dc1bb46f",
+    "passwordHash": "dcb37bd348f7bfac0d11c6beedc26e4c228f57a80d09d0f89c671e90eebc3287a650911d8595d1669766cb2d9a3e61fcd354b524ef63eb6b8643d9f16799ca8d",
+    "salt": "1e660fbfef1d8baa31481cb900fc6920",
     "stats": {
       "wins": 0,
       "losses": 0,
       "draws": 0,
       "totalGames": 0
     },
-    "createdAt": 1793117989998
+    "createdAt": 1793210881717
   },
   {
     "id": "usr_eve_1792844797030_5733",
@@ -49,15 +49,15 @@
     "username": "bob",
     "displayName": "Bob Tactician",
     "avatarId": "avatar_prince",
-    "passwordHash": "128774eb1f4c5c86d0c52ad0beadf9458694e95c93246891735806e6c6c99cdaf8fbae66fd9d1c5450523854626dde6e374ef4d03b9ee23065404d1b2d03029c",
-    "salt": "7eceb296d6992372356b1b26c1243458",
+    "passwordHash": "ffdfe267dad0d07c7e3c3d665ef567c12cc342fba30107c31a86d246e49dd8b6f53404484fd24ecd433a349cafef0d5ad43ee58d5757f602b3d170338e3f059e",
+    "salt": "47a63a6e25be4f3b1ae8786abab1b7d0",
     "stats": {
       "wins": 0,
       "losses": 0,
       "draws": 0,
       "totalGames": 0
     },
-    "createdAt": 1793117990000
+    "createdAt": 1793210881719
   },
   {
     "id": "usr_guest_1793028370923_y32fu",

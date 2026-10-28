@@ -7,6 +7,7 @@ import {
   CullingMove,
   CULLING_ROSTER,
   posToCullingSquare,
+  CullingBoardSize,
 } from '../types/cullingGame';
 import { CullingBoard } from './CullingBoard';
 import { CullingPiece as CullingPieceComponent } from './CullingPiece';
@@ -60,6 +61,7 @@ interface CullingMatchViewProps {
   socket?: WebSocket | null;
   onPlaySimilarBot?: () => void;
   onPlayMultiplayer?: () => void;
+  boardSize?: CullingBoardSize;
 }
 
 interface AbilityPopup {
@@ -308,7 +310,7 @@ export const CullingMatchView: React.FC<CullingMatchViewProps> = ({
             casterType: m.piece.type,
             color: m.piece.color,
             abilityName,
-            targetSquare: posToCullingSquare(m.to),
+            targetSquare: posToCullingSquare(m.to, match.boardSize || '7x7'),
             isPlayer,
             timestamp: Date.now(),
           };
@@ -537,7 +539,7 @@ export const CullingMatchView: React.FC<CullingMatchViewProps> = ({
       const charInfo = CULLING_ROSTER[m.piece.type];
       const charName = charInfo ? charInfo.name : m.piece.type;
       const teamLabel = m.piece.color === 'white' ? 'White' : 'Black';
-      const dest = posToCullingSquare(m.to);
+      const dest = posToCullingSquare(m.to, match.boardSize || '7x7');
 
       let actionDesc = '';
       if (m.captured) {
@@ -949,6 +951,7 @@ export const CullingMatchView: React.FC<CullingMatchViewProps> = ({
           >
             <CullingBoard
               match={match}
+              boardSize={match.boardSize || '7x7'}
               myColor={userColor}
               isInteractive={match.status === 'active' && match.turn === userColor && !isBotThinking}
               onMove={handleMove}

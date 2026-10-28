@@ -4,6 +4,7 @@ import {
   CullingPieceColor,
   CullingMove,
   CullingMatchState,
+  CullingBoardSize,
   isValidCullingPos,
   posToCullingSquare,
 } from '../types/cullingGame';
@@ -20,6 +21,7 @@ interface CullingBoardProps {
   onPieceClick?: (piece: { type: string; color: string; pos?: CullingPos }) => void;
   pulseGuide?: { from?: CullingPos; to?: CullingPos };
   maxDimension?: number;
+  boardSize?: CullingBoardSize;
 }
 
 export const CullingBoard: React.FC<CullingBoardProps> = ({
@@ -31,7 +33,12 @@ export const CullingBoard: React.FC<CullingBoardProps> = ({
   onPieceClick,
   pulseGuide,
   maxDimension,
+  boardSize,
 }) => {
+  const activeBoardSize: CullingBoardSize = boardSize || match.boardSize || (match.board.length === 8 ? '8x8' : '7x7');
+  const dim = activeBoardSize === '8x8' ? 8 : 7;
+  const maxIdx = dim - 1;
+
   const [selectedPos, setSelectedPos] = useState<CullingPos | null>(null);
 
   const selectedMoves: CullingMove[] = selectedPos
@@ -49,7 +56,7 @@ export const CullingBoard: React.FC<CullingBoardProps> = ({
       : null;
 
   const handleSquareClick = (x: number, y: number) => {
-    if (!isValidCullingPos(x, y)) return;
+    if (!isValidCullingPos(x, y, activeBoardSize)) return;
 
     const clickedPiece = match.board[y][x];
 
@@ -85,15 +92,13 @@ export const CullingBoard: React.FC<CullingBoardProps> = ({
     }
   };
 
-  // 10x10 rows.
-  // If not flipped: rank 9 (top arm) is row 0 of display, rank 0 (bottom arm) is row 9.
   const rowIndices = flipped
-    ? [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
-    : [9, 8, 7, 6, 5, 4, 3, 2, 1, 0];
+    ? Array.from({ length: dim }, (_, i) => i)
+    : Array.from({ length: dim }, (_, i) => maxIdx - i);
 
   const colIndices = flipped
-    ? [9, 8, 7, 6, 5, 4, 3, 2, 1, 0]
-    : [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
+    ? Array.from({ length: dim }, (_, i) => maxIdx - i)
+    : Array.from({ length: dim }, (_, i) => i);
 
   return (
     <div
@@ -114,24 +119,14 @@ export const CullingBoard: React.FC<CullingBoardProps> = ({
           : {}),
       }}
     >
-      {/* 10x10 Cross-Shaped Board Grid: Rock-Solid Dimensions Anchored to Viewport */}
+      {/* Board Grid: Anchored to Viewport */}
       <div
-        className="grid grid-cols-10 grid-rows-10 board-grid-mobile border-0 md:border-2 border-black/40 dark:border-white/20 bg-transparent aspect-square touch-manipulation select-none max-w-full max-h-full w-full h-full"
+        className={`grid ${dim === 8 ? 'grid-cols-8 grid-rows-8' : 'grid-cols-7 grid-rows-7'} board-grid-mobile border-0 md:border-2 border-black/40 dark:border-white/20 bg-transparent aspect-square touch-manipulation select-none max-w-full max-h-full w-full h-full`}
         style={maxDimension ? { maxWidth: `${maxDimension}px`, maxHeight: `${maxDimension}px` } : undefined}
       >
         {rowIndices.map((y) =>
           colIndices.map((x) => {
-            const isPlayable = isValidCullingPos(x, y);
-            const piece = isPlayable ? match.board[y][x] : null;
-
-            if (!isPlayable) {
-              return (
-                <div
-                  key={`cell-${x}-${y}`}
-                  className="w-full h-full aspect-square bg-[#0a0e14]/95 pointer-events-none"
-                />
-              );
-            }
+            const piece = match.board[y][x];
 
             const isSelected = selectedPos?.x === x && selectedPos?.y === y;
             const legalMove = selectedMoves.find((m) => m.to.x === x && m.to.y === y);
@@ -176,7 +171,7 @@ export const CullingBoard: React.FC<CullingBoardProps> = ({
                 : '#F2EFE4';
             }
 
-            const squareLabel = posToCullingSquare({ x, y });
+            const squareLabel = posToCullingSquare({ x, y }, activeBoardSize);
             const isGuideFrom = pulseGuide?.from && pulseGuide.from.x === x && pulseGuide.from.y === y;
             const isGuideTo = pulseGuide?.to && pulseGuide.to.x === x && pulseGuide.to.y === y;
 

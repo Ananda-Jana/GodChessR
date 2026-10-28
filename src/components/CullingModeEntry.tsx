@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, lazy, Suspense } from 'react';
 import {
   CullingMatchState,
   CullingPieceColor,
+  CullingBoardSize,
 } from '../types/cullingGame';
 import { createInitialCullingMatch } from '../game/cullingEngine';
 import { CullingMatchView } from './CullingMatchView';
@@ -58,6 +59,7 @@ export const CullingModeEntry: React.FC<CullingModeEntryProps> = ({ onBack, onMa
   // Common setup state
   const [selectedSide, setSelectedSide] = useState<'white' | 'black' | 'random'>('random');
   const [timeControl, setTimeControl] = useState<120 | 300>(300);
+  const [selectedBoardSize, setSelectedBoardSize] = useState<CullingBoardSize>('7x7');
 
   // Direct Challenge Multiplayer state
   const [joinCodeInput, setJoinCodeInput] = useState('');
@@ -196,7 +198,8 @@ export const CullingModeEntry: React.FC<CullingModeEntryProps> = ({ onBack, onMa
         username: chosenSide === 'black' ? user?.username || 'Player' : 'Grandmaster Bot',
         displayName: chosenSide === 'black' ? user?.displayName || 'Player (Black)' : 'Grandmaster Bot',
       },
-      timeControl
+      timeControl,
+      selectedBoardSize
     );
 
     setIsBotMatch(true);
@@ -395,7 +398,7 @@ export const CullingModeEntry: React.FC<CullingModeEntryProps> = ({ onBack, onMa
             <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent pointer-events-none" />
             <div className="absolute bottom-2.5 left-3 right-3 flex items-center justify-between pointer-events-none">
               <span className="text-[10px] font-mono font-black uppercase px-2 py-0.5 bg-red-600 text-white border border-white shadow-[1px_1px_0px_#fff]">
-                88-SQUARE CROSS GRID
+                49-SQUARE (7×7) GRID
               </span>
               <span className="text-[10px] font-mono font-bold text-white/90 bg-black/70 px-2 py-0.5 border border-white/20">
                 SORCERER DUEL • 1V1 & BOT
@@ -406,20 +409,20 @@ export const CullingModeEntry: React.FC<CullingModeEntryProps> = ({ onBack, onMa
           <ModeArtPanel
             modeKey="culling-game"
             title="Culling Game"
-            subtitle="88-Square Cross Battlefield"
+            subtitle="49-Square (7×7) Battlefield"
           />
 
           <div className="flex-1 p-4 sm:p-7 text-center">
             <div className="inline-flex items-center gap-2 px-3 py-1 bg-amber-400 text-black border-2 border-black shadow-[2px_2px_0px_#000] text-xs font-black uppercase mb-2">
             <Sparkles className="w-3.5 h-3.5" />
-            88 Playable Cross-Board Squares • Direct Challenge Multiplayer
+            49 Playable Squares • Direct Challenge Multiplayer
           </div>
 
           <h2 className="text-2xl sm:text-3xl font-black uppercase tracking-tight mb-2">
             Culling Game Battlegrounds
           </h2>
           <p className="text-xs sm:text-sm text-neutral-600 dark:text-slate-300 font-bold max-w-2xl mx-auto mb-4">
-            Balanced Sorcerer combat on an 88-square cross grid. Challenge a friend directly via Room Code, join open player challenges, or clash against the Grandmaster Bot.
+            Balanced Sorcerer combat on a 49-square (7×7) grid. Challenge a friend directly via Room Code, join open player challenges, or clash against the Grandmaster Bot.
           </p>
 
           {/* Prominent Red Pre-Game Theory Book Gate */}
@@ -443,8 +446,51 @@ export const CullingModeEntry: React.FC<CullingModeEntryProps> = ({ onBack, onMa
             </button>
           </div>
 
-          {/* Time Control & Allegiance Global Defaults */}
-          <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4 mb-6 pb-4 border-b-2 border-black/10 dark:border-white/10">
+          {/* Board Size Selector & Options */}
+          <div className="flex flex-wrap items-center justify-center gap-4 mb-6 pb-4 border-b-2 border-black/10 dark:border-white/10">
+            <div className="w-full max-w-md mb-2">
+              <span className="text-xs font-mono font-bold uppercase text-neutral-500 dark:text-neutral-400 block mb-2 text-center">
+                Board Size:
+              </span>
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => setSelectedBoardSize('7x7')}
+                  className={`p-3 border-3 border-black dark:border-white font-black text-left cursor-pointer transition-transform min-h-[64px] flex flex-col justify-center select-none active:translate-x-0.5 active:translate-y-0.5 ${
+                    selectedBoardSize === '7x7'
+                      ? 'bg-amber-400 text-black shadow-[3px_3px_0px_#000]'
+                      : 'bg-white dark:bg-[#1e293b] text-neutral-600 dark:text-neutral-300'
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm uppercase tracking-wide">7×7 GRID</span>
+                    {selectedBoardSize === '7x7' && (
+                      <span className="text-[10px] bg-black text-amber-400 px-1.5 py-0.5 font-mono">ACTIVE</span>
+                    )}
+                  </div>
+                  <span className="text-[10px] font-bold opacity-80 mt-0.5">49 Squares • Culling Format</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setSelectedBoardSize('8x8')}
+                  className={`p-3 border-3 border-black dark:border-white font-black text-left cursor-pointer transition-transform min-h-[64px] flex flex-col justify-center select-none active:translate-x-0.5 active:translate-y-0.5 ${
+                    selectedBoardSize === '8x8'
+                      ? 'bg-amber-400 text-black shadow-[3px_3px_0px_#000]'
+                      : 'bg-white dark:bg-[#1e293b] text-neutral-600 dark:text-neutral-300'
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm uppercase tracking-wide">8×8 GRID</span>
+                    {selectedBoardSize === '8x8' && (
+                      <span className="text-[10px] bg-black text-amber-400 px-1.5 py-0.5 font-mono">ACTIVE</span>
+                    )}
+                  </div>
+                  <span className="text-[10px] font-bold opacity-80 mt-0.5">64 Squares • Classic Format</span>
+                </button>
+              </div>
+            </div>
+
             <div className="flex items-center gap-2">
               <span className="text-xs font-mono font-bold uppercase text-neutral-500 dark:text-neutral-400">
                 Time Control:

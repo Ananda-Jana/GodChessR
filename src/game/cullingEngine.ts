@@ -30,6 +30,7 @@ import type {
   CullingMove,
   CullingMatchState,
   CullingSpecialAction,
+  CullingBoardSize,
 } from '../types/cullingGame.ts';
 import {
   isValidCullingPos,
@@ -39,35 +40,64 @@ import {
   CULLING_ROSTER,
 } from '../types/cullingGame.ts';
 
-// Precomputed set of all valid (x,y) position strings for O(1) boundary checks
-const VALID_POS_SET: Set<string> = (() => {
+export const CULLING_BOARD_SIZES = {
+  '7x7': { rows: 7, cols: 7, maxIndex: 6 },
+  '8x8': { rows: 8, cols: 8, maxIndex: 7 },
+} as const;
+
+// Precomputed sets of all valid (x,y) position strings for O(1) boundary checks
+const VALID_POS_SET_7X7: Set<string> = (() => {
   const s = new Set<string>();
-  for (let y = 0; y < 10; y++) {
-    for (let x = 0; x < 10; x++) {
-      let valid = false;
-      if (x >= 1 && x <= 8 && y >= 1 && y <= 8) valid = true;
-      else if (y === 9 && x >= 2 && x <= 7) valid = true;
-      else if (y === 0 && x >= 2 && x <= 7) valid = true;
-      else if (x === 0 && y >= 2 && y <= 7) valid = true;
-      else if (x === 9 && y >= 2 && y <= 7) valid = true;
-      if (valid) s.add(`${x},${y}`);
+  for (let y = 0; y < 7; y++) {
+    for (let x = 0; x < 7; x++) {
+      s.add(`${x},${y}`);
     }
   }
   return s;
 })();
 
-export function isValidPos(x: number, y: number): boolean {
-  return VALID_POS_SET.has(`${x},${y}`);
+const VALID_POS_SET_8X8: Set<string> = (() => {
+  const s = new Set<string>();
+  for (let y = 0; y < 8; y++) {
+    for (let x = 0; x < 8; x++) {
+      s.add(`${x},${y}`);
+    }
+  }
+  return s;
+})();
+
+export function getValidPosSet(size: CullingBoardSize = '7x7'): Set<string> {
+  return size === '8x8' ? VALID_POS_SET_8X8 : VALID_POS_SET_7X7;
+}
+
+export function isValidPos(x: number, y: number, size: CullingBoardSize = '7x7'): boolean {
+  return getValidPosSet(size).has(`${x},${y}`);
 }
 
 /**
- * Creates an empty 10x10 cross board
+ * Creates an empty 7x7 board (kept for backward compatibility)
  */
 export function createEmptyCullingBoard(): CullingBoard {
   const board: CullingBoard = [];
-  for (let y = 0; y < 10; y++) {
+  for (let y = 0; y < 7; y++) {
     const row: (CullingPiece | null)[] = [];
-    for (let x = 0; x < 10; x++) {
+    for (let x = 0; x < 7; x++) {
+      row.push(null);
+    }
+    board.push(row);
+  }
+  return board;
+}
+
+/**
+ * Creates an empty board of specified size ('7x7' | '8x8')
+ */
+export function createEmptyBoard(size: CullingBoardSize = '7x7'): CullingBoard {
+  if (size === '7x7') return createEmptyCullingBoard();
+  const board: CullingBoard = [];
+  for (let y = 0; y < 8; y++) {
+    const row: (CullingPiece | null)[] = [];
+    for (let x = 0; x < 8; x++) {
       row.push(null);
     }
     board.push(row);
@@ -85,51 +115,73 @@ export function cloneCullingBoard(board: CullingBoard): CullingBoard {
 }
 
 /**
- * Creates the initial Culling Game board with 180° rotationally symmetric setup.
- * White protagonists on Ranks 1-2; Black antagonists on Ranks 8-7.
- * Bulwarks (Panda and Yorozu) both start with shell intact ('panda').
+ * Creates the initial Culling Game board (7x7) with 180° rotationally symmetric setup.
  */
 export function createInitialCullingBoard(): CullingBoard {
   const board = createEmptyCullingBoard();
 
-  // White team: protagonists
-  // H1: Gojo (Sovereign, x=8, y=1)
-  board[1][8] = { id: 'w_gojo', type: 'culling_gojo', color: 'white', hasMoved: false };
-  // G1: Yuji (Vanguard, x=7, y=1)
-  board[1][7] = { id: 'w_yuji', type: 'culling_yuji', color: 'white', hasMoved: false };
-  // F1: Mechamaru (Artillery, x=6, y=1)
-  board[1][6] = { id: 'w_mechamaru', type: 'culling_mechamaru', color: 'white', hasMoved: false };
-  // E1: Panda (Bulwark, x=5, y=1, Shell intact)
-  board[1][5] = { id: 'w_panda', type: 'culling_panda', color: 'white', hasMoved: false, pandaCore: 'panda' };
-  // D1: Nanami (Warden, x=4, y=1)
-  board[1][4] = { id: 'w_nanami', type: 'culling_nanami', color: 'white', hasMoved: false };
-  // C1: Maki (Skirmisher, x=3, y=1)
-  board[1][3] = { id: 'w_maki', type: 'culling_maki', color: 'white', hasMoved: false };
-  // B1: Hakari (Rusher, x=2, y=1)
-  board[1][2] = { id: 'w_hakari', type: 'culling_hakari', color: 'white', hasMoved: false };
-  // B2..G2: Six White Pawns
-  for (let x = 2; x <= 7; x++) {
-    board[2][x] = { id: `w_pawn_${x}`, type: 'culling_pawn', color: 'white', hasMoved: false };
+  // White team: protagonists (Rank 1: y=0, Rank 2: y=1)
+  board[0][6] = { id: 'w_gojo', type: 'culling_gojo', color: 'white', hasMoved: false };
+  board[0][5] = { id: 'w_yuji', type: 'culling_yuji', color: 'white', hasMoved: false };
+  board[0][4] = { id: 'w_mechamaru', type: 'culling_mechamaru', color: 'white', hasMoved: false };
+  board[0][3] = { id: 'w_panda', type: 'culling_panda', color: 'white', hasMoved: false, pandaCore: 'panda' };
+  board[0][2] = { id: 'w_nanami', type: 'culling_nanami', color: 'white', hasMoved: false };
+  board[0][1] = { id: 'w_maki', type: 'culling_maki', color: 'white', hasMoved: false };
+  board[0][0] = { id: 'w_hakari', type: 'culling_hakari', color: 'white', hasMoved: false };
+  for (let x = 0; x < 7; x++) {
+    board[1][x] = { id: `w_pawn_${x}`, type: 'culling_pawn', color: 'white', hasMoved: false };
   }
 
-  // Black team: antagonists (Exact 180° mirror: (x,y) -> (9-x, 9-y))
-  // A8: Sukuna (Sovereign, x=1, y=8)
-  board[8][1] = { id: 'b_sukuna', type: 'culling_sukuna', color: 'black', hasMoved: false };
-  // B8: Kenjaku (Vanguard, x=2, y=8)
-  board[8][2] = { id: 'b_kenjaku', type: 'culling_kenjaku', color: 'black', hasMoved: false };
-  // C8: Uraume (Artillery, x=3, y=8)
-  board[8][3] = { id: 'b_uraume', type: 'culling_uraume', color: 'black', hasMoved: false };
-  // D8: Yorozu (Bulwark, x=4, y=8, Shell intact)
-  board[8][4] = { id: 'b_yorozu', type: 'culling_yorozu', color: 'black', hasMoved: false, pandaCore: 'panda' };
-  // E8: Reggie Star (Warden, x=5, y=8)
-  board[8][5] = { id: 'b_reggie', type: 'culling_reggie', color: 'black', hasMoved: false };
-  // F8: Naoya Zenin (Skirmisher, x=6, y=8)
-  board[8][6] = { id: 'b_naoya', type: 'culling_naoya', color: 'black', hasMoved: false };
-  // G8: Kurourushi (Rusher, x=7, y=8)
-  board[8][7] = { id: 'b_kurourushi', type: 'culling_kurourushi', color: 'black', hasMoved: false };
-  // B7..G7: Six Black Pawns
-  for (let x = 2; x <= 7; x++) {
-    board[7][x] = { id: `b_pawn_${x}`, type: 'culling_pawn', color: 'black', hasMoved: false };
+  // Black team: antagonists (Exact 180° mirror: (x,y) -> (6-x, 6-y))
+  board[6][0] = { id: 'b_sukuna', type: 'culling_sukuna', color: 'black', hasMoved: false };
+  board[6][1] = { id: 'b_kenjaku', type: 'culling_kenjaku', color: 'black', hasMoved: false };
+  board[6][2] = { id: 'b_uraume', type: 'culling_uraume', color: 'black', hasMoved: false };
+  board[6][3] = { id: 'b_yorozu', type: 'culling_yorozu', color: 'black', hasMoved: false, pandaCore: 'panda' };
+  board[6][4] = { id: 'b_reggie', type: 'culling_reggie', color: 'black', hasMoved: false };
+  board[6][5] = { id: 'b_naoya', type: 'culling_naoya', color: 'black', hasMoved: false };
+  board[6][6] = { id: 'b_kurourushi', type: 'culling_kurourushi', color: 'black', hasMoved: false };
+  for (let x = 0; x < 7; x++) {
+    board[5][x] = { id: `b_pawn_${x}`, type: 'culling_pawn', color: 'black', hasMoved: false };
+  }
+
+  return board;
+}
+
+/**
+ * Creates initial board based on size ('7x7' | '8x8')
+ */
+export function createInitialBoard(size: CullingBoardSize = '7x7'): CullingBoard {
+  if (size === '7x7') return createInitialCullingBoard();
+
+  const board = createEmptyBoard('8x8');
+
+  // White team on 8x8: Rank 1 (y=0) characters, Rank 2 (y=1) pawns
+  // White characters assigned to x=0..6; x=7 extra pawn
+  board[0][0] = { id: 'w_hakari', type: 'culling_hakari', color: 'white', hasMoved: false };
+  board[0][1] = { id: 'w_maki', type: 'culling_maki', color: 'white', hasMoved: false };
+  board[0][2] = { id: 'w_nanami', type: 'culling_nanami', color: 'white', hasMoved: false };
+  board[0][3] = { id: 'w_panda', type: 'culling_panda', color: 'white', hasMoved: false, pandaCore: 'panda' };
+  board[0][4] = { id: 'w_mechamaru', type: 'culling_mechamaru', color: 'white', hasMoved: false };
+  board[0][5] = { id: 'w_yuji', type: 'culling_yuji', color: 'white', hasMoved: false };
+  board[0][6] = { id: 'w_gojo', type: 'culling_gojo', color: 'white', hasMoved: false };
+  board[0][7] = { id: 'w_pawn_extra_0', type: 'culling_pawn', color: 'white', hasMoved: false };
+
+  for (let x = 0; x < 8; x++) {
+    board[1][x] = { id: `w_pawn_${x}`, type: 'culling_pawn', color: 'white', hasMoved: false };
+  }
+
+  // Black team on 8x8: Rank 8 (y=7) characters, Rank 7 (y=6) pawns (180° mirror (7-x, 7-y))
+  board[7][7] = { id: 'b_kurourushi', type: 'culling_kurourushi', color: 'black', hasMoved: false };
+  board[7][6] = { id: 'b_naoya', type: 'culling_naoya', color: 'black', hasMoved: false };
+  board[7][5] = { id: 'b_reggie', type: 'culling_reggie', color: 'black', hasMoved: false };
+  board[7][4] = { id: 'b_yorozu', type: 'culling_yorozu', color: 'black', hasMoved: false, pandaCore: 'panda' };
+  board[7][3] = { id: 'b_uraume', type: 'culling_uraume', color: 'black', hasMoved: false };
+  board[7][2] = { id: 'b_kenjaku', type: 'culling_kenjaku', color: 'black', hasMoved: false };
+  board[7][1] = { id: 'b_sukuna', type: 'culling_sukuna', color: 'black', hasMoved: false };
+  board[7][0] = { id: 'b_pawn_extra_0', type: 'culling_pawn', color: 'black', hasMoved: false };
+
+  for (let x = 0; x < 8; x++) {
+    board[6][x] = { id: `b_pawn_${x}`, type: 'culling_pawn', color: 'black', hasMoved: false };
   }
 
   return board;
@@ -142,14 +194,17 @@ export function createInitialCullingMatch(
   id: string,
   whitePlayer: { userId: string; username: string; displayName: string; avatarId?: string },
   blackPlayer: { userId: string; username: string; displayName: string; avatarId?: string },
-  timeControl: 120 | 300 = 300
+  timeControl: 120 | 300 = 300,
+  boardSize: CullingBoardSize = '7x7'
 ): CullingMatchState {
   const now = Date.now();
-  const board = createInitialCullingBoard();
-  const initialSig = generateBoardSignature(board, 'white');
+  const board = createInitialBoard(boardSize);
+  const initialSig = generateBoardSignature(board, 'white', false, undefined, boardSize);
+  const is8x8 = boardSize === '8x8';
   return {
     id,
     board,
+    boardSize,
     turn: 'white',
     turnCount: 1,
     status: 'active',
@@ -162,8 +217,8 @@ export function createInitialCullingMatch(
     blackTimeRemaining: timeControl,
     lastTurnStartTime: now,
     history: [],
-    whiteKingPos: { x: 8, y: 1 }, // H1: Gojo
-    blackKingPos: { x: 1, y: 8 }, // A8: Sukuna
+    whiteKingPos: is8x8 ? { x: 6, y: 0 } : { x: 6, y: 0 }, // G1: Gojo
+    blackKingPos: is8x8 ? { x: 1, y: 7 } : { x: 0, y: 6 }, // B8 / A7: Sukuna
     whiteCaptureCount: 0,
     blackCaptureCount: 0,
     halfmoveClock: 0,
@@ -174,19 +229,18 @@ export function createInitialCullingMatch(
 }
 
 /**
- * Returns true if a pawn at (pos.x, pos.y) has reached the far edge of its file.
- * Symmetrical far edge by file:
- * - White (+y): L/R -> Rank 7; A/H -> Rank 8; B..G -> Rank 9
- * - Black (-y): L/R -> Rank 2; A/H -> Rank 1; B..G -> Rank 0
+ * Returns true if a pawn at (pos.x, pos.y) has reached the far rank.
+ * White promotes at max rank; Black promotes at rank 0.
  */
-export function isPawnPromotionSquare(color: CullingPieceColor, pos: CullingPos): boolean {
+export function isPawnPromotionSquare(
+  color: CullingPieceColor,
+  pos: CullingPos,
+  boardSize: CullingBoardSize = '7x7'
+): boolean {
+  const maxIdx = boardSize === '8x8' ? 7 : 6;
   if (color === 'white') {
-    if (pos.x === 0 || pos.x === 9) return pos.y >= 7;
-    if (pos.x === 1 || pos.x === 8) return pos.y >= 8;
-    return pos.y >= 9;
+    return pos.y >= maxIdx;
   } else {
-    if (pos.x === 0 || pos.x === 9) return pos.y <= 2;
-    if (pos.x === 1 || pos.x === 8) return pos.y <= 1;
     return pos.y <= 0;
   }
 }
@@ -246,6 +300,7 @@ export function findKingPos(
   color: CullingPieceColor,
   cachedPos?: CullingPos | null
 ): CullingPos | null {
+  const dim = board.length === 8 ? 8 : 7;
   const kingType: CullingPieceType = color === 'white' ? 'culling_gojo' : 'culling_sukuna';
   if (cachedPos && board[cachedPos.y]?.[cachedPos.x]) {
     const candidate = board[cachedPos.y][cachedPos.x];
@@ -253,8 +308,8 @@ export function findKingPos(
       return cachedPos;
     }
   }
-  for (let y = 0; y < 10; y++) {
-    for (let x = 0; x < 10; x++) {
+  for (let y = 0; y < dim; y++) {
+    for (let x = 0; x < dim; x++) {
       const p = board[y][x];
       if (p && p.color === color && p.type === kingType) {
         return { x, y };
@@ -273,8 +328,9 @@ export function isSquareAttackedBy(
   target: CullingPos,
   attackerColor: CullingPieceColor
 ): boolean {
-  for (let y = 0; y < 10; y++) {
-    for (let x = 0; x < 10; x++) {
+  const dim = board.length === 8 ? 8 : 7;
+  for (let y = 0; y < dim; y++) {
+    for (let x = 0; x < dim; x++) {
       const piece = board[y][x];
       if (!piece || piece.color !== attackerColor) continue;
 
@@ -934,8 +990,9 @@ export function getLegalMovesForSquare(match: CullingMatchState, from: CullingPo
  */
 export function getAllLegalMoves(match: CullingMatchState): CullingMove[] {
   const moves: CullingMove[] = [];
-  for (let y = 0; y < 10; y++) {
-    for (let x = 0; x < 10; x++) {
+  const dim = match.board.length === 8 ? 8 : 7;
+  for (let y = 0; y < dim; y++) {
+    for (let x = 0; x < dim; x++) {
       const piece = match.board[y][x];
       if (piece && piece.color === match.turn) {
         moves.push(...getLegalMovesForSquare(match, { x, y }));
@@ -952,14 +1009,16 @@ export function generateBoardSignature(
   board: CullingBoard,
   turn: CullingPieceColor,
   jackpotPending?: boolean,
-  jackpotPos?: CullingPos
+  jackpotPos?: CullingPos,
+  boardSize?: CullingBoardSize
 ): string {
   let sig = `${turn}`;
   if (jackpotPending && jackpotPos) {
     sig += `_jp${jackpotPos.x}${jackpotPos.y}`;
   }
-  for (let y = 0; y < 10; y++) {
-    for (let x = 0; x < 10; x++) {
+  const dim = boardSize === '8x8' || board.length === 8 ? 8 : 7;
+  for (let y = 0; y < dim; y++) {
+    for (let x = 0; x < dim; x++) {
       const p = board[y][x];
       if (p) {
         sig += `_${x}${y}${p.color[0]}${p.type}_${p.pandaCore || '0'}_${p.specialUsed ? '1' : '0'}`;
@@ -1117,8 +1176,8 @@ export function executeCullingMove(
   }
 
   // Cached sovereign positions
-  let nextWhiteKingPos = match.whiteKingPos || { x: 8, y: 1 };
-  let nextBlackKingPos = match.blackKingPos || { x: 1, y: 8 };
+  let nextWhiteKingPos = match.whiteKingPos || { x: 6, y: 0 };
+  let nextBlackKingPos = match.blackKingPos || { x: 0, y: 6 };
   if (chosenMove.piece.type === 'culling_gojo') {
     nextWhiteKingPos = chosenMove.to;
   } else if (chosenMove.piece.type === 'culling_sukuna') {
