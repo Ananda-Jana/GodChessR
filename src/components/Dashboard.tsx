@@ -120,6 +120,45 @@ const DropupThumb: React.FC<DropupThumbProps> = ({
   );
 };
 
+const Chessboard3x3Icon: React.FC<{ className?: string; active?: boolean }> = ({
+  className = 'w-5 h-5',
+  active = false,
+}) => (
+  <svg
+    viewBox="0 0 24 24"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+    className={className}
+    aria-hidden="true"
+  >
+    {/* Outer Rounded Board Border */}
+    <rect
+      x="2"
+      y="2"
+      width="20"
+      height="20"
+      rx="3.5"
+      className={active ? 'stroke-red-500 fill-black/60' : 'stroke-zinc-400 fill-black/60'}
+      strokeWidth="1.6"
+    />
+    {/* 3x3 Checkered Chessboard Grid */}
+    {/* Row 1 */}
+    <rect x="3.6" y="3.6" width="5.1" height="5.1" rx="1" fill={active ? '#ef4444' : '#f59e0b'} />
+    <rect x="9.45" y="3.6" width="5.1" height="5.1" rx="1" fill="#18181b" stroke="rgba(255,255,255,0.2)" strokeWidth="0.6" />
+    <rect x="15.3" y="3.6" width="5.1" height="5.1" rx="1" fill={active ? '#ef4444' : '#f59e0b'} />
+
+    {/* Row 2 */}
+    <rect x="3.6" y="9.45" width="5.1" height="5.1" rx="1" fill="#18181b" stroke="rgba(255,255,255,0.2)" strokeWidth="0.6" />
+    <rect x="9.45" y="9.45" width="5.1" height="5.1" rx="1" fill={active ? '#ef4444' : '#f59e0b'} />
+    <rect x="15.3" y="9.45" width="5.1" height="5.1" rx="1" fill="#18181b" stroke="rgba(255,255,255,0.2)" strokeWidth="0.6" />
+
+    {/* Row 3 */}
+    <rect x="3.6" y="15.3" width="5.1" height="5.1" rx="1" fill={active ? '#ef4444' : '#f59e0b'} />
+    <rect x="9.45" y="15.3" width="5.1" height="5.1" rx="1" fill="#18181b" stroke="rgba(255,255,255,0.2)" strokeWidth="0.6" />
+    <rect x="15.3" y="15.3" width="5.1" height="5.1" rx="1" fill={active ? '#ef4444' : '#f59e0b'} />
+  </svg>
+);
+
 export const Dashboard: React.FC<DashboardProps> = ({
   onOpenRules,
   onOpenBotModal,
@@ -182,7 +221,9 @@ export const Dashboard: React.FC<DashboardProps> = ({
   const [isMobileProfileOpen, setIsMobileProfileOpen] = useState(false);
   const [isMobileNavDropdownOpen, setIsMobileNavDropdownOpen] = useState(false);
   const [isHighlightsExpanded, setIsHighlightsExpanded] = useState(false);
-  const [activeBottomTab, setActiveBottomTab] = useState<'play' | 'matches' | 'players' | null>(null);
+  const [activeBottomTab, setActiveBottomTab] = useState<'play' | 'matches' | 'players' | 'store' | 'hashira' | 'trophies' | 'culling' | 'modes' | 'profile' | null>('modes');
+
+  const isNavigatingRef = useRef(false);
 
   const handleCloseAllPreGameViews = () => {
     setIsCullingOpen(false);
@@ -194,8 +235,162 @@ export const Dashboard: React.FC<DashboardProps> = ({
     setChallengeModalTarget(null);
     setIsWalkWithMastersOpen(false);
     setIsMobileNavDropdownOpen(false);
+    setIsMobileProfileOpen(false);
+    setIsTrophyRoomOpen(false);
+    setIsAboutOpen(false);
+    setActiveBottomTab('modes');
     onExitPreGameViews?.();
   };
+
+  // Single-source-of-truth active tab in bottom navigation bar (strictly mutually exclusive)
+  const getActiveTab = (): 'modes' | 'store' | 'play' | 'hashira' | 'trophies' | null => {
+    if (isMobileNavDropdownOpen) return 'play';
+    if (isStoreOpen) return 'store';
+    if (isTrophyRoomOpen) return 'trophies';
+    if (isWalkWithMastersOpen) return 'hashira';
+    if (isAllGameModesOpen) return 'modes';
+    if (isCullingOpen) return 'modes';
+    if (isMobileProfileOpen) return null;
+    if (activeBottomTab === 'store') return 'store';
+    if (activeBottomTab === 'hashira') return 'hashira';
+    if (activeBottomTab === 'trophies') return 'trophies';
+    if (activeBottomTab === 'play') return 'play';
+    if (activeBottomTab === 'modes') return 'modes';
+    return 'modes';
+  };
+
+  const currentActiveTab = getActiveTab();
+
+  // Clean play menu toggle handler that closes all other views without race conditions
+  const togglePlayMenu = () => {
+    const wasOpen = isMobileNavDropdownOpen;
+    handleCloseAllPreGameViews();
+    if (!wasOpen) {
+      setIsMobileNavDropdownOpen(true);
+      setActiveBottomTab('play');
+    } else {
+      setActiveBottomTab('modes');
+    }
+  };
+
+  // Central mobile-only navigation orchestrator (additive, no desktop changes)
+  const navigateMobile = (
+    tab: 'play' | 'store' | 'hashira' | 'trophies' | 'culling' | 'rules' | 'profile' | 'modes',
+    action: () => void,
+    hashName?: string
+  ) => {
+    // Desktop guard: on desktop (>=768px), execute action directly without mobile tab state changes
+    if (typeof window !== 'undefined' && window.innerWidth >= 768) {
+      action();
+      return;
+    }
+
+    // Debounce rapid double-taps
+    if (isNavigatingRef.current) return;
+    isNavigatingRef.current = true;
+    setTimeout(() => {
+      isNavigatingRef.current = false;
+    }, 150);
+
+    // Optional subtle touch feedback
+    try {
+      if (typeof navigator !== 'undefined' && navigator.vibrate) {
+        navigator.vibrate(10);
+      }
+    } catch {}
+
+    // Close all open overlays, modals, and the PLAY drop-up menu
+    handleCloseAllPreGameViews();
+
+    // Set bottom tab active highlight
+    if (tab === 'store' || tab === 'hashira' || tab === 'trophies' || tab === 'culling' || tab === 'play' || tab === 'modes' || tab === 'profile') {
+      setActiveBottomTab(tab);
+    }
+
+    // Execute target action
+    action();
+
+    // Push/replace history entry for native mobile back button support
+    if (hashName && typeof window !== 'undefined') {
+      const targetHash = `#${hashName}`;
+      if (window.location.hash !== targetHash) {
+        if (window.location.hash) {
+          window.history.replaceState(null, '', targetHash);
+        } else {
+          window.history.pushState(null, '', targetHash);
+        }
+      }
+    }
+  };
+
+  // Mobile popstate listener for device Back button / swipe-back
+  useEffect(() => {
+    if (typeof window === 'undefined' || window.innerWidth >= 768) return;
+
+    const handlePopState = () => {
+      if (
+        isStoreOpen ||
+        isTrophyRoomOpen ||
+        isCullingOpen ||
+        isMobileProfileOpen ||
+        isMobileNavDropdownOpen ||
+        is3dPreviewModalOpen ||
+        isAboutOpen ||
+        isAllGameModesOpen ||
+        isWalkWithMastersOpen
+      ) {
+        handleCloseAllPreGameViews();
+        setActiveBottomTab('play');
+        if (window.location.hash) {
+          window.history.replaceState(null, '', window.location.pathname);
+        }
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [
+    isStoreOpen,
+    isTrophyRoomOpen,
+    isCullingOpen,
+    isMobileProfileOpen,
+    isMobileNavDropdownOpen,
+    is3dPreviewModalOpen,
+    isAboutOpen,
+    isAllGameModesOpen,
+    isWalkWithMastersOpen,
+  ]);
+
+  // Lock body scroll when mobile modal/overlay is active and unlock on close
+  useEffect(() => {
+    if (typeof window === 'undefined' || window.innerWidth >= 768) return;
+    const isAnyOpen =
+      isStoreOpen ||
+      isTrophyRoomOpen ||
+      isMobileProfileOpen ||
+      isAboutOpen ||
+      isAllGameModesOpen ||
+      is3dPreviewModalOpen ||
+      isWalkWithMastersOpen;
+
+    if (isAnyOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [
+    isStoreOpen,
+    isTrophyRoomOpen,
+    isMobileProfileOpen,
+    isAboutOpen,
+    isAllGameModesOpen,
+    is3dPreviewModalOpen,
+    isWalkWithMastersOpen,
+  ]);
 
   const profilePillRef = useRef<HTMLButtonElement | null>(null);
   const sheetCloseRef = useRef<HTMLButtonElement | null>(null);
@@ -367,7 +562,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
           {/* Mobile Walk with Masters Button */}
           <button
             type="button"
-            onClick={() => setIsWalkWithMastersOpen(true)}
+            onClick={() => navigateMobile('hashira', () => setIsWalkWithMastersOpen(true), 'masters')}
             aria-label="Walk with Masters (Train with Thukuna & Gatoru)"
             title="Walk with Masters"
             className="min-w-[44px] min-h-[44px] inline-flex items-center justify-center p-1.5 rounded-lg hover:bg-white/10 active:bg-white/15 text-white cursor-pointer transition-all active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 shrink-0 group relative"
@@ -378,7 +573,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
           {/* Rules Button */}
           <button
             type="button"
-            onClick={onOpenRules}
+            onClick={() => navigateMobile('rules', onOpenRules, 'rules')}
             aria-label="Open rulebook"
             title="Rules"
             className="min-w-[44px] min-h-[44px] inline-flex items-center justify-center p-1.5 rounded-lg hover:bg-white/10 active:bg-white/15 text-white cursor-pointer transition-all active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 shrink-0"
@@ -389,7 +584,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
           {/* Culling Mode Launcher Button */}
           <button
             type="button"
-            onClick={() => setIsCullingOpen(true)}
+            onClick={() => navigateMobile('culling', () => setIsCullingOpen(true), 'culling')}
             aria-label="Play Culling mode"
             title="Culling"
             className="min-w-[44px] min-h-[44px] inline-flex items-center justify-center p-1.5 rounded-lg hover:bg-white/10 active:bg-white/15 text-white cursor-pointer transition-all active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 shrink-0"
@@ -400,7 +595,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
           {/* Mobile 3D Annihilatic Chess Arcade Button */}
           <button
             type="button"
-            onClick={() => setIs3dPreviewModalOpen(true)}
+            onClick={() => navigateMobile('play', () => setIs3dPreviewModalOpen(true), '3d')}
             aria-label="3D Annihilatic Chess Arcade"
             title="3D Chess Arcade"
             className="min-w-[44px] min-h-[44px] inline-flex items-center justify-center p-1.5 rounded-lg hover:bg-purple-950/50 active:bg-purple-900/60 text-purple-400 cursor-pointer transition-all active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400 shrink-0 relative group"
@@ -428,7 +623,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
           <button
             ref={profilePillRef}
             type="button"
-            onClick={() => setIsMobileProfileOpen(true)}
+            onClick={() => navigateMobile('profile', () => setIsMobileProfileOpen(true), 'profile')}
             aria-label="Open profile and statistics"
             aria-expanded={isMobileProfileOpen}
             className="min-w-[44px] min-h-[44px] inline-flex items-center justify-center p-0.5 rounded-full border-2 border-amber-400 hover:border-amber-300 active:scale-95 transition-all cursor-pointer shrink-0 bg-neutral-900 overflow-hidden shadow-[0_0_8px_rgba(251,191,36,0.25)]"
@@ -447,10 +642,10 @@ export const Dashboard: React.FC<DashboardProps> = ({
       {/* Mobile Quick-Access Game Modes Drop-Up Menu (md:hidden, fiery glass styling, NOT a modal) */}
       {isMobileNavDropdownOpen && (
         <>
-          {/* Invisible click-outside dismisser (transparent, not a dimming modal overlay) */}
+          {/* Invisible click-outside dismisser (transparent, covers area above bottom nav) */}
           <div
-            className="md:hidden fixed inset-0 z-[115] bg-transparent"
-            onClick={() => setIsMobileNavDropdownOpen(false)}
+            className="md:hidden fixed top-0 left-0 right-0 bottom-[calc(4rem+env(safe-area-inset-bottom))] z-[115] bg-transparent"
+            onClick={togglePlayMenu}
             aria-hidden="true"
           />
 
@@ -475,7 +670,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
               </div>
               <button
                 type="button"
-                onClick={() => setIsMobileNavDropdownOpen(false)}
+                onClick={togglePlayMenu}
                 className="text-zinc-400 hover:text-white min-w-[44px] min-h-[44px] inline-flex items-center justify-center rounded-lg hover:bg-white/10 active:scale-95 transition-all cursor-pointer"
                 aria-label="Close Modes Menu"
               >
@@ -807,11 +1002,12 @@ export const Dashboard: React.FC<DashboardProps> = ({
           filter: drop-shadow(0 4px 10px rgba(255, 76, 18, 0.28))
                   drop-shadow(0 10px 22px rgba(255, 91, 20, 0.22));
           animation: playWrapperBreath 3.2s ease-in-out infinite;
+          transition: filter 0.3s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
         .play-glass-wrapper-active {
-          filter: drop-shadow(0 4px 12px rgba(255, 76, 18, 0.42))
-                  drop-shadow(0 12px 26px rgba(255, 91, 20, 0.34)) !important;
+          filter: drop-shadow(0 4px 14px rgba(255, 45, 115, 0.58))
+                  drop-shadow(0 12px 28px rgba(255, 100, 50, 0.45)) !important;
         }
 
         html body nav button.play-glass-button,
@@ -841,12 +1037,12 @@ export const Dashboard: React.FC<DashboardProps> = ({
                       0 18px 34px rgba(255, 104, 24, 0.10),
                       inset 0 1px 1px rgba(255, 255, 255, 0.12);
           animation: playAmbientBreath 3.2s ease-in-out infinite;
-          transition: transform 0.15s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+          transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), border-color 0.2s ease, box-shadow 0.2s ease;
         }
 
         html body nav button.play-glass-button:active,
         button.play-glass-button:active {
-          transform: scale(0.95);
+          transform: scale(0.90) !important;
         }
 
         html body nav button.play-glass-button:focus-visible,
@@ -857,11 +1053,11 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
         html body nav button.play-glass-button.play-glass-active,
         .play-glass-active {
-          border-color: rgba(255, 154, 36, 0.55) !important;
-          box-shadow: 0 4px 14px rgba(255, 76, 18, 0.38),
-                      0 10px 28px rgba(255, 91, 20, 0.32),
-                      0 20px 42px rgba(255, 104, 24, 0.20),
-                      inset 0 1px 1px rgba(255, 255, 255, 0.18) !important;
+          border-color: rgba(255, 105, 180, 0.8) !important;
+          box-shadow: 0 4px 16px rgba(255, 45, 115, 0.5),
+                      0 10px 30px rgba(255, 120, 40, 0.4),
+                      0 20px 45px rgba(255, 45, 115, 0.25),
+                      inset 0 1px 1px rgba(255, 255, 255, 0.4) !important;
         }
 
         /* Lower molten-glass inner layer */
@@ -2746,24 +2942,28 @@ export const Dashboard: React.FC<DashboardProps> = ({
       {/* Fixed Bottom Tab Bar (Mobile only, md:hidden) */}
       <nav
         aria-label="Mobile Navigation"
-        className="md:hidden fixed bottom-0 left-0 right-0 z-[110] overflow-visible bg-zinc-950/95 supports-[backdrop-filter]:bg-zinc-950/80 supports-[backdrop-filter]:backdrop-blur-xl border-t border-white/10 text-white pb-[env(safe-area-inset-bottom)]"
+        className="md:hidden fixed bottom-0 left-0 right-0 z-[200] overflow-visible bg-zinc-950/95 supports-[backdrop-filter]:bg-zinc-950/80 supports-[backdrop-filter]:backdrop-blur-xl border-t border-white/10 text-white pb-[env(safe-area-inset-bottom)]"
       >
         <div className="grid grid-cols-[1fr_1fr_auto_1fr_1fr] h-16 max-w-md mx-auto items-center px-1 overflow-visible">
           {/* Tab 1: Modes */}
           <button
             type="button"
             onClick={() => {
-              handleCloseAllPreGameViews();
-              scrollToSection('modes', 'play');
+              const wasOpen = isAllGameModesOpen;
+              navigateMobile('modes', () => {
+                if (!wasOpen) {
+                  setIsAllGameModesOpen(true);
+                }
+              }, 'modes');
             }}
-            aria-label="Jump to Game Modes"
-            className={`min-h-[48px] w-full flex flex-col items-center justify-center gap-0.5 transition-colors cursor-pointer relative box-border ${
-              activeBottomTab === 'play'
-                ? 'border-t-[3px] border-amber-400 font-bold text-amber-400'
-                : 'border-t-[3px] border-transparent font-semibold text-zinc-100 hover:text-white'
+            aria-label="Open All Game Modes"
+            className={`min-h-[48px] w-full flex flex-col items-center justify-center gap-0.5 transition-transform duration-150 ease-out active:scale-95 motion-reduce:transform-none cursor-pointer relative box-border ${
+              currentActiveTab === 'modes'
+                ? 'font-bold text-red-500'
+                : 'font-semibold text-zinc-100 hover:text-white'
             }`}
           >
-            <LayoutGrid className="w-5 h-5" />
+            <Chessboard3x3Icon className="w-5 h-5" active={currentActiveTab === 'modes'} />
             <span className="text-[11px] uppercase tracking-tight">Modes</span>
           </button>
 
@@ -2771,31 +2971,27 @@ export const Dashboard: React.FC<DashboardProps> = ({
           <button
             type="button"
             onClick={() => {
-              handleCloseAllPreGameViews();
-              setIsStoreOpen(true);
+              navigateMobile('store', () => setIsStoreOpen(true), 'store');
             }}
             aria-label="Open Mugen Gem Store"
-            className={`min-h-[48px] w-full flex flex-col items-center justify-center gap-0.5 transition-colors cursor-pointer relative box-border ${
-              isStoreOpen
-                ? 'border-t-[3px] border-amber-400 font-bold text-amber-400'
-                : 'border-t-[3px] border-transparent font-semibold text-zinc-100 hover:text-white'
+            className={`min-h-[48px] w-full flex flex-col items-center justify-center gap-0.5 transition-transform duration-150 ease-out active:scale-95 motion-reduce:transform-none cursor-pointer relative box-border ${
+              currentActiveTab === 'store'
+                ? 'font-bold text-red-500'
+                : 'font-semibold text-zinc-100 hover:text-white'
             }`}
           >
-            <ShoppingBag className="w-5 h-5 text-amber-400" />
+            <ShoppingBag className={`w-5 h-5 ${currentActiveTab === 'store' ? 'text-red-500' : 'text-amber-400'}`} />
             <span className="text-[11px] uppercase tracking-tight">Store</span>
           </button>
 
-          {/* Tab 3: PLAY Button (Fiery Molten Glass Keycap with text PLAY) */}
-          <div className={`play-glass-wrapper px-1 ${isMobileNavDropdownOpen ? 'play-glass-wrapper-active' : ''}`}>
+          {/* Tab 3: PLAY Button (Fiery Molten Glass Keycap converting to Glossy King Icon when active) */}
+          <div className={`play-glass-wrapper px-1 ${currentActiveTab === 'play' ? 'play-glass-wrapper-active' : ''}`}>
             <button
               type="button"
-              onClick={() => {
-                handleCloseAllPreGameViews();
-                setIsMobileNavDropdownOpen((prev) => !prev);
-              }}
+              onClick={togglePlayMenu}
               aria-label="Toggle Quick Access Game Modes Menu"
               aria-expanded={isMobileNavDropdownOpen}
-              className={`play-glass-button ${isMobileNavDropdownOpen ? 'play-glass-active' : ''}`}
+              className={`play-glass-button ${currentActiveTab === 'play' ? 'play-glass-active' : ''}`}
             >
               {/* Layer 1: Lower molten-glass inner layer */}
               <span className="play-glass-molten" aria-hidden="true" />
@@ -2809,14 +3005,30 @@ export const Dashboard: React.FC<DashboardProps> = ({
               {/* Layer 4: Bright lower glass rim */}
               <span className="play-glass-rim" aria-hidden="true" />
 
-              {/* Layer 5: Top specular highlight */}
-              <span className="play-glass-specular" aria-hidden="true" />
+              {/* Layer 5: Active Glossy Pink Chess King Icon Background Layer (Contained inside squircle container) */}
+              <span
+                className={`absolute inset-0 z-1 pointer-events-none transition-all duration-300 ease-out ${
+                  currentActiveTab === 'play'
+                    ? 'opacity-100 scale-100'
+                    : 'opacity-0 scale-90'
+                }`}
+                aria-hidden="true"
+              >
+                <img
+                  src="/assets/aistudio/Glossy_Pink_Chess_King_Icon_11d2622a.png"
+                  alt=""
+                  className="w-full h-full object-cover rounded-[20px] select-none"
+                />
+              </span>
 
-              {/* Layer 6: Diagonal glass gleam sweep */}
-              <span className="play-glass-gleam" aria-hidden="true" />
+              {/* Layer 6: Top specular highlight */}
+              <span className="play-glass-specular z-2" aria-hidden="true" />
 
-              {/* Crisp PLAY Label */}
-              <span className="play-glass-label">PLAY</span>
+              {/* Layer 7: Diagonal glass gleam sweep */}
+              <span className="play-glass-gleam z-2" aria-hidden="true" />
+
+              {/* Crisp PLAY Label (Fades smoothly when icon takes over) */}
+              <span className={`play-glass-label z-3 transition-opacity duration-200 ${currentActiveTab === 'play' ? 'opacity-0' : 'opacity-100'}`}>PLAY</span>
             </button>
           </div>
 
@@ -2824,15 +3036,22 @@ export const Dashboard: React.FC<DashboardProps> = ({
           <button
             type="button"
             onClick={() => {
-              handleCloseAllPreGameViews();
-              if (onOpenHashiraTraining) {
-                onOpenHashiraTraining('thukuna');
-              }
+              navigateMobile('hashira', () => {
+                if (onOpenHashiraTraining) {
+                  onOpenHashiraTraining('thukuna');
+                } else {
+                  setIsWalkWithMastersOpen(true);
+                }
+              }, 'hashira');
             }}
             aria-label="Open Hashira Dojo"
-            className="min-h-[48px] w-full flex flex-col items-center justify-center gap-0.5 border-t-[3px] border-transparent font-semibold text-zinc-100 hover:text-white transition-colors cursor-pointer relative box-border"
+            className={`min-h-[48px] w-full flex flex-col items-center justify-center gap-0.5 transition-transform duration-150 ease-out active:scale-95 motion-reduce:transform-none cursor-pointer relative box-border ${
+              currentActiveTab === 'hashira'
+                ? 'font-bold text-red-500'
+                : 'font-semibold text-zinc-100 hover:text-white'
+            }`}
           >
-            <Flame className="w-5 h-5 text-amber-500" />
+            <Flame className={`w-5 h-5 ${currentActiveTab === 'hashira' ? 'text-red-500' : 'text-amber-500'}`} />
             <span className="text-[11px] uppercase tracking-tight">Hashira</span>
           </button>
 
@@ -2840,16 +3059,19 @@ export const Dashboard: React.FC<DashboardProps> = ({
           <button
             type="button"
             onClick={() => {
-              handleCloseAllPreGameViews();
-              setIsTrophyRoomOpen(true);
+              navigateMobile('trophies', () => setIsTrophyRoomOpen(true), 'trophies');
             }}
             aria-label="Open Trophy Room"
-            className="min-h-[48px] w-full flex flex-col items-center justify-center gap-0.5 border-t-[3px] border-transparent font-semibold text-zinc-100 hover:text-white transition-colors cursor-pointer relative box-border"
+            className={`min-h-[48px] w-full flex flex-col items-center justify-center gap-0.5 transition-transform duration-150 ease-out active:scale-95 motion-reduce:transform-none cursor-pointer relative box-border ${
+              currentActiveTab === 'trophies'
+                ? 'font-bold text-red-500'
+                : 'font-semibold text-zinc-100 hover:text-white'
+            }`}
           >
             <div className="relative">
-              <Trophy className="w-5 h-5 text-amber-400" />
+              <Trophy className={`w-5 h-5 ${currentActiveTab === 'trophies' ? 'text-red-500' : 'text-amber-400'}`} />
               {predictorState.earnedCards.length > 0 && (
-                <span className="absolute -top-1.5 -right-2.5 px-1 py-0.2 bg-amber-400 text-black text-[10px] font-mono font-black rounded-full leading-tight">
+                <span className={`absolute -top-1.5 -right-2.5 px-1 py-0.2 ${currentActiveTab === 'trophies' ? 'bg-red-500 text-white' : 'bg-amber-400 text-black'} text-[10px] font-mono font-black rounded-full leading-tight`}>
                   {predictorState.earnedCards.length}
                 </span>
               )}
@@ -3096,7 +3318,10 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
       <AllGameModesModal
         isOpen={isAllGameModesOpen}
-        onClose={() => setIsAllGameModesOpen(false)}
+        onClose={() => {
+          setIsAllGameModesOpen(false);
+          setActiveBottomTab('modes');
+        }}
         onOpenHashiraTraining={() => onOpenHashiraTraining && onOpenHashiraTraining('thukuna')}
         onOpenPunisher={onOpenPunisher}
         onOpenBotModal={onOpenBotModal}

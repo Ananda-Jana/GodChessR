@@ -129,57 +129,120 @@ export const ChessPieceClassic: React.FC<ChessPieceProps> = ({ type, color, clas
           </>
         );
 
-      /**
-       * 5. QUEEN
-       * Five-point coronet with pearls, gown, bead necklace.
-       */
-      case 'queen':
-        return (
-          <>
-            {/* Two-tier plinth */}
-            <rect x="5" y="20.6" width="14" height="1.4" rx="0.2" fill={p.fill} stroke={p.line} strokeWidth="0.4" />
-            <rect x="6.3" y="19.5" width="11.4" height="1.1" rx="0.2" fill={p.fill} stroke={p.line} strokeWidth="0.4" />
-            {/* Gown */}
-            <path d="M9 11 H15 C15.4 13.6 16.8 16.6 17.4 19.5 H6.6 C7.2 16.6 8.6 13.6 9 11 Z" fill={p.fill} stroke={p.line} strokeWidth="0.4" />
-            <path d="M9.6 12.4 C11 14 13 14 14.4 12.4" fill="none" stroke={p.detail} strokeWidth="0.4" strokeLinecap="round" />
-            <circle cx="12" cy="13.7" r="0.4" fill={p.ink} />
-            <path d="M8.6 17 C10.4 17.8 13.6 17.8 15.4 17 M12 14.6 V19.2" fill="none" stroke={p.detail} strokeWidth="0.3" strokeLinecap="round" />
-            {/* Coronet */}
-            <polygon points="7.2,10.2 6,4.8 9,7.4 12,3.8 15,7.4 18,4.8 16.8,10.2" fill={p.fill} stroke={p.line} strokeWidth="0.4" strokeLinejoin="round" />
-            <path d="M7.2 8.8 H16.8" fill="none" stroke={p.detail} strokeWidth="0.3" strokeLinecap="round" />
-            <circle cx="6" cy="4.2" r="0.75" fill={p.fill} stroke={p.line} strokeWidth="0.4" />
-            <circle cx="12" cy="3.1" r="0.85" fill={p.fill} stroke={p.line} strokeWidth="0.4" />
-            <circle cx="18" cy="4.2" r="0.75" fill={p.fill} stroke={p.line} strokeWidth="0.4" />
-            <circle cx="9" cy="6.7" r="0.45" fill={p.ink} />
-            <circle cx="15" cy="6.7" r="0.45" fill={p.ink} />
-          </>
-        );
+
+/**
+ * 5. QUEEN
+ * Tall, symmetrical five-point crown.
+ * Wide upper tips, narrow waist, flared base.
+ */
+case 'queen':
+  return (
+    <>
+      {/* Two-tier plinth */}
+      <rect x="5" y="20.6" width="14" height="1.4" rx="0.2"
+        fill={p.fill} stroke={p.line} strokeWidth="0.4" />
+      <rect x="6.3" y="19.5" width="11.4" height="1.1" rx="0.2"
+        fill={p.fill} stroke={p.line} strokeWidth="0.4" />
+
+      {/* Tall crown: wide top, narrow waist, wide base */}
+      <path
+        d="M6.8 19.5
+           L3.8 7.8
+           L7.5 11.4
+           L7.9 6.8
+           L10.1 10.5
+           L12 4.5
+           L13.9 10.5
+           L16.1 6.8
+           L16.5 11.4
+           L20.2 7.8
+           L17.2 19.5
+           Z"
+        fill={p.fill}
+        stroke={p.line}
+        strokeWidth="0.4"
+        strokeLinejoin="round"
+      />
+
+      {/* Four symmetrical diamond cutouts */}
+      <path d="M7.5 16.6 Q6.3 15.1 7.5 13.6 Q8.7 15.1 7.5 16.6 Z"
+        fill={p.ink} />
+      <path d="M10.1 16.3 Q8.8 14.3 10.1 12.3 Q11.4 14.3 10.1 16.3 Z"
+        fill={p.ink} />
+      <path d="M13.9 16.3 Q12.6 14.3 13.9 12.3 Q15.2 14.3 13.9 16.3 Z"
+        fill={p.ink} />
+      <path d="M16.5 16.6 Q15.3 15.1 16.5 13.6 Q17.7 15.1 16.5 16.6 Z"
+        fill={p.ink} />
+
+      {/* Five equally spaced ball tips */}
+      <circle cx="3.8" cy="7.5" r="0.9"
+        fill={p.fill} stroke={p.line} strokeWidth="0.4" />
+      <circle cx="7.9" cy="6.4" r="0.9"
+        fill={p.fill} stroke={p.line} strokeWidth="0.4" />
+      <circle cx="12" cy="4.1" r="1.05"
+        fill={p.fill} stroke={p.line} strokeWidth="0.4" />
+      <circle cx="16.1" cy="6.4" r="0.9"
+        fill={p.fill} stroke={p.line} strokeWidth="0.4" />
+      <circle cx="20.2" cy="7.5" r="0.9"
+        fill={p.fill} stroke={p.line} strokeWidth="0.4" />
+    </>
+  );
+
 
        /**
-       * 6. KING
-       * Domed crown with banded rim, cross finial, long robe.
-       */
-      case 'king':
-        return (
-          <>
-            {/* Two-tier plinth */}
-            <rect x="4.5" y="20.6" width="15" height="1.4" rx="0.2" fill={p.fill} stroke={p.line} strokeWidth="0.4" />
-            <rect x="5.8" y="19.5" width="12.4" height="1.1" rx="0.2" fill={p.fill} stroke={p.line} strokeWidth="0.4" />
-            {/* Robe */}
-            <path d="M9.4 10.6 H14.6 C14.9 13.2 16.6 16.2 17.2 19.5 H6.8 C7.4 16.2 9.1 13.2 9.4 10.6 Z" fill={p.fill} stroke={p.line} strokeWidth="0.4" />
-            <path d="M10.2 10.8 L12 13.4 L13.8 10.8 M12 13.4 V19.2" fill="none" stroke={p.detail} strokeWidth="0.4" strokeLinecap="round" />
-            <circle cx="12" cy="15.4" r="0.45" fill={p.ink} />
-            {/* Crown */}
-            <path d="M8 10.6 L7.4 7 C7.4 5.8 9 5.2 12 5.2 C15 5.2 16.6 5.8 16.6 7 L16 10.6 Z" fill={p.fill} stroke={p.line} strokeWidth="0.4" strokeLinejoin="round" />
-            <path d="M7.6 8.6 H16.4 M12 5.4 V8.6 M9.8 5.7 C9.5 6.6 9.6 7.8 9.8 8.6 M14.2 5.7 C14.5 6.6 14.4 7.8 14.2 8.6" fill="none" stroke={p.detail} strokeWidth="0.3" strokeLinecap="round" />
-            <circle cx="9" cy="9.6" r="0.35" fill={p.ink} />
-            <circle cx="12" cy="9.6" r="0.35" fill={p.ink} />
-            <circle cx="15" cy="9.6" r="0.35" fill={p.ink} />
-            {/* Cross finial: larger, dark on both kings (pale outline underlay on the black king only) */}
-            <path d="M12 0.9 V5 M9.9 2.5 H14.1" fill="none" stroke={p.line} strokeWidth={isWhite ? 0 : 1.5} strokeLinecap="square" />
-            <path d="M12 0.9 V5 M9.9 2.5 H14.1" fill="none" stroke="#0b1020" strokeWidth="0.9" strokeLinecap="square" />
-          </>
-        );
+ * 6. KING
+ * Heart-shaped dominant crown: two bulging lobes, central column + chunky cross,
+ * rounded cut-outs, sitting on a low wide slab.
+ */
+        case 'king':
+          return (
+            <>
+              {/* Low wide slab */}
+              <rect x="3.2" y="19.2" width="17.6" height="2.6" rx="0.6" fill={p.fill} stroke={p.line} strokeWidth="0.4" />
+              <path d="M4 20.1 H20" fill="none" stroke={p.detail} strokeWidth="0.3" strokeLinecap="round" />
+
+              {/* Crown body with two cut-out holes (evenodd) */}
+              <path
+                fillRule="evenodd"
+                fill={p.fill}
+                stroke={p.line}
+                strokeWidth="0.4"
+                strokeLinejoin="round"
+                d="
+                  M7.4 19.2
+                  C6.6 17.4 3.4 15.8 3 12.4
+                  C2.7 9.4 4.9 7.4 7.6 7.4
+                  C9 7.4 10 8 10.4 8.8
+                  V5.8 H13.6 V8.8
+                  C14 8 15 7.4 16.4 7.4
+                  C19.1 7.4 21.3 9.4 21 12.4
+                  C20.6 15.8 17.4 17.4 16.6 19.2 Z
+                  M6.2 11.6
+                  C6.2 10.6 7.4 10.2 8.4 10.6
+                  C9.2 10.9 9.8 11.6 9.8 12.6
+                  V15
+                  C8.2 15 6.2 13.6 6.2 11.6 Z
+                  M17.8 11.6
+                  C17.8 10.6 16.6 10.2 15.6 10.6
+                  C14.8 10.9 14.2 11.6 14.2 12.6
+                  V15
+                  C15.8 15 17.8 13.6 17.8 11.6 Z
+                "
+              />
+
+              {/* Lobe highlights + base band */}
+              <path
+                d="M4.4 11.2 C4.4 9.8 5.6 8.8 7 8.8 M19.6 11.2 C19.6 9.8 18.4 8.8 17 8.8 M8 18.2 H16"
+                fill="none" stroke={p.detail} strokeWidth="0.3" strokeLinecap="round"
+              />
+
+              {/* Chunky cross */}
+              <path
+                d="M11.2 1.4 H12.8 V2.6 H14.6 V4.2 H12.8 V5.8 H11.2 V4.2 H9.4 V2.6 H11.2 Z"
+                fill={p.fill} stroke={p.line} strokeWidth="0.4" strokeLinejoin="round"
+              />
+            </>
+          );
 
       /**
        * 7. PRINCE (extra)
