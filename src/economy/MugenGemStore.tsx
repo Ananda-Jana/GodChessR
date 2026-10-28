@@ -602,7 +602,7 @@ export const MugenGemStore: React.FC<MugenGemStoreProps> = ({
             {/* ============================================================== */}
             {activeTab === 'secrets' && (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                {SECRET_PLAYERS.map((player) => {
+                {SECRET_PLAYERS.filter((player) => player.id !== 'boy_friend' && player.id !== 'girl_friend').map((player) => {
                   const isUnlocked = Boolean(unlockedSecretMap[player.id]);
                   const isAffordable = gemBalance >= 800;
                   const isAnimating = animatingUnlockId === player.id;

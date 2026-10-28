@@ -32,7 +32,9 @@ import {
   Heart,
   LayoutGrid,
   ShoppingBag,
+  Download,
 } from 'lucide-react';
+import { usePWAInstall } from '../hooks/usePWAInstall';
 import { posToNotation } from '../game/engine';
 import { usePredictor } from '../predictor/PredictorContext';
 import { TrophyRoomModal } from './TrophyRoomModal';
@@ -144,6 +146,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
   } = useSocket();
 
   const { state: predictorState, clearPredictorSession, applyRatingBoost } = usePredictor();
+  const { isInstallable, install } = usePWAInstall();
   const [isTrophyRoomOpen, setIsTrophyRoomOpen] = useState(false);
   const [isStoreOpen, setIsStoreOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -240,8 +243,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
           const data = await res.json();
           setPlayers(data.players || []);
         }
-      } catch (err) {
-        console.error('Failed to search players:', err);
+      } catch {
+        // Silently handle brief server reconnect / network fetch pause
       } finally {
         setIsLoadingPlayers(false);
       }
@@ -255,20 +258,27 @@ export const Dashboard: React.FC<DashboardProps> = ({
   const refreshUserData = async () => {
     if (!token) return;
     try {
-      const [matchesRes, challengesRes] = await Promise.all([
-        fetch('/api/matches', { headers: { Authorization: `Bearer ${token}` } }),
-        fetch('/api/challenges', { headers: { Authorization: `Bearer ${token}` } }),
-      ]);
-      if (matchesRes.ok && matchesRes.headers.get('content-type')?.includes('application/json')) {
-        const data = await matchesRes.json();
-        setActiveMatches(data.matches || []);
-      }
-      if (challengesRes.ok && challengesRes.headers.get('content-type')?.includes('application/json')) {
-        const data = await challengesRes.json();
-        setOutgoingChallenges(data.outgoing || []);
-      }
-    } catch (err) {
-      console.error('Failed to refresh data:', err);
+      const matchesTask = fetch('/api/matches', { headers: { Authorization: `Bearer ${token}` } })
+        .then(async (res) => {
+          if (res.ok && res.headers.get('content-type')?.includes('application/json')) {
+            const data = await res.json();
+            setActiveMatches(data.matches || []);
+          }
+        })
+        .catch(() => {});
+
+      const challengesTask = fetch('/api/challenges', { headers: { Authorization: `Bearer ${token}` } })
+        .then(async (res) => {
+          if (res.ok && res.headers.get('content-type')?.includes('application/json')) {
+            const data = await res.json();
+            setOutgoingChallenges(data.outgoing || []);
+          }
+        })
+        .catch(() => {});
+
+      await Promise.allSettled([matchesTask, challengesTask]);
+    } catch {
+      // Gracefully ignore periodic background poll errors during idle/reconnect
     }
   };
 
@@ -400,6 +410,19 @@ export const Dashboard: React.FC<DashboardProps> = ({
               3D
             </span>
           </button>
+
+          {/* Mobile Install App Button */}
+          {isInstallable && (
+            <button
+              type="button"
+              onClick={install}
+              aria-label="Install MugenChessX App"
+              title="Install App"
+              className="min-w-[44px] min-h-[44px] inline-flex items-center justify-center p-1.5 rounded-lg bg-amber-400 text-black cursor-pointer transition-all active:scale-95 shrink-0"
+            >
+              <Download className="w-5 h-5 text-black shrink-0" />
+            </button>
+          )}
 
           {/* Mobile Profile Trigger (Circular Avatar Badge, ELO hidden in top bar) */}
           <button
@@ -1431,6 +1454,19 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
         {/* Right Section: Profile & Sign Out */}
         <div className="flex items-center gap-3 shrink-0">
+          {/* Desktop PWA Install App Button */}
+          {isInstallable && (
+            <button
+              type="button"
+              onClick={install}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-black uppercase tracking-wider rounded-md bg-amber-400 text-black hover:bg-amber-300 transition-colors shadow-sm cursor-pointer"
+              title="Install MugenChessX App"
+            >
+              <Download className="w-3.5 h-3.5" />
+              <span>Install App</span>
+            </button>
+          )}
+
           <div className="mcx-nav2-hairline" />
 
           {/* Profile Area */}
@@ -2823,43 +2859,38 @@ export const Dashboard: React.FC<DashboardProps> = ({
         </div>
       </nav>
 
-      {/* Mobile Profile Bottom Sheet Drawer (Mobile only, md:hidden) */}
+      {/* Centered Mobile Profile Modal (Mobile only, md:hidden) */}
       {isMobileProfileOpen && (
-        <>
-          {/* Dark Backdrop */}
+        <div
+          className="md:hidden fixed inset-0 z-[150] bg-black/80 supports-[backdrop-filter]:backdrop-blur-sm flex items-center justify-center p-4 sm:p-6 overflow-y-auto"
+          onClick={() => {
+            setIsMobileProfileOpen(false);
+            profilePillRef.current?.focus();
+          }}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Player Profile and Statistics"
+        >
+          {/* Centered Modal Card */}
           <div
-            className="md:hidden fixed inset-0 z-50 bg-black/75 supports-[backdrop-filter]:backdrop-blur-sm transition-opacity"
-            onClick={() => {
-              setIsMobileProfileOpen(false);
-              profilePillRef.current?.focus();
-            }}
-          />
-
-          {/* Sheet Container */}
-          <div
-            role="dialog"
-            aria-modal="true"
-            aria-label="Player Profile and Statistics"
-            className="md:hidden fixed inset-x-0 bottom-0 z-50 max-h-[92vh] max-w-lg mx-auto overflow-y-auto overscroll-contain bg-zinc-950 border-t-3 border-amber-400 rounded-t-3xl shadow-2xl p-6 pb-[calc(2rem+env(safe-area-inset-bottom))] text-white animate-in slide-in-from-bottom duration-200"
+            className="w-full max-w-lg bg-zinc-950 border-2 border-amber-400 rounded-2xl shadow-2xl p-5 sm:p-6 text-white max-h-[85vh] overflow-y-auto overscroll-contain my-auto relative animate-in zoom-in-95 duration-150"
+            onClick={(e) => e.stopPropagation()}
           >
-            {/* Grab handle */}
-            <div className="w-12 h-1.5 bg-neutral-700 rounded-full mx-auto mb-4" />
-
-            {/* Profile Drawer Header */}
-            <div className="flex items-start justify-between mb-4">
-              <div className="flex items-center gap-3.5">
-                <div className="border-2 border-amber-400 p-1 bg-neutral-900 rounded-xl shrink-0">
+            {/* Header: Avatar, Name, Bio & Actions */}
+            <div className="flex items-start justify-between mb-4 pb-3 border-b border-white/10">
+              <div className="flex items-center gap-3">
+                <div className="border-2 border-amber-400 p-1 bg-neutral-900 rounded-xl shrink-0 shadow-[2px_2px_0px_#000]">
                   <AvatarDisplay
                     avatarId={user.avatarId}
                     isGuest={Boolean(user.id?.startsWith('usr_guest') || user.username?.toLowerCase().includes('mecharuri'))}
                     size="lg"
                   />
                 </div>
-                <div>
-                  <h3 className="text-base sm:text-lg font-black uppercase text-white">{user.displayName}</h3>
-                  <p className="text-xs text-neutral-400 font-mono">@{user.username}</p>
+                <div className="min-w-0">
+                  <h3 className="text-base sm:text-lg font-black uppercase text-white truncate">{user.displayName}</h3>
+                  <p className="text-xs text-neutral-400 font-mono truncate">@{user.username}</p>
                   {user.bio ? (
-                    <p className="text-xs text-amber-300/90 font-mono italic mt-1 max-w-[200px] break-words">
+                    <p className="text-xs text-amber-300/90 font-mono italic mt-1 max-w-[200px] break-words line-clamp-2">
                       "{user.bio}"
                     </p>
                   ) : (
@@ -2870,7 +2901,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 </div>
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 shrink-0">
                 <button
                   type="button"
                   onClick={() => {
@@ -2879,7 +2910,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                     setEditBio(user.bio || '');
                     setIsEditingProfile(!isEditingProfile);
                   }}
-                  className="text-xs font-black uppercase px-3 py-1.5 rounded-lg bg-amber-400 hover:bg-amber-300 text-black border border-amber-300 cursor-pointer min-h-[44px] flex items-center justify-center active:scale-95 shadow-[2px_2px_0px_#000]"
+                  className="text-xs font-black uppercase px-3 py-1.5 rounded-lg bg-amber-400 hover:bg-amber-300 text-black border border-amber-300 cursor-pointer min-h-[38px] flex items-center justify-center active:scale-95 shadow-[2px_2px_0px_#000]"
                 >
                   {isEditingProfile ? 'Cancel' : 'Edit'}
                 </button>
@@ -2891,7 +2922,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                     profilePillRef.current?.focus();
                   }}
                   aria-label="Close Profile"
-                  className="w-11 h-11 flex items-center justify-center rounded-xl bg-white/10 hover:bg-white/20 text-neutral-300 hover:text-white border border-white/10 cursor-pointer active:scale-95"
+                  className="w-9 h-9 flex items-center justify-center rounded-xl bg-white/10 hover:bg-white/20 text-neutral-300 hover:text-white border border-white/10 cursor-pointer active:scale-95"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -2900,7 +2931,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
             {/* Profile Edit Mode Form or Stats Grid */}
             {isEditingProfile ? (
-              <form onSubmit={handleSaveProfile} className="pt-3 border-t border-white/10 flex flex-col gap-3.5">
+              <form onSubmit={handleSaveProfile} className="flex flex-col gap-3.5">
                 <div>
                   <label className="block text-xs font-black uppercase mb-1 text-neutral-300">Display Name</label>
                   <input
@@ -2924,7 +2955,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
                 <div>
                   <label className="block text-xs font-black uppercase mb-1.5 text-neutral-300">Choose Profile Avatar</label>
-                  <div className="grid grid-cols-4 sm:grid-cols-6 gap-2 max-h-56 overflow-y-auto p-1.5 border border-neutral-800 rounded-lg">
+                  <div className="grid grid-cols-4 sm:grid-cols-6 gap-2 max-h-48 overflow-y-auto p-1.5 border border-neutral-800 rounded-lg">
                     {AVATAR_OPTIONS.map((av) => (
                       <button
                         key={av.id}
@@ -2941,12 +2972,26 @@ export const Dashboard: React.FC<DashboardProps> = ({
                   </div>
                 </div>
 
-                <button
-                  type="submit"
-                  className="mt-2 py-3 px-4 bg-amber-400 hover:bg-amber-300 text-black font-black text-xs uppercase rounded-xl border border-black cursor-pointer shadow-md active:scale-98"
-                >
-                  Save Profile
-                </button>
+                <div className="flex items-center gap-2 pt-2 border-t border-white/10">
+                  <button
+                    type="submit"
+                    className="flex-1 py-2.5 px-4 bg-amber-400 hover:bg-amber-300 text-black font-black text-xs uppercase rounded-xl border border-black cursor-pointer shadow-md active:scale-98"
+                  >
+                    Save Profile
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      clearPredictorSession();
+                      logout();
+                    }}
+                    className="py-2.5 px-4 bg-red-600/20 hover:bg-red-600 text-red-300 hover:text-white border border-red-500/30 rounded-xl text-xs font-black uppercase flex items-center justify-center gap-1.5 cursor-pointer transition-colors active:scale-98"
+                    title="Sign Out"
+                  >
+                    <LogOut className="w-4 h-4" />
+                    <span>Sign Out</span>
+                  </button>
+                </div>
               </form>
             ) : (
               <div className="space-y-3 font-mono">
@@ -2996,7 +3041,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                   <span>View Session Trophy Room ({predictorState.earnedCards.length})</span>
                 </button>
 
-                {/* Sign Out Button (Separated) */}
+                {/* Sign Out Button (Prominent) */}
                 <div className="pt-3 border-t border-white/10">
                   <button
                     type="button"
@@ -3013,7 +3058,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
               </div>
             )}
           </div>
-        </>
+        </div>
       )}
 
       <TrophyRoomModal
