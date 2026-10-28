@@ -34,6 +34,8 @@ import {
 } from '../chest/chestStore';
 import { triggerChestModalNow } from '../chest/reportGameEnd';
 import { ChestSvg } from '../chest/ChestSvg';
+import { getGems } from '../economy/mugenStore';
+import { MugenGemIcon } from '../economy/MugenGemIcon';
 
 interface TrophyRoomModalProps {
   isOpen: boolean;
@@ -235,85 +237,77 @@ export const TrophyRoomModal: React.FC<TrophyRoomModalProps> = ({
         onClick={(e) => e.stopPropagation()}
       >
         {/* Fixed Header: Modern Brutalist Navigation */}
-        <header className="flex items-center justify-between px-4 py-3 bg-black border-b-4 border-white shrink-0 z-30">
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="w-12 h-12 bg-amber-400 border-2 border-black flex items-center justify-center shadow-[3px_3px_0px_#fff] shrink-0">
-              {mainView === 'inventory' ? (
-                <Gift className="w-7 h-7 text-black" />
-              ) : (
-                <Trophy className="w-7 h-7 text-black" />
-              )}
-            </div>
-            <div className="min-w-0">
-              <h2
-                id="trophy-modal-title"
-                className="text-base sm:text-xl font-black uppercase tracking-tighter text-white leading-none mb-1 truncate"
-              >
-                {mainView === 'inventory' ? 'Chest Vault & Inventory' : 'Trophy Sanctuary'}
-              </h2>
-              <div className="flex items-center gap-2">
+        {/* STREAMLIINED MOBILE-OPTIMIZED TOP NAV BAR */}
+        <header className="flex flex-col gap-2 px-3 py-2.5 bg-black border-b-2 border-white/20 shrink-0 z-30">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 min-w-0">
+              <div className="w-9 h-9 bg-amber-400 border border-black flex items-center justify-center shrink-0">
                 {mainView === 'inventory' ? (
-                  <>
-                    <span className="text-xs font-black text-amber-400 bg-amber-950/40 px-2 py-0.5 border border-amber-400/30 tracking-widest whitespace-nowrap">
-                      {pendingChestsCount} CHEST{pendingChestsCount === 1 ? '' : 'S'} STORED
-                    </span>
-                    <span className="hidden sm:inline text-[11px] font-bold text-slate-400 uppercase tracking-widest">
-                      {claimedRewards.length} Claimed Item{claimedRewards.length === 1 ? '' : 's'} in History
-                    </span>
-                  </>
+                  <Gift className="w-5 h-5 text-black" />
                 ) : (
-                  <>
-                    <span className="text-xs font-black text-amber-400 bg-amber-950/40 px-2 py-0.5 border border-amber-400/30 tracking-widest whitespace-nowrap">
-                      {unlockedCount} / {totalCount} UNLOCKED
-                    </span>
-                    <span className="hidden sm:inline text-[11px] font-bold text-slate-500 uppercase tracking-widest">
-                      Total Collection: {Math.round((unlockedCount / totalCount) * 100)}%
-                    </span>
-                  </>
+                  <Trophy className="w-5 h-5 text-black" />
                 )}
               </div>
+              <div className="min-w-0">
+                <h2
+                  id="trophy-modal-title"
+                  className="text-xs sm:text-sm font-black uppercase text-white truncate"
+                >
+                  {mainView === 'inventory' ? 'Chest Vault' : 'Trophy Sanctuary'}
+                </h2>
+                <span className="text-[10px] font-bold text-amber-400 uppercase tracking-wide">
+                  {mainView === 'inventory'
+                    ? `${pendingChestsCount} Chests Stored`
+                    : `${unlockedCount}/${totalCount} Unlocked (${Math.round((unlockedCount / totalCount) * 100)}%)`}
+                </span>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-1.5 shrink-0">
+              {/* Live Gem Balance Badge */}
+              <div className="px-2.5 py-1 bg-amber-400 text-black border border-black font-mono font-black text-xs flex items-center gap-1 shadow-[2px_2px_0px_#fff]">
+                <MugenGemIcon className="w-4 h-4 text-black shrink-0" />
+                <span>{getGems(user?.id || 'guest')} GEMS</span>
+              </div>
+
+              {mainView === 'trophies' && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (
+                      window.confirm(
+                        'WIPE ALL PROGRESS? This will erase all badges and ratings permanently.'
+                      )
+                    ) {
+                      clearPredictorSession();
+                      setSelectedCard(null);
+                    }
+                  }}
+                  className="w-9 h-9 flex items-center justify-center text-slate-400 hover:text-rose-500 border border-slate-700 bg-neutral-900 cursor-pointer"
+                  title="Factory reset progress"
+                  aria-label="Factory reset progress"
+                >
+                  <RefreshCw className="w-4 h-4" />
+                </button>
+              )}
+
+              <button
+                type="button"
+                onClick={onClose}
+                className="w-9 h-9 flex items-center justify-center bg-white text-black border border-black hover:bg-amber-400 cursor-pointer"
+                aria-label="Close modal"
+              >
+                <X className="w-5 h-5 stroke-[3]" />
+              </button>
             </div>
           </div>
 
-          <div className="flex items-center gap-3 shrink-0 ml-3">
-            {mainView === 'trophies' && (
-              <button
-                type="button"
-                onClick={() => {
-                  if (
-                    window.confirm(
-                      'WIPE ALL PROGRESS? This will erase all badges and ratings permanently.'
-                    )
-                  ) {
-                    clearPredictorSession();
-                    setSelectedCard(null);
-                  }
-                }}
-                className="min-w-[44px] min-h-[44px] w-11 h-11 flex items-center justify-center text-slate-400 hover:text-rose-500 border-2 border-slate-900 hover:border-rose-900 transition-all active:scale-90 motion-reduce:transition-none motion-reduce:transform-none motion-reduce:animate-none cursor-pointer"
-                title="Factory reset progress"
-                aria-label="Factory reset progress"
-              >
-                <RefreshCw className="w-5 h-5" />
-              </button>
-            )}
-            <button
-              type="button"
-              onClick={onClose}
-              className="min-w-[44px] min-h-[44px] w-11 h-11 flex items-center justify-center bg-white text-black border-2 border-black hover:bg-amber-400 transition-all cursor-pointer active:scale-90 motion-reduce:transition-none motion-reduce:transform-none motion-reduce:animate-none"
-              aria-label="Close modal"
-            >
-              <X className="w-7 h-7 stroke-[3]" />
-            </button>
-          </div>
-        </header>
-
-        {/* Top View Selector: Trophies vs Chest Inventory */}
-        <div
-          role="tablist"
-          aria-label="Sanctuary and Vault Views"
-          className="bg-neutral-950 border-b-2 border-white/20 px-4 py-2 flex items-center justify-between gap-3 shrink-0 flex-wrap"
-        >
-          <div className="flex items-center gap-2 flex-wrap">
+          {/* Collapsed Compact View Selector Tabs */}
+          <div
+            role="tablist"
+            aria-label="Sanctuary and Vault Views"
+            className="flex items-center gap-1.5 overflow-x-auto pb-0.5 scrollbar-none"
+          >
             <button
               type="button"
               role="tab"
@@ -321,14 +315,14 @@ export const TrophyRoomModal: React.FC<TrophyRoomModalProps> = ({
               aria-controls="trophies-panel"
               id="trophies-tab"
               onClick={() => setMainView('trophies')}
-              className={`min-h-[44px] px-4 font-black uppercase text-xs flex items-center gap-2 border-2 transition-all cursor-pointer motion-reduce:transition-none motion-reduce:transform-none motion-reduce:animate-none ${
+              className={`min-h-[36px] px-3 py-1 font-black uppercase text-[11px] flex items-center gap-1.5 border transition-all cursor-pointer whitespace-nowrap shrink-0 ${
                 mainView === 'trophies'
-                  ? 'bg-amber-400 text-black border-black shadow-[3px_3px_0px_#fff]'
+                  ? 'bg-amber-400 text-black border-black shadow-[2px_2px_0px_#fff]'
                   : 'bg-neutral-900 text-neutral-400 border-neutral-700 hover:text-white'
               }`}
             >
-              <Trophy className="w-4 h-4" />
-              <span>TROPHIES ({unlockedCount}/{totalCount})</span>
+              <Trophy className="w-3.5 h-3.5" />
+              <span>Trophies ({unlockedCount}/{totalCount})</span>
             </button>
 
             <button
@@ -339,22 +333,22 @@ export const TrophyRoomModal: React.FC<TrophyRoomModalProps> = ({
               id="inventory-tab"
               onClick={() => setMainView('inventory')}
               aria-label={`Chest inventory, ${pendingChestsCount} chests stored`}
-              className={`min-h-[44px] px-4 font-black uppercase text-xs flex items-center gap-2 border-2 transition-all cursor-pointer motion-reduce:transition-none motion-reduce:transform-none motion-reduce:animate-none ${
+              className={`min-h-[36px] px-3 py-1 font-black uppercase text-[11px] flex items-center gap-1.5 border transition-all cursor-pointer whitespace-nowrap shrink-0 ${
                 mainView === 'inventory'
-                  ? 'bg-amber-400 text-black border-black shadow-[3px_3px_0px_#fff]'
+                  ? 'bg-amber-400 text-black border-black shadow-[2px_2px_0px_#fff]'
                   : 'bg-neutral-900 text-amber-400 border-amber-400/60 hover:bg-neutral-800'
               }`}
             >
-              <Gift className="w-4 h-4" />
-              <span>CHEST INVENTORY</span>
+              <Gift className="w-3.5 h-3.5" />
+              <span>Chest Vault</span>
               {pendingChestsCount > 0 && (
-                <span className="px-1.5 py-0.5 bg-rose-600 text-white font-mono text-[10px] font-black rounded-xs">
+                <span className="px-1.5 py-0.2 bg-rose-600 text-white font-mono text-[9px] font-black rounded-xs">
                   {pendingChestsCount}
                 </span>
               )}
             </button>
           </div>
-        </div>
+        </header>
 
         {/* Scrollable Body: Single Column Stacking on Mobile */}
         <div className="flex-1 flex flex-col overflow-y-auto overscroll-contain bg-[#0a0d14] scroll-smooth pb-[max(env(safe-area-inset-bottom,0px),16px)]">

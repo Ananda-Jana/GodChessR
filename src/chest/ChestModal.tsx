@@ -1,8 +1,11 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { ChestSvg } from './ChestSvg';
 import { RewardCard } from './RewardCard';
+import { GemRewardCard } from './GemRewardCard';
 import { SecretPlayerRewardDef } from './chestConfig';
 import { pickRandomReward, unlockSecretPlayer, recordClaimedReward, PickedRewardResult } from './chestStore';
+import { addGems } from '../economy/mugenStore';
+import { MugenGemIcon } from '../economy/MugenGemIcon';
 import { X, Sparkles, ShieldAlert } from 'lucide-react';
 import './chest.css';
 
@@ -111,6 +114,7 @@ export const ChestModal: React.FC<ChestModalProps> = ({
   const [showButtons, setShowButtons] = useState<boolean>(false);
   const [particles, setParticles] = useState<Particle[]>([]);
   const [rewardResult, setRewardResult] = useState<PickedRewardResult | null>(null);
+  const [gemsAwarded, setGemsAwarded] = useState<number>(0);
   const [resignedEloBoost, setResignedEloBoost] = useState<number>(() => {
     return initialEloBoost && initialEloBoost >= 6 && initialEloBoost <= 10
       ? initialEloBoost
@@ -239,36 +243,67 @@ export const ChestModal: React.FC<ChestModalProps> = ({
         setTapCount(3);
         setIsWindup(true);
 
-        if (!resigned) {
-          const picked = pickRandomReward(userId);
-          setRewardResult(picked);
-          unlockSecretPlayer(picked.reward.id, userId);
-          recordClaimedReward(picked.reward, picked.isOwned, matchId, undefined, userId);
-        } else {
-          const delta = resignedEloBoost;
-          if (matchId && onApplyEloBoost) {
-            try {
-              onApplyEloBoost(delta, matchId);
-            } catch {
-              // Fail safe
-            }
-          }
+        // Mutually exclusive randomized reward (50% chance for Secret Player Card, 50% chance for Mugen Gems)
+        const isGemDrop = Math.random() < 0.5;
+
+        if (isGemDrop) {
+          const randomGems = isWin
+            ? Math.floor(Math.random() * 201) + 500
+            : Math.floor(Math.random() * 151) + 50;
+
+          setGemsAwarded(randomGems);
+          setRewardResult(null);
+          addGems(userId || 'guest', randomGems);
+
           recordClaimedReward(
             {
-              id: 'elo_consolation',
-              name: 'Resilience Spirit',
-              role: 'Tactical Grit',
-              title: 'Resilience Honor',
-              rarity: 'Common',
-              avatarUrl: '/assets/aistudio/image_4aa74391.png',
-              quote: 'Honor remains in standing tall through defeat.',
-              flavor: `Awarded +${delta} ELO rating boost.`,
+              id: 'gem_loot_payout',
+              name: `${randomGems} Mugen Gems`,
+              role: 'Currency Loot',
+              title: 'Vault Payout',
+              rarity: 'Rare',
+              avatarUrl: '/assets/aistudio/image_93cd5708.png',
+              quote: 'Gleaming crystals of pure combat resonance.',
+              flavor: `Awarded +${randomGems} Mugen Gems directly to your wallet.`,
             },
             true,
             matchId,
-            delta,
+            undefined,
             userId
           );
+        } else {
+          setGemsAwarded(0);
+          if (!resigned) {
+            const picked = pickRandomReward(userId);
+            setRewardResult(picked);
+            unlockSecretPlayer(picked.reward.id, userId);
+            recordClaimedReward(picked.reward, picked.isOwned, matchId, undefined, userId);
+          } else {
+            const delta = resignedEloBoost;
+            if (matchId && onApplyEloBoost) {
+              try {
+                onApplyEloBoost(delta, matchId);
+              } catch {
+                // Fail safe
+              }
+            }
+            recordClaimedReward(
+              {
+                id: 'elo_consolation',
+                name: 'Resilience Spirit',
+                role: 'Tactical Grit',
+                title: 'Resilience Honor',
+                rarity: 'Common',
+                avatarUrl: '/assets/aistudio/image_4aa74391.png',
+                quote: 'Honor remains in standing tall through defeat.',
+                flavor: `Awarded +${delta} ELO rating boost.`,
+              },
+              true,
+              matchId,
+              delta,
+              userId
+            );
+          }
         }
 
         setTimeout(() => {
@@ -450,10 +485,12 @@ export const ChestModal: React.FC<ChestModalProps> = ({
             />
           </button>
 
-          {/* Emergence Panel */}
+          {/* Emergence Panel: Single Exclusive Reward Reveal */}
           {showCard && (
-            <div className="absolute z-30 chest-card-rise pointer-events-auto">
-              {!resigned && rewardResult ? (
+            <div className="absolute z-30 chest-card-rise pointer-events-auto flex items-center justify-center max-w-full px-2">
+              {gemsAwarded > 0 ? (
+                <GemRewardCard amount={gemsAwarded} />
+              ) : !resigned && rewardResult ? (
                 <RewardCard
                   reward={rewardResult.reward}
                   isOwned={rewardResult.isOwned}
@@ -462,27 +499,27 @@ export const ChestModal: React.FC<ChestModalProps> = ({
                   }}
                 />
               ) : (
-                /* Resign Outcome Card (Square 150x150px, 14px rounded corners, dark background #1a0f0f, 3px border #ef4444) */
-                <div className="w-[150px] h-[150px] min-w-[150px] min-h-[150px] rounded-[14px] bg-[#1a0f0f] border-[3px] border-[#ef4444] shadow-[4px_4px_0px_#000000] p-2.5 flex flex-col justify-between items-center text-center select-none box-border">
+                /* Resign Outcome Card */
+                <div className="w-[148px] h-[236px] min-w-[148px] min-h-[236px] max-360:w-[128px] max-360:h-[208px] rounded-[14px] bg-[#1a0f0f] border-[3px] border-[#ef4444] shadow-[4px_4px_0px_#000000] p-2.5 flex flex-col justify-between items-center text-center select-none box-border">
                   <div className="text-[9px] font-black uppercase text-[#ef4444] tracking-wider leading-none pt-0.5">
                     RATING BOOST
                   </div>
 
                   <div className="my-auto flex flex-col items-center justify-center">
-                    <span className="font-black text-[34px] leading-none text-[#ef4444] drop-shadow-md tracking-tight">
+                    <span className="font-black text-[32px] leading-none text-[#ef4444] drop-shadow-md tracking-tight">
                       +{resignedEloBoost} ELO
                     </span>
                   </div>
 
                   <div className="text-[8px] font-black uppercase text-slate-300 tracking-wider leading-tight px-1 mb-1">
-                    THAT'S ALL YOU GET FOR RESIGNING
+                    RESIGNATION CONSOLATION
                   </div>
 
                   <div className="w-full">
                     <button
                       type="button"
                       onClick={() => onClose(true)}
-                      className="w-full h-[30px] bg-neutral-900 hover:bg-neutral-800 text-slate-200 hover:text-white font-black text-[11px] uppercase rounded-[8px] border border-slate-700 shadow-[2px_2px_0px_#000000] cursor-pointer active:translate-x-0.5 active:translate-y-0.5 transition-all"
+                      className="w-full h-[32px] bg-neutral-900 hover:bg-neutral-800 text-slate-200 hover:text-white font-black text-[11px] uppercase rounded-[8px] border border-slate-700 shadow-[2px_2px_0px_#000000] cursor-pointer active:translate-x-0.5 active:translate-y-0.5 transition-all"
                     >
                       CONTINUE
                     </button>

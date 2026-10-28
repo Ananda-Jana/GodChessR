@@ -6,6 +6,7 @@ import {
   hasBoughtChest,
   recordChestPurchase,
 } from './mugenStore';
+import { MugenGemIcon } from './MugenGemIcon';
 import {
   unlockSecretPlayer,
   getChestStore,
@@ -288,81 +289,84 @@ export const MugenGemStore: React.FC<MugenGemStoreProps> = ({
         {/* Inner Layout */}
         <div className="flex flex-col h-full w-full overflow-hidden bg-[#0a0a0f]">
           
-          {/* TOP BAR */}
-          <header className="shrink-0 h-14 px-4 flex items-center justify-between bg-[#0a0a0f] border-b-2 border-white">
-            <div className="flex items-center gap-2">
-              <ShoppingBag className="w-5 h-5 text-amber-400 shrink-0" />
-              <h2 className="font-black uppercase text-white text-base md:text-lg tracking-wider">
-                MUGEN STORE
-              </h2>
+          {/* TOP NAV BAR & COMPACT CATEGORY PILLS */}
+          <header className="shrink-0 px-3 py-2.5 bg-[#0a0a0f] border-b-2 border-white/20 flex flex-col gap-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <ShoppingBag className="w-4 h-4 text-amber-400 shrink-0" />
+                <h2 className="font-black uppercase text-white text-sm md:text-base tracking-wider">
+                  MUGEN STORE
+                </h2>
+              </div>
+
+              {/* Gem Balance Badge */}
+              <div className="px-2.5 py-1 bg-amber-400 text-black font-mono font-black text-xs flex items-center gap-1.5 border border-black shadow-[2px_2px_0px_#fff]">
+                <MugenGemIcon className="w-5 h-5 text-black shrink-0" />
+                <span>{gemBalance} GEMS</span>
+              </div>
+
+              {/* Close Button */}
+              <button
+                onClick={onClose}
+                className="w-9 h-9 bg-red-600 hover:bg-red-500 text-white border-2 border-white flex items-center justify-center shadow-[2px_2px_0px_#fff] cursor-pointer shrink-0"
+                title="Close Store"
+                aria-label="Close Store"
+              >
+                <X className="w-5 h-5 stroke-[3]" />
+              </button>
             </div>
 
-            {/* Center Gem Balance */}
-            <div className="px-3 py-1.5 bg-amber-400 text-black font-mono font-black text-xs md:text-sm flex items-center gap-1.5 border-2 border-black shadow-[2px_2px_0px_#fff]">
-              <Coins className="w-4 h-4 text-black shrink-0" />
-              <span>{gemBalance} GEMS</span>
-            </div>
+            {/* Compact Category Pill Buttons Sub-Nav */}
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+              <button
+                onClick={() => {
+                  setActiveTab('exchange');
+                  setNoticeMessage(null);
+                  setSavedConfirmationMessage(null);
+                }}
+                className={`min-h-[36px] px-3 py-1 font-black uppercase text-[11px] flex items-center gap-1.5 border transition-all cursor-pointer whitespace-nowrap shrink-0 ${
+                  activeTab === 'exchange'
+                    ? 'bg-amber-400 text-black border-black shadow-[2px_2px_0px_#fff]'
+                    : 'bg-neutral-900 text-zinc-300 border-zinc-700 hover:text-white'
+                }`}
+              >
+                <MugenGemIcon className="w-4 h-4 shrink-0" />
+                <span>Exchange</span>
+              </button>
 
-            {/* Close Button */}
-            <button
-              onClick={onClose}
-              className="min-w-[44px] min-h-[44px] bg-red-600 hover:bg-red-500 text-white border-2 border-white flex items-center justify-center shadow-[2px_2px_0px_#fff] cursor-pointer shrink-0"
-              title="Close Store"
-            >
-              <X className="w-6 h-6 stroke-[3]" />
-            </button>
+              <button
+                onClick={() => {
+                  setActiveTab('chests');
+                  setNoticeMessage(null);
+                  setSavedConfirmationMessage(null);
+                }}
+                className={`min-h-[36px] px-3 py-1 font-black uppercase text-[11px] flex items-center gap-1.5 border transition-all cursor-pointer whitespace-nowrap shrink-0 ${
+                  activeTab === 'chests'
+                    ? 'bg-amber-400 text-black border-black shadow-[2px_2px_0px_#fff]'
+                    : 'bg-neutral-900 text-zinc-300 border-zinc-700 hover:text-white'
+                }`}
+              >
+                <Gift className="w-3.5 h-3.5 shrink-0" />
+                <span>Chest Shop</span>
+              </button>
+
+              <button
+                onClick={() => {
+                  setActiveTab('secrets');
+                  setNoticeMessage(null);
+                  setSavedConfirmationMessage(null);
+                }}
+                className={`min-h-[36px] px-3 py-1 font-black uppercase text-[11px] flex items-center gap-1.5 border transition-all cursor-pointer whitespace-nowrap shrink-0 ${
+                  activeTab === 'secrets'
+                    ? 'bg-amber-400 text-black border-black shadow-[2px_2px_0px_#fff]'
+                    : 'bg-neutral-900 text-zinc-300 border-zinc-700 hover:text-white'
+                }`}
+              >
+                <KeyRound className="w-3.5 h-3.5 shrink-0" />
+                <span>Secret Unlocks</span>
+              </button>
+            </div>
           </header>
-
-          {/* TAB BAR */}
-          <div className="shrink-0 flex flex-row w-full border-b-2 border-slate-700 bg-black">
-            <button
-              onClick={() => {
-                setActiveTab('exchange');
-                setNoticeMessage(null);
-                setSavedConfirmationMessage(null);
-              }}
-              className={`flex-1 min-h-[48px] font-black uppercase text-xs flex items-center justify-center gap-2 cursor-pointer transition-colors ${
-                activeTab === 'exchange'
-                  ? 'border-b-[3px] border-amber-400 text-amber-400 bg-white/5'
-                  : 'text-zinc-400 hover:text-white'
-              }`}
-            >
-              <Coins className="w-4 h-4 shrink-0" />
-              <span>Gem Exchange</span>
-            </button>
-
-            <button
-              onClick={() => {
-                setActiveTab('chests');
-                setNoticeMessage(null);
-                setSavedConfirmationMessage(null);
-              }}
-              className={`flex-1 min-h-[48px] font-black uppercase text-xs flex items-center justify-center gap-2 cursor-pointer transition-colors ${
-                activeTab === 'chests'
-                  ? 'border-b-[3px] border-amber-400 text-amber-400 bg-white/5'
-                  : 'text-zinc-400 hover:text-white'
-              }`}
-            >
-              <Gift className="w-4 h-4 shrink-0" />
-              <span>Chest Shop</span>
-            </button>
-
-            <button
-              onClick={() => {
-                setActiveTab('secrets');
-                setNoticeMessage(null);
-                setSavedConfirmationMessage(null);
-              }}
-              className={`flex-1 min-h-[48px] font-black uppercase text-xs flex items-center justify-center gap-2 cursor-pointer transition-colors ${
-                activeTab === 'secrets'
-                  ? 'border-b-[3px] border-amber-400 text-amber-400 bg-white/5'
-                  : 'text-zinc-400 hover:text-white'
-              }`}
-            >
-              <KeyRound className="w-4 h-4 shrink-0" />
-              <span>Secret Unlock</span>
-            </button>
-          </div>
 
           {/* Inline Feedback Notice */}
           {noticeMessage && (
@@ -387,8 +391,8 @@ export const MugenGemStore: React.FC<MugenGemStoreProps> = ({
                     <span className="font-mono text-xs font-black uppercase text-slate-300">
                       YOUR BALANCE
                     </span>
-                    <span className="font-mono text-lg font-black text-amber-400 flex items-center gap-1.5">
-                      <Coins className="w-5 h-5 text-amber-400 shrink-0" />
+                    <span className="font-mono text-lg font-black text-amber-400 flex items-center gap-2">
+                      <MugenGemIcon className="w-7 h-7 text-amber-400 shrink-0" />
                       {gemBalance} GEMS
                     </span>
                   </div>
@@ -468,8 +472,8 @@ export const MugenGemStore: React.FC<MugenGemStoreProps> = ({
                               </h3>
                             </div>
 
-                            <div className="px-3 py-1 bg-amber-400 text-black font-mono font-black text-xs border border-black flex items-center gap-1 shadow-[2px_2px_0px_#000]">
-                              <Coins className="w-3.5 h-3.5 text-black shrink-0" />
+                            <div className="px-3 py-1 bg-amber-400 text-black font-mono font-black text-xs border border-black flex items-center gap-1.5 shadow-[2px_2px_0px_#000]">
+                              <MugenGemIcon className="w-5 h-5 text-black shrink-0" />
                               <span>{chest.cost} GEMS</span>
                             </div>
                           </div>
@@ -636,8 +640,9 @@ export const MugenGemStore: React.FC<MugenGemStoreProps> = ({
                               <h3 className="text-base font-black uppercase text-amber-400 truncate">
                                 {player.realName}
                               </h3>
-                              <span className="text-[10px] font-mono font-black uppercase px-2 py-0.5 bg-amber-400 text-black border border-black shrink-0">
-                                800 GEMS
+                              <span className="text-[10px] font-mono font-black uppercase px-2 py-0.5 bg-amber-400 text-black border border-black shrink-0 flex items-center gap-1">
+                                <MugenGemIcon className="w-4 h-4 text-black shrink-0" />
+                                <span>800 GEMS</span>
                               </span>
                             </div>
                             <p className="text-xs font-bold text-slate-300 truncate mt-0.5">

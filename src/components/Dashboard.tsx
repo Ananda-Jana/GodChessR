@@ -221,7 +221,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
   const [isMobileProfileOpen, setIsMobileProfileOpen] = useState(false);
   const [isMobileNavDropdownOpen, setIsMobileNavDropdownOpen] = useState(false);
   const [isHighlightsExpanded, setIsHighlightsExpanded] = useState(false);
-  const [activeBottomTab, setActiveBottomTab] = useState<'play' | 'matches' | 'players' | 'store' | 'hashira' | 'trophies' | 'culling' | 'modes' | 'profile' | null>('modes');
+  const [activeBottomTab, setActiveBottomTab] = useState<'play' | 'matches' | 'players' | 'store' | 'hashira' | 'trophies' | 'culling' | 'modes' | 'profile' | null>(null);
 
   const isNavigatingRef = useRef(false);
 
@@ -238,7 +238,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
     setIsMobileProfileOpen(false);
     setIsTrophyRoomOpen(false);
     setIsAboutOpen(false);
-    setActiveBottomTab('modes');
+    setActiveBottomTab(null);
     onExitPreGameViews?.();
   };
 
@@ -256,7 +256,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
     if (activeBottomTab === 'trophies') return 'trophies';
     if (activeBottomTab === 'play') return 'play';
     if (activeBottomTab === 'modes') return 'modes';
-    return 'modes';
+    return null;
   };
 
   const currentActiveTab = getActiveTab();
