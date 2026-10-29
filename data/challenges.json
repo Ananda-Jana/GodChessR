@@ -19,5 +19,26 @@
     "createdAt": 1793279516397,
     "expiresAt": 1793279816397,
     "matchId": "match_test_1793279516397"
+  },
+  {
+    "id": "ch_test_1793293510642",
+    "challenger": {
+      "userId": "usr_alice_test",
+      "username": "alice",
+      "displayName": "Alice Champion",
+      "avatarId": "avatar_queen"
+    },
+    "challenged": {
+      "userId": "usr_bob_test",
+      "username": "bob",
+      "displayName": "Bob Tactician",
+      "avatarId": "avatar_prince"
+    },
+    "status": "accepted",
+    "timeControl": 300,
+    "moveSuggestions": "included",
+    "createdAt": 1793293510642,
+    "expiresAt": 1793293810643,
+    "matchId": "match_test_1793293510643"
   }
 ]

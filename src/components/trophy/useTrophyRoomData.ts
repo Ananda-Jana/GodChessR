@@ -23,7 +23,7 @@ import {
   RankProgressInfo,
 } from '../../league/rankConfig';
 
-export type TrophyMainView = 'trophies' | 'league' | 'inventory' | 'mugenpass';
+export type TrophyMainView = 'trophies' | 'league' | 'journey' | 'inventory' | 'mugenpass';
 export type InventorySubTab = 'pending' | 'claimed';
 
 export function useTrophyRoomData(

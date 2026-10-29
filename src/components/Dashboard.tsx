@@ -208,7 +208,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
   const { state: predictorState, clearPredictorSession, applyRatingBoost } = usePredictor();
   const { isInstallable, install } = usePWAInstall();
   const [isTrophyRoomOpen, setIsTrophyRoomOpen] = useState(false);
-  const [trophyRoomMainView, setTrophyRoomMainView] = useState<'trophies' | 'league' | 'inventory' | 'mugenpass'>('trophies');
+  const [trophyRoomMainView, setTrophyRoomMainView] = useState<'trophies' | 'league' | 'journey' | 'inventory' | 'mugenpass'>('trophies');
   const [isStoreOpen, setIsStoreOpen] = useState(false);
   const [storeInitialTab, setStoreInitialTab] = useState<StoreTab>('ore_conversion');
   const [secretArenaOrigin, setSecretArenaOrigin] = useState<NavigationOrigin>(() => {
@@ -301,6 +301,11 @@ export const Dashboard: React.FC<DashboardProps> = ({
       setIsTrophyRoomOpen(true);
     };
 
+    const handleOpenJourneyTab = () => {
+      setTrophyRoomMainView('journey');
+      setIsTrophyRoomOpen(true);
+    };
+
     const handleToastNotice = (e: Event) => {
       const custom = e as CustomEvent;
       const msg = custom.detail?.message;
@@ -316,6 +321,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
     window.addEventListener('open_multiplayer_challenge', handleOpenMultiplayerChallenge);
     window.addEventListener('open_league_tab', handleOpenLeagueTab);
     window.addEventListener('open_mugenpass_tab', handleOpenMugenPassTab);
+    window.addEventListener('open_journey_tab', handleOpenJourneyTab);
     window.addEventListener('app_toast_notice', handleToastNotice);
     return () => {
       window.removeEventListener('open_punisher_bot', handleOpenPunisherBot);
@@ -324,6 +330,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
       window.removeEventListener('open_multiplayer_challenge', handleOpenMultiplayerChallenge);
       window.removeEventListener('open_league_tab', handleOpenLeagueTab);
       window.removeEventListener('open_mugenpass_tab', handleOpenMugenPassTab);
+      window.removeEventListener('open_journey_tab', handleOpenJourneyTab);
       window.removeEventListener('app_toast_notice', handleToastNotice);
     };
   }, [onOpenPunisher, onStartLeagueBotMatch]);

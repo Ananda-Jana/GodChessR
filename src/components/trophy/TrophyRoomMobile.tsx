@@ -28,6 +28,7 @@ import {
   Bot,
   Zap,
   Info,
+  Compass,
 } from 'lucide-react';
 import type { PunisherBotId } from '../../punisher/punisherBot';
 import { LEAGUE_BOTS } from '../../league/leagueBots';
@@ -36,6 +37,8 @@ import { LeagueRivalsModal } from './LeagueRivalsModal';
 import { useSocket } from '../../context/SocketContext';
 import { MugenPassIcon } from '../../economy/MugenPassIcon';
 import { MugenPassView } from '../../economy/MugenPassView';
+import { JourneyPathView } from '../../journey/JourneyPathView';
+import type { JourneyNodeDef } from '../../journey/journeyTypes';
 
 interface TrophyRoomMobileProps {
   data: ReturnType<typeof useTrophyRoomData>;
@@ -93,6 +96,11 @@ export const TrophyRoomMobile: React.FC<TrophyRoomMobileProps> = ({ data, onClos
     setIsPreMatchOpen(false);
     onClose();
     window.dispatchEvent(new CustomEvent('open_league_bot_match', { detail: { botId } }));
+  };
+
+  const handleLaunchJourneyMatch = (node: JourneyNodeDef) => {
+    onClose();
+    window.dispatchEvent(new CustomEvent('open_journey_bot_match', { detail: { node } }));
   };
 
   const handleAutoMatch = () => {
@@ -578,6 +586,15 @@ export const TrophyRoomMobile: React.FC<TrophyRoomMobileProps> = ({ data, onClos
           </div>
         )}
 
+        {mainView === 'journey' && (
+          <div className="h-[calc(100dvh-130px)] flex flex-col overflow-hidden">
+            <JourneyPathView
+              userId={user?.id}
+              onLaunchMatch={handleLaunchJourneyMatch}
+            />
+          </div>
+        )}
+
         {mainView === 'mugenpass' && (
           <div>
             <MugenPassView userId={user?.id || 'guest'} />
@@ -644,6 +661,16 @@ export const TrophyRoomMobile: React.FC<TrophyRoomMobileProps> = ({ data, onClos
         >
           <Crown className="w-5 h-5 mb-0.5" />
           <span>League</span>
+        </button>
+
+        <button
+          onClick={() => setMainView('journey')}
+          className={`flex flex-col items-center justify-center min-h-[44px] px-3 font-mono font-black text-[10px] uppercase cursor-pointer ${
+            mainView === 'journey' ? 'text-amber-400' : 'text-slate-500'
+          }`}
+        >
+          <Compass className="w-5 h-5 mb-0.5" />
+          <span>Journey</span>
         </button>
 
         <button

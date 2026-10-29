@@ -1,110 +1,35 @@
-# Mugen Pass System & Event Ticket Store
+# Phase A2 Plan — Journey Career Mode
 
-Implementation plan for integrating the **Mugen Pass** tab inside the Trophy Room / League interface, featuring 3 tiered Event Passes (**Nu Pass 1.2X**, **Mecha Mugen Pass 1.5X**, **VIP Pass 2.0X**) purchased with Mugen Gems, custom ticket icons styled with dollar symbols, active match counters, and full integration with League match trophy rewards.
+## 1. Directory Structure & File Architecture
+All new Journey mode code lives strictly in `/src/journey/`:
+- `/src/journey/journeyTypes.ts`: Type definitions for nodes, checkpoints, boss configs, user progress, and star ratings.
+- `/src/journey/journeyNodes.ts`: Definitions for 21 nodes (Nodes 1–21), including early beginner bots (Nodes 1–3), regular bots, and boss nodes every 3rd–4th node (Nodes 4, 8, 12, 16, 20), plus final bonus champion node (Node 21).
+- `/src/journey/journeyBossBot.ts`: 3000 ELO Boss Engine evaluator layering over existing engine methods (`applyMoveToBoard`, `getAllLegalMoves`, `isKingInCheck`) with depth search, quiescence search, zero blunders, and king safety weights.
+- `/src/journey/journeyStore.ts`: Storage manager for `journey_progress_v1_{userId}` with in-memory fallback dictionary, star calculations, node unlocks, and avatar storage.
+- `/src/journey/JourneyAvatar.tsx`: Reusable avatar slot supporting custom image file uploads (`FileReader` to data-URL) with TSX SVG vector fallbacks.
+- `/src/journey/JourneyNodeCard.tsx`: Checkpoint node card component displaying status (locked, active, cleared), stars, bot badge, rewards, and boss styling.
+- `/src/journey/JourneyPreMatchModal.tsx`: Battle briefing modal showing bot stats, dialogue intro, rules, rewards, and "Engage Battle" action.
+- `/src/journey/JourneyPathView.tsx`: Responsive scrollable journey progression roadmap (desktop & mobile) with connected path nodes, milestone chests, and header statistics.
 
----
+## 2. Integration with Career Tabs
+- `/src/components/trophy/useTrophyRoomData.ts`:
+  - Extend `TrophyMainView` type: `'trophies' | 'league' | 'journey' | 'inventory' | 'mugenpass'`.
+- `/src/components/trophy/TrophyRoomDesktop.tsx`:
+  - Add "Journey" button in the left sidebar rail directly between `'league'` and `'inventory'`.
+  - Icon: `Swords` or `Compass` with amber/crimson active badge.
+  - Render `<JourneyPathView />` when `mainView === 'journey'`.
+- `/src/components/trophy/TrophyRoomMobile.tsx`:
+  - Add "Journey" tab button in the bottom navigation bar directly between `'league'` and `'inventory'`.
+  - Render `<JourneyPathView />` when `mainView === 'journey'`.
 
-## User Review & Critical Decisions
+## 3. Match Lifecycle Wiring in App.tsx
+- Add `journeyMatch` state and event listener `open_journey_bot_match`.
+- On starting a Journey node battle:
+  - Closes career modal, launches standard `MatchView` using the Journey bot engine.
+  - On win, invokes `journeyStore.recordNodeWin(userId, nodeId, movesCount, remainingTime)`.
+  - On exit, automatically re-opens the Career modal to the `'journey'` tab.
 
-> [!IMPORTANT]
-> The following design decisions have been confirmed and incorporated based on your choices:
-
-- **Pass Duration & Activation**: Every purchased Mugen Pass remains active for **10 League matches**.
-- **Pass Upgrades**: Purchasing a higher tier pass (e.g. upgrading from Nu Pass to VIP Pass) **instantly applies the higher multiplier** and resets/extends active match charges to 10 matches.
-- **Pass Tier Breakdown**:
-  - **Nu Pass**: **1.2X Trophy Multiplier** · Cost: **1,200 Mugen Gems** · 10 Match Charges.
-  - **Mecha Mugen Pass**: **1.5X Trophy Multiplier** · Cost: **2,000 Mugen Gems** · 10 Match Charges.
-  - **VIP Pass**: **2.0X Trophy Multiplier** · Cost: **3,000 Mugen Gems** · 10 Match Charges.
-- **Economy Sync**: Integrated directly with `getGems()` and `deductGems()` in `mugenStore.ts` so Gem balances update across all views (Store, Dashboard, Header, Pass Store).
-
----
-
-## 1. Overview & Core Concept
-
-The **Mugen Pass** system introduces premium Event Passes into the League Mode ecosystem. Players can exchange earned Mugen Gems for an active multiplier pass that multiplies all League match trophy payouts (both victories and participation trophies) for 10 consecutive matches.
-
----
-
-## 2. User Experience & Visual Design
-
-### Mugen Pass Tab & Ticket Icon
-- **Navigation Item**: A new **MUGEN PASS** tab in the Trophy Room header alongside `Trophies`, `League`, and `Inventory`.
-- **Custom Tab Icon**: A ticket icon with $ symbol in the middle, styled after the ticket geometry (`/public/assets/aistudio/image_a17115c5.png`).
-- **Mobile & Desktop Responsive Layouts**:
-  - **Desktop Layout (`TrophyRoomDesktop.tsx`)**: 3-column ticket card showcase featuring pass badges, multiplier tags, active charges meter, and 1-click Gem purchase buttons.
-  - **Mobile Layout (`TrophyRoomMobile.tsx`)**: Non-flickering touch-optimized card layout with horizontal pass cards, prominent Gem balance badge, and purchase confirmation modal.
-
-### Ticket Card Aesthetic
-Inspired by the 3D ticket pass design (`image_a17115c5.png`):
-- Cutout side notch detailing (`border-dashed`, circular edge notches).
-- **Nu Pass**: Sleek Cyan/Teal ticket card with 1.2X badge and silver stars.
-- **Mecha Mugen Pass**: Cyber Purple/Pink ticket card with 1.5X badge and golden stars.
-- **VIP Pass**: Deluxe Gold/Amber ticket card with 2.0X badge, glowing border, and triple star insignia.
-
----
-
-## 3. Key Product Decisions & Trade-Offs
-
-- **Match Charges vs Time Duration**: Match charges (10 matches) ensure players get full value regardless of play frequency without losing pass duration while offline.
-- **League Match Integration**:
-  - When playing a League match with an active pass, the base trophies (e.g. 100 TR on win, 25 TR on loss) are multiplied by the active pass multiplier (e.g. $100 \times 2.0 = 200\text{ TR}$).
-  - The `PostGameTrophyCardModal` displays a callout: `"VIP PASS ACTIVE — 2.0X MULTIPLIER APPLIED!"`.
-  - Upon match completion, 1 charge is deducted from the active pass.
-
----
-
-## 4. Technical Architecture & Data Strategy
-
-```
-┌────────────────────────────────────────────────────────────────────────┐
-│                        Trophy Room Modal                               │
-│  [ Trophies ]     [ League ]     [ MUGEN PASS ($) ]     [ Inventory ]  │
-└───────────────────────────────────────────────────┬────────────────────┘
-                                                    │
-                      ┌─────────────────────────────┴─────────────────────────────┐
-                      ▼                                                           ▼
-         ┌──────────────────────────┐                               ┌──────────────────────────┐
-         │ PassStore (Desktop View) │                               │  PassStore (Mobile View) │
-         │ 3-Column Ticket Cards    │                               │  Touch Carousel / List   │
-         └────────────┬─────────────┘                               └────────────┬─────────────┘
-                      │                                                          │
-                      └─────────────────────────────┬────────────────────────────┘
-                                                    │
-                                                    ▼
-                                     ┌─────────────────────────────┐
-                                     │  Mugen Pass Store / State   │
-                                     │  - Active Pass & Multiplier │
-                                     │  - Remaining Match Charges  │
-                                     │  - Gem Deductions           │
-                                     └──────────────┬──────────────┘
-                                                    │
-                                                    ▼
-                                     ┌─────────────────────────────┐
-                                     │    League Match Processor   │
-                                     │  Base TR x Pass Multiplier  │
-                                     │  Deduct 1 Charge / Match    │
-                                     └─────────────────────────────┘
-```
-
-### State & Storage Architecture (`mugenPassStore.ts`)
-- Stores active pass state in `localStorage` keyed by `userId`:
-  ```typescript
-  interface ActiveMugenPass {
-    passId: 'nu_pass' | 'mecha_pass' | 'vip_pass';
-    multiplier: number; // 1.2, 1.5, 2.0
-    chargesRemaining: number; // Max 10
-    purchasedAt: number;
-  }
-  ```
-- Functions: `getActivePass(userId)`, `purchasePass(userId, passId)`, `consumePassCharge(userId)`.
-
----
-
-## Execution Steps
-
-1. **Create `mugenPassStore.ts`**: Store pass definitions, Gem prices, multipliers, and charge consumption logic.
-2. **Create Ticket Icon SVG Component (`MugenPassIcon.tsx`)**: Reusable ticket icon with $ symbol and notch details.
-3. **Build `MugenPassView.tsx`**: Separate desktop and mobile optimized layout components for the Mugen Pass store.
-4. **Update `TrophyRoomDesktop.tsx` & `TrophyRoomMobile.tsx`**: Add `mugenpass` tab with ticket icon and render `MugenPassView`.
-5. **Integrate with `MatchView.tsx` & `server/league.ts`**: Apply active pass multiplier to League match trophy rewards and deduct 1 charge per completed game.
-6. **Compile & Verify**: Test Gem deductions, multiplier math, and responsive presentation across desktop and mobile.
+## 4. Strict Constraints Enforced
+- `src/game/engine.ts` is 100% untouched.
+- `src/punisher/*` files are 100% untouched.
+- `mugen_*` storage keys are 100% untouched.

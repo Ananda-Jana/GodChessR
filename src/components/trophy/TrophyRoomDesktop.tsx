@@ -32,6 +32,7 @@ import {
   Bot,
   Zap,
   Info,
+  Compass,
 } from 'lucide-react';
 import type { PunisherBotId } from '../../punisher/punisherBot';
 import { LEAGUE_BOTS } from '../../league/leagueBots';
@@ -40,6 +41,8 @@ import { LeagueRivalsModal } from './LeagueRivalsModal';
 import { useSocket } from '../../context/SocketContext';
 import { MugenPassIcon } from '../../economy/MugenPassIcon';
 import { MugenPassView } from '../../economy/MugenPassView';
+import { JourneyPathView } from '../../journey/JourneyPathView';
+import type { JourneyNodeDef } from '../../journey/journeyTypes';
 
 interface TrophyRoomDesktopProps {
   data: ReturnType<typeof useTrophyRoomData>;
@@ -96,6 +99,11 @@ export const TrophyRoomDesktop: React.FC<TrophyRoomDesktopProps> = ({ data, onCl
     setIsPreMatchOpen(false);
     onClose();
     window.dispatchEvent(new CustomEvent('open_league_bot_match', { detail: { botId } }));
+  };
+
+  const handleLaunchJourneyMatch = (node: JourneyNodeDef) => {
+    onClose();
+    window.dispatchEvent(new CustomEvent('open_journey_bot_match', { detail: { node } }));
   };
 
   const handleAutoMatch = () => {
@@ -204,6 +212,19 @@ export const TrophyRoomDesktop: React.FC<TrophyRoomDesktopProps> = ({ data, onCl
           >
             <Crown className="w-5 h-5" />
             <span className="text-[9px] font-mono font-black uppercase">League</span>
+          </button>
+
+          <button
+            onClick={() => setMainView('journey')}
+            className={`w-14 h-14 rounded-md flex flex-col items-center justify-center gap-1 border-2 transition-all cursor-pointer ${
+              mainView === 'journey'
+                ? 'bg-amber-400 text-black border-black shadow-[3px_3px_0px_#fff] scale-105'
+                : 'bg-slate-900/80 text-slate-400 border-slate-700 hover:text-white'
+            }`}
+            title="Journey Career Campaign"
+          >
+            <Compass className="w-5 h-5" />
+            <span className="text-[9px] font-mono font-black uppercase">Journey</span>
           </button>
 
           <button
@@ -832,6 +853,15 @@ export const TrophyRoomDesktop: React.FC<TrophyRoomDesktopProps> = ({ data, onCl
                   )}
                 </div>
               )}
+            </div>
+          )}
+
+          {mainView === 'journey' && (
+            <div className="h-full overflow-hidden flex flex-col">
+              <JourneyPathView
+                userId={user?.id}
+                onLaunchMatch={handleLaunchJourneyMatch}
+              />
             </div>
           )}
 

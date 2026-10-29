@@ -50,6 +50,9 @@ import { PunisherSelector } from './punisher/PunisherSelector';
 import { getPunisherBotMove, PunisherBotId, PUNISHER_BOTS } from './punisher/punisherBot';
 import { ChestRewardHost } from './chest/ChestRewardHost';
 import { EloStreakNotification } from './components/EloStreakNotification';
+import { getJourneyBotMove } from './journey/journeyBossBot';
+import type { JourneyNodeDef } from './journey/journeyTypes';
+import { recordNodeVictory } from './journey/journeyStore';
 
 function AppContent() {
   const { user, isLoading } = useAuth();
@@ -98,10 +101,18 @@ function AppContent() {
 
   const punisherTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
+  // Journey Career Mode State
+  const [journeyMatch, setJourneyMatch] = useState<MatchState | null>(null);
+  const [activeJourneyNode, setActiveJourneyNode] = useState<JourneyNodeDef | null>(null);
+  const journeyTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
   useEffect(() => {
     return () => {
       if (punisherTimeoutRef.current) {
         clearTimeout(punisherTimeoutRef.current);
+      }
+      if (journeyTimeoutRef.current) {
+        clearTimeout(journeyTimeoutRef.current);
       }
     };
   }, []);
@@ -196,6 +207,112 @@ function AppContent() {
     []
   );
 
+  // Run Journey Bot turn with 3000 ELO evaluation and calibrated thinking time
+  const runJourneyBotTurn = useCallback(
+    (currentMatch: MatchState, node: JourneyNodeDef) => {
+      if (journeyTimeoutRef.current) {
+        clearTimeout(journeyTimeoutRef.current);
+        journeyTimeoutRef.current = null;
+      }
+
+      setIsBotThinking(true);
+
+      journeyTimeoutRef.current = setTimeout(() => {
+        const startTime = Date.now();
+        const bestMove = getJourneyBotMove(currentMatch, node.botConfig, 'black');
+        if (!bestMove) {
+          setIsBotThinking(false);
+          journeyTimeoutRef.current = null;
+          return;
+        }
+
+        const isBoss = Boolean(node.botConfig.isPerfectPlayBoss);
+        const targetThinkingTime = isBoss
+          ? Math.floor(1000 + Math.random() * 800)
+          : Math.floor(1200 + Math.random() * 900);
+
+        const elapsed = Date.now() - startTime;
+        const remainingDelay = Math.max(50, targetThinkingTime - elapsed);
+
+        journeyTimeoutRef.current = setTimeout(() => {
+          const res = executeMove(currentMatch, bestMove.from, bestMove.to);
+          if (res.success) {
+            setJourneyMatch(res.state);
+            if (res.state.status === 'completed') {
+              sounds.playGameOver();
+              const entry = { match: res.state, completedAt: Date.now() };
+              setLastCompletedMatch(entry);
+            } else if (bestMove.captured) {
+              sounds.playCapture();
+            } else {
+              sounds.playMove();
+            }
+          }
+          setIsBotThinking(false);
+          journeyTimeoutRef.current = null;
+        }, remainingDelay);
+      }, 20);
+    },
+    []
+  );
+
+  const handleStartJourneyMatch = (node: JourneyNodeDef) => {
+    if (!user) return;
+    if (journeyTimeoutRef.current) {
+      clearTimeout(journeyTimeoutRef.current);
+      journeyTimeoutRef.current = null;
+    }
+    setIsBotThinking(false);
+    setActiveJourneyNode(node);
+    setLastCompletedMatch(null);
+
+    const botUser = {
+      userId: `journey_${node.botConfig.id}`,
+      username: node.botConfig.name,
+      displayName: `${node.botConfig.name} (${node.botConfig.rating} ELO)`,
+      avatarId: 'avatar_prince',
+    };
+
+    const now = Date.now();
+    const initialMatch: MatchState = {
+      id: `journey_match_${node.id}_${now}`,
+      whitePlayer: {
+        userId: user.id,
+        username: user.username,
+        displayName: user.displayName,
+        avatarId: user.avatarId,
+      },
+      blackPlayer: botUser,
+      board: createInitialBoard('classic'),
+      gameMode: 'classic',
+      craftingAllowed: false,
+      pieceTheme: 'classic',
+      boardTheme: 'crimson',
+      turn: 'white',
+      status: 'active',
+      dice: null,
+      diceActive: false,
+      whitePawnsReachedEndRank: 0,
+      blackPawnsReachedEndRank: 0,
+      capturedByWhite: [],
+      capturedByBlack: [],
+      moveHistory: [],
+      inCheck: null,
+      result: null,
+      moveSuggestions: 'included',
+      totalCaptures: 0,
+      timeControl: (node.botConfig.timeControlSeconds === 120 ? 120 : 300) as 120 | 300,
+      whiteTimeRemaining: node.botConfig.timeControlSeconds || 300,
+      blackTimeRemaining: node.botConfig.timeControlSeconds || 300,
+      lastTurnStartTime: now,
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    setJourneyMatch(initialMatch);
+    sounds.playChallenge();
+  };
+
   const [isCurrentMatchLeague, setIsCurrentMatchLeague] = useState<boolean>(false);
 
   const handleStartPunisherMatch = (botId: PunisherBotId, isLeague = false) => {
@@ -261,6 +378,20 @@ function AppContent() {
   const handleStartLeagueBotMatch = (botId: PunisherBotId) => {
     handleStartPunisherMatch(botId, true);
   };
+
+  useEffect(() => {
+    const handleOpenJourneyBotMatch = (e: Event) => {
+      const custom = e as CustomEvent;
+      const node = custom.detail?.node as JourneyNodeDef;
+      if (node) {
+        handleStartJourneyMatch(node);
+      }
+    };
+    window.addEventListener('open_journey_bot_match', handleOpenJourneyBotMatch);
+    return () => {
+      window.removeEventListener('open_journey_bot_match', handleOpenJourneyBotMatch);
+    };
+  }, [user]);
 
   // Last completed game review state (retained for 10 minutes then auto-flushed)
   const [lastCompletedMatch, setLastCompletedMatch] = useState<{ match: MatchState; completedAt: number } | null>(() => {
@@ -707,6 +838,98 @@ function AppContent() {
     setLastCompletedMatch(entry);
   };
 
+  // Journey Match: Human Moves Piece
+  const handleJourneyMatchMove = (from: Position, to: Position) => {
+    if (!journeyMatch || journeyMatch.status !== 'active') return;
+    if (journeyMatch.turn !== 'white') return; // User is white
+
+    const res = executeMove(journeyMatch, from, to);
+    if (!res.success) return;
+
+    setJourneyMatch(res.state);
+
+    if (res.state.status === 'completed') {
+      sounds.playGameOver();
+      const entry = { match: res.state, completedAt: Date.now() };
+      setLastCompletedMatch(entry);
+
+      // Record victory if player won
+      if (res.state.result?.winner === 'white' && activeJourneyNode) {
+        const victoryRes = recordNodeVictory(
+          user?.id,
+          activeJourneyNode.id,
+          res.state.moveHistory.length,
+          res.state.whiteTimeRemaining
+        );
+        window.dispatchEvent(
+          new CustomEvent('app_toast_notice', {
+            detail: {
+              message: `NODE CLEARED! ★ ${victoryRes.starsEarned} STARS EARNED! +${victoryRes.pointsEarned} PTS`,
+            },
+          })
+        );
+      }
+      return;
+    }
+
+    const lastMove = res.state.moveHistory[res.state.moveHistory.length - 1];
+    if (lastMove?.captured) {
+      sounds.playCapture();
+    } else {
+      sounds.playMove();
+    }
+
+    // Trigger Journey Bot's turn
+    if (activeJourneyNode) {
+      runJourneyBotTurn(res.state, activeJourneyNode);
+    }
+  };
+
+  const handleJourneyMatchResign = () => {
+    if (!journeyMatch || !user) return;
+    if (journeyTimeoutRef.current) {
+      clearTimeout(journeyTimeoutRef.current);
+      journeyTimeoutRef.current = null;
+    }
+    setIsBotThinking(false);
+    const resMatch = resignMatch(journeyMatch, user.id);
+    setJourneyMatch(resMatch);
+    sounds.playGameOver();
+    const entry = { match: resMatch, completedAt: Date.now() };
+    setLastCompletedMatch(entry);
+  };
+
+  // Journey Match Timer Countdown
+  useEffect(() => {
+    if (!journeyMatch || journeyMatch.status !== 'active') return;
+
+    const interval = setInterval(() => {
+      setJourneyMatch((prev) => {
+        if (!prev || prev.status !== 'active') return prev;
+
+        const isWhiteTurn = prev.turn === 'white';
+        const currentRemaining = isWhiteTurn ? prev.whiteTimeRemaining : prev.blackTimeRemaining;
+        const newRemaining = Math.max(0, currentRemaining - 1);
+
+        if (newRemaining <= 0) {
+          const finished = handleTimeout(prev, prev.turn, true);
+          sounds.playGameOver();
+          const entry = { match: finished, completedAt: Date.now() };
+          setLastCompletedMatch(entry);
+          return finished;
+        }
+
+        return {
+          ...prev,
+          whiteTimeRemaining: isWhiteTurn ? newRemaining : prev.whiteTimeRemaining,
+          blackTimeRemaining: !isWhiteTurn ? newRemaining : prev.blackTimeRemaining,
+        };
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [journeyMatch?.status, journeyMatch?.turn]);
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-black flex flex-col items-center justify-center gap-6" role="status">
@@ -784,7 +1007,7 @@ function AppContent() {
     );
   }
 
-  const activeGame = botMatch || socketMatch || punisherMatch;
+  const activeGame = botMatch || socketMatch || punisherMatch || journeyMatch;
 
   return (
     <>
@@ -823,28 +1046,39 @@ function AppContent() {
               clearTimeout(punisherTimeoutRef.current);
               punisherTimeoutRef.current = null;
             }
+            if (journeyTimeoutRef.current) {
+              clearTimeout(journeyTimeoutRef.current);
+              journeyTimeoutRef.current = null;
+            }
             const wasLeague = isCurrentMatchLeague;
+            const wasJourney = Boolean(journeyMatch);
             setIsCurrentMatchLeague(false);
             setIsBotThinking(false);
             setBotMatch(null);
             setPunisherMatch(null);
+            setJourneyMatch(null);
             setActivePunisherBotId(null);
+            setActiveJourneyNode(null);
             clearSocketMatch();
 
             if (wasLeague) {
               setTimeout(() => {
                 window.dispatchEvent(new CustomEvent('open_league_tab'));
               }, 50);
+            } else if (wasJourney) {
+              setTimeout(() => {
+                window.dispatchEvent(new CustomEvent('open_journey_tab'));
+              }, 50);
             }
           }}
           overrideMatch={activeGame || undefined}
-          customOnRoll={botMatch ? handleBotMatchRoll : (punisherMatch ? () => {} : undefined)}
-          customOnMove={botMatch ? handleBotMatchMove : (punisherMatch ? handlePunisherMatchMove : undefined)}
-          customOnResign={botMatch ? handleBotMatchResign : (punisherMatch ? handlePunisherMatchResign : undefined)}
+          customOnRoll={botMatch ? handleBotMatchRoll : (punisherMatch || journeyMatch ? () => {} : undefined)}
+          customOnMove={botMatch ? handleBotMatchMove : (punisherMatch ? handlePunisherMatchMove : (journeyMatch ? handleJourneyMatchMove : undefined))}
+          customOnResign={botMatch ? handleBotMatchResign : (punisherMatch ? handlePunisherMatchResign : (journeyMatch ? handleJourneyMatchResign : undefined))}
           customOnExpand={botMatch ? handleBotMatchExpand : undefined}
           customOnCraftPlace={botMatch ? handleBotMatchCraftPlace : undefined}
           customOnCraftCancel={botMatch ? handleBotMatchCraftCancel : undefined}
-          isBotMatch={Boolean(botMatch || punisherMatch)}
+          isBotMatch={Boolean(botMatch || punisherMatch || journeyMatch)}
           isBotThinking={isBotThinking}
           activePunisherBotId={activePunisherBotId}
           isLeagueMatch={isCurrentMatchLeague}

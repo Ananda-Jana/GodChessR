@@ -69,6 +69,10 @@ export interface Move {
   isSpecialPrinceMove?: boolean;
   isPromotion?: boolean;
   promotedTo?: PieceType;
+  isCastling?: boolean;
+  castlingSide?: 'kingside' | 'queenside';
+  castlingRookFrom?: Position;
+  castlingRookTo?: Position;
   san?: string; // Standard algebraic notation
   timestamp: number;
 }

@@ -317,6 +317,149 @@ export function findKingPosition(
 }
 
 /**
+ * Checks whether a given square is attacked by any piece of the specified color.
+ * Uses direct line-of-sight and leap checks to prevent recursion with castling.
+ */
+export function isSquareAttackedFast(
+  board: (Piece | null)[][],
+  pos: Position,
+  attackedByColor: PieceColor
+): boolean {
+  const boardHeight = board.length;
+  const boardWidth = board[0]?.length || 8;
+
+  // 1. Pawns (White attacks y-1, Black attacks y+1)
+  const pawnAttackY = attackedByColor === 'white' ? pos.y - 1 : pos.y + 1;
+  if (pawnAttackY >= 0 && pawnAttackY < boardHeight) {
+    if (pos.x - 1 >= 0) {
+      const p = board[pawnAttackY][pos.x - 1];
+      if (p && p.color === attackedByColor && p.type === 'pawn') return true;
+    }
+    if (pos.x + 1 < boardWidth) {
+      const p = board[pawnAttackY][pos.x + 1];
+      if (p && p.color === attackedByColor && p.type === 'pawn') return true;
+    }
+  }
+
+  // 2. Knights (and Prince standard 2x1 leap)
+  const knightOffsets = [
+    { dx: 1, dy: 2 }, { dx: 2, dy: 1 }, { dx: 2, dy: -1 }, { dx: 1, dy: -2 },
+    { dx: -1, dy: -2 }, { dx: -2, dy: -1 }, { dx: -2, dy: 1 }, { dx: -1, dy: 2 },
+  ];
+  for (const off of knightOffsets) {
+    const nx = pos.x + off.dx;
+    const ny = pos.y + off.dy;
+    if (isInsideBoard(nx, ny, boardWidth, boardHeight)) {
+      const p = board[ny][nx];
+      if (p && p.color === attackedByColor && (p.type === 'knight' || p.type === 'prince')) {
+        return true;
+      }
+    }
+  }
+
+  // 3. Kings (adjacent square attacks)
+  for (let dx = -1; dx <= 1; dx++) {
+    for (let dy = -1; dy <= 1; dy++) {
+      if (dx === 0 && dy === 0) continue;
+      const kx = pos.x + dx;
+      const ky = pos.y + dy;
+      if (isInsideBoard(kx, ky, boardWidth, boardHeight)) {
+        const p = board[ky][kx];
+        if (p && p.color === attackedByColor && p.type === 'king') return true;
+      }
+    }
+  }
+
+  // 4. Orthogonal sliders (Rook, Queen, Supreme Rook)
+  const orthDirs = [
+    { dx: 1, dy: 0 }, { dx: -1, dy: 0 }, { dx: 0, dy: 1 }, { dx: 0, dy: -1 },
+  ];
+  for (const dir of orthDirs) {
+    let step = 1;
+    while (true) {
+      const tx = pos.x + dir.dx * step;
+      const ty = pos.y + dir.dy * step;
+      if (!isInsideBoard(tx, ty, boardWidth, boardHeight)) break;
+      const p = board[ty][tx];
+      if (!p) {
+        step++;
+        continue;
+      }
+      if (p.color === attackedByColor) {
+        if (p.type === 'rook' || p.type === 'queen' || p.type === 'supremeRook') {
+          return true;
+        }
+      }
+      break;
+    }
+  }
+
+  // 5. Diagonal sliders (Bishop, Queen, Prince up to 4 squares, Priest up to 3 squares)
+  const diagDirs = [
+    { dx: 1, dy: 1 }, { dx: 1, dy: -1 }, { dx: -1, dy: 1 }, { dx: -1, dy: -1 },
+  ];
+  for (const dir of diagDirs) {
+    let step = 1;
+    while (true) {
+      const tx = pos.x + dir.dx * step;
+      const ty = pos.y + dir.dy * step;
+      if (!isInsideBoard(tx, ty, boardWidth, boardHeight)) break;
+      const p = board[ty][tx];
+      if (!p) {
+        step++;
+        continue;
+      }
+      if (p.color === attackedByColor) {
+        if (p.type === 'bishop' || p.type === 'queen') return true;
+        if (p.type === 'prince' && step <= 4) return true;
+        if (p.type === 'priest' && step <= 3) return true;
+      }
+      break;
+    }
+  }
+
+  // 6. Priest 2-square orthogonal leaps
+  const priestLeaps = [{ dx: 0, dy: 2 }, { dx: 0, dy: -2 }, { dx: 2, dy: 0 }, { dx: -2, dy: 0 }];
+  for (const leap of priestLeaps) {
+    const px = pos.x + leap.dx;
+    const py = pos.y + leap.dy;
+    if (isInsideBoard(px, py, boardWidth, boardHeight)) {
+      const p = board[py][px];
+      if (p && p.color === attackedByColor && p.type === 'priest') return true;
+    }
+  }
+
+  // 7. Supreme Rook 2-square diagonal leaps
+  const supremeLeaps = [{ dx: 2, dy: 2 }, { dx: 2, dy: -2 }, { dx: 2, dy: 2 }, { dx: -2, dy: -2 }];
+  for (const leap of supremeLeaps) {
+    const sx = pos.x + leap.dx;
+    const sy = pos.y + leap.dy;
+    if (isInsideBoard(sx, sy, boardWidth, boardHeight)) {
+      const p = board[sy][sx];
+      if (p && p.color === attackedByColor && p.type === 'supremeRook') return true;
+    }
+  }
+
+  // 8. Prince 3x1 extended jump (if unused)
+  const extPrinceOffsets = [
+    { dx: 1, dy: 3 }, { dx: 3, dy: 1 }, { dx: 3, dy: -1 }, { dx: 1, dy: -3 },
+    { dx: -1, dy: -3 }, { dx: -3, dy: -1 }, { dx: -3, dy: 1 }, { dx: -1, dy: 3 },
+  ];
+  for (const off of extPrinceOffsets) {
+    const ex = pos.x + off.dx;
+    const ey = pos.y + off.dy;
+    if (isInsideBoard(ex, ey, boardWidth, boardHeight)) {
+      const p = board[ey][ex];
+      if (p && p.color === attackedByColor && p.type === 'prince' && !p.hasMoved && !p.princeSpecialUsed) {
+        return true;
+      }
+    }
+  }
+
+  return false;
+}
+
+/**
  * Computes pseudo-legal moves for a piece without king-safety checks
  */
 export function getPseudoLegalMoves(
@@ -462,6 +605,108 @@ export function getPseudoLegalMoves(
       for (let dy = -1; dy <= 1; dy++) {
         if (dx === 0 && dy === 0) continue;
         addMove({ x: from.x + dx, y: from.y + dy });
+      }
+    }
+
+    // CASTLING (0-0 Kingside and 0-0-0 Queenside)
+    // Allowed across all game modes if King has not moved and is not currently in check
+    if (!piece.hasMoved && !isSquareAttackedFast(board, from, enemyColor)) {
+      // 1. Kingside Castling (0-0)
+      for (let rx = from.x + 1; rx < boardWidth; rx++) {
+        const candidate = board[from.y][rx];
+        if (!candidate) continue;
+        if (
+          candidate.color === piece.color &&
+          (candidate.type === 'rook' || candidate.type === 'supremeRook') &&
+          !candidate.hasMoved
+        ) {
+          let pathClear = true;
+          for (let midX = from.x + 1; midX < rx; midX++) {
+            if (board[from.y][midX] !== null) {
+              pathClear = false;
+              break;
+            }
+          }
+          if (pathClear) {
+            const kingToX = from.x + 2;
+            const rookToX = from.x + 1;
+            if (kingToX < boardWidth) {
+              const transitSquare = { x: from.x + 1, y: from.y };
+              const landingSquare = { x: kingToX, y: from.y };
+              if (
+                !isSquareAttackedFast(board, transitSquare, enemyColor) &&
+                !isSquareAttackedFast(board, landingSquare, enemyColor)
+              ) {
+                if (board[from.y][kingToX] === null || kingToX === rx) {
+                  moves.push({
+                    from,
+                    to: landingSquare,
+                    piece,
+                    isCastling: true,
+                    castlingSide: 'kingside',
+                    castlingRookFrom: { x: rx, y: from.y },
+                    castlingRookTo: { x: rookToX, y: from.y },
+                    san: '0-0',
+                    timestamp: Date.now(),
+                  });
+                }
+              }
+            }
+          }
+          break; // Stop scanning after nearest rook on right
+        } else {
+          // Blocked by any non-rook piece
+          break;
+        }
+      }
+
+      // 2. Queenside Castling (0-0-0)
+      for (let rx = from.x - 1; rx >= 0; rx--) {
+        const candidate = board[from.y][rx];
+        if (!candidate) continue;
+        if (
+          candidate.color === piece.color &&
+          (candidate.type === 'rook' || candidate.type === 'supremeRook') &&
+          !candidate.hasMoved
+        ) {
+          let pathClear = true;
+          for (let midX = rx + 1; midX < from.x; midX++) {
+            if (board[from.y][midX] !== null) {
+              pathClear = false;
+              break;
+            }
+          }
+          if (pathClear) {
+            const kingToX = from.x - 2;
+            const rookToX = from.x - 1;
+            if (kingToX >= 0) {
+              const transitSquare = { x: from.x - 1, y: from.y };
+              const landingSquare = { x: kingToX, y: from.y };
+              if (
+                !isSquareAttackedFast(board, transitSquare, enemyColor) &&
+                !isSquareAttackedFast(board, landingSquare, enemyColor)
+              ) {
+                if (board[from.y][kingToX] === null || kingToX === rx) {
+                  moves.push({
+                    from,
+                    to: landingSquare,
+                    piece,
+                    isCastling: true,
+                    castlingSide: 'queenside',
+                    castlingRookFrom: { x: rx, y: from.y },
+                    castlingRookTo: { x: rookToX, y: from.y },
+                    san: '0-0-0',
+                    timestamp: Date.now(),
+                  });
+                }
+              }
+            }
+          }
+          break; // Stop scanning after nearest rook on left
+        } else {
+          // Blocked by any non-rook piece
+          break;
+        }
       }
     }
   }
@@ -641,24 +886,7 @@ export function isKingInCheck(
   if (!kingPos) return false;
 
   const opponentColor: PieceColor = color === 'white' ? 'black' : 'white';
-  const boardHeight = board.length;
-  const boardWidth = board[0].length;
-
-  for (let y = 0; y < boardHeight; y++) {
-    for (let x = 0; x < boardWidth; x++) {
-      const piece = board[y][x];
-      if (piece && piece.color === opponentColor) {
-        const enemyMoves = getPseudoLegalMoves(board, { x, y });
-        for (const m of enemyMoves) {
-          if (m.to.x === kingPos.x && m.to.y === kingPos.y) {
-            return true;
-          }
-        }
-      }
-    }
-  }
-
-  return false;
+  return isSquareAttackedFast(board, kingPos, opponentColor);
 }
 
 /**
@@ -754,6 +982,19 @@ export function applyMoveToBoard(
 
   newBoard[move.from.y][move.from.x] = null;
   newBoard[move.to.y][move.to.x] = movingPiece;
+
+  // Atomically execute castling Rook move
+  if (move.isCastling) {
+    const isKingside = move.castlingSide === 'kingside' || move.to.x > move.from.x;
+    const rookFrom = move.castlingRookFrom || { x: isKingside ? 7 : 0, y: move.from.y };
+    const rookTo = move.castlingRookTo || { x: isKingside ? move.from.x + 1 : move.from.x - 1, y: move.from.y };
+    const rookPiece = newBoard[rookFrom.y]?.[rookFrom.x];
+    if (rookPiece) {
+      const movedRook = { ...rookPiece, hasMoved: true };
+      newBoard[rookFrom.y][rookFrom.x] = null;
+      newBoard[rookTo.y][rookTo.x] = movedRook;
+    }
+  }
 
   return newBoard;
 }
@@ -1098,7 +1339,9 @@ export function executeMove(
 
   const recordedMove: Move = {
     ...matchedMove,
-    san: `${piece.type[0].toUpperCase()}${posToNotation(from)}→${posToNotation(to)}`,
+    san: matchedMove.isCastling
+      ? (matchedMove.castlingSide === 'kingside' || matchedMove.to.x > matchedMove.from.x ? '0-0' : '0-0-0')
+      : `${piece.type[0].toUpperCase()}${posToNotation(from)}→${posToNotation(to)}`,
     timestamp: Date.now(),
   };
 

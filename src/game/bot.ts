@@ -160,6 +160,8 @@ export function evaluateBoard(
           case 'king':
             // King safety: penalize early king exposure
             if (tableY > 2) posVal -= 40;
+            // Reward castled king position (tucked safely on g1/c1/g8/c8)
+            if ((x === 6 || x === 2) && tableY === 0) posVal += 50;
             break;
         }
       }
@@ -190,6 +192,10 @@ function orderMoves(moves: Move[], board: (Piece | null)[][]): Move[] {
   return moves.slice().sort((a, b) => {
     let scoreA = 0;
     let scoreB = 0;
+
+    // Castling moves get high strategic priority for king safety
+    if (a.isCastling) scoreA += 120;
+    if (b.isCastling) scoreB += 120;
 
     // MVV-LVA (Most Valuable Victim - Least Valuable Attacker)
     if (a.captured) {
