@@ -726,7 +726,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
             </div>
 
             {/* Scrollable 3-column grid of quick-access game mode square tiles */}
-            <div className="grid grid-cols-3 gap-1.5 max-h-[60vh] overflow-y-auto overscroll-contain pr-0.5 relative z-10">
+            <div className="grid grid-cols-3 gap-1.5 max-h-[78vh] overflow-y-auto overscroll-contain pr-0.5 relative z-10">
               {/* Bot Match */}
               <button
                 type="button"
@@ -889,6 +889,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                   className="play-dropup-item group aspect-square relative w-full h-full p-0 overflow-hidden rounded-[10px] border border-white/15 bg-zinc-950 flex items-center justify-center cursor-pointer select-none"
                 >
                   <DropupThumb
+                    src="/assets/aistudio/image_58fb144c.png"
                     alt="Rose Paradise"
                     label="Rose Paradise"
                     fallbackBgClass="bg-rose-950/40 border-rose-500/30"
@@ -951,6 +952,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 className="play-dropup-item group aspect-square relative w-full h-full p-0 overflow-hidden rounded-[10px] border border-white/15 bg-zinc-950 flex items-center justify-center cursor-pointer select-none"
               >
                 <DropupThumb
+                  src="/assets/aistudio/image_eba86319.png"
                   alt="Trophy Vault"
                   label="Trophy Vault"
                   fallbackBgClass="bg-amber-950/40 border-amber-400/30"

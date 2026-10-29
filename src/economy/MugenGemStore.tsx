@@ -448,23 +448,23 @@ export const MugenGemStore: React.FC<MugenGemStoreProps> = ({
             {/* TAB 1: ORE CONVERSION */}
             {activeTab === 'ore_conversion' && (
               <div className="space-y-4 sm:space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
+                {/* MOBILE VIEW: Card 1 -> Card 3 -> Card 2 (Elo Protection at bottom of mobile scroll) */}
+                <div className="md:hidden flex flex-col gap-3">
                   {/* CARD 1: GEM TO CRYPTO CONVERSION */}
-                  <div className="bg-[#0e1117] border-2 sm:border-3 border-black shadow-[4px_4px_0px_#000] p-3.5 sm:p-5 flex flex-col justify-between relative overflow-hidden">
-                    <div className="flex items-center justify-between pb-2 mb-2 sm:mb-3 border-b border-neutral-800">
+                  <div className="bg-[#0e1117] border-2 border-black shadow-[4px_4px_0px_#000] p-3.5 flex flex-col justify-between relative overflow-hidden">
+                    <div className="flex items-center justify-between pb-2 mb-2 border-b border-neutral-800">
                       <div className="flex items-center gap-2 min-w-0">
-                        <MugenCryptoIcon className="w-5 h-5 sm:w-6 sm:h-6 text-yellow-400 shrink-0" />
-                        <h3 className="text-sm sm:text-base font-black uppercase text-white tracking-wide truncate">
+                        <MugenCryptoIcon className="w-5 h-5 text-yellow-400 shrink-0" />
+                        <h3 className="text-sm font-black uppercase text-white tracking-wide truncate">
                           GEM ➔ CRYPTO CONVERSION
                         </h3>
                       </div>
-                      <span className="px-1.5 sm:px-2 py-0.5 bg-yellow-400/20 border border-yellow-400/50 text-yellow-300 font-mono font-black text-[9px] sm:text-[10px] uppercase shrink-0">
+                      <span className="px-1.5 py-0.5 bg-yellow-400/20 border border-yellow-400/50 text-yellow-300 font-mono font-black text-[9px] uppercase shrink-0">
                         CATALYST ORE
                       </span>
                     </div>
 
-                    {/* MOBILE VIEW ONLY: CONVERSION BUTTONS DIRECTLY ON TOP */}
-                    <div className="md:hidden flex flex-col gap-2 mb-2.5">
+                    <div className="flex flex-col gap-2 mb-2.5">
                       <div className="grid grid-cols-1 gap-2">
                         <button
                           type="button"
@@ -495,7 +495,6 @@ export const MugenGemStore: React.FC<MugenGemStoreProps> = ({
                         </button>
                       </div>
 
-                      {/* MOBILE COLLAPSIBLE RULES ACCORDION */}
                       <details className="border border-neutral-800 bg-black/50 p-2.5 text-xs text-neutral-300 group">
                         <summary className="font-bold text-xs text-yellow-400 flex items-center justify-between cursor-pointer select-none">
                           <span className="flex items-center gap-1.5">
@@ -525,9 +524,172 @@ export const MugenGemStore: React.FC<MugenGemStoreProps> = ({
                         </div>
                       </details>
                     </div>
+                  </div>
 
-                    {/* DESKTOP VIEW (Constant and unchanged) */}
-                    <div className="hidden md:block">
+                  {/* CARD 3: ELO TO GEMS CATALYST */}
+                  <div className="bg-[#0e1117] border-2 border-black shadow-[4px_4px_0px_#000] p-3.5">
+                    <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+                      <div className="flex items-center gap-2">
+                        <Coins className="w-5 h-5 text-yellow-400 shrink-0" />
+                        <h3 className="text-sm font-black uppercase text-white tracking-wide">
+                          ELO TO GEMS CATALYST
+                        </h3>
+                      </div>
+                      <span className="text-[9px] font-mono font-black px-2 py-0.5 bg-yellow-400 text-black border border-black uppercase">
+                        50 ELO = 500 GEMS
+                      </span>
+                    </div>
+
+                    <div className="flex flex-col gap-2.5">
+                      <div className="grid grid-cols-1 gap-2">
+                        <button
+                          type="button"
+                          onClick={() => handleDeductElo(50)}
+                          disabled={currentElo <= 50}
+                          className="min-h-[44px] py-2.5 px-3 bg-yellow-400 hover:bg-yellow-300 text-black font-black text-xs uppercase tracking-wider border-2 border-black shadow-[4px_4px_0px_#000] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed transition-all active:translate-x-0.5 active:translate-y-0.5"
+                        >
+                          -50 ELO ➔ +500 GEMS
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDeductElo(100)}
+                          disabled={currentElo <= 100}
+                          className="min-h-[44px] py-2.5 px-3 bg-yellow-400 hover:bg-yellow-300 text-black font-black text-xs uppercase tracking-wider border-2 border-black shadow-[4px_4px_0px_#000] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed transition-all active:translate-x-0.5 active:translate-y-0.5"
+                        >
+                          -100 ELO ➔ +1,000 GEMS
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDeductElo(200)}
+                          disabled={currentElo <= 200}
+                          className="min-h-[44px] py-2.5 px-3 bg-yellow-400 hover:bg-yellow-300 text-black font-black text-xs uppercase tracking-wider border-2 border-black shadow-[4px_4px_0px_#000] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed transition-all active:translate-x-0.5 active:translate-y-0.5"
+                        >
+                          -200 ELO ➔ +2,000 GEMS
+                        </button>
+                      </div>
+
+                      <details className="border border-neutral-800 bg-black/50 p-2.5 text-xs text-neutral-300 group">
+                        <summary className="font-bold text-xs text-yellow-400 flex items-center justify-between cursor-pointer select-none">
+                          <span className="flex items-center gap-1.5">
+                            <AlertCircle className="w-3.5 h-3.5 text-yellow-400" />
+                            <span>Catalyst Rules & Balance Requirements</span>
+                          </span>
+                          <ChevronDown className="w-3.5 h-3.5 transition-transform group-open:rotate-180" />
+                        </summary>
+                        <div className="pt-2 space-y-1.5 border-t border-neutral-800 mt-2">
+                          <p className="text-[11px] text-neutral-300 leading-relaxed font-medium">
+                            Exchange excess ELO rating into Mugen Gems to fund chest unlocks and crypto ore fusion.
+                            Requires minimum 50 ELO remaining balance.
+                          </p>
+                          <p className="text-[10px] font-mono text-neutral-400">
+                            Current Rating: <span className="text-yellow-400 font-bold">{currentElo} ELO</span>
+                          </p>
+                        </div>
+                      </details>
+                    </div>
+                  </div>
+
+                  {/* CARD 2: ELO PROTECTION BARRIER (AT BOTTOM OF MOBILE SCROLL) */}
+                  <div className="bg-[#0e1117] border-2 border-black shadow-[4px_4px_0px_#000] p-3.5 flex flex-col justify-between relative overflow-hidden">
+                    <div className="flex items-center justify-between pb-2 mb-2 border-b border-neutral-800">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <Shield className="w-5 h-5 text-emerald-400 shrink-0" />
+                        <h3 className="text-sm font-black uppercase text-white tracking-wide truncate">
+                          ELO PROTECTION BARRIER
+                        </h3>
+                      </div>
+                      <span className="px-1.5 py-0.5 bg-emerald-600/20 border border-emerald-500/50 text-emerald-400 font-mono font-black text-[9px] uppercase shrink-0">
+                        RATING SHIELD
+                      </span>
+                    </div>
+
+                    <div className="flex flex-col gap-2 mb-2.5">
+                      <div
+                        className={`p-2.5 border-2 border-black shadow-[2px_2px_0px_#000] flex items-center justify-between gap-2 ${
+                          eloShieldStatus.active
+                            ? 'bg-emerald-950/60 border-emerald-500/80 text-emerald-300'
+                            : 'bg-neutral-900 border-neutral-700 text-neutral-400'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2 min-w-0">
+                          {eloShieldStatus.active ? (
+                            <div className="p-1 bg-emerald-500 text-black border border-black animate-pulse shrink-0">
+                              <ShieldCheck className="w-4 h-4" />
+                            </div>
+                          ) : (
+                            <div className="p-1 bg-neutral-800 text-neutral-400 border border-neutral-700 shrink-0">
+                              <ShieldAlert className="w-4 h-4" />
+                            </div>
+                          )}
+                          <div className="min-w-0">
+                            <span className="text-[9px] font-mono uppercase block font-bold text-neutral-400">
+                              Barrier Status
+                            </span>
+                            <span className="text-xs font-black uppercase tracking-wider text-white truncate block">
+                              {eloShieldStatus.active
+                                ? `ACTIVE (${eloShieldStatus.matchesRemaining} SHIELDED)`
+                                : 'INACTIVE'}
+                            </span>
+                          </div>
+                        </div>
+
+                        {eloShieldStatus.active && (
+                          <span className="text-[9px] font-mono font-black px-2 py-0.5 bg-emerald-500 text-black border border-black uppercase shrink-0">
+                            ARMED
+                          </span>
+                        )}
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={handleActivateEloShield}
+                        disabled={cryptoBalance < 1}
+                        className={`w-full min-h-[44px] py-2.5 px-3 text-xs font-black uppercase tracking-wider border-2 border-black shadow-[4px_4px_0px_#000] flex items-center justify-center gap-2 transition-all ${
+                          cryptoBalance >= 1
+                            ? 'bg-yellow-400 hover:bg-yellow-300 text-black cursor-pointer active:translate-x-0.5 active:translate-y-0.5'
+                            : 'bg-neutral-800 text-neutral-500 border-neutral-700 cursor-not-allowed opacity-60'
+                        }`}
+                      >
+                        <ShieldCheck className="w-4 h-4" />
+                        <span>ACTIVATE ELO SHIELD (1 CRYPTO)</span>
+                      </button>
+
+                      <details className="border border-neutral-800 bg-black/50 p-2.5 text-xs text-neutral-300 group">
+                        <summary className="font-bold text-xs text-yellow-400 flex items-center justify-between cursor-pointer select-none">
+                          <span className="flex items-center gap-1.5">
+                            <AlertCircle className="w-3.5 h-3.5 text-yellow-400" />
+                            <span>Shield Mechanics & Rules</span>
+                          </span>
+                          <ChevronDown className="w-3.5 h-3.5 transition-transform group-open:rotate-180" />
+                        </summary>
+                        <div className="pt-2 border-t border-neutral-800 mt-2">
+                          <p className="text-[11px] text-neutral-300 leading-relaxed font-medium">
+                            Imbue your matches with an evaluation barrier. When active, losing a rated match will{' '}
+                            <span className="text-emerald-400 font-bold">NOT decrease your ELO rating</span>. Consumes 1 shield charge per defeat.
+                          </p>
+                        </div>
+                      </details>
+                    </div>
+                  </div>
+                </div>
+
+                {/* DESKTOP VIEW: Card 1 & Card 2 side by side, Card 3 below */}
+                <div className="hidden md:grid grid-cols-2 gap-4">
+                  {/* CARD 1: GEM TO CRYPTO CONVERSION */}
+                  <div className="bg-[#0e1117] border-3 border-black shadow-[4px_4px_0px_#000] p-5 flex flex-col justify-between relative overflow-hidden">
+                    <div className="flex items-center justify-between pb-2 mb-3 border-b border-neutral-800">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <MugenCryptoIcon className="w-6 h-6 text-yellow-400 shrink-0" />
+                        <h3 className="text-base font-black uppercase text-white tracking-wide truncate">
+                          GEM ➔ CRYPTO CONVERSION
+                        </h3>
+                      </div>
+                      <span className="px-2 py-0.5 bg-yellow-400/20 border border-yellow-400/50 text-yellow-300 font-mono font-black text-[10px] uppercase shrink-0">
+                        CATALYST ORE
+                      </span>
+                    </div>
+
+                    <div>
                       <p className="text-xs text-neutral-300 leading-relaxed font-medium mb-3">
                         Mugen Crypto is a secondary asset minted through Mugen Gem fusion. Fixed rate:{' '}
                         <span className="text-yellow-400 font-bold">1,000 Gems = 1 Crypto</span> (2,000 Gems = 2 Crypto).
@@ -580,116 +742,44 @@ export const MugenGemStore: React.FC<MugenGemStoreProps> = ({
                   </div>
 
                   {/* CARD 2: ELO PROTECTION BARRIER */}
-                  <div className="bg-[#0e1117] border-2 sm:border-3 border-black shadow-[4px_4px_0px_#000] p-3.5 sm:p-5 flex flex-col justify-between relative overflow-hidden">
-                    <div className="flex items-center justify-between pb-2 mb-2 sm:mb-3 border-b border-neutral-800">
+                  <div className="bg-[#0e1117] border-3 border-black shadow-[4px_4px_0px_#000] p-5 flex flex-col justify-between relative overflow-hidden">
+                    <div className="flex items-center justify-between pb-2 mb-3 border-b border-neutral-800">
                       <div className="flex items-center gap-2 min-w-0">
-                        <Shield className="w-5 h-5 sm:w-6 sm:h-6 text-emerald-400 shrink-0" />
-                        <h3 className="text-sm sm:text-base font-black uppercase text-white tracking-wide truncate">
+                        <Shield className="w-6 h-6 text-emerald-400 shrink-0" />
+                        <h3 className="text-base font-black uppercase text-white tracking-wide truncate">
                           ELO PROTECTION BARRIER
                         </h3>
                       </div>
-                      <span className="px-1.5 sm:px-2 py-0.5 bg-emerald-600/20 border border-emerald-500/50 text-emerald-400 font-mono font-black text-[9px] sm:text-[10px] uppercase shrink-0">
+                      <span className="px-2 py-0.5 bg-emerald-600/20 border border-emerald-500/50 text-emerald-400 font-mono font-black text-[10px] uppercase shrink-0">
                         RATING SHIELD
                       </span>
                     </div>
 
-                    {/* MOBILE VIEW ONLY: STATUS & ACTIVATE BUTTON AT TOP */}
-                    <div className="md:hidden flex flex-col gap-2 mb-2.5">
-                      <div
-                        className={`p-2.5 border-2 border-black shadow-[2px_2px_0px_#000] flex items-center justify-between gap-2 ${
-                          eloShieldStatus.active
-                            ? 'bg-emerald-950/60 border-emerald-500/80 text-emerald-300'
-                            : 'bg-neutral-900 border-neutral-700 text-neutral-400'
-                        }`}
-                      >
-                        <div className="flex items-center gap-2 min-w-0">
-                          {eloShieldStatus.active ? (
-                            <div className="p-1 bg-emerald-500 text-black border border-black animate-pulse shrink-0">
-                              <ShieldCheck className="w-4 h-4" />
-                            </div>
-                          ) : (
-                            <div className="p-1 bg-neutral-800 text-neutral-400 border border-neutral-700 shrink-0">
-                              <ShieldAlert className="w-4 h-4" />
-                            </div>
-                          )}
-                          <div className="min-w-0">
-                            <span className="text-[9px] font-mono uppercase block font-bold text-neutral-400">
-                              Barrier Status
-                            </span>
-                            <span className="text-xs font-black uppercase tracking-wider text-white truncate block">
-                              {eloShieldStatus.active
-                                ? `ACTIVE (${eloShieldStatus.matchesRemaining} SHIELDED)`
-                                : 'INACTIVE'}
-                            </span>
-                          </div>
-                        </div>
-
-                        {eloShieldStatus.active && (
-                          <span className="text-[9px] font-mono font-black px-2 py-0.5 bg-emerald-500 text-black border border-black uppercase shrink-0">
-                            ARMED
-                          </span>
-                        )}
-                      </div>
-
-                      <button
-                        type="button"
-                        onClick={handleActivateEloShield}
-                        disabled={cryptoBalance < 1}
-                        className={`w-full min-h-[44px] py-2.5 px-3 text-xs font-black uppercase tracking-wider border-2 border-black shadow-[4px_4px_0px_#000] flex items-center justify-center gap-2 transition-all ${
-                          cryptoBalance >= 1
-                            ? 'bg-yellow-400 hover:bg-yellow-300 text-black cursor-pointer active:translate-x-0.5 active:translate-y-0.5'
-                            : 'bg-neutral-800 text-neutral-500 border-neutral-700 cursor-not-allowed opacity-60'
-                        }`}
-                      >
-                        <ShieldCheck className="w-4 h-4" />
-                        <span>ACTIVATE ELO SHIELD (1 CRYPTO)</span>
-                      </button>
-
-                      {/* MOBILE COLLAPSIBLE RULES ACCORDION */}
-                      <details className="border border-neutral-800 bg-black/50 p-2.5 text-xs text-neutral-300 group">
-                        <summary className="font-bold text-xs text-yellow-400 flex items-center justify-between cursor-pointer select-none">
-                          <span className="flex items-center gap-1.5">
-                            <AlertCircle className="w-3.5 h-3.5 text-yellow-400" />
-                            <span>Shield Mechanics & Rules</span>
-                          </span>
-                          <ChevronDown className="w-3.5 h-3.5 transition-transform group-open:rotate-180" />
-                        </summary>
-                        <div className="pt-2 border-t border-neutral-800 mt-2">
-                          <p className="text-[11px] text-neutral-300 leading-relaxed font-medium">
-                            Imbue your matches with an evaluation barrier. When active, losing a rated match will{' '}
-                            <span className="text-emerald-400 font-bold">NOT decrease your ELO rating</span>. Consumes 1 shield charge per defeat.
-                          </p>
-                        </div>
-                      </details>
-                    </div>
-
-                    {/* DESKTOP VIEW (Constant and unchanged) */}
-                    <div className="hidden md:block">
+                    <div>
                       <p className="text-xs text-neutral-300 leading-relaxed font-medium mb-3">
                         Imbue your matches with an evaluation barrier. When active, losing a rated match will{' '}
                         <span className="text-emerald-400 font-bold">NOT decrease your ELO rating</span>. Consumes 1 shield charge per defeat.
                       </p>
 
-                      {/* Status Indicator Card */}
                       <div
-                        className={`p-2.5 sm:p-3 border-2 border-black shadow-[2px_2px_0px_#000] mb-4 flex items-center justify-between gap-2.5 ${
+                        className={`p-3 border-2 border-black shadow-[2px_2px_0px_#000] mb-4 flex items-center justify-between gap-2.5 ${
                           eloShieldStatus.active
                             ? 'bg-emerald-950/60 border-emerald-500/80 text-emerald-300'
                             : 'bg-neutral-900 border-neutral-700 text-neutral-400'
                         }`}
                       >
-                        <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
+                        <div className="flex items-center gap-2.5 min-w-0">
                           {eloShieldStatus.active ? (
-                            <div className="p-1 sm:p-1.5 bg-emerald-500 text-black border border-black animate-pulse shrink-0">
-                              <ShieldCheck className="w-4 h-4 sm:w-5 sm:h-5" />
+                            <div className="p-1.5 bg-emerald-500 text-black border border-black animate-pulse shrink-0">
+                              <ShieldCheck className="w-5 h-5" />
                             </div>
                           ) : (
-                            <div className="p-1 sm:p-1.5 bg-neutral-800 text-neutral-400 border border-neutral-700 shrink-0">
-                              <ShieldAlert className="w-4 h-4 sm:w-5 sm:h-5" />
+                            <div className="p-1.5 bg-neutral-800 text-neutral-400 border border-neutral-700 shrink-0">
+                              <ShieldAlert className="w-5 h-5" />
                             </div>
                           )}
                           <div className="min-w-0">
-                            <span className="text-[9px] sm:text-[10px] font-mono uppercase block font-bold text-neutral-400">
+                            <span className="text-[10px] font-mono uppercase block font-bold text-neutral-400">
                               Protection Status
                             </span>
                             <span className="text-xs font-black uppercase tracking-wider text-white truncate block">
@@ -701,7 +791,7 @@ export const MugenGemStore: React.FC<MugenGemStoreProps> = ({
                         </div>
 
                         {eloShieldStatus.active && (
-                          <span className="text-[9px] sm:text-[10px] font-mono font-black px-2 py-0.5 bg-emerald-500 text-black border border-black uppercase shrink-0">
+                          <span className="text-[10px] font-mono font-black px-2 py-0.5 bg-emerald-500 text-black border border-black uppercase shrink-0">
                             ARMED
                           </span>
                         )}
@@ -722,74 +812,21 @@ export const MugenGemStore: React.FC<MugenGemStoreProps> = ({
                       </button>
                     </div>
                   </div>
-                </div>
 
-                {/* CARD 3: ELO TO GEMS EXCHANGE */}
-                <div className="bg-[#0e1117] border-2 sm:border-3 border-black shadow-[4px_4px_0px_#000] p-3.5 sm:p-5">
-                  <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
-                    <div className="flex items-center gap-2">
-                      <Coins className="w-5 h-5 text-yellow-400 shrink-0" />
-                      <h3 className="text-sm sm:text-base font-black uppercase text-white tracking-wide">
-                        ELO TO GEMS CATALYST
-                      </h3>
-                    </div>
-                    <span className="text-[9px] sm:text-[10px] font-mono font-black px-2 py-0.5 bg-yellow-400 text-black border border-black uppercase">
-                      50 ELO = 500 GEMS
-                    </span>
-                  </div>
-
-                  {/* MOBILE VIEW ONLY: 3 BUTTONS ON TOP */}
-                  <div className="md:hidden flex flex-col gap-2.5">
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                      <button
-                        type="button"
-                        onClick={() => handleDeductElo(50)}
-                        disabled={currentElo <= 50}
-                        className="min-h-[44px] py-2.5 px-3 bg-yellow-400 hover:bg-yellow-300 text-black font-black text-xs uppercase tracking-wider border-2 border-black shadow-[4px_4px_0px_#000] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed transition-all active:translate-x-0.5 active:translate-y-0.5"
-                      >
-                        -50 ELO ➔ +500 GEMS
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleDeductElo(100)}
-                        disabled={currentElo <= 100}
-                        className="min-h-[44px] py-2.5 px-3 bg-yellow-400 hover:bg-yellow-300 text-black font-black text-xs uppercase tracking-wider border-2 border-black shadow-[4px_4px_0px_#000] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed transition-all active:translate-x-0.5 active:translate-y-0.5"
-                      >
-                        -100 ELO ➔ +1,000 GEMS
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleDeductElo(200)}
-                        disabled={currentElo <= 200}
-                        className="min-h-[44px] py-2.5 px-3 bg-yellow-400 hover:bg-yellow-300 text-black font-black text-xs uppercase tracking-wider border-2 border-black shadow-[4px_4px_0px_#000] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed transition-all active:translate-x-0.5 active:translate-y-0.5"
-                      >
-                        -200 ELO ➔ +2,000 GEMS
-                      </button>
-                    </div>
-
-                    {/* MOBILE COLLAPSIBLE RULES ACCORDION */}
-                    <details className="border border-neutral-800 bg-black/50 p-2.5 text-xs text-neutral-300 group">
-                      <summary className="font-bold text-xs text-yellow-400 flex items-center justify-between cursor-pointer select-none">
-                        <span className="flex items-center gap-1.5">
-                          <AlertCircle className="w-3.5 h-3.5 text-yellow-400" />
-                          <span>Catalyst Rules & Balance Requirements</span>
-                        </span>
-                        <ChevronDown className="w-3.5 h-3.5 transition-transform group-open:rotate-180" />
-                      </summary>
-                      <div className="pt-2 space-y-1.5 border-t border-neutral-800 mt-2">
-                        <p className="text-[11px] text-neutral-300 leading-relaxed font-medium">
-                          Exchange excess ELO rating into Mugen Gems to fund chest unlocks and crypto ore fusion.
-                          Requires minimum 50 ELO remaining balance.
-                        </p>
-                        <p className="text-[10px] font-mono text-neutral-400">
-                          Current Rating: <span className="text-yellow-400 font-bold">{currentElo} ELO</span>
-                        </p>
+                  {/* CARD 3: ELO TO GEMS CATALYST (col-span-2) */}
+                  <div className="bg-[#0e1117] border-3 border-black shadow-[4px_4px_0px_#000] p-5 md:col-span-2">
+                    <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+                      <div className="flex items-center gap-2">
+                        <Coins className="w-5 h-5 text-yellow-400 shrink-0" />
+                        <h3 className="text-base font-black uppercase text-white tracking-wide">
+                          ELO TO GEMS CATALYST
+                        </h3>
                       </div>
-                    </details>
-                  </div>
+                      <span className="text-[10px] font-mono font-black px-2 py-0.5 bg-yellow-400 text-black border border-black uppercase">
+                        50 ELO = 500 GEMS
+                      </span>
+                    </div>
 
-                  {/* DESKTOP VIEW (Constant and unchanged) */}
-                  <div className="hidden md:block">
                     <p className="text-xs text-neutral-300 leading-relaxed font-medium mb-4">
                       Exchange excess ELO rating into Mugen Gems to fund chest unlocks and crypto ore fusion.
                       Requires minimum 50 ELO remaining balance.
