@@ -111,38 +111,14 @@ function updatePlayerLeagueRecord(
   let baseDelta = 0;
 
   if (outcome === 'win') {
-    if (oppRank.tierNumber > oldRank.tierNumber) {
-      baseDelta = LEAGUE_MATH_CONSTANTS.WIN_VS_HIGHER;
-    } else if (oppRank.tierNumber < oldRank.tierNumber) {
-      baseDelta = LEAGUE_MATH_CONSTANTS.WIN_VS_LOWER;
-    } else {
-      baseDelta = LEAGUE_MATH_CONSTANTS.WIN_BASE;
-    }
-
-    if (isBotMatch) {
-      baseDelta = Math.round(baseDelta * LEAGUE_MATH_CONSTANTS.BOT_WIN_MULTIPLIER);
-    }
+    // Win awards 90 to 120 trophies
+    baseDelta = Math.floor(90 + Math.random() * 31);
   } else if (outcome === 'loss') {
-    if (isBotMatch) {
-      baseDelta = 0; // Loss to bot costs nothing
-    } else {
-      if (oppRank.tierNumber > oldRank.tierNumber) {
-        baseDelta = LEAGUE_MATH_CONSTANTS.LOSS_VS_HIGHER;
-      } else if (oppRank.tierNumber < oldRank.tierNumber) {
-        baseDelta = LEAGUE_MATH_CONSTANTS.LOSS_VS_LOWER;
-      } else {
-        baseDelta = LEAGUE_MATH_CONSTANTS.LOSS_BASE;
-      }
-    }
+    // Loss awards 20 to 30 trophies
+    baseDelta = Math.floor(20 + Math.random() * 11);
   } else {
-    // Draw
-    if (oppRank.tierNumber > oldRank.tierNumber) {
-      baseDelta = LEAGUE_MATH_CONSTANTS.DRAW_LOWER_GAIN;
-    } else if (oppRank.tierNumber < oldRank.tierNumber) {
-      baseDelta = LEAGUE_MATH_CONSTANTS.DRAW_HIGHER_LOSS;
-    } else {
-      baseDelta = 0;
-    }
+    // Draw awards 50 to 70 trophies
+    baseDelta = Math.floor(50 + Math.random() * 21);
   }
 
   // Handle promotion shield protection

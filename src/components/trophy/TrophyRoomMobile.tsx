@@ -34,6 +34,8 @@ import { LEAGUE_BOTS } from '../../league/leagueBots';
 import { LeaguePreMatchModal } from './LeaguePreMatchModal';
 import { LeagueRivalsModal } from './LeagueRivalsModal';
 import { useSocket } from '../../context/SocketContext';
+import { MugenPassIcon } from '../../economy/MugenPassIcon';
+import { MugenPassView } from '../../economy/MugenPassView';
 
 interface TrophyRoomMobileProps {
   data: ReturnType<typeof useTrophyRoomData>;
@@ -575,6 +577,12 @@ export const TrophyRoomMobile: React.FC<TrophyRoomMobileProps> = ({ data, onClos
             )}
           </div>
         )}
+
+        {mainView === 'mugenpass' && (
+          <div>
+            <MugenPassView userId={user?.id || 'guest'} />
+          </div>
+        )}
       </div>
 
       {/* 3. CARD INSPECTOR OVERLAY SHEET FOR MOBILE */}
@@ -620,7 +628,7 @@ export const TrophyRoomMobile: React.FC<TrophyRoomMobileProps> = ({ data, onClos
       <nav className="fixed bottom-0 inset-x-0 h-16 bg-black/95 border-t-2 border-white/20 px-3 flex items-center justify-around z-40 pb-[env(safe-area-inset-bottom)]">
         <button
           onClick={() => setMainView('trophies')}
-          className={`flex flex-col items-center justify-center min-h-[44px] px-4 font-mono font-black text-[10px] uppercase cursor-pointer ${
+          className={`flex flex-col items-center justify-center min-h-[44px] px-3 font-mono font-black text-[10px] uppercase cursor-pointer ${
             mainView === 'trophies' ? 'text-amber-400' : 'text-slate-500'
           }`}
         >
@@ -630,7 +638,7 @@ export const TrophyRoomMobile: React.FC<TrophyRoomMobileProps> = ({ data, onClos
 
         <button
           onClick={() => setMainView('league')}
-          className={`flex flex-col items-center justify-center min-h-[44px] px-4 font-mono font-black text-[10px] uppercase cursor-pointer ${
+          className={`flex flex-col items-center justify-center min-h-[44px] px-3 font-mono font-black text-[10px] uppercase cursor-pointer ${
             mainView === 'league' ? 'text-amber-400' : 'text-slate-500'
           }`}
         >
@@ -640,7 +648,7 @@ export const TrophyRoomMobile: React.FC<TrophyRoomMobileProps> = ({ data, onClos
 
         <button
           onClick={() => setMainView('inventory')}
-          className={`flex flex-col items-center justify-center min-h-[44px] px-4 font-mono font-black text-[10px] uppercase cursor-pointer relative ${
+          className={`flex flex-col items-center justify-center min-h-[44px] px-3 font-mono font-black text-[10px] uppercase cursor-pointer relative ${
             mainView === 'inventory' ? 'text-amber-400' : 'text-slate-500'
           }`}
         >
@@ -649,6 +657,16 @@ export const TrophyRoomMobile: React.FC<TrophyRoomMobileProps> = ({ data, onClos
           {pendingChestsCount > 0 && (
             <span className="absolute top-1 right-3 w-2 h-2 rounded-full bg-rose-600" />
           )}
+        </button>
+
+        <button
+          onClick={() => setMainView('mugenpass')}
+          className={`flex flex-col items-center justify-center min-h-[44px] px-3 font-mono font-black text-[10px] uppercase cursor-pointer relative ${
+            mainView === 'mugenpass' ? 'text-amber-400' : 'text-slate-500'
+          }`}
+        >
+          <MugenPassIcon className="w-5 h-5 mb-0.5 fill-current" />
+          <span>Pass</span>
         </button>
       </nav>
 

@@ -1,6 +1,8 @@
 /**
  * Types for Custom Multiplayer Dice Chess
  */
+import { BoardThemeId } from '../game/boardThemes';
+export type { BoardThemeId };
 
 export type PieceColor = 'white' | 'black';
 
@@ -165,6 +167,7 @@ export interface MatchState {
   craftingAllowed?: boolean;
   expansionDisabled?: boolean;
   pieceTheme?: PieceTheme;
+  boardTheme?: BoardThemeId;
 }
 
 export type PieceTheme = 'classic' | 'retro';

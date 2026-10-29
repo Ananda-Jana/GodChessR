@@ -38,6 +38,8 @@ import { LEAGUE_BOTS } from '../../league/leagueBots';
 import { LeaguePreMatchModal } from './LeaguePreMatchModal';
 import { LeagueRivalsModal } from './LeagueRivalsModal';
 import { useSocket } from '../../context/SocketContext';
+import { MugenPassIcon } from '../../economy/MugenPassIcon';
+import { MugenPassView } from '../../economy/MugenPassView';
 
 interface TrophyRoomDesktopProps {
   data: ReturnType<typeof useTrophyRoomData>;
@@ -220,6 +222,19 @@ export const TrophyRoomDesktop: React.FC<TrophyRoomDesktopProps> = ({ data, onCl
                 {pendingChestsCount}
               </span>
             )}
+          </button>
+
+          <button
+            onClick={() => setMainView('mugenpass')}
+            className={`w-14 h-14 rounded-md flex flex-col items-center justify-center gap-1 border-2 transition-all cursor-pointer relative ${
+              mainView === 'mugenpass'
+                ? 'bg-amber-400 text-black border-black shadow-[3px_3px_0px_#fff] scale-105'
+                : 'bg-slate-900/80 text-slate-400 border-slate-700 hover:text-white'
+            }`}
+            title="Mugen Pass Store"
+          >
+            <MugenPassIcon className="w-5 h-5 fill-current" />
+            <span className="text-[9px] font-mono font-black uppercase">Pass</span>
           </button>
         </div>
 
@@ -817,6 +832,12 @@ export const TrophyRoomDesktop: React.FC<TrophyRoomDesktopProps> = ({ data, onCl
                   )}
                 </div>
               )}
+            </div>
+          )}
+
+          {mainView === 'mugenpass' && (
+            <div className="h-full overflow-y-auto pr-2">
+              <MugenPassView userId={user?.id || 'guest'} />
             </div>
           )}
         </main>

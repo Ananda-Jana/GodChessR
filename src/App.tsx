@@ -8,6 +8,7 @@ import { AuthModal } from './components/AuthModal';
 import { Dashboard } from './components/Dashboard';
 import { MatchView } from './components/MatchView';
 import { ChallengeModal } from './components/ChallengeModal';
+import { AbandonedMatchModal } from './components/AbandonedMatchModal';
 import { RulesModal } from './components/RulesModal';
 import { BotMatchModal } from './components/BotMatchModal';
 import { PopupAd } from './components/PopupAd';
@@ -27,6 +28,7 @@ import {
   ExpansionSide,
   PieceType,
   PieceTheme,
+  BoardThemeId,
   DICE_GRACE_WINDOW_MS,
 } from './types/game';
 import {
@@ -62,8 +64,11 @@ function AppContent() {
 
   const {
     activeMatch: socketMatch,
+    abandonedMatch,
     incomingChallenge,
     respondChallenge,
+    resumeAbandonedMatch,
+    resignAbandonedMatch,
     clearActiveMatch: clearSocketMatch,
   } = useSocket();
 
@@ -409,7 +414,7 @@ function AppContent() {
     [botDifficulty]
   );
 
-  // Start instant match against Grandmaster Bot with chosen timer (2m or 5m), move suggestions, game mode, and piece theme
+  // Start instant match against Grandmaster Bot with chosen timer (2m or 5m), move suggestions, game mode, piece theme, and board theme
   const handleStartBotMatch = (
     playerColor: PieceColor,
     difficulty: 'grandmaster' | 'master',
@@ -417,7 +422,8 @@ function AppContent() {
     moveSuggestions: 'included' | 'excluded' = 'included',
     gameMode: 'standard' | 'crafted' | 'classic' = 'standard',
     craftingAllowed: boolean = true,
-    pieceTheme: PieceTheme = 'classic'
+    pieceTheme: PieceTheme = 'classic',
+    boardTheme: BoardThemeId = 'crimson'
   ) => {
     if (!user) return;
     setIsBotModalOpen(false);
@@ -452,6 +458,7 @@ function AppContent() {
       gameMode,
       craftingAllowed: gameMode === 'classic' ? false : craftingAllowed,
       pieceTheme,
+      boardTheme,
       turn: 'white',
       status: 'active',
       dice: null,
@@ -816,12 +823,19 @@ function AppContent() {
               clearTimeout(punisherTimeoutRef.current);
               punisherTimeoutRef.current = null;
             }
+            const wasLeague = isCurrentMatchLeague;
             setIsCurrentMatchLeague(false);
             setIsBotThinking(false);
             setBotMatch(null);
             setPunisherMatch(null);
             setActivePunisherBotId(null);
             clearSocketMatch();
+
+            if (wasLeague) {
+              setTimeout(() => {
+                window.dispatchEvent(new CustomEvent('open_league_tab'));
+              }, 50);
+            }
           }}
           overrideMatch={activeGame || undefined}
           customOnRoll={botMatch ? handleBotMatchRoll : (punisherMatch ? () => {} : undefined)}
@@ -880,6 +894,13 @@ function AppContent() {
         challenge={incomingChallenge}
         onAccept={(id) => respondChallenge(id, 'accept')}
         onDecline={(id) => respondChallenge(id, 'decline')}
+      />
+
+      {/* Abandoned Active Match Re-entry Modal (Fix 0) */}
+      <AbandonedMatchModal
+        match={abandonedMatch}
+        onResume={resumeAbandonedMatch}
+        onResign={resignAbandonedMatch}
       />
 
       {/* Full Game Rulebook Modal */}

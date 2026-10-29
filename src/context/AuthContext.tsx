@@ -16,13 +16,67 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// In-memory fallback dictionary matching mugenStore.ts pattern
+const userMemoryFallback: Record<string, UserProfile | null> = {};
+
+function getCachedUser(): UserProfile | null {
+  try {
+    if (typeof window !== 'undefined' && window.localStorage) {
+      const raw = window.localStorage.getItem('dice_chess_user');
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed && typeof parsed === 'object' && parsed.id) {
+          return parsed as UserProfile;
+        }
+      }
+    }
+  } catch {
+    // Fail silently to memory fallback
+  }
+  return userMemoryFallback['user'] || null;
+}
+
+function setCachedUser(user: UserProfile | null): void {
+  userMemoryFallback['user'] = user;
+  try {
+    if (typeof window !== 'undefined' && window.localStorage) {
+      if (user) {
+        window.localStorage.setItem('dice_chess_user', JSON.stringify(user));
+      } else {
+        window.localStorage.removeItem('dice_chess_user');
+      }
+    }
+  } catch {
+    // Fail silently to memory fallback
+  }
+}
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<UserProfile | null>(null);
-  const [token, setToken] = useState<string | null>(() => {
-    return localStorage.getItem('dice_chess_token');
+  const [user, setUserState] = useState<UserProfile | null>(() => getCachedUser());
+  const [token, setTokenState] = useState<string | null>(() => {
+    try {
+      if (typeof window !== 'undefined' && window.localStorage) {
+        return window.localStorage.getItem('dice_chess_token');
+      }
+    } catch {}
+    return null;
   });
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+
+  const setUser = (userProfile: UserProfile | null) => {
+    setUserState(userProfile);
+    setCachedUser(userProfile);
+  };
+
+  // Request persistent storage on PWA / mobile Chrome
+  useEffect(() => {
+    try {
+      if (typeof window !== 'undefined' && navigator.storage && navigator.storage.persist) {
+        navigator.storage.persist().catch(() => {});
+      }
+    } catch {}
+  }, []);
 
   useEffect(() => {
     async function loadMe() {
@@ -37,14 +91,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (res.ok) {
           const data = await res.json();
           setUser(data.user);
-        } else {
-          // Token invalid
-          localStorage.removeItem('dice_chess_token');
-          setToken(null);
+        } else if (res.status === 401) {
+          // Token is genuinely invalid or expired on server (unrecoverable 401)
+          try {
+            if (typeof window !== 'undefined' && window.localStorage) {
+              window.localStorage.removeItem('dice_chess_token');
+              window.localStorage.removeItem('dice_chess_user');
+            }
+          } catch {}
+          setTokenState(null);
           setUser(null);
+        } else {
+          // Server returned non-401 error (500, 502, 503, gateway glitch): Keep cached user session!
+          console.warn('Non-401 response from /api/auth/me during session check:', res.status);
         }
       } catch (err) {
-        console.error('Failed to load current user:', err);
+        // Network error (device offline or weak mobile connectivity): Retain cached user session!
+        console.warn('Network error checking session status, maintaining local cached session:', err);
       } finally {
         setIsLoading(false);
       }
@@ -65,8 +128,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setError(data.error || 'Login failed. Please check your credentials.');
         return false;
       }
-      localStorage.setItem('dice_chess_token', data.token);
-      setToken(data.token);
+      try {
+        if (typeof window !== 'undefined' && window.localStorage) {
+          window.localStorage.setItem('dice_chess_token', data.token);
+        }
+      } catch {}
+      setTokenState(data.token);
       setUser(data.user);
       return true;
     } catch (err) {
@@ -93,8 +160,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setError(data.error || 'Registration failed.');
         return false;
       }
-      localStorage.setItem('dice_chess_token', data.token);
-      setToken(data.token);
+      try {
+        if (typeof window !== 'undefined' && window.localStorage) {
+          window.localStorage.setItem('dice_chess_token', data.token);
+        }
+      } catch {}
+      setTokenState(data.token);
       setUser(data.user);
       return true;
     } catch (err) {
@@ -115,8 +186,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch {
       // Ignore
     }
-    localStorage.removeItem('dice_chess_token');
-    setToken(null);
+    try {
+      if (typeof window !== 'undefined' && window.localStorage) {
+        window.localStorage.removeItem('dice_chess_token');
+        window.localStorage.removeItem('dice_chess_user');
+      }
+    } catch {}
+    setTokenState(null);
     setUser(null);
   };
 
@@ -131,7 +207,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       };
       setUser(updated);
       try {
-        localStorage.setItem(`dice_guest_profile_${user.id}`, JSON.stringify(updated));
+        if (typeof window !== 'undefined' && window.localStorage) {
+          window.localStorage.setItem(`dice_guest_profile_${user.id}`, JSON.stringify(updated));
+        }
       } catch {}
       return true;
     }
@@ -168,8 +246,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setError(data.error || 'Guest login failed.');
         return false;
       }
-      localStorage.setItem('dice_chess_token', data.token);
-      setToken(data.token);
+      try {
+        if (typeof window !== 'undefined' && window.localStorage) {
+          window.localStorage.setItem('dice_chess_token', data.token);
+        }
+      } catch {}
+      setTokenState(data.token);
       setUser(data.user);
       return true;
     } catch (err) {

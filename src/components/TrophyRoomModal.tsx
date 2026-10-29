@@ -10,18 +10,22 @@ import { TrophyRoomMobile } from './trophy/TrophyRoomMobile';
 
 import { RankUpCelebration } from './trophy/RankUpCelebration';
 
+import type { TrophyMainView } from './trophy/useTrophyRoomData';
+
 interface TrophyRoomModalProps {
   isOpen: boolean;
   onClose: () => void;
   initialSelectedCard?: AchievementCard | null;
+  initialMainView?: TrophyMainView;
 }
 
 export const TrophyRoomModal: React.FC<TrophyRoomModalProps> = ({
   isOpen,
   onClose,
   initialSelectedCard = null,
+  initialMainView = 'trophies',
 }) => {
-  const trophyData = useTrophyRoomData(isOpen, onClose, initialSelectedCard);
+  const trophyData = useTrophyRoomData(isOpen, onClose, initialSelectedCard, initialMainView);
   const [isDesktop, setIsDesktop] = useState(() => {
     if (typeof window === 'undefined') return true;
     return window.innerWidth >= 1024;

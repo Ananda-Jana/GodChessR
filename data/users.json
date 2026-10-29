@@ -4,91 +4,17 @@
     "username": "alice",
     "displayName": "Alice Champion",
     "avatarId": "avatar_queen",
-    "passwordHash": "b3c1b4e8d6e126a7c1e2f56a7ef7419603ab1ab8f9ab66ac512e6130fb419df9df685f39eed01808c76706428bbabd0a1c5742e0d69dcea65eeb79dca7d50b79",
-    "salt": "c79e3661073a78fcd56ee6edc4284e43",
+    "passwordHash": "faca92718f8abd1ae9141b881f2ade6486bfa84d557d68fbc08af2614d654eb13f1f1f2c3899eaa44183a953c72152f940887a84796c205734e0170bd9a61712",
+    "salt": "0e5ec0345c5c55f9ff66f54e0ba59b0c",
     "stats": {
       "wins": 0,
       "losses": 0,
       "draws": 0,
       "totalGames": 0
     },
-    "createdAt": 1793255415012
+    "createdAt": 1793279516394
   },
-  {
-    "id": "usr_eve_1792844797030_5733",
-    "username": "eve_1792844797030_py1y",
-    "displayName": "eve",
-    "avatarId": "avatar_prince",
-    "passwordHash": "8a2ca8bfbd60892fa30a59f4ce89cf267632906a46153f30e16c70110633b636a2ff0c48dca609f0cfdb83e51c7c0aac0ff416382478f168149345325942557c",
-    "salt": "04d88c6071ea056a08b95dd6039c9726",
-    "stats": {
-      "wins": 0,
-      "losses": 0,
-      "draws": 0,
-      "totalGames": 0
-    },
-    "createdAt": 1792844797030
-  },
-  {
-    "id": "usr_1792919149450_qu69w",
-    "username": "sdfsfsdf",
-    "displayName": "sdfsfsdf",
-    "avatarId": "avatar_prince",
-    "passwordHash": "f2ff0095570be27857c6329e5842b70d5416291717a5775812bdfa7d0516d767b9a6eed695b292c3c849f609c455a9ef52052cd3fe7040a6e59546e38d2683a6",
-    "salt": "4942903abc8d07b40bb67bf9947847a1",
-    "stats": {
-      "wins": 0,
-      "losses": 0,
-      "draws": 0,
-      "totalGames": 0
-    },
-    "createdAt": 1792919149452
-  },
-  {
-    "id": "usr_bob_test",
-    "username": "bob",
-    "displayName": "Bob Tactician",
-    "avatarId": "avatar_prince",
-    "passwordHash": "1178f4f5c44fe8551fe0aff54ee85722103e33dac17925bf8716980b3b93656c15c84f2c0dbb54475c942fc719f2d05511bb2bc814c2a0704b231f036652aff9",
-    "salt": "a19a89d5d1eaa8e2a2c10ecafd6be818",
-    "stats": {
-      "wins": 0,
-      "losses": 0,
-      "draws": 0,
-      "totalGames": 0
-    },
-    "createdAt": 1793255415013
-  },
-  {
-    "id": "usr_guest_1793028370923_y32fu",
-    "username": "MechaRuri",
-    "displayName": "MechaRuri",
-    "avatarId": "avatar_prince",
-    "passwordHash": "1223be06c8d0439a029e0cb28472be0281ed5b481ed50fa9a68fd2948b513ca5f85c92fabe3f17dd9b140db7d555c723e35d5ff015304a14cae24aecae36bc46",
-    "salt": "42e78805ea2052ce787a6463ca09f2aa",
-    "stats": {
-      "wins": 0,
-      "losses": 0,
-      "draws": 0,
-      "totalGames": 0
-    },
-    "createdAt": 1793028370924
-  },
-  {
-    "id": "usr_guest_1793104261762_zksg8",
-    "username": "MechaRuri_2071",
-    "displayName": "MechaRuri",
-    "avatarId": "/assets/aistudio/image_97317ea2.png",
-    "passwordHash": "76572313e5e035918445e4db7d22a2dd380384f0c5e3e4f31fa3251ca983648df6116b641931f6b6d3b0ff0e4621fa6641f8060d97a416611dc76a827cc35b90",
-    "salt": "45f958b18696097963c7b6d4bbd0050f",
-    "stats": {
-      "wins": 0,
-      "losses": 0,
-      "draws": 0,
-      "totalGames": 0
-    },
-    "createdAt": 1793104261763
-  },
+  
   {
     "id": "usr_guest_1793116015595_kvhvj",
     "username": "MechaRuri_2669",
@@ -102,6 +28,15 @@
       "draws": 0,
       "totalGames": 0
     },
-    "createdAt": 1793116015596
+    "createdAt": 1793116015596,
+    "trophies": 0,
+    "leagueRank": "rusted_chrome",
+    "shieldMatches": 0,
+    "leagueStats": {
+      "wins": 0,
+      "losses": 0,
+      "draws": 0,
+      "peakTrophies": 0
+    }
   }
 ]

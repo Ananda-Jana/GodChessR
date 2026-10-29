@@ -23,6 +23,7 @@ import {
 import { CRAFTABLE_MAP } from '../game/craftables';
 import { reportGameEnd, triggerChestModalNow } from '../chest/reportGameEnd';
 import { addGems, getEloShieldStatus, consumeEloShield } from '../economy/mugenStore';
+import { getActivePass, consumePassCharge, MUGEN_PASS_DEFINITIONS } from '../economy/mugenPassStore';
 import {
   ArrowLeft,
   Flag,
@@ -53,6 +54,8 @@ import { LiveAnnouncer } from './LiveAnnouncer';
 import { useModalFocus } from '../utils/useModalFocus';
 import { ObserverBot } from '../punisher/ObserverBot';
 import { PunisherBotId } from '../punisher/punisherBot';
+import { PostGameTrophyCardModal, LeagueTrophyResult } from './trophy/PostGameTrophyCardModal';
+import { getRankFromTrophies } from '../league/rankConfig';
 
 const ExpansionModal = React.lazy(() => import('./ExpansionModal'));
 const CraftingModal = React.lazy(() => import('./CraftingModal'));
@@ -111,10 +114,21 @@ const MatchViewContent: React.FC<MatchViewContentProps> = ({
     expandBoard: socketExpand,
     craftPiece: socketCraft,
     cancelCraft: socketCancelCraft,
+    matchError,
+    clearMatchError,
   } = useSocket();
   const { theme, toggleTheme } = useTheme();
   const [showResignConfirm, setShowResignConfirm] = useState(false);
   const resignModalRef = useModalFocus(showResignConfirm, () => setShowResignConfirm(false), false);
+
+  // Auto-dismiss match error after 4 seconds (Fix 2)
+  useEffect(() => {
+    if (!matchError) return;
+    const timer = setTimeout(() => {
+      clearMatchError();
+    }, 4000);
+    return () => clearTimeout(timer);
+  }, [matchError, clearMatchError]);
 
   const rollDice = customOnRoll || socketRoll;
   const makeMove = customOnMove || socketMove;
@@ -413,6 +427,113 @@ const MatchViewContent: React.FC<MatchViewContentProps> = ({
     opponent.displayName,
     finalizeMatch,
   ]);
+
+  // League Trophy Calculation & Reward Card Handler
+  const [leagueTrophyResult, setLeagueTrophyResult] = useState<LeagueTrophyResult | null>(null);
+  const [isLeagueModalOpen, setIsLeagueModalOpen] = useState(false);
+  const hasProcessedLeagueRef = useRef(false);
+
+  useEffect(() => {
+    if (
+      activeMatch &&
+      activeMatch.status === 'completed' &&
+      activeMatch.result &&
+      (isLeagueMatch || activeMatch.id.startsWith('league_')) &&
+      !hasProcessedLeagueRef.current
+    ) {
+      hasProcessedLeagueRef.current = true;
+      const outcome =
+        activeMatch.result.winner === myColor
+          ? 'win'
+          : activeMatch.result.winner === 'draw'
+          ? 'draw'
+          : 'loss';
+
+      let delta = 0;
+      if (outcome === 'win') {
+        delta = Math.floor(90 + Math.random() * 31); // 90 to 120 trophies on win
+      } else if (outcome === 'loss') {
+        delta = Math.floor(20 + Math.random() * 11); // 20 to 30 trophies on loss
+      } else {
+        delta = Math.floor(50 + Math.random() * 21); // 50 to 70 trophies on draw
+      }
+
+      // Check active Mugen Pass and apply multiplier
+      const activePass = user?.id ? getActivePass(user.id) : null;
+      let passMultiplier = 1;
+      let passName = '';
+      if (activePass) {
+        passMultiplier = activePass.multiplier;
+        passName = MUGEN_PASS_DEFINITIONS[activePass.passId]?.name || 'Mugen Pass';
+        delta = Math.round(delta * passMultiplier);
+        consumePassCharge(user.id);
+      }
+
+      const oldTrophies = (user as any)?.trophies || 0;
+      const newTrophies = oldTrophies + delta;
+      const oldRank = getRankFromTrophies(oldTrophies);
+      const newRank = getRankFromTrophies(newTrophies);
+      const promoted = newRank.tierNumber > oldRank.tierNumber;
+      const gemsAwarded = promoted ? (newRank.rewards?.gemsOnPromotion || 0) : 0;
+
+      if (user) {
+        (user as any).trophies = newTrophies;
+        (user as any).leagueRank = newRank.id;
+      }
+
+      const token = localStorage.getItem('dice_chess_token');
+      if (token) {
+        fetch('/api/league/process-match', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            matchId: activeMatch.id,
+            mode: 'league',
+            winner: activeMatch.result.winner,
+            isBotMatch,
+            trophiesDelta: delta,
+          }),
+        }).catch(() => {});
+      }
+
+      const resultPayload: LeagueTrophyResult = {
+        matchId: activeMatch.id,
+        outcome,
+        trophiesAwarded: delta,
+        oldTrophies,
+        newTrophies,
+        oldRank,
+        newRank,
+        promoted,
+        gemsAwarded,
+        passMultiplier: passMultiplier > 1 ? passMultiplier : undefined,
+        passName: passMultiplier > 1 ? passName : undefined,
+      };
+
+      setLeagueTrophyResult(resultPayload);
+      setIsLeagueModalOpen(true);
+    }
+  }, [
+    activeMatch?.status,
+    activeMatch?.result,
+    activeMatch?.id,
+    isLeagueMatch,
+    myColor,
+    user,
+    isBotMatch,
+  ]);
+
+  const handleClaimLeagueTrophies = () => {
+    setIsLeagueModalOpen(false);
+    if (leagueTrophyResult) {
+      window.dispatchEvent(new CustomEvent('league:updated', { detail: leagueTrophyResult }));
+    }
+    window.dispatchEvent(new CustomEvent('open_league_tab'));
+    onExit();
+  };
 
   useEffect(() => {
     if (isGameOver) {
@@ -716,6 +837,17 @@ const MatchViewContent: React.FC<MatchViewContentProps> = ({
     </div>
   );
 
+  const handleHeaderExit = () => {
+    if (isLeagueMatch || activeMatch.id.startsWith('league_')) {
+      if (!isGameOver) {
+        resignMatch();
+        return;
+      }
+      window.dispatchEvent(new CustomEvent('open_league_tab'));
+    }
+    onExit();
+  };
+
   return (
     <div className={`${isGameOver ? 'min-h-[100dvh] h-auto overflow-y-auto' : 'h-[100dvh] max-h-[100dvh] overflow-hidden'} bg-white dark:bg-black text-black dark:text-white flex flex-col font-sans`}>
       <style>{`
@@ -738,15 +870,35 @@ const MatchViewContent: React.FC<MatchViewContentProps> = ({
         }
       `}</style>
 
+      {/* Match Error Floating Banner / Toast (Fix 2) */}
+      {matchError && (
+        <aside
+          role="alert"
+          aria-live="assertive"
+          className="fixed top-3 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2.5 px-4 py-2.5 bg-red-950/95 border-2 border-red-500 text-red-100 rounded-xl shadow-2xl backdrop-blur-md max-w-md w-[92vw] sm:w-auto animate-in fade-in slide-in-from-top-2 duration-200 pointer-events-auto"
+        >
+          <AlertTriangle className="w-4 h-4 text-red-400 shrink-0" aria-hidden="true" />
+          <span className="text-xs sm:text-sm font-semibold truncate flex-1">{matchError}</span>
+          <button
+            type="button"
+            onClick={clearMatchError}
+            className="p-1 text-red-300 hover:text-white hover:bg-red-800/50 rounded-lg transition-colors cursor-pointer"
+            aria-label="Dismiss error notification"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </aside>
+      )}
+
       {/* ZONE 1: Slim Top Header & Status Bar (48px fixed height on mobile, full header on desktop) */}
       <header className="h-12 md:h-14 shrink-0 px-1.5 sm:px-6 border-b-3 md:border-b-4 border-black dark:border-white bg-white dark:bg-[#0a0a0c] z-40 flex items-center justify-between gap-1 sm:gap-3">
         <div className="flex items-center gap-1 sm:gap-3 min-w-0">
           <button
             type="button"
-            onClick={onExit}
-            aria-label="Return to Dashboard"
+            onClick={handleHeaderExit}
+            aria-label="Return to Dashboard or League Tab"
             className="min-w-[44px] min-h-[44px] w-11 h-11 shrink-0 flex items-center justify-center border-2 border-black dark:border-white bg-neutral-100 dark:bg-neutral-900 hover:bg-black hover:text-white dark:hover:bg-white dark:hover:text-black transition-transform duration-100 motion-reduce:transition-none cursor-pointer"
-            title="Return to Dashboard"
+            title={isLeagueMatch || activeMatch.id.startsWith('league_') ? 'Return to League Tab' : 'Return to Dashboard'}
           >
             <ArrowLeft className="w-5 h-5" aria-hidden="true" />
           </button>
@@ -889,7 +1041,7 @@ const MatchViewContent: React.FC<MatchViewContentProps> = ({
             <span className="tracking-wide">OFFICIAL LEAGUE RANKED MATCH</span>
           </div>
           <span className="text-[10px] font-bold text-black/90 hidden sm:inline">
-            Ranked Stakes: +TR on Win · 0 TR on Loss (Bot Shield Protection)
+            Ranked Stakes: +90-120 TR on Win · +20-30 TR on Loss
           </span>
         </div>
       )}
@@ -1301,10 +1453,15 @@ const MatchViewContent: React.FC<MatchViewContentProps> = ({
                   </button>
                   <button
                     type="button"
-                    onClick={onExit}
+                    onClick={() => {
+                      if (isLeagueMatch || activeMatch.id.startsWith('league_')) {
+                        window.dispatchEvent(new CustomEvent('open_league_tab'));
+                      }
+                      onExit();
+                    }}
                     className="min-h-[44px] px-4 bg-black hover:bg-neutral-900 text-white font-black text-xs sm:text-sm uppercase tracking-wider border-2 border-white shadow-[2px_2px_0px_#000] cursor-pointer"
                   >
-                    Return to Dashboard
+                    {isLeagueMatch || activeMatch.id.startsWith('league_') ? 'Return to League' : 'Return to Dashboard'}
                   </button>
                 </div>
               </div>
@@ -1382,6 +1539,7 @@ const MatchViewContent: React.FC<MatchViewContentProps> = ({
               defeatedKingPos={defeatedKingPos}
               pieceTheme={activeMatch.pieceTheme || 'classic'}
               boardPalette={isBotMatch ? 'crimson' : 'default'}
+              boardTheme={activeMatch.boardTheme || (isBotMatch ? 'crimson' : undefined)}
             />
           </div>
 
@@ -1867,6 +2025,9 @@ const MatchViewContent: React.FC<MatchViewContentProps> = ({
               if (mobileGameOverMinimized) {
                 setMobileGameOverMinimized(false);
               } else {
+                if (isLeagueMatch || activeMatch.id.startsWith('league_')) {
+                  window.dispatchEvent(new CustomEvent('open_league_tab'));
+                }
                 onExit();
               }
             }}
@@ -1959,6 +2120,12 @@ const MatchViewContent: React.FC<MatchViewContentProps> = ({
             />
           </React.Suspense>
         )}
+
+      <PostGameTrophyCardModal
+        isOpen={isLeagueModalOpen}
+        result={leagueTrophyResult}
+        onClaim={handleClaimLeagueTrophies}
+      />
 
       <TrophyRoomModal
         isOpen={isMatchTrophyRoomOpen}

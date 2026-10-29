@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Bot, Sparkles, X, Swords, Sun, Moon, Palette, ArrowLeft } from 'lucide-react';
 import { PieceColor, PieceTheme } from '../types/game';
+import { BoardThemeId, DEFAULT_BOARD_THEME } from '../game/boardThemes';
 import { useTheme } from '../context/ThemeContext';
 import { ChessPiece } from './ChessPiece';
 import { useModalFocus } from '../utils/useModalFocus';
@@ -17,7 +18,8 @@ interface BotMatchModalProps {
     moveSuggestions: 'included' | 'excluded',
     gameMode: 'standard' | 'crafted' | 'classic',
     craftingAllowed?: boolean,
-    pieceTheme?: PieceTheme
+    pieceTheme?: PieceTheme,
+    boardTheme?: BoardThemeId
   ) => void;
 }
 
@@ -38,11 +40,13 @@ export const BotMatchModal: React.FC<BotMatchModalProps> = ({
   const [gameMode, setGameMode] = useState<'standard' | 'crafted' | 'classic'>(initialGameMode);
   const [craftingAllowed, setCraftingAllowed] = useState<boolean>(true);
   const [pieceTheme, setPieceTheme] = useState<PieceTheme>('classic');
+  const [boardTheme, setBoardTheme] = useState<BoardThemeId>(DEFAULT_BOARD_THEME);
 
   React.useEffect(() => {
     if (isOpen) {
       setGameMode(initialGameMode);
       setPieceTheme('classic'); // Always reset to default theme for new matches
+      setBoardTheme(DEFAULT_BOARD_THEME); // Always reset to default crimson board theme
       setCraftingAllowed(true); // Default to enabled
     }
   }, [isOpen, initialGameMode]);
@@ -150,7 +154,7 @@ export const BotMatchModal: React.FC<BotMatchModalProps> = ({
             gameMode === 'crafted' ? 'bg-[#1e293b]' : 'bg-amber-400'
           }`}>
             <button
-              onClick={() => onStartBotMatch(playerColor, difficulty, timeControl, moveSuggestions, gameMode, gameMode === 'classic' ? false : craftingAllowed, pieceTheme)}
+              onClick={() => onStartBotMatch(playerColor, difficulty, timeControl, moveSuggestions, gameMode, gameMode === 'classic' ? false : craftingAllowed, pieceTheme, boardTheme)}
               className="w-full py-2.5 px-4 bg-black text-amber-400 hover:bg-neutral-900 border-2 border-black font-black text-xs sm:text-sm uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer shadow-[3px_3px_0px_#000000]"
             >
               <Swords className="w-4 h-4" />
@@ -391,6 +395,62 @@ export const BotMatchModal: React.FC<BotMatchModalProps> = ({
             </div>
           </div>
 
+          {/* Board Color Theme Selection (Crimson Default vs Midnight Abyss) */}
+          <div>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="text-[11px] font-black uppercase tracking-wider flex items-center gap-1.5">
+                <Palette className="w-3.5 h-3.5 text-amber-500" />
+                Board Color Theme
+              </label>
+              <span className="text-[10px] font-mono text-neutral-500 uppercase">
+                {boardTheme === 'crimson' ? 'Crimson (Default)' : 'Midnight Abyss'}
+              </span>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setBoardTheme('crimson')}
+                className={`p-2.5 border-2 border-black dark:border-white flex flex-col items-center gap-1.5 cursor-pointer transition-all ${
+                  boardTheme === 'crimson'
+                    ? 'bg-amber-400 text-black shadow-[3px_3px_0px_var(--shadow)] ring-2 ring-black dark:ring-white'
+                    : 'bg-neutral-100 dark:bg-neutral-900 text-neutral-800 dark:text-neutral-200'
+                }`}
+              >
+                <div className="flex items-center justify-center gap-1.5 w-full py-0.5">
+                  <div className="w-12 h-6 border-2 border-black dark:border-white/50 rounded-sm overflow-hidden flex shadow-inner">
+                    <div className="w-1/2 h-full bg-[#F2EFE4]" title="Light: #F2EFE4" />
+                    <div className="w-1/2 h-full bg-[#BC1434]" title="Dark: #BC1434" />
+                  </div>
+                </div>
+                <div className="text-center">
+                  <span className="font-black uppercase text-xs block">Demon Crimson</span>
+                  <span className="text-[9px] opacity-80 block font-mono">Cream &amp; Crimson</span>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setBoardTheme('midnight')}
+                className={`p-2.5 border-2 border-black dark:border-white flex flex-col items-center gap-1.5 cursor-pointer transition-all ${
+                  boardTheme === 'midnight'
+                    ? 'bg-amber-400 text-black shadow-[3px_3px_0px_var(--shadow)] ring-2 ring-black dark:ring-white'
+                    : 'bg-neutral-100 dark:bg-neutral-900 text-neutral-800 dark:text-neutral-200'
+                }`}
+              >
+                <div className="flex items-center justify-center gap-1.5 w-full py-0.5">
+                  <div className="w-12 h-6 border-2 border-black dark:border-white/50 rounded-sm overflow-hidden flex shadow-inner">
+                    <div className="w-1/2 h-full bg-[#274975]" title="Light: #274975" />
+                    <div className="w-1/2 h-full bg-[#0f223b]" title="Dark: #0f223b" />
+                  </div>
+                </div>
+                <div className="text-center">
+                  <span className="font-black uppercase text-xs block">Midnight Abyss</span>
+                  <span className="text-[9px] opacity-80 block font-mono">Navy &amp; Indigo</span>
+                </div>
+              </button>
+            </div>
+          </div>
+
           {/* Difficulty Choice */}
           <div>
             <label className="block text-[11px] font-black uppercase tracking-wider mb-1.5">
@@ -513,7 +573,7 @@ export const BotMatchModal: React.FC<BotMatchModalProps> = ({
           gameMode === 'crafted' ? 'bg-[#1e293b]' : 'bg-amber-400'
         }`}>
           <button
-            onClick={() => onStartBotMatch(playerColor, difficulty, timeControl, moveSuggestions, gameMode, gameMode === 'classic' ? false : craftingAllowed, pieceTheme)}
+            onClick={() => onStartBotMatch(playerColor, difficulty, timeControl, moveSuggestions, gameMode, gameMode === 'classic' ? false : craftingAllowed, pieceTheme, boardTheme)}
             className="w-full min-h-[46px] py-2.5 px-4 bg-black text-amber-400 hover:bg-neutral-900 border-2 border-black font-black text-sm uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer shadow-[3px_3px_0px_#000000] active:translate-x-0.5 active:translate-y-0.5"
           >
             <Swords className="w-4 h-4" />

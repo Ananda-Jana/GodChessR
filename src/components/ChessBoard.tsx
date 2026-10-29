@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Piece, Position, Move, PieceColor, DiceState, PieceType, PieceTheme } from '../types/game';
+import { BoardThemeId, BOARD_THEMES } from '../game/boardThemes';
 import { ChessPiece } from './ChessPiece';
 import { getLegalMovesForSquare, getDiceEligibleMoves, getAllLegalMoves } from '../game/engine';
 import { useTheme } from '../context/ThemeContext';
@@ -37,6 +38,7 @@ interface ChessBoardProps {
   defeatedKingPos?: Position | null;
   pieceTheme?: PieceTheme;
   boardPalette?: 'default' | 'crimson';
+  boardTheme?: BoardThemeId;
 }
 
 export const ChessBoard: React.FC<ChessBoardProps> = ({
@@ -59,6 +61,7 @@ export const ChessBoard: React.FC<ChessBoardProps> = ({
   defeatedKingPos = null,
   pieceTheme = 'classic',
   boardPalette = 'default',
+  boardTheme,
 }) => {
   const { theme } = useTheme();
   const [selectedPos, setSelectedPos] = useState<Position | null>(null);
@@ -240,26 +243,28 @@ export const ChessBoard: React.FC<ChessBoardProps> = ({
                 defeatedKingPos && defeatedKingPos.x === x && defeatedKingPos.y === y
               );
 
-              const isCrimsonPalette = boardPalette === 'crimson';
-              const crimsonBaseBg = isLight ? 'bg-[#F2EFE4]' : 'bg-[#BC1434]';
+              const activeBoardTheme = (boardTheme || boardPalette === 'crimson')
+                ? (BOARD_THEMES[boardTheme || 'crimson'] || BOARD_THEMES.crimson)
+                : null;
+              const themedBaseBg = activeBoardTheme ? (isLight ? activeBoardTheme.lightBg : activeBoardTheme.darkBg) : '';
 
-              // Soft low-contrast square palette with optional cream/crimson bot match palette
-              let squareBg = isCrimsonPalette
-                ? crimsonBaseBg
+              // Soft low-contrast square palette with optional themed board palette (crimson / midnight)
+              let squareBg = activeBoardTheme
+                ? themedBaseBg
                 : isThemeLight
                   ? isLight ? 'bg-white' : 'bg-[#d8e0f0]'
                   : isLight ? 'bg-[#2b3c5a]' : 'bg-[#101726]';
 
               if (isLastMoveFrom || isLastMoveTo) {
-                squareBg = isCrimsonPalette
-                  ? `${crimsonBaseBg} ring-2 ring-inset ring-amber-400/90`
+                squareBg = activeBoardTheme
+                  ? `${themedBaseBg} ring-2 ring-inset ring-amber-400/90`
                   : isThemeLight
                     ? 'bg-amber-300/35'
                     : 'bg-amber-400/20';
               }
               if (isSelected) {
-                squareBg = isCrimsonPalette
-                  ? `${crimsonBaseBg} ring-3 ring-inset ring-amber-400 brightness-105`
+                squareBg = activeBoardTheme
+                  ? `${themedBaseBg} ring-3 ring-inset ring-amber-400 brightness-105`
                   : 'bg-amber-400/40 ring-2 ring-inset ring-amber-400/80';
               }
               if (isKingInCheckSquare) {
@@ -267,12 +272,12 @@ export const ChessBoard: React.FC<ChessBoardProps> = ({
               }
 
               if (isCraftCandidate) {
-                squareBg = isCrimsonPalette
-                  ? `${crimsonBaseBg} ring-2 ring-inset ring-amber-400`
+                squareBg = activeBoardTheme
+                  ? `${themedBaseBg} ring-2 ring-inset ring-amber-400`
                   : 'bg-amber-400/35 ring-2 ring-inset ring-amber-400';
               } else if (isCraftAttacked) {
-                squareBg = isCrimsonPalette
-                  ? `${crimsonBaseBg} ring-1 ring-inset ring-red-950/70 cursor-not-allowed`
+                squareBg = activeBoardTheme
+                  ? `${themedBaseBg} ring-1 ring-inset ring-red-950/70 cursor-not-allowed`
                   : isThemeLight
                     ? 'bg-red-200/80 ring-1 ring-inset ring-red-500 cursor-not-allowed'
                     : 'bg-red-950/70 ring-1 ring-inset ring-red-500 cursor-not-allowed';
@@ -283,8 +288,8 @@ export const ChessBoard: React.FC<ChessBoardProps> = ({
                 squareBg = 'bg-red-600 ring-2 ring-inset ring-red-400 shadow-[inset_0_0_12px_rgba(0,0,0,0.6)] animate-pulse';
               }
 
-              const coordColor = isCrimsonPalette
-                ? isLight ? 'text-[#BC1434]/80' : 'text-[#F2EFE4]/85'
+              const coordColor = activeBoardTheme
+                ? (isLight ? activeBoardTheme.coordLightColor : activeBoardTheme.coordDarkColor)
                 : isThemeLight
                   ? isLight ? 'text-slate-400' : 'text-slate-500'
                   : isLight ? 'text-slate-400' : 'text-slate-500';

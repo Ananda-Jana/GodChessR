@@ -23,14 +23,25 @@ import {
   RankProgressInfo,
 } from '../../league/rankConfig';
 
-export type TrophyMainView = 'trophies' | 'league' | 'inventory';
+export type TrophyMainView = 'trophies' | 'league' | 'inventory' | 'mugenpass';
 export type InventorySubTab = 'pending' | 'claimed';
 
-export function useTrophyRoomData(isOpen: boolean, onClose: () => void, initialCard?: AchievementCard | null) {
+export function useTrophyRoomData(
+  isOpen: boolean,
+  onClose: () => void,
+  initialCard?: AchievementCard | null,
+  initialMainView: TrophyMainView = 'trophies'
+) {
   const { state: predictorState, clearPredictorSession } = usePredictor();
   const { user } = useAuth();
 
-  const [mainView, setMainView] = useState<TrophyMainView>('trophies');
+  const [mainView, setMainView] = useState<TrophyMainView>(initialMainView);
+
+  useEffect(() => {
+    if (isOpen) {
+      setMainView(initialMainView);
+    }
+  }, [isOpen, initialMainView]);
   const [inventorySubTab, setInventorySubTab] = useState<InventorySubTab>('pending');
   const [selectedCard, setSelectedCard] = useState<AchievementCard | null>(initialCard || null);
   const [filterMode, setFilterMode] = useState<GameModeKey | 'all'>('all');

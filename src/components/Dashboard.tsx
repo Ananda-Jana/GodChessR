@@ -52,11 +52,12 @@ import { AllGameModesModal } from './AllGameModesModal';
 import { WalkWithMastersCard } from './HashiraTrainingCard';
 import { Chess3dEntryCard } from '../chess3d/Chess3dEntryCard';
 import { Chess3dRulesPreviewModal } from '../chess3d/Chess3dRulesPreviewModal';
-import { ChromeReaper } from '../punisher/ChessBotFaces_with_Gestures';
-import type { PunisherBotId } from '../chess3d/chess3dBot';
-import type { Team as Team3D, TimeControl3D } from '../chess3d/types';
 import { CraftGameHub } from '../craftgame/CraftGameHub';
 import bannerHeroImage from '../assets/banner-hero.png';
+import { PassTicketGraphic } from '../economy/PassTicketGraphic';
+import { ChromeReaper } from '../punisher/ChessBotFaces_with_Gestures';
+import type { PunisherBotId } from '../punisher/punisherBot';
+import type { Team as Team3D, TimeControl3D } from '../chess3d/types';
 
 export type NavigationOrigin =
   | { type: 'store'; initialTab: StoreTab }
@@ -207,6 +208,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
   const { state: predictorState, clearPredictorSession, applyRatingBoost } = usePredictor();
   const { isInstallable, install } = usePWAInstall();
   const [isTrophyRoomOpen, setIsTrophyRoomOpen] = useState(false);
+  const [trophyRoomMainView, setTrophyRoomMainView] = useState<'trophies' | 'league' | 'inventory' | 'mugenpass'>('trophies');
   const [isStoreOpen, setIsStoreOpen] = useState(false);
   const [storeInitialTab, setStoreInitialTab] = useState<StoreTab>('ore_conversion');
   const [secretArenaOrigin, setSecretArenaOrigin] = useState<NavigationOrigin>(() => {
@@ -289,6 +291,16 @@ export const Dashboard: React.FC<DashboardProps> = ({
       el?.scrollIntoView({ behavior: 'smooth' });
     };
 
+    const handleOpenLeagueTab = () => {
+      setTrophyRoomMainView('league');
+      setIsTrophyRoomOpen(true);
+    };
+
+    const handleOpenMugenPassTab = () => {
+      setTrophyRoomMainView('mugenpass');
+      setIsTrophyRoomOpen(true);
+    };
+
     const handleToastNotice = (e: Event) => {
       const custom = e as CustomEvent;
       const msg = custom.detail?.message;
@@ -302,12 +314,16 @@ export const Dashboard: React.FC<DashboardProps> = ({
     window.addEventListener('open_league_bot_match', handleOpenLeagueBotMatch);
     window.addEventListener('open_player_challenge', handleOpenPlayerChallenge);
     window.addEventListener('open_multiplayer_challenge', handleOpenMultiplayerChallenge);
+    window.addEventListener('open_league_tab', handleOpenLeagueTab);
+    window.addEventListener('open_mugenpass_tab', handleOpenMugenPassTab);
     window.addEventListener('app_toast_notice', handleToastNotice);
     return () => {
       window.removeEventListener('open_punisher_bot', handleOpenPunisherBot);
       window.removeEventListener('open_league_bot_match', handleOpenLeagueBotMatch);
       window.removeEventListener('open_player_challenge', handleOpenPlayerChallenge);
       window.removeEventListener('open_multiplayer_challenge', handleOpenMultiplayerChallenge);
+      window.removeEventListener('open_league_tab', handleOpenLeagueTab);
+      window.removeEventListener('open_mugenpass_tab', handleOpenMugenPassTab);
       window.removeEventListener('app_toast_notice', handleToastNotice);
     };
   }, [onOpenPunisher, onStartLeagueBotMatch]);
@@ -1681,7 +1697,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
             <span>Rules</span>
           </button>
 
-          {/* Trophies */}
+          {/* Trophies / Career */}
           <button
             type="button"
             onClick={() => setIsTrophyRoomOpen(true)}
@@ -1689,7 +1705,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
             title="View trophy room & chest inventory"
           >
             <Trophy className="w-3.5 h-3.5 text-zinc-400" />
-            <span>Trophies</span>
+            <span>Career</span>
             {predictorState.earnedCards.length > 0 && (
               <span className="mcx-nav2-badge">
                 {predictorState.earnedCards.length}
@@ -2320,6 +2336,60 @@ export const Dashboard: React.FC<DashboardProps> = ({
                     </div>
                   </div>
                   <div className="shrink-0 w-7 h-7 rounded-full bg-[#a9a9a9] text-[#141414] flex items-center justify-center opacity-85 group-hover:opacity-100 transition-opacity">
+                    <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round">
+                      <line x1="7" y1="7" x2="17" y2="17" />
+                      <polyline points="17 7 17 17 7 17" />
+                    </svg>
+                  </div>
+                </button>
+              </div>
+
+              {/* EVENT PASS BUTTON: Glassmorphic Event Pass Pill with Half-Cropped Shiny Golden Pass (Mobile view only) */}
+              <div className="order-1 lg:order-none block md:hidden w-full mt-2">
+                <button
+                  type="button"
+                  data-live="true"
+                  onClick={() => {
+                    if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+                      try {
+                        navigator.vibrate(8);
+                      } catch {
+                        // ignore
+                      }
+                    }
+                    setTrophyRoomMainView('mugenpass');
+                    setIsTrophyRoomOpen(true);
+                  }}
+                  className="glass-pill-summoner group rounded-[5px] relative overflow-hidden"
+                  style={{ borderRadius: '5px' }}
+                  title="Open Event Pass & Mugen Pass in Career Page"
+                >
+                  <span className="pill__hit" aria-hidden="true" />
+
+                  {/* Left-Cropped Shiny Golden Pass Graphic (Left half cut off by left container border) */}
+                  <div className="relative shrink-0 -ml-7 sm:-ml-8 w-16 h-12 flex items-center justify-center pointer-events-none z-10 overflow-hidden">
+                    <div className="w-28 h-auto transform -rotate-3 filter drop-shadow-[0_0_12px_rgba(251,191,36,0.9)] -translate-x-7">
+                      <PassTicketGraphic passId="mecha_pass" multiplierText="2.5X" className="w-full h-auto" />
+                    </div>
+                  </div>
+
+                  {/* Button Content Text & Thematic Accents */}
+                  <div className="flex-1 min-w-0 text-left z-10 pl-1">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[10px] font-extrabold text-[#fde047] tracking-wider uppercase flex items-center gap-1">
+                        MUGEN PASS · GOLDEN EVENT PASS
+                      </span>
+                    </div>
+                    <div className="text-[13px] sm:text-sm font-bold text-white tracking-[0.01em] truncate leading-tight mt-0.5">
+                      VIP, Mecha & Nu Passes
+                    </div>
+                    <div className="text-[11px] text-amber-100/80 tracking-tight truncate leading-tight mt-0.5">
+                      Boost trophies up to 2.5X & bypass with gems
+                    </div>
+                  </div>
+
+                  {/* Right Action Arrow Circle (White/Golden Accent - No Red) */}
+                  <div className="shrink-0 w-7 h-7 rounded-full bg-amber-400 text-black flex items-center justify-center opacity-90 group-hover:opacity-100 transition-all shadow-[0_0_10px_rgba(251,191,36,0.7)] z-10">
                     <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round">
                       <line x1="7" y1="7" x2="17" y2="17" />
                       <polyline points="17 7 17 17 7 17" />
@@ -3317,7 +3387,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 </span>
               )}
             </div>
-            <span className="text-[11px] uppercase tracking-tight">Trophies</span>
+            <span className="text-[11px] uppercase tracking-tight">Career</span>
           </button>
         </div>
       </nav>
@@ -3528,6 +3598,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
       <TrophyRoomModal
         isOpen={isTrophyRoomOpen}
         onClose={() => setIsTrophyRoomOpen(false)}
+        initialMainView={trophyRoomMainView}
       />
 
       <SecretArenaModal

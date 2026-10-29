@@ -8,7 +8,10 @@ interface SocketContextType {
   onlineUserIds: string[];
   incomingChallenge: Challenge | null;
   activeMatch: MatchState | null;
+  abandonedMatch: MatchState | null;
   matchError: string | null;
+  resumeAbandonedMatch: () => void;
+  resignAbandonedMatch: () => void;
   sendChallenge: (
     targetUserId: string,
     timeControl?: 120 | 300,
@@ -35,15 +38,34 @@ interface SocketContextType {
 const SocketContext = createContext<SocketContextType | undefined>(undefined);
 
 export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { user, token } = useAuth();
+  const { user, token, logout } = useAuth();
   const [isConnected, setIsConnected] = useState(false);
   const [onlineUserIds, setOnlineUserIds] = useState<string[]>([]);
   const [incomingChallenge, setIncomingChallenge] = useState<Challenge | null>(null);
   const [activeMatch, setActiveMatch] = useState<MatchState | null>(null);
+  const [abandonedMatch, setAbandonedMatch] = useState<MatchState | null>(null);
   const [matchError, setMatchError] = useState<string | null>(null);
 
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const authRetryCountRef = useRef<number>(0);
+  const activeMatchRef = useRef<MatchState | null>(null);
+  const abandonedMatchRef = useRef<MatchState | null>(null);
+  const isViewingActiveMatchRef = useRef<boolean>(false);
+
+  useEffect(() => {
+    activeMatchRef.current = activeMatch;
+  }, [activeMatch]);
+
+  useEffect(() => {
+    abandonedMatchRef.current = abandonedMatch;
+  }, [abandonedMatch]);
+
+  const send = useCallback((data: any) => {
+    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+      wsRef.current.send(JSON.stringify(data));
+    }
+  }, []);
 
   const connect = useCallback(() => {
     if (!token) return;
@@ -69,8 +91,26 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         const msg = JSON.parse(event.data);
         switch (msg.type) {
           case 'auth:success':
-            if (activeMatch?.id) {
-              send({ type: 'match:join', matchId: activeMatch.id });
+            authRetryCountRef.current = 0;
+            if (activeMatchRef.current?.id && isViewingActiveMatchRef.current) {
+              send({ type: 'match:join', matchId: activeMatchRef.current.id });
+            }
+            break;
+
+          case 'auth:failed':
+            setIsConnected(false);
+            isViewingActiveMatchRef.current = false;
+            setActiveMatch(null);
+            activeMatchRef.current = null;
+            setAbandonedMatch(null);
+            abandonedMatchRef.current = null;
+            if (authRetryCountRef.current < 1 && token) {
+              authRetryCountRef.current += 1;
+              if (ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({ type: 'auth', token }));
+              }
+            } else {
+              logout();
             }
             break;
 
@@ -92,45 +132,116 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
             break;
 
           case 'match:started':
+            isViewingActiveMatchRef.current = true;
             setActiveMatch(msg.match);
+            activeMatchRef.current = msg.match;
+            setAbandonedMatch(null);
+            abandonedMatchRef.current = null;
             setIncomingChallenge(null);
             send({ type: 'match:join', matchId: msg.matchId });
             sounds.playChallenge();
             break;
 
-          case 'match:state':
-            setActiveMatch(msg.match);
+          case 'match:state': {
+            const incomingMatch = msg.match as MatchState;
+            if (!incomingMatch) break;
+
+            if (incomingMatch.status === 'active') {
+              // If player was already actively viewing this match in this session, keep updating
+              if (isViewingActiveMatchRef.current && activeMatchRef.current?.id === incomingMatch.id) {
+                setActiveMatch(incomingMatch);
+                activeMatchRef.current = incomingMatch;
+              } else {
+                // Re-entry / reconnect discovered active match: prompt player with Resume/Resign
+                setAbandonedMatch(incomingMatch);
+                abandonedMatchRef.current = incomingMatch;
+              }
+            } else {
+              if (abandonedMatchRef.current?.id === incomingMatch.id) {
+                setAbandonedMatch(null);
+                abandonedMatchRef.current = null;
+              }
+              if (isViewingActiveMatchRef.current && activeMatchRef.current?.id === incomingMatch.id) {
+                setActiveMatch(incomingMatch);
+                activeMatchRef.current = incomingMatch;
+              }
+            }
             break;
+          }
 
           case 'match:dice_rolled':
-            setActiveMatch(msg.match);
-            sounds.playDiceRoll();
+            if (isViewingActiveMatchRef.current && activeMatchRef.current?.id === msg.match.id) {
+              setActiveMatch(msg.match);
+              activeMatchRef.current = msg.match;
+              sounds.playDiceRoll();
+            } else if (abandonedMatchRef.current?.id === msg.match.id) {
+              setAbandonedMatch(msg.match);
+              abandonedMatchRef.current = msg.match;
+            }
             break;
 
           case 'match:moved':
-            setActiveMatch(msg.match);
-            if (msg.match.status === 'completed') {
-              sounds.playGameOver();
-            } else if (msg.lastMove?.captured) {
-              sounds.playCapture();
-            } else {
-              sounds.playMove();
+            if (abandonedMatchRef.current?.id === msg.match.id) {
+              if (msg.match.status === 'completed') {
+                setAbandonedMatch(null);
+                abandonedMatchRef.current = null;
+              } else {
+                setAbandonedMatch(msg.match);
+                abandonedMatchRef.current = msg.match;
+              }
+            }
+            if (isViewingActiveMatchRef.current && activeMatchRef.current?.id === msg.match.id) {
+              setActiveMatch(msg.match);
+              activeMatchRef.current = msg.match;
+              if (msg.match.status === 'completed') {
+                sounds.playGameOver();
+              } else if (msg.lastMove?.captured) {
+                sounds.playCapture();
+              } else {
+                sounds.playMove();
+              }
             }
             break;
 
           case 'match:resigned':
-            setActiveMatch(msg.match);
-            sounds.playGameOver();
+            if (abandonedMatchRef.current?.id === msg.match.id) {
+              setAbandonedMatch(null);
+              abandonedMatchRef.current = null;
+            }
+            if (isViewingActiveMatchRef.current && activeMatchRef.current?.id === msg.match.id) {
+              setActiveMatch(msg.match);
+              activeMatchRef.current = msg.match;
+              sounds.playGameOver();
+            }
             break;
 
           case 'match:expanded':
           case 'match:craft_placed':
-            setActiveMatch(msg.match);
+            if (isViewingActiveMatchRef.current && activeMatchRef.current?.id === msg.match.id) {
+              setActiveMatch(msg.match);
+              activeMatchRef.current = msg.match;
+            } else if (abandonedMatchRef.current?.id === msg.match.id) {
+              setAbandonedMatch(msg.match);
+              abandonedMatchRef.current = msg.match;
+            }
             break;
 
-          case 'error':
+          case 'error': {
             setMatchError(msg.message);
+            const lowerMsg = (msg.message || '').toLowerCase();
+            if (
+              lowerMsg.includes('match not found') ||
+              lowerMsg.includes('match is not active') ||
+              lowerMsg.includes('not active')
+            ) {
+              isViewingActiveMatchRef.current = false;
+              setActiveMatch(null);
+              activeMatchRef.current = null;
+              setAbandonedMatch(null);
+              abandonedMatchRef.current = null;
+            }
             break;
+          }
         }
       } catch (err) {
         console.error('Socket message parse error:', err);
@@ -150,9 +261,10 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       console.warn('WebSocket encountered error:', err);
       ws.close();
     };
-  }, [token]);
+  }, [token, logout, send]);
 
   useEffect(() => {
+    authRetryCountRef.current = 0;
     if (token) {
       connect();
     } else {
@@ -161,9 +273,13 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         wsRef.current = null;
       }
       setIsConnected(false);
+      isViewingActiveMatchRef.current = false;
       setOnlineUserIds([]);
       setIncomingChallenge(null);
       setActiveMatch(null);
+      activeMatchRef.current = null;
+      setAbandonedMatch(null);
+      abandonedMatchRef.current = null;
     }
 
     return () => {
@@ -175,12 +291,6 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       }
     };
   }, [token, connect]);
-
-  const send = (data: any) => {
-    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
-      wsRef.current.send(JSON.stringify(data));
-    }
-  };
 
   const sendChallenge = (
     targetUserId: string,
@@ -226,6 +336,30 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     send({ type: 'match:resign' });
   };
 
+  const resumeAbandonedMatch = useCallback(() => {
+    const matchToResume = abandonedMatchRef.current;
+    if (matchToResume) {
+      setAbandonedMatch(null);
+      abandonedMatchRef.current = null;
+      isViewingActiveMatchRef.current = true;
+      setActiveMatch(matchToResume);
+      activeMatchRef.current = matchToResume;
+      send({ type: 'match:join', matchId: matchToResume.id });
+    }
+  }, [send]);
+
+  const resignAbandonedMatch = useCallback(() => {
+    const matchToResign = abandonedMatchRef.current;
+    if (matchToResign) {
+      send({ type: 'match:resign', matchId: matchToResign.id });
+      setAbandonedMatch(null);
+      abandonedMatchRef.current = null;
+      isViewingActiveMatchRef.current = false;
+      setActiveMatch(null);
+      activeMatchRef.current = null;
+    }
+  }, [send]);
+
   const expandBoard = (side: ExpansionSide) => {
     send({ type: 'match:expand', side });
   };
@@ -239,7 +373,11 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   };
 
   const clearIncomingChallenge = () => setIncomingChallenge(null);
-  const clearActiveMatch = () => setActiveMatch(null);
+  const clearActiveMatch = () => {
+    isViewingActiveMatchRef.current = false;
+    setActiveMatch(null);
+    activeMatchRef.current = null;
+  };
   const clearMatchError = () => setMatchError(null);
 
   return (
@@ -249,7 +387,10 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         onlineUserIds,
         incomingChallenge,
         activeMatch,
+        abandonedMatch,
         matchError,
+        resumeAbandonedMatch,
+        resignAbandonedMatch,
         sendChallenge,
         respondChallenge,
         cancelChallenge,

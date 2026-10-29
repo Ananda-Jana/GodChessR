@@ -43,7 +43,7 @@ const BOT_COLOR_MAP: Record<PunisherBotId, string> = {
 };
 
 const BOT_BG_MAP: Record<PunisherBotId, string> = {
-  'bangla-bot': 'from-red-950 to-orange-950/70',
+  'bangla-bot': 'from-red-950/30 to-black',
   'joystick-wraith': 'from-green-950/30 to-black',
   'static-jester': 'from-amber-950/30 to-black',
   'octavian-hollow': 'from-blue-950/30 to-black',
@@ -146,23 +146,10 @@ export const PunisherSelector: React.FC<PunisherSelectorProps> = ({ onSelect, on
               <div
                 key={bot.id}
                 onClick={() => setSelectedBotDetail(bot.id as PunisherBotId)}
-                className={`w-full flex items-center justify-between gap-3 p-3 text-left relative overflow-hidden transition-all cursor-pointer active:scale-[0.99] ${
-                  isBangla
-                    ? 'border-3 border-red-500 bg-[#2b0808] shadow-[3px_3px_0px_#dc2626]'
-                    : 'bg-white/5 border-3 border-white/20 hover:border-[#2727F5] active:bg-white/10'
-                }`}
+                className="w-full flex items-center justify-between gap-3 p-3 text-left relative overflow-hidden transition-all cursor-pointer active:scale-[0.99] bg-white/5 border-3 border-white/20 hover:border-[#2727F5] active:bg-white/10"
               >
-                {/* Bangla Fire Background on Mobile Card */}
-                {isBangla && (
-                  <div
-                    aria-hidden="true"
-                    className="absolute inset-0 overflow-hidden pointer-events-none z-0 bangla-fire-surface opacity-35"
-                    style={{ contain: 'layout paint' }}
-                  />
-                )}
-
                 {/* Bot Icon (58px) */}
-                <div className={`shrink-0 p-1 border-2 relative z-10 ${isBangla ? 'border-red-400 bg-black/60' : 'border-white/20'} ${colorClass}`}>
+                <div className={`shrink-0 p-1 border-2 relative z-10 border-white/20 ${colorClass}`}>
                   <Icon size={58} />
                 </div>
 
@@ -192,11 +179,7 @@ export const PunisherSelector: React.FC<PunisherSelectorProps> = ({ onSelect, on
                 <button
                   type="button"
                   onClick={() => setSelectedBotDetail(bot.id as PunisherBotId)}
-                  className={`min-w-[88px] min-h-[44px] px-3 font-black text-xs uppercase tracking-wider border-2 cursor-pointer shrink-0 relative z-10 ${
-                    isBangla
-                      ? 'bg-red-600 hover:bg-red-500 active:bg-red-700 text-white border-white shadow-[2px_2px_0px_#fff]'
-                      : 'bg-[#2727F5] hover:bg-[#2727F5]/90 active:bg-blue-700 text-white border-white shadow-[2px_2px_0px_#fff]'
-                  }`}
+                  className="min-w-[88px] min-h-[44px] px-3 font-black text-xs uppercase tracking-wider border-2 cursor-pointer shrink-0 relative z-10 bg-[#2727F5] hover:bg-[#2727F5]/90 active:bg-blue-700 text-white border-white shadow-[2px_2px_0px_#fff]"
                 >
                   CHALLENGE
                 </button>
@@ -228,61 +211,9 @@ export const PunisherSelector: React.FC<PunisherSelectorProps> = ({ onSelect, on
                 whileHover={{ scale: 1.015 }}
                 onHoverStart={() => setHoveredBot(bot.id as PunisherBotId)}
                 onHoverEnd={() => setHoveredBot(null)}
-                className={`relative p-3.5 sm:p-4 flex flex-col justify-between group cursor-pointer overflow-hidden rounded-none border-3 ${
-                  isBangla
-                    ? 'border-red-500 shadow-[4px_4px_0px_#dc2626]'
-                    : `bg-gradient-to-b ${bgGradient} border-white shadow-[4px_4px_0px_#fff]`
-                }`}
+                className={`relative p-3.5 sm:p-4 flex flex-col justify-between group cursor-pointer overflow-hidden rounded-none border-3 bg-gradient-to-b ${bgGradient} border-white shadow-[4px_4px_0px_#fff]`}
                 onClick={() => onSelect(bot.id as PunisherBotId)}
               >
-                {/* Fire Animation Background (Bangla-bot only) */}
-                {isBangla && (
-                  <div 
-                    aria-hidden="true" 
-                    className="absolute inset-0 overflow-hidden pointer-events-none z-0 bangla-fire-surface opacity-40"
-                    style={{ contain: 'layout paint' }}
-                  >
-                    {/* Dark vignette to ensure high text contrast */}
-                    <div className="absolute inset-0 bg-black/50 pointer-events-none" />
-
-                    {/* Rising flame tongues */}
-                    <div 
-                      className="absolute -bottom-10 left-4 w-32 h-44 rounded-full blur-xl pointer-events-none bangla-fire-tongue-1"
-                      style={{
-                        background: 'radial-gradient(circle, #fde047 10%, #f97316 50%, #dc2626 80%, transparent 100%)',
-                        mixBlendMode: 'screen',
-                      }}
-                    />
-                    <div 
-                      className="absolute -bottom-12 right-6 w-36 h-48 rounded-full blur-xl pointer-events-none bangla-fire-tongue-2"
-                      style={{
-                        background: 'radial-gradient(circle, #ffffff 10%, #fbbf24 45%, #ea580c 75%, transparent 100%)',
-                        mixBlendMode: 'screen',
-                      }}
-                    />
-
-                    {/* Floating Embers */}
-                    {[
-                      { left: '15%', delay: '0s', dur: '3.2s', drift: '6px' },
-                      { left: '45%', delay: '1.2s', dur: '4.5s', drift: '-8px' },
-                      { left: '75%', delay: '0.5s', dur: '2.8s', drift: '10px' },
-                    ].map((ember, idx) => (
-                      <div
-                        key={idx}
-                        className="absolute bottom-0 w-1.5 h-1.5 rounded-full bg-yellow-300 pointer-events-none bangla-fire-ember shadow-[0_0_4px_#fde047]"
-                        style={{
-                          left: ember.left,
-                          animation: `banglaFireEmber ${ember.dur} ease-out infinite ${ember.delay}`,
-                          ['--ember-drift' as any]: ember.drift,
-                        }}
-                      />
-                    ))}
-
-                    {/* Hot-edge flicker */}
-                    <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-red-600 via-amber-400 to-yellow-300 pointer-events-none bangla-fire-edge-glow" />
-                  </div>
-                )}
-
                 {/* Content Layer (Relative z-10) */}
                 <div className="relative z-10 flex flex-col gap-3">
                   {/* Top Row: ELO & Depth badges */}
@@ -305,11 +236,7 @@ export const PunisherSelector: React.FC<PunisherSelectorProps> = ({ onSelect, on
                   {/* Body Row: Face on left + Details & Fight button on right */}
                   <div className="flex items-center gap-3.5">
                     {/* Face Icon Container (constant clear size face) */}
-                    <div className={`p-2 border-2 shrink-0 transition-colors duration-300 ${
-                      isBangla 
-                        ? 'border-yellow-400/50 group-hover:border-yellow-400 bg-black/50' 
-                        : 'border-white/20 group-hover:border-white bg-black/40'
-                    } ${colorClass}`}>
+                    <div className={`p-2 border-2 shrink-0 transition-colors duration-300 border-white/20 group-hover:border-white bg-black/40 ${colorClass}`}>
                       <Icon size={100} />
                     </div>
 
@@ -331,11 +258,7 @@ export const PunisherSelector: React.FC<PunisherSelectorProps> = ({ onSelect, on
                           e.stopPropagation();
                           onSelect(bot.id as PunisherBotId);
                         }}
-                        className={`w-full mt-2.5 py-2 px-3 text-white font-black text-xs uppercase tracking-wider border-2 border-white flex items-center justify-center gap-1.5 cursor-pointer transition-transform active:translate-x-0.5 active:translate-y-0.5 ${
-                          isBangla
-                            ? 'bg-red-600 hover:bg-red-500 shadow-[2px_2px_0px_#fde047]'
-                            : 'bg-[#2727F5] group-hover:bg-blue-600 shadow-[2px_2px_0px_#fff]'
-                        }`}
+                        className="w-full mt-2.5 py-2 px-3 text-white font-black text-xs uppercase tracking-wider border-2 border-white flex items-center justify-center gap-1.5 cursor-pointer transition-transform active:translate-x-0.5 active:translate-y-0.5 bg-[#2727F5] group-hover:bg-blue-600 shadow-[2px_2px_0px_#fff]"
                       >
                         <Sword className="w-3.5 h-3.5" />
                         FIGHT BOT
@@ -399,7 +322,7 @@ export const PunisherSelector: React.FC<PunisherSelectorProps> = ({ onSelect, on
                   return (
                     <>
                       <div className="flex items-center gap-4">
-                        <div className={`p-3 border-2 border-white ${colorClass} shrink-0 ${isBangla ? 'bg-red-950/60' : ''}`}>
+                        <div className={`p-3 border-2 border-white ${colorClass} shrink-0 bg-black/40`}>
                           <Icon size={80} />
                         </div>
                         <div>
@@ -453,11 +376,7 @@ export const PunisherSelector: React.FC<PunisherSelectorProps> = ({ onSelect, on
                       setSelectedBotDetail(null);
                     }
                   }}
-                  className={`w-full py-3.5 text-white font-black text-sm uppercase tracking-widest border-2 border-white flex items-center justify-center gap-2 cursor-pointer active:translate-x-0.5 active:translate-y-0.5 ${
-                    selectedBotDetail === 'bangla-bot'
-                      ? 'bg-red-600 hover:bg-red-500 shadow-[3px_3px_0px_#fde047]'
-                      : 'bg-[#2727F5] hover:bg-blue-600 shadow-[3px_3px_0px_#fff]'
-                  }`}
+                  className="w-full py-3.5 text-white font-black text-sm uppercase tracking-widest border-2 border-white flex items-center justify-center gap-2 cursor-pointer active:translate-x-0.5 active:translate-y-0.5 bg-[#2727F5] hover:bg-blue-600 shadow-[3px_3px_0px_#fff]"
                 >
                   <Sword className="w-5 h-5" />
                   FIGHT BOT NOW
