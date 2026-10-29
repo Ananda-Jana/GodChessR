@@ -9,17 +9,27 @@ import { ModeArtPanel } from '../../components/ModeArtPanel';
 interface SecretArenaModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onBack?: () => void;
   onStartSecretMatch: (botConfig: SecretPlayerConfig) => void;
 }
 
 export const SecretArenaModal: React.FC<SecretArenaModalProps> = ({
   isOpen,
   onClose,
+  onBack,
   onStartSecretMatch,
 }) => {
   const [selectedBotForPin, setSelectedBotForPin] = useState<SecretPlayerConfig | null>(null);
 
   if (!isOpen) return null;
+
+  const handleBack = () => {
+    if (onBack) {
+      onBack();
+    } else {
+      onClose();
+    }
+  };
 
   const handlePinSuccess = () => {
     if (selectedBotForPin) {
@@ -37,7 +47,7 @@ export const SecretArenaModal: React.FC<SecretArenaModalProps> = ({
         <div className="md:hidden absolute top-3 left-3 right-3 z-20 flex items-center justify-between pointer-events-none">
           <button
             type="button"
-            onClick={onClose}
+            onClick={handleBack}
             className="pointer-events-auto min-w-[40px] min-h-[40px] px-2.5 py-1.5 bg-neutral-900/90 hover:bg-neutral-800 border-2 border-white text-white flex items-center justify-center rounded-lg gap-1.5 shadow-[2px_2px_0px_#fff] text-xs font-bold uppercase cursor-pointer"
             aria-label="Back"
           >
@@ -87,7 +97,7 @@ export const SecretArenaModal: React.FC<SecretArenaModalProps> = ({
             <div className="flex items-center gap-2.5 sm:gap-3.5">
               <button
                 type="button"
-                onClick={onClose}
+                onClick={handleBack}
                 className="hidden md:flex min-w-[40px] min-h-[40px] px-2.5 py-1.5 bg-neutral-900 hover:bg-neutral-800 border-2 border-white text-white items-center justify-center rounded-lg gap-1.5 shadow-[2px_2px_0px_#fff] text-xs font-bold uppercase cursor-pointer"
                 aria-label="Back"
               >

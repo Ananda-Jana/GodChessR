@@ -64,7 +64,7 @@ for (let y = 0; y < 10; y++) {
     else voidCount++;
   }
 }
-assert(playableCount === TOTAL_PLAYABLE_SQUARES && playableCount === 88, 'Board contains exactly 88 playable squares');
+assert(playableCount === (TOTAL_PLAYABLE_SQUARES as unknown as number) && (playableCount as unknown as number) === 88, 'Board contains exactly 88 playable squares');
 assert(voidCount === 12, 'Board contains exactly 12 void corner cells');
 
 assert(posToCullingSquare({ x: 8, y: 1 }) === 'H1', 'H1 maps correctly');

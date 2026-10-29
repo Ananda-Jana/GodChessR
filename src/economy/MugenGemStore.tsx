@@ -1,36 +1,48 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   getGems,
   spendGems,
   deductEloForGems,
-  hasBoughtChest,
   recordChestPurchase,
+  getMugenCrypto,
+  convertGemsToCrypto,
+  getEloShieldStatus,
+  activateEloShield,
+  getUnlockedSecretCodes,
+  unlockSecretCode,
 } from './mugenStore';
 import { MugenGemIcon } from './MugenGemIcon';
+import { MugenCryptoIcon } from './MugenCryptoIcon';
 import {
   unlockSecretPlayer,
-  getChestStore,
-  addPendingChestEvent,
-  popPendingChestEvent,
   PendingChestEvent,
+  addPendingChestEvent,
 } from '../chest/chestStore';
 import { ChestModal } from '../chest/ChestModal';
-import { SecretPlayerRewardDef } from '../chest/chestConfig';
 import { SECRET_PLAYERS } from '../secret/secretPlayersData';
+import { SecretEngineCodeModal } from '../secret/components/SecretEngineCodeModal';
+import { SecretPlayerConfig } from '../secret/types';
 import {
-  ShoppingBag,
-  Sparkles,
-  Coins,
   Lock,
   Unlock,
   CheckCircle2,
-  Gift,
-  KeyRound,
   X,
   Flame,
   Zap,
-  ArrowRight,
+  ArrowLeftRight,
+  Shield,
+  ShieldCheck,
+  ShieldAlert,
+  Package,
+  KeyRound,
+  AlertCircle,
+  Coins,
+  Swords,
+  ChevronDown,
+  Trophy,
 } from 'lucide-react';
+
+export type StoreTab = 'ore_conversion' | 'secret_blueprints' | 'chest_vault';
 
 interface MugenGemStoreProps {
   isOpen: boolean;
@@ -39,9 +51,8 @@ interface MugenGemStoreProps {
   currentElo: number;
   onEloDeduct: (amount: number) => void;
   onOpenSecretArena: () => void;
+  initialTab?: StoreTab;
 }
-
-type StoreTab = 'exchange' | 'chests' | 'secrets';
 
 interface ChestCatalogItem {
   id: string;
@@ -57,7 +68,7 @@ const CHEST_CATALOG: ChestCatalogItem[] = [
     id: 'chest_shadow',
     name: 'Shadow Chest',
     cost: 400,
-    description: 'Rare combat artifact containing hidden tactical relics.',
+    description: 'Tactical combat artifact containing hidden battle relics and rating boosts.',
     borderColorClass: 'border-slate-400',
     accentTextClass: 'text-slate-300',
   },
@@ -65,7 +76,7 @@ const CHEST_CATALOG: ChestCatalogItem[] = [
     id: 'chest_crimson',
     name: 'Crimson Chest',
     cost: 600,
-    description: 'Secret character fragment imbued with ancient battle energy.',
+    description: 'Secret character fragment imbued with ancient battle energy and tactics.',
     borderColorClass: 'border-red-500',
     accentTextClass: 'text-red-400',
   },
@@ -73,7 +84,7 @@ const CHEST_CATALOG: ChestCatalogItem[] = [
     id: 'chest_void',
     name: 'Void Chest',
     cost: 900,
-    description: 'Legendary codex card with high-tier rating attributes.',
+    description: 'Legendary codex card with high-tier rating attributes and secret PINs.',
     borderColorClass: 'border-purple-500',
     accentTextClass: 'text-purple-400',
   },
@@ -81,7 +92,7 @@ const CHEST_CATALOG: ChestCatalogItem[] = [
     id: 'chest_mugen',
     name: 'Mugen Chest',
     cost: 1200,
-    description: 'Ultimate ELO boost relic granting massive session rating power.',
+    description: 'Ultimate ELO boost relic granting massive session rating protection power.',
     borderColorClass: 'border-amber-400',
     accentTextClass: 'text-amber-400',
   },
@@ -94,634 +105,989 @@ export const MugenGemStore: React.FC<MugenGemStoreProps> = ({
   currentElo,
   onEloDeduct,
   onOpenSecretArena,
+  initialTab = 'ore_conversion',
 }) => {
-  const [activeTab, setActiveTab] = useState<StoreTab>('exchange');
+  const [activeTab, setActiveTab] = useState<StoreTab>(initialTab);
   const [gemBalance, setGemBalance] = useState<number>(0);
+  const [cryptoBalance, setCryptoBalance] = useState<number>(0);
+  const [eloShieldStatus, setEloShieldStatus] = useState<{ active: boolean; matchesRemaining: number }>({
+    active: false,
+    matchesRemaining: 0,
+  });
+  const [unlockedCodes, setUnlockedCodes] = useState<string[]>([]);
   const [noticeMessage, setNoticeMessage] = useState<string | null>(null);
-  const [unlockedSecretMap, setUnlockedSecretMap] = useState<Record<string, boolean>>({});
-  const [animatingUnlockId, setAnimatingUnlockId] = useState<string | null>(null);
+  const [noticeType, setNoticeType] = useState<'success' | 'error' | 'info'>('info');
 
-  // Post-purchase and vault flow state for Chest Shop
-  const [justPurchasedChestId, setJustPurchasedChestId] = useState<string | null>(null);
-  const [lastPurchasedEvent, setLastPurchasedEvent] = useState<PendingChestEvent | null>(null);
-  const [activeOpeningEvent, setActiveOpeningEvent] = useState<PendingChestEvent | null>(null);
-  const [vaultChests, setVaultChests] = useState<PendingChestEvent[]>([]);
-  const [savedConfirmationMessage, setSavedConfirmationMessage] = useState<string | null>(null);
+  // Active chest opening modal state
+  const [activeChestEvent, setActiveChestEvent] = useState<PendingChestEvent | null>(null);
 
-  // Sync balances, vault chests, and unlocked state on open / updates
-  const refreshStoreState = () => {
-    if (!userId) return;
+  // Pending purchase routing choice modal state (Open Immediately vs Store in Trophy Room)
+  const [purchasedChestForChoice, setPurchasedChestForChoice] = useState<{
+    chest: ChestCatalogItem;
+    chestEvent: PendingChestEvent;
+  } | null>(null);
+
+  // Active PIN inspector modal
+  const [selectedBotForCode, setSelectedBotForCode] = useState<SecretPlayerConfig | null>(null);
+
+  // Synchronize balances and statuses
+  const syncWallet = useCallback(() => {
     setGemBalance(getGems(userId));
-
-    try {
-      const store = getChestStore(userId);
-      const unlockedList = store.unlocked || [];
-      const map: Record<string, boolean> = {};
-      SECRET_PLAYERS.forEach((p) => {
-        map[p.id] = unlockedList.includes(p.id);
-      });
-      setUnlockedSecretMap(map);
-
-      // Load pending unopened chests stored in user's vault
-      const pendingList: PendingChestEvent[] =
-        store.pendingEvents && store.pendingEvents.length > 0
-          ? store.pendingEvents
-          : Array.from({ length: store.pending || 0 }, (_, i) => ({
-              matchId: `pending_${i}`,
-              mode: 'Combat Loot',
-              result: 'win' as const,
-              userId,
-            }));
-      setVaultChests(pendingList);
-    } catch {
-      // Fall safe
-    }
-  };
+    setCryptoBalance(getMugenCrypto(userId));
+    setEloShieldStatus(getEloShieldStatus(userId));
+    setUnlockedCodes(getUnlockedSecretCodes(userId));
+  }, [userId]);
 
   useEffect(() => {
     if (isOpen) {
-      refreshStoreState();
-      setNoticeMessage(null);
-      setJustPurchasedChestId(null);
-      setLastPurchasedEvent(null);
-      setActiveOpeningEvent(null);
-      setSavedConfirmationMessage(null);
+      if (initialTab) {
+        setActiveTab(initialTab);
+      }
+      syncWallet();
     }
-  }, [isOpen, userId]);
+  }, [isOpen, initialTab, syncWallet]);
+
+  useEffect(() => {
+    const handleEconomyUpdate = () => {
+      syncWallet();
+    };
+    window.addEventListener('mugen_economy_update', handleEconomyUpdate);
+    return () => window.removeEventListener('mugen_economy_update', handleEconomyUpdate);
+  }, [syncWallet]);
+
+  const showNotification = (msg: string, type: 'success' | 'error' | 'info' = 'info') => {
+    setNoticeMessage(msg);
+    setNoticeType(type);
+    setTimeout(() => {
+      setNoticeMessage(null);
+    }, 4500);
+  };
 
   if (!isOpen) return null;
 
-  // Derive chest purchase state inline
-  const purchasedChestMap: Record<string, boolean> = {
-    chest_shadow: hasBoughtChest(userId, 'chest_shadow'),
-    chest_crimson: hasBoughtChest(userId, 'chest_crimson'),
-    chest_void: hasBoughtChest(userId, 'chest_void'),
-    chest_mugen: hasBoughtChest(userId, 'chest_mugen'),
-  };
-
-  const purchasedChestsCount = Object.values(purchasedChestMap).filter(Boolean).length;
-
-  // ELO exchange handler
-  const handleExchangeElo = () => {
-    if (currentElo - 50 < 50) {
-      setNoticeMessage('Minimum 50 ELO must remain after exchange!');
+  // Handle Gem to Crypto conversion
+  const handleConvertGemsToCrypto = (gemsAmount: number) => {
+    if (gemBalance < gemsAmount) {
+      showNotification(`Insufficient Mugen Gems. You need ${gemsAmount} gems to convert.`, 'error');
       return;
     }
+    const res = convertGemsToCrypto(userId, gemsAmount);
+    if (res.success) {
+      syncWallet();
+      showNotification(
+        `Successfully converted ${res.gemsSpent} Gems into ${res.cryptoGained} Mugen Crypto.`,
+        'success'
+      );
+    } else {
+      showNotification('Currency conversion failed. Please check your balance.', 'error');
+    }
+  };
 
-    const { gemsAwarded } = deductEloForGems(userId, currentElo, 50);
+  // Handle ELO Shield Activation
+  const handleActivateEloShield = () => {
+    if (cryptoBalance < 1) {
+      showNotification('Insufficient Mugen Crypto. 1 Crypto is required to activate ELO Shield.', 'error');
+      return;
+    }
+    const success = activateEloShield(userId);
+    if (success) {
+      syncWallet();
+      showNotification('ELO Protection Shield Activated. Your rating is shielded against next defeat.', 'success');
+    } else {
+      showNotification('Failed to activate ELO Shield. Insufficient Crypto balance.', 'error');
+    }
+  };
+
+  // Handle ELO to Gems deduction
+  const handleDeductElo = (eloAmount: number) => {
+    if (currentElo <= 50) {
+      showNotification('Current ELO rating is at baseline minimum. Cannot deduct further.', 'error');
+      return;
+    }
+    const { newElo, gemsAwarded } = deductEloForGems(userId, currentElo, eloAmount);
     if (gemsAwarded > 0) {
-      onEloDeduct(50);
-      setGemBalance(getGems(userId));
-      setNoticeMessage(`Exchange Successful! Received +${gemsAwarded} Mugen Gems.`);
+      onEloDeduct(currentElo - newElo);
+      syncWallet();
+      showNotification(`Converted ${currentElo - newElo} ELO into +${gemsAwarded} Mugen Gems.`, 'success');
+    } else {
+      showNotification('Unable to deduct ELO. Minimum rating limit reached.', 'error');
     }
   };
 
-  // Chest purchase handler
+  // Handle Secret Blueprint 6-digit PIN Unlock
+  const handleUnlockSecretBlueprint = (botConfig: SecretPlayerConfig) => {
+    if (unlockedCodes.includes(botConfig.id)) {
+      setSelectedBotForCode(botConfig);
+      return;
+    }
+    if (cryptoBalance < 1) {
+      showNotification(
+        `Insufficient Mugen Crypto. 1 Crypto required to decrypt ${botConfig.publicName}'s 6-digit PIN.`,
+        'error'
+      );
+      return;
+    }
+    const success = unlockSecretCode(userId, botConfig.id);
+    if (success) {
+      // Also unlock character in secret arena system
+      unlockSecretPlayer(userId, botConfig.id as any);
+      syncWallet();
+      showNotification(
+        `Decryption complete! ${botConfig.publicName}'s 6-digit access PIN is unlocked.`,
+        'success'
+      );
+      setSelectedBotForCode(botConfig);
+    } else {
+      showNotification('Failed to decrypt secret PIN.', 'error');
+    }
+  };
+
+  // Handle Chest Purchase - routes through choice popup
   const handleBuyChest = (chest: ChestCatalogItem) => {
-    if (hasBoughtChest(userId, chest.id)) {
-      setNoticeMessage(`You have already claimed the ${chest.name}!`);
+    if (gemBalance < chest.cost) {
+      showNotification(`Insufficient gems. Need ${chest.cost} gems to purchase ${chest.name}.`, 'error');
       return;
     }
 
-    const currentBalance = getGems(userId);
-    if (currentBalance < chest.cost) {
-      const deficit = chest.cost - currentBalance;
-      setNoticeMessage(`Insufficient Gems! Need ${deficit} more gems.`);
+    const spent = spendGems(userId, chest.cost);
+    if (!spent) {
+      showNotification('Transaction failed. Please verify your gem balance.', 'error');
       return;
     }
 
-    const success = spendGems(userId, chest.cost);
-    if (success) {
-      recordChestPurchase(userId, chest.id);
-      setGemBalance(getGems(userId));
+    recordChestPurchase(userId, chest.id);
+    syncWallet();
 
-      // Create and persist pending chest event into chestStore immediately
-      const newEvent: PendingChestEvent = {
-        matchId: `store_${chest.id}_${Date.now()}`,
-        mode: chest.name,
-        result: 'win',
-        userId,
-        isWin: true,
-      };
-      addPendingChestEvent(newEvent, userId);
-      setLastPurchasedEvent(newEvent);
-      setJustPurchasedChestId(chest.id);
-      setNoticeMessage(null);
-      setSavedConfirmationMessage(null);
-      refreshStoreState();
-    }
+    const chestEvent: PendingChestEvent = {
+      matchId: `store_purchase_${Date.now()}`,
+      mode: 'store',
+      result: 'win',
+      userId,
+      directOpen: true,
+      eloBoost: chest.id === 'chest_mugen' ? 25 : chest.id === 'chest_void' ? 18 : 10,
+    };
+
+    setPurchasedChestForChoice({ chest, chestEvent });
   };
 
-  // Immediate chest opening handler (triggers full 3-tap ChestModal animation)
-  const handleOpenNow = (eventToOpen?: PendingChestEvent | null) => {
-    const target = eventToOpen || lastPurchasedEvent;
-    if (target) {
-      popPendingChestEvent(userId);
-      setActiveOpeningEvent(target);
-      setJustPurchasedChestId(null);
-      setLastPurchasedEvent(null);
-      refreshStoreState();
-    }
+  const handleOpenPurchasedChestNow = () => {
+    if (!purchasedChestForChoice) return;
+    const { chest, chestEvent } = purchasedChestForChoice;
+    setPurchasedChestForChoice(null);
+    setActiveChestEvent(chestEvent);
+    showNotification(`Opening ${chest.name} rewards...`, 'info');
   };
 
-  // Save to trophy room handler
-  const handleSaveToTrophyRoom = () => {
-    setJustPurchasedChestId(null);
-    setLastPurchasedEvent(null);
-    setSavedConfirmationMessage('Chest safely stored in Trophy Room → Chest Vault');
-    refreshStoreState();
-  };
-
-  // Chest modal close handler
-  const handleChestModalClose = (wasOpened: boolean) => {
-    if (!wasOpened && activeOpeningEvent) {
-      // Re-queue into pending vault if closed before completing 3 taps
-      addPendingChestEvent(activeOpeningEvent, userId);
+  const handleStorePurchasedChestInTrophyRoom = () => {
+    if (!purchasedChestForChoice) return;
+    const { chest, chestEvent } = purchasedChestForChoice;
+    addPendingChestEvent(chestEvent, userId);
+    setPurchasedChestForChoice(null);
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('trophy_room_updated'));
+      window.dispatchEvent(new CustomEvent('mugen_chest_stored', { detail: { chestId: chest.id } }));
     }
-    setActiveOpeningEvent(null);
-    setJustPurchasedChestId(null);
-    setLastPurchasedEvent(null);
-    refreshStoreState();
+    showNotification(
+      `Saved ${chest.name} to your Trophy Room inventory! You can open it anytime from the Trophy Room.`,
+      'success'
+    );
   };
-
-  // Secret player unlock handler
-  const handleUnlockSecretPlayer = (playerId: string, playerName: string) => {
-    const cost = 800;
-    const currentBalance = getGems(userId);
-
-    if (currentBalance < cost) {
-      const deficit = cost - currentBalance;
-      setNoticeMessage(`Need ${deficit} more Mugen Gems to unlock ${playerName}!`);
-      return;
-    }
-
-    const success = spendGems(userId, cost);
-    if (success) {
-      unlockSecretPlayer(playerId, userId);
-      setGemBalance(getGems(userId));
-      setAnimatingUnlockId(playerId);
-      setNoticeMessage(`Unlocked ${playerName}! PIN Code Revealed.`);
-      setUnlockedSecretMap((prev) => ({ ...prev, [playerId]: true }));
-
-      setTimeout(() => {
-        setAnimatingUnlockId(null);
-      }, 1000);
-    }
-  };
-
-  const isEloExchangeDisabled = currentElo - 50 < 50;
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/80 md:flex md:items-center md:justify-center">
-      <style>{`
-        @keyframes secretReveal {
-          0% { transform: scale(0.85); opacity: 0; }
-          100% { transform: scale(1.0); opacity: 1; }
-        }
-        .animate-secret-reveal {
-          animation: secretReveal 400ms ease-out forwards;
-        }
-      `}</style>
+    <>
+      <div
+        className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/90 backdrop-blur-md overflow-y-auto animate-in fade-in duration-200"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Mugen Aura Vault Store"
+        onClick={onClose}
+      >
+        <div
+          className="w-full max-w-5xl bg-[#0a0c10] border-2 sm:border-3 border-yellow-400/80 shadow-[0_0_35px_rgba(250,204,21,0.25),6px_6px_0px_#000000] text-white relative flex flex-col max-h-[92dvh] sm:max-h-[88vh] overflow-hidden rounded-none"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* TOP HEADER: Brutalist Aesthetic & Responsive Mobile Layout */}
+          <div className="bg-[#0b0c10] border-b-2 sm:border-b-3 border-black p-2.5 sm:p-4 flex flex-wrap items-center justify-between gap-2 sm:gap-3 shrink-0">
+            <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+              <div className="p-2 sm:p-2.5 bg-yellow-400 text-black border-2 border-black shadow-[2px_2px_0px_#000] shrink-0">
+                <Flame className="w-5 h-5 sm:w-6 sm:h-6 stroke-[2.5]" />
+              </div>
+              <div className="min-w-0">
+                <div className="flex items-center gap-1.5 sm:gap-2">
+                  <span className="text-[9px] sm:text-[10px] font-mono font-black uppercase tracking-wider px-1.5 py-0.5 bg-yellow-400/20 text-yellow-300 border border-yellow-400/40">
+                    ORE ECONOMY
+                  </span>
+                  <span className="text-[9px] sm:text-[10px] font-mono text-neutral-400 font-bold uppercase truncate">
+                    TACTICAL RESERVE
+                  </span>
+                </div>
+                <h1 className="text-base sm:text-xl md:text-2xl font-black uppercase tracking-wider text-white truncate">
+                  MUGEN AURA VAULT
+                </h1>
+              </div>
+            </div>
 
-      {/* Main Container Wrapper */}
-      <div className="fixed inset-0 z-50 flex flex-col pb-[64px] md:pb-0 bg-[#0a0a0f] overflow-hidden md:relative md:inset-auto md:w-[900px] md:max-w-[95vw] md:h-[85vh] md:border-4 md:border-white md:shadow-[12px_12px_0px_#000]">
-        
-        {/* Inner Layout */}
-        <div className="flex flex-col h-full w-full overflow-hidden bg-[#0a0a0f]">
-          
-          {/* TOP NAV BAR & COMPACT CATEGORY PILLS */}
-          <header className="shrink-0 px-3 py-2.5 bg-[#0a0a0f] border-b-2 border-white/20 flex flex-col gap-2">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <ShoppingBag className="w-4 h-4 text-amber-400 shrink-0" />
-                <h2 className="font-black uppercase text-white text-sm md:text-base tracking-wider">
-                  MUGEN STORE
-                </h2>
+            {/* Balances & Close (Touch-friendly & Responsive) */}
+            <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0 ml-auto sm:ml-0">
+              {/* Gem Balance Badge */}
+              <div
+                className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1 sm:py-1.5 bg-amber-500/10 border-2 border-amber-500/40 shadow-[2px_2px_0px_#000]"
+                title="Current Mugen Gems"
+              >
+                <MugenGemIcon className="w-4 h-4 sm:w-5 sm:h-5 text-amber-400 shrink-0" />
+                <div className="flex flex-col">
+                  <span className="text-[8px] sm:text-[9px] font-mono uppercase text-amber-300 font-bold leading-none">
+                    GEMS
+                  </span>
+                  <span className="text-xs sm:text-sm font-black font-mono text-amber-400 leading-tight">
+                    {gemBalance.toLocaleString()}
+                  </span>
+                </div>
               </div>
 
-              {/* Gem Balance Badge */}
-              <div className="px-2.5 py-1 bg-amber-400 text-black font-mono font-black text-xs flex items-center gap-1.5 border border-black shadow-[2px_2px_0px_#fff]">
-                <MugenGemIcon className="w-5 h-5 text-black shrink-0" />
-                <span>{gemBalance} GEMS</span>
+              {/* Crypto Balance Badge */}
+              <div
+                className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1 sm:py-1.5 bg-yellow-400/10 border-2 border-yellow-400/40 shadow-[2px_2px_0px_#000]"
+                title="Current Mugen Crypto"
+              >
+                <MugenCryptoIcon className="w-4 h-4 sm:w-5 sm:h-5 text-yellow-400 shrink-0" />
+                <div className="flex flex-col">
+                  <span className="text-[8px] sm:text-[9px] font-mono uppercase text-yellow-300 font-bold leading-none">
+                    CRYPTO
+                  </span>
+                  <span className="text-xs sm:text-sm font-black font-mono text-yellow-400 leading-tight">
+                    {cryptoBalance.toLocaleString()}
+                  </span>
+                </div>
               </div>
 
               {/* Close Button */}
               <button
+                type="button"
                 onClick={onClose}
-                className="w-9 h-9 bg-red-600 hover:bg-red-500 text-white border-2 border-white flex items-center justify-center shadow-[2px_2px_0px_#fff] cursor-pointer shrink-0"
-                title="Close Store"
+                className="p-1.5 sm:p-2.5 bg-neutral-900 hover:bg-red-600 border-2 border-black text-white shadow-[2px_2px_0px_#000] cursor-pointer transition-transform active:translate-x-0.5 active:translate-y-0.5"
                 aria-label="Close Store"
               >
-                <X className="w-5 h-5 stroke-[3]" />
+                <X className="w-4 h-4 sm:w-5 sm:h-5" />
               </button>
             </div>
+          </div>
 
-            {/* Compact Category Pill Buttons Sub-Nav */}
-            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
-              <button
-                onClick={() => {
-                  setActiveTab('exchange');
-                  setNoticeMessage(null);
-                  setSavedConfirmationMessage(null);
-                }}
-                className={`min-h-[36px] px-3 py-1 font-black uppercase text-[11px] flex items-center gap-1.5 border transition-all cursor-pointer whitespace-nowrap shrink-0 ${
-                  activeTab === 'exchange'
-                    ? 'bg-amber-400 text-black border-black shadow-[2px_2px_0px_#fff]'
-                    : 'bg-neutral-900 text-zinc-300 border-zinc-700 hover:text-white'
-                }`}
-              >
-                <MugenGemIcon className="w-4 h-4 shrink-0" />
-                <span>Exchange</span>
-              </button>
-
-              <button
-                onClick={() => {
-                  setActiveTab('chests');
-                  setNoticeMessage(null);
-                  setSavedConfirmationMessage(null);
-                }}
-                className={`min-h-[36px] px-3 py-1 font-black uppercase text-[11px] flex items-center gap-1.5 border transition-all cursor-pointer whitespace-nowrap shrink-0 ${
-                  activeTab === 'chests'
-                    ? 'bg-amber-400 text-black border-black shadow-[2px_2px_0px_#fff]'
-                    : 'bg-neutral-900 text-zinc-300 border-zinc-700 hover:text-white'
-                }`}
-              >
-                <Gift className="w-3.5 h-3.5 shrink-0" />
-                <span>Chest Shop</span>
-              </button>
-
-              <button
-                onClick={() => {
-                  setActiveTab('secrets');
-                  setNoticeMessage(null);
-                  setSavedConfirmationMessage(null);
-                }}
-                className={`min-h-[36px] px-3 py-1 font-black uppercase text-[11px] flex items-center gap-1.5 border transition-all cursor-pointer whitespace-nowrap shrink-0 ${
-                  activeTab === 'secrets'
-                    ? 'bg-amber-400 text-black border-black shadow-[2px_2px_0px_#fff]'
-                    : 'bg-neutral-900 text-zinc-300 border-zinc-700 hover:text-white'
-                }`}
-              >
-                <KeyRound className="w-3.5 h-3.5 shrink-0" />
-                <span>Secret Unlocks</span>
-              </button>
-            </div>
-          </header>
-
-          {/* Inline Feedback Notice */}
+          {/* NOTIFICATION BANNER */}
           {noticeMessage && (
-            <div className="bg-amber-400 text-black border-b-2 border-black font-mono font-black text-xs px-4 py-2 text-center flex items-center justify-center gap-2 shrink-0">
-              <Sparkles className="w-4 h-4 text-black shrink-0" />
-              <span>{noticeMessage}</span>
+            <div
+              className={`px-3 sm:px-4 py-2 text-xs font-mono font-bold flex items-center justify-between border-b-2 border-black animate-in fade-in duration-150 shrink-0 ${
+                noticeType === 'success'
+                  ? 'bg-emerald-500 text-black'
+                  : noticeType === 'error'
+                  ? 'bg-red-600 text-white'
+                  : 'bg-yellow-400 text-black'
+              }`}
+            >
+              <div className="flex items-center gap-2">
+                {noticeType === 'success' ? (
+                  <CheckCircle2 className="w-4 h-4 shrink-0" />
+                ) : (
+                  <AlertCircle className="w-4 h-4 shrink-0" />
+                )}
+                <span className="truncate">{noticeMessage}</span>
+              </div>
+              <button
+                onClick={() => setNoticeMessage(null)}
+                className="p-0.5 hover:opacity-75 cursor-pointer"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
             </div>
           )}
 
-          {/* CONTENT AREA (Only Scrollable Region) */}
-          <main className="flex-1 overflow-y-auto overscroll-contain p-4 md:p-6 bg-[#0a0a0f]">
-            
-            {/* ============================================================== */}
-            {/* TAB 1: GEM EXCHANGE                                            */}
-            {/* ============================================================== */}
-            {activeTab === 'exchange' && (
-              <div className="max-w-[500px] mx-auto space-y-4">
-                <div className="bg-[#0c0d14] border-2 border-white p-6 flex flex-col gap-4 shadow-[6px_6px_0px_#000]">
-                  
-                  {/* Row 1: Gem Balance */}
-                  <div className="bg-white/5 border border-slate-700 p-4 flex justify-between items-center">
-                    <span className="font-mono text-xs font-black uppercase text-slate-300">
-                      YOUR BALANCE
-                    </span>
-                    <span className="font-mono text-lg font-black text-amber-400 flex items-center gap-2">
-                      <MugenGemIcon className="w-7 h-7 text-amber-400 shrink-0" />
-                      {gemBalance} GEMS
-                    </span>
-                  </div>
+          {/* TABS NAVIGATION: Responsive text, zero emojis */}
+          <div className="grid grid-cols-3 bg-[#0d0f15] border-b-2 sm:border-b-3 border-black p-1 sm:p-2 gap-1 sm:gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={() => setActiveTab('ore_conversion')}
+              className={`py-2 sm:py-2.5 px-1 sm:px-3 text-[10px] sm:text-xs font-black uppercase tracking-wider flex items-center justify-center gap-1 sm:gap-2 border-2 border-black shadow-[2px_2px_0px_#000] sm:shadow-[3px_3px_0px_#000] cursor-pointer transition-all ${
+                activeTab === 'ore_conversion'
+                  ? 'bg-yellow-400 text-black shadow-[3px_3px_0px_#000] sm:shadow-[4px_4px_0px_#000] translate-y-[-1px]'
+                  : 'bg-neutral-900 text-neutral-300 hover:bg-neutral-800'
+              }`}
+            >
+              <ArrowLeftRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+              <span className="truncate"><span className="hidden sm:inline">ORE </span>CONVERSION</span>
+            </button>
 
-                  {/* Row 2: Current ELO */}
-                  <div className="bg-white/5 border border-slate-700 p-4 flex justify-between items-center">
-                    <span className="font-mono text-xs font-black uppercase text-slate-300">
-                      CURRENT RATING
-                    </span>
-                    <span className="font-mono text-lg font-black text-white flex items-center gap-1.5">
-                      <Zap className="w-5 h-5 text-amber-400 shrink-0" />
-                      {currentElo} ELO
-                    </span>
-                  </div>
+            <button
+              type="button"
+              onClick={() => setActiveTab('secret_blueprints')}
+              className={`py-2 sm:py-2.5 px-1 sm:px-3 text-[10px] sm:text-xs font-black uppercase tracking-wider flex items-center justify-center gap-1 sm:gap-2 border-2 border-black shadow-[2px_2px_0px_#000] sm:shadow-[3px_3px_0px_#000] cursor-pointer transition-all ${
+                activeTab === 'secret_blueprints'
+                  ? 'bg-yellow-400 text-black shadow-[3px_3px_0px_#000] sm:shadow-[4px_4px_0px_#000] translate-y-[-1px]'
+                  : 'bg-neutral-900 text-neutral-300 hover:bg-neutral-800'
+              }`}
+            >
+              <Lock className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+              <span className="truncate"><span className="hidden sm:inline">SECRET </span>PIN VAULT</span>
+            </button>
 
-                  {/* Exchange Rate Line */}
-                  <p className="text-xs text-zinc-400 text-center font-mono">
-                    Exchange 50 ELO → Receive 500 Mugen Gems
-                  </p>
+            <button
+              type="button"
+              onClick={() => setActiveTab('chest_vault')}
+              className={`py-2 sm:py-2.5 px-1 sm:px-3 text-[10px] sm:text-xs font-black uppercase tracking-wider flex items-center justify-center gap-1 sm:gap-2 border-2 border-black shadow-[2px_2px_0px_#000] sm:shadow-[3px_3px_0px_#000] cursor-pointer transition-all ${
+                activeTab === 'chest_vault'
+                  ? 'bg-yellow-400 text-black shadow-[3px_3px_0px_#000] sm:shadow-[4px_4px_0px_#000] translate-y-[-1px]'
+                  : 'bg-neutral-900 text-neutral-300 hover:bg-neutral-800'
+              }`}
+            >
+              <Package className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+              <span className="truncate"><span className="hidden sm:inline">CHEST </span>VAULT</span>
+            </button>
+          </div>
 
-                  {/* Exchange Button */}
-                  <button
-                    onClick={handleExchangeElo}
-                    disabled={isEloExchangeDisabled}
-                    className="w-full min-h-[52px] bg-amber-400 text-black font-black text-sm uppercase border-2 border-black shadow-[4px_4px_0px_#000] active:translate-x-0.5 active:translate-y-0.5 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
-                  >
-                    {isEloExchangeDisabled
-                      ? 'EXCHANGE LOCKED (MIN 50 ELO REQUIRED)'
-                      : 'EXCHANGE 50 ELO → +500 GEMS'}
-                  </button>
-                </div>
-              </div>
-            )}
+          {/* TAB CONTENTS CONTAINER: Scrollable with momentum & responsive padding */}
+          <div className="p-2.5 sm:p-5 md:p-6 overflow-y-auto flex-1 space-y-4 sm:space-y-6 overscroll-contain">
+            {/* TAB 1: ORE CONVERSION */}
+            {activeTab === 'ore_conversion' && (
+              <div className="space-y-4 sm:space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
+                  {/* CARD 1: GEM TO CRYPTO CONVERSION */}
+                  <div className="bg-[#0e1117] border-2 sm:border-3 border-black shadow-[4px_4px_0px_#000] p-3.5 sm:p-5 flex flex-col justify-between relative overflow-hidden">
+                    <div className="flex items-center justify-between pb-2 mb-2 sm:mb-3 border-b border-neutral-800">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <MugenCryptoIcon className="w-5 h-5 sm:w-6 sm:h-6 text-yellow-400 shrink-0" />
+                        <h3 className="text-sm sm:text-base font-black uppercase text-white tracking-wide truncate">
+                          GEM ➔ CRYPTO CONVERSION
+                        </h3>
+                      </div>
+                      <span className="px-1.5 sm:px-2 py-0.5 bg-yellow-400/20 border border-yellow-400/50 text-yellow-300 font-mono font-black text-[9px] sm:text-[10px] uppercase shrink-0">
+                        CATALYST ORE
+                      </span>
+                    </div>
 
-            {/* ============================================================== */}
-            {/* TAB 2: CHEST SHOP                                              */}
-            {/* ============================================================== */}
-            {activeTab === 'chests' && (
-              <div className="space-y-6">
-                
-                {/* Saved confirmation toast banner */}
-                {savedConfirmationMessage && (
-                  <div className="p-3 bg-emerald-500 text-black font-black text-xs border-2 border-black shadow-[3px_3px_0px_#000] flex items-center justify-between">
-                    <span className="flex items-center gap-1.5">
-                      <CheckCircle2 className="w-4 h-4 text-black shrink-0" />
-                      {savedConfirmationMessage}
-                    </span>
-                    <button
-                      onClick={() => setSavedConfirmationMessage(null)}
-                      className="text-black font-bold text-xs uppercase underline cursor-pointer"
-                    >
-                      Dismiss
-                    </button>
-                  </div>
-                )}
+                    {/* MOBILE VIEW ONLY: CONVERSION BUTTONS DIRECTLY ON TOP */}
+                    <div className="md:hidden flex flex-col gap-2 mb-2.5">
+                      <div className="grid grid-cols-1 gap-2">
+                        <button
+                          type="button"
+                          onClick={() => handleConvertGemsToCrypto(1000)}
+                          disabled={gemBalance < 1000}
+                          className={`min-h-[44px] py-2.5 px-3 text-xs font-black uppercase tracking-wider border-2 border-black shadow-[4px_4px_0px_#000] flex items-center justify-center gap-1.5 transition-all ${
+                            gemBalance >= 1000
+                              ? 'bg-yellow-400 hover:bg-yellow-300 text-black cursor-pointer active:translate-x-0.5 active:translate-y-0.5'
+                              : 'bg-neutral-800 text-neutral-500 border-neutral-700 cursor-not-allowed opacity-60'
+                          }`}
+                        >
+                          <ArrowLeftRight className="w-3.5 h-3.5 text-black" />
+                          <span>1,000 GEMS ➔ 1 CRYPTO</span>
+                        </button>
 
-                {/* 4 Chest Catalog Cards Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                  {CHEST_CATALOG.map((chest) => {
-                    const isPurchased = Boolean(purchasedChestMap[chest.id]);
-                    const isAffordable = gemBalance >= chest.cost;
-                    const isJustPurchased = justPurchasedChestId === chest.id;
+                        <button
+                          type="button"
+                          onClick={() => handleConvertGemsToCrypto(2000)}
+                          disabled={gemBalance < 2000}
+                          className={`min-h-[44px] py-2.5 px-3 text-xs font-black uppercase tracking-wider border-2 border-black shadow-[4px_4px_0px_#000] flex items-center justify-center gap-1.5 transition-all ${
+                            gemBalance >= 2000
+                              ? 'bg-yellow-400 hover:bg-yellow-300 text-black cursor-pointer active:translate-x-0.5 active:translate-y-0.5'
+                              : 'bg-neutral-800 text-neutral-500 border-neutral-700 cursor-not-allowed opacity-60'
+                          }`}
+                        >
+                          <Zap className="w-3.5 h-3.5 text-black" />
+                          <span>2,000 GEMS ➔ 2 CRYPTO</span>
+                        </button>
+                      </div>
 
-                    return (
-                      <div
-                        key={chest.id}
-                        className={`bg-[#0c0d14] border-2 ${chest.borderColorClass} p-4 flex flex-col gap-3 w-full shadow-[4px_4px_0px_#fff] justify-between`}
-                      >
-                        <div className="space-y-2">
-                          <div className="flex items-start justify-between gap-2">
-                            <div>
-                              <span className={`text-[10px] font-mono font-black uppercase px-2 py-0.5 bg-black border border-white/20 ${chest.accentTextClass}`}>
-                                Combat Chest
-                              </span>
-                              <h3 className="text-base font-black uppercase text-white tracking-tight mt-1">
-                                {chest.name}
-                              </h3>
+                      {/* MOBILE COLLAPSIBLE RULES ACCORDION */}
+                      <details className="border border-neutral-800 bg-black/50 p-2.5 text-xs text-neutral-300 group">
+                        <summary className="font-bold text-xs text-yellow-400 flex items-center justify-between cursor-pointer select-none">
+                          <span className="flex items-center gap-1.5">
+                            <AlertCircle className="w-3.5 h-3.5 text-yellow-400" />
+                            <span>Quick Rules & Exchange Lore</span>
+                          </span>
+                          <ChevronDown className="w-3.5 h-3.5 transition-transform group-open:rotate-180" />
+                        </summary>
+                        <div className="pt-2.5 space-y-2 border-t border-neutral-800 mt-2">
+                          <p className="text-[11px] text-neutral-300 leading-relaxed font-medium">
+                            Mugen Crypto is a secondary asset minted through Mugen Gem fusion. Fixed rate:{' '}
+                            <span className="text-yellow-400 font-bold">1,000 Gems = 1 Crypto</span> (2,000 Gems = 2 Crypto).
+                          </p>
+                          <div className="p-2 bg-black border border-neutral-800 font-mono text-[10px] space-y-1">
+                            <div className="flex justify-between text-neutral-400">
+                              <span>Wallet Balance:</span>
+                              <span className="text-amber-400 font-bold">{gemBalance.toLocaleString()} Gems</span>
                             </div>
-
-                            <div className="px-3 py-1 bg-amber-400 text-black font-mono font-black text-xs border border-black flex items-center gap-1.5 shadow-[2px_2px_0px_#000]">
-                              <MugenGemIcon className="w-5 h-5 text-black shrink-0" />
-                              <span>{chest.cost} GEMS</span>
+                            <div className="flex justify-between text-neutral-400">
+                              <span>Crypto Reserves:</span>
+                              <span className="text-yellow-400 font-bold">{cryptoBalance.toLocaleString()} Crypto</span>
+                            </div>
+                            <div className="text-[9px] text-yellow-400/90 italic pt-1 border-t border-neutral-800">
+                              Direct ELO to Crypto exchange is disabled to preserve competitive integrity.
                             </div>
                           </div>
-
-                          <p className="text-xs font-mono text-zinc-300 bg-black/60 p-2 border border-white/10">
-                            {chest.description}
-                          </p>
                         </div>
+                      </details>
+                    </div>
 
-                        {/* Post-Purchase vs Purchase Button State */}
-                        <div className="pt-2 border-t border-white/10">
-                          {isJustPurchased ? (
-                            /* Inline Post-Purchase Banner with 2 Buttons */
-                            <div className="bg-amber-400 text-black font-black text-xs p-3 border-2 border-black shadow-[3px_3px_0px_#000] flex flex-col gap-2">
-                              <span>CHEST ACQUIRED! Open now with animation or find it in Trophy Room.</span>
-                              <div className="flex gap-2">
-                                <button
-                                  onClick={() => handleOpenNow()}
-                                  className="bg-black text-amber-400 border-2 border-amber-400 min-h-[44px] flex-1 font-black text-xs uppercase cursor-pointer flex items-center justify-center gap-1 active:scale-[0.98]"
-                                >
-                                  <Gift className="w-4 h-4 text-amber-400 shrink-0" />
-                                  <span>OPEN NOW</span>
-                                </button>
-                                <button
-                                  onClick={handleSaveToTrophyRoom}
-                                  className="bg-white/10 text-white border-2 border-white min-h-[44px] flex-1 font-black text-xs uppercase cursor-pointer flex items-center justify-center gap-1 active:scale-[0.98]"
-                                >
-                                  <CheckCircle2 className="w-4 h-4 text-white shrink-0" />
-                                  <span>SAVE TO TROPHY ROOM</span>
-                                </button>
-                              </div>
-                            </div>
-                          ) : isPurchased ? (
-                            <div className="w-full py-2.5 bg-neutral-900 text-emerald-400 border-2 border-emerald-500 font-mono font-black text-xs uppercase flex items-center justify-center gap-2">
-                              <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                              <span>CLAIMED & STORED</span>
-                            </div>
-                          ) : !isAffordable ? (
-                            <button
-                              disabled
-                              className="w-full py-2.5 bg-neutral-900 text-zinc-500 border-2 border-slate-800 font-mono font-black text-xs uppercase flex items-center justify-center gap-2 cursor-not-allowed opacity-70"
-                            >
-                              <Lock className="w-4 h-4 text-zinc-500" />
-                              <span>LOCKED (NEED {chest.cost - gemBalance} MORE GEMS)</span>
-                            </button>
-                          ) : (
-                            <button
-                              onClick={() => handleBuyChest(chest)}
-                              className="w-full py-3 bg-amber-400 hover:bg-amber-300 text-black font-black text-xs uppercase tracking-wider border-2 border-black shadow-[3px_3px_0px_#fff] flex items-center justify-center gap-2 cursor-pointer active:translate-x-0.5 active:translate-y-0.5"
-                            >
-                              <Gift className="w-4 h-4 text-black shrink-0" />
-                              <span>PURCHASE CHEST ({chest.cost} GEMS)</span>
-                            </button>
-                          )}
+                    {/* DESKTOP VIEW (Constant and unchanged) */}
+                    <div className="hidden md:block">
+                      <p className="text-xs text-neutral-300 leading-relaxed font-medium mb-3">
+                        Mugen Crypto is a secondary asset minted through Mugen Gem fusion. Fixed rate:{' '}
+                        <span className="text-yellow-400 font-bold">1,000 Gems = 1 Crypto</span> (2,000 Gems = 2 Crypto).
+                      </p>
+
+                      <div className="p-2.5 bg-black/60 border border-neutral-800 font-mono text-[11px] mb-4 space-y-1">
+                        <div className="flex justify-between text-neutral-400">
+                          <span>Wallet Balance:</span>
+                          <span className="text-amber-400 font-bold">{gemBalance.toLocaleString()} Gems</span>
+                        </div>
+                        <div className="flex justify-between text-neutral-400">
+                          <span>Crypto Reserves:</span>
+                          <span className="text-yellow-400 font-bold">{cryptoBalance.toLocaleString()} Crypto</span>
+                        </div>
+                        <div className="text-[10px] text-yellow-400/90 italic pt-1 border-t border-neutral-800">
+                          Direct ELO to Crypto exchange is disabled to preserve competitive integrity.
                         </div>
                       </div>
-                    );
-                  })}
-                </div>
 
-                {/* YOUR CHEST VAULT SECTION */}
-                <div className="mt-8 pt-4 border-t border-slate-800">
-                  <div className="flex items-center justify-between border-b border-slate-700 pb-2 mb-4">
-                    <h3 className="font-black uppercase text-xs text-amber-400 flex items-center gap-2">
-                      <Gift className="w-4 h-4 text-amber-400" />
-                      <span>YOUR CHEST VAULT ({vaultChests.length} UNOPENED)</span>
-                    </h3>
-                    <button
-                      onClick={onClose}
-                      className="text-zinc-400 hover:text-amber-400 text-xs font-mono font-bold uppercase flex items-center gap-1 cursor-pointer"
-                    >
-                      <span>GO TO TROPHY ROOM</span>
-                      <ArrowRight className="w-3.5 h-3.5" />
-                    </button>
+                      <div className="grid grid-cols-2 gap-2 pt-1">
+                        <button
+                          type="button"
+                          onClick={() => handleConvertGemsToCrypto(1000)}
+                          disabled={gemBalance < 1000}
+                          className={`min-h-[44px] py-2.5 px-3 text-xs font-black uppercase tracking-wider border-2 border-black shadow-[4px_4px_0px_#000] flex items-center justify-center gap-1.5 transition-all ${
+                            gemBalance >= 1000
+                              ? 'bg-yellow-400 hover:bg-yellow-300 text-black cursor-pointer active:translate-x-0.5 active:translate-y-0.5'
+                              : 'bg-neutral-800 text-neutral-500 border-neutral-700 cursor-not-allowed opacity-60'
+                          }`}
+                        >
+                          <ArrowLeftRight className="w-3.5 h-3.5" />
+                          <span>1,000 GEMS ➔ 1 CRYPTO</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => handleConvertGemsToCrypto(2000)}
+                          disabled={gemBalance < 2000}
+                          className={`min-h-[44px] py-2.5 px-3 text-xs font-black uppercase tracking-wider border-2 border-black shadow-[4px_4px_0px_#000] flex items-center justify-center gap-1.5 transition-all ${
+                            gemBalance >= 2000
+                              ? 'bg-yellow-400 hover:bg-yellow-300 text-black cursor-pointer active:translate-x-0.5 active:translate-y-0.5'
+                              : 'bg-neutral-800 text-neutral-500 border-neutral-700 cursor-not-allowed opacity-60'
+                          }`}
+                        >
+                          <Zap className="w-3.5 h-3.5" />
+                          <span>2,000 GEMS ➔ 2 CRYPTO</span>
+                        </button>
+                      </div>
+                    </div>
                   </div>
 
-                  {vaultChests.length === 0 ? (
-                    <p className="text-zinc-500 text-sm italic font-mono p-4 bg-neutral-900/50 border border-slate-800 text-center">
-                      No unopened chests currently in vault. Purchase one above or earn match loot to stock your vault!
-                    </p>
-                  ) : (
-                    <div className="space-y-3">
-                      {vaultChests.map((vChest, idx) => (
-                        <div
-                          key={`vault_${vChest.matchId || idx}`}
-                          className="border-2 border-amber-400/60 p-3.5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-[#0c0d14] shadow-[4px_4px_0px_#000]"
-                        >
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 bg-amber-400/10 border-2 border-amber-400 flex items-center justify-center shrink-0">
-                              <Gift className="w-5 h-5 text-amber-400" />
-                            </div>
-                            <div>
-                              <span className="font-black uppercase text-white text-sm block">
-                                {vChest.mode ? vChest.mode.replace(/_/g, ' ') : 'Mystery Combat Chest'}
-                              </span>
-                              <span className="text-zinc-400 text-xs font-mono">
-                                Stored in Trophy Room → Ready to open
-                              </span>
-                            </div>
-                          </div>
+                  {/* CARD 2: ELO PROTECTION BARRIER */}
+                  <div className="bg-[#0e1117] border-2 sm:border-3 border-black shadow-[4px_4px_0px_#000] p-3.5 sm:p-5 flex flex-col justify-between relative overflow-hidden">
+                    <div className="flex items-center justify-between pb-2 mb-2 sm:mb-3 border-b border-neutral-800">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <Shield className="w-5 h-5 sm:w-6 sm:h-6 text-emerald-400 shrink-0" />
+                        <h3 className="text-sm sm:text-base font-black uppercase text-white tracking-wide truncate">
+                          ELO PROTECTION BARRIER
+                        </h3>
+                      </div>
+                      <span className="px-1.5 sm:px-2 py-0.5 bg-emerald-600/20 border border-emerald-500/50 text-emerald-400 font-mono font-black text-[9px] sm:text-[10px] uppercase shrink-0">
+                        RATING SHIELD
+                      </span>
+                    </div>
 
-                          <div className="flex items-center gap-2 w-full sm:w-auto">
-                            <button
-                              onClick={() => handleOpenNow(vChest)}
-                              className="flex-1 sm:flex-none min-h-[42px] px-4 bg-amber-400 hover:bg-amber-300 text-black font-black text-xs uppercase border-2 border-black shadow-[2px_2px_0px_#fff] cursor-pointer flex items-center justify-center gap-1.5 active:translate-x-0.5 active:translate-y-0.5"
-                            >
-                              <Gift className="w-3.5 h-3.5 text-black shrink-0" />
-                              <span>OPEN NOW</span>
-                            </button>
-                            <button
-                              onClick={onClose}
-                              className="flex-1 sm:flex-none min-h-[42px] px-3 bg-white/10 hover:bg-white/20 text-white font-bold text-xs uppercase border border-white/30 cursor-pointer flex items-center justify-center gap-1"
-                              title="View in Trophy Room"
-                            >
-                              <span>TROPHY ROOM</span>
-                              <ArrowRight className="w-3 h-3 text-white" />
-                            </button>
+                    {/* MOBILE VIEW ONLY: STATUS & ACTIVATE BUTTON AT TOP */}
+                    <div className="md:hidden flex flex-col gap-2 mb-2.5">
+                      <div
+                        className={`p-2.5 border-2 border-black shadow-[2px_2px_0px_#000] flex items-center justify-between gap-2 ${
+                          eloShieldStatus.active
+                            ? 'bg-emerald-950/60 border-emerald-500/80 text-emerald-300'
+                            : 'bg-neutral-900 border-neutral-700 text-neutral-400'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2 min-w-0">
+                          {eloShieldStatus.active ? (
+                            <div className="p-1 bg-emerald-500 text-black border border-black animate-pulse shrink-0">
+                              <ShieldCheck className="w-4 h-4" />
+                            </div>
+                          ) : (
+                            <div className="p-1 bg-neutral-800 text-neutral-400 border border-neutral-700 shrink-0">
+                              <ShieldAlert className="w-4 h-4" />
+                            </div>
+                          )}
+                          <div className="min-w-0">
+                            <span className="text-[9px] font-mono uppercase block font-bold text-neutral-400">
+                              Barrier Status
+                            </span>
+                            <span className="text-xs font-black uppercase tracking-wider text-white truncate block">
+                              {eloShieldStatus.active
+                                ? `ACTIVE (${eloShieldStatus.matchesRemaining} SHIELDED)`
+                                : 'INACTIVE'}
+                            </span>
                           </div>
                         </div>
-                      ))}
+
+                        {eloShieldStatus.active && (
+                          <span className="text-[9px] font-mono font-black px-2 py-0.5 bg-emerald-500 text-black border border-black uppercase shrink-0">
+                            ARMED
+                          </span>
+                        )}
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={handleActivateEloShield}
+                        disabled={cryptoBalance < 1}
+                        className={`w-full min-h-[44px] py-2.5 px-3 text-xs font-black uppercase tracking-wider border-2 border-black shadow-[4px_4px_0px_#000] flex items-center justify-center gap-2 transition-all ${
+                          cryptoBalance >= 1
+                            ? 'bg-yellow-400 hover:bg-yellow-300 text-black cursor-pointer active:translate-x-0.5 active:translate-y-0.5'
+                            : 'bg-neutral-800 text-neutral-500 border-neutral-700 cursor-not-allowed opacity-60'
+                        }`}
+                      >
+                        <ShieldCheck className="w-4 h-4" />
+                        <span>ACTIVATE ELO SHIELD (1 CRYPTO)</span>
+                      </button>
+
+                      {/* MOBILE COLLAPSIBLE RULES ACCORDION */}
+                      <details className="border border-neutral-800 bg-black/50 p-2.5 text-xs text-neutral-300 group">
+                        <summary className="font-bold text-xs text-yellow-400 flex items-center justify-between cursor-pointer select-none">
+                          <span className="flex items-center gap-1.5">
+                            <AlertCircle className="w-3.5 h-3.5 text-yellow-400" />
+                            <span>Shield Mechanics & Rules</span>
+                          </span>
+                          <ChevronDown className="w-3.5 h-3.5 transition-transform group-open:rotate-180" />
+                        </summary>
+                        <div className="pt-2 border-t border-neutral-800 mt-2">
+                          <p className="text-[11px] text-neutral-300 leading-relaxed font-medium">
+                            Imbue your matches with an evaluation barrier. When active, losing a rated match will{' '}
+                            <span className="text-emerald-400 font-bold">NOT decrease your ELO rating</span>. Consumes 1 shield charge per defeat.
+                          </p>
+                        </div>
+                      </details>
                     </div>
-                  )}
+
+                    {/* DESKTOP VIEW (Constant and unchanged) */}
+                    <div className="hidden md:block">
+                      <p className="text-xs text-neutral-300 leading-relaxed font-medium mb-3">
+                        Imbue your matches with an evaluation barrier. When active, losing a rated match will{' '}
+                        <span className="text-emerald-400 font-bold">NOT decrease your ELO rating</span>. Consumes 1 shield charge per defeat.
+                      </p>
+
+                      {/* Status Indicator Card */}
+                      <div
+                        className={`p-2.5 sm:p-3 border-2 border-black shadow-[2px_2px_0px_#000] mb-4 flex items-center justify-between gap-2.5 ${
+                          eloShieldStatus.active
+                            ? 'bg-emerald-950/60 border-emerald-500/80 text-emerald-300'
+                            : 'bg-neutral-900 border-neutral-700 text-neutral-400'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
+                          {eloShieldStatus.active ? (
+                            <div className="p-1 sm:p-1.5 bg-emerald-500 text-black border border-black animate-pulse shrink-0">
+                              <ShieldCheck className="w-4 h-4 sm:w-5 sm:h-5" />
+                            </div>
+                          ) : (
+                            <div className="p-1 sm:p-1.5 bg-neutral-800 text-neutral-400 border border-neutral-700 shrink-0">
+                              <ShieldAlert className="w-4 h-4 sm:w-5 sm:h-5" />
+                            </div>
+                          )}
+                          <div className="min-w-0">
+                            <span className="text-[9px] sm:text-[10px] font-mono uppercase block font-bold text-neutral-400">
+                              Protection Status
+                            </span>
+                            <span className="text-xs font-black uppercase tracking-wider text-white truncate block">
+                              {eloShieldStatus.active
+                                ? `BARRIER ACTIVE (${eloShieldStatus.matchesRemaining} SHIELDED)`
+                                : 'BARRIER INACTIVE'}
+                            </span>
+                          </div>
+                        </div>
+
+                        {eloShieldStatus.active && (
+                          <span className="text-[9px] sm:text-[10px] font-mono font-black px-2 py-0.5 bg-emerald-500 text-black border border-black uppercase shrink-0">
+                            ARMED
+                          </span>
+                        )}
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={handleActivateEloShield}
+                        disabled={cryptoBalance < 1}
+                        className={`w-full min-h-[44px] py-2.5 px-3 text-xs font-black uppercase tracking-wider border-2 border-black shadow-[4px_4px_0px_#000] flex items-center justify-center gap-2 transition-all ${
+                          cryptoBalance >= 1
+                            ? 'bg-yellow-400 hover:bg-yellow-300 text-black cursor-pointer active:translate-x-0.5 active:translate-y-0.5'
+                            : 'bg-neutral-800 text-neutral-500 border-neutral-700 cursor-not-allowed opacity-60'
+                        }`}
+                      >
+                        <ShieldCheck className="w-4 h-4" />
+                        <span>ACTIVATE ELO SHIELD (1 CRYPTO)</span>
+                      </button>
+                    </div>
+                  </div>
                 </div>
 
+                {/* CARD 3: ELO TO GEMS EXCHANGE */}
+                <div className="bg-[#0e1117] border-2 sm:border-3 border-black shadow-[4px_4px_0px_#000] p-3.5 sm:p-5">
+                  <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+                    <div className="flex items-center gap-2">
+                      <Coins className="w-5 h-5 text-yellow-400 shrink-0" />
+                      <h3 className="text-sm sm:text-base font-black uppercase text-white tracking-wide">
+                        ELO TO GEMS CATALYST
+                      </h3>
+                    </div>
+                    <span className="text-[9px] sm:text-[10px] font-mono font-black px-2 py-0.5 bg-yellow-400 text-black border border-black uppercase">
+                      50 ELO = 500 GEMS
+                    </span>
+                  </div>
+
+                  {/* MOBILE VIEW ONLY: 3 BUTTONS ON TOP */}
+                  <div className="md:hidden flex flex-col gap-2.5">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => handleDeductElo(50)}
+                        disabled={currentElo <= 50}
+                        className="min-h-[44px] py-2.5 px-3 bg-yellow-400 hover:bg-yellow-300 text-black font-black text-xs uppercase tracking-wider border-2 border-black shadow-[4px_4px_0px_#000] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed transition-all active:translate-x-0.5 active:translate-y-0.5"
+                      >
+                        -50 ELO ➔ +500 GEMS
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleDeductElo(100)}
+                        disabled={currentElo <= 100}
+                        className="min-h-[44px] py-2.5 px-3 bg-yellow-400 hover:bg-yellow-300 text-black font-black text-xs uppercase tracking-wider border-2 border-black shadow-[4px_4px_0px_#000] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed transition-all active:translate-x-0.5 active:translate-y-0.5"
+                      >
+                        -100 ELO ➔ +1,000 GEMS
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleDeductElo(200)}
+                        disabled={currentElo <= 200}
+                        className="min-h-[44px] py-2.5 px-3 bg-yellow-400 hover:bg-yellow-300 text-black font-black text-xs uppercase tracking-wider border-2 border-black shadow-[4px_4px_0px_#000] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed transition-all active:translate-x-0.5 active:translate-y-0.5"
+                      >
+                        -200 ELO ➔ +2,000 GEMS
+                      </button>
+                    </div>
+
+                    {/* MOBILE COLLAPSIBLE RULES ACCORDION */}
+                    <details className="border border-neutral-800 bg-black/50 p-2.5 text-xs text-neutral-300 group">
+                      <summary className="font-bold text-xs text-yellow-400 flex items-center justify-between cursor-pointer select-none">
+                        <span className="flex items-center gap-1.5">
+                          <AlertCircle className="w-3.5 h-3.5 text-yellow-400" />
+                          <span>Catalyst Rules & Balance Requirements</span>
+                        </span>
+                        <ChevronDown className="w-3.5 h-3.5 transition-transform group-open:rotate-180" />
+                      </summary>
+                      <div className="pt-2 space-y-1.5 border-t border-neutral-800 mt-2">
+                        <p className="text-[11px] text-neutral-300 leading-relaxed font-medium">
+                          Exchange excess ELO rating into Mugen Gems to fund chest unlocks and crypto ore fusion.
+                          Requires minimum 50 ELO remaining balance.
+                        </p>
+                        <p className="text-[10px] font-mono text-neutral-400">
+                          Current Rating: <span className="text-yellow-400 font-bold">{currentElo} ELO</span>
+                        </p>
+                      </div>
+                    </details>
+                  </div>
+
+                  {/* DESKTOP VIEW (Constant and unchanged) */}
+                  <div className="hidden md:block">
+                    <p className="text-xs text-neutral-300 leading-relaxed font-medium mb-4">
+                      Exchange excess ELO rating into Mugen Gems to fund chest unlocks and crypto ore fusion.
+                      Requires minimum 50 ELO remaining balance.
+                    </p>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => handleDeductElo(50)}
+                        disabled={currentElo <= 50}
+                        className="min-h-[44px] py-2.5 px-3 bg-yellow-400 hover:bg-yellow-300 text-black font-black text-xs uppercase tracking-wider border-2 border-black shadow-[4px_4px_0px_#000] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed transition-all active:translate-x-0.5 active:translate-y-0.5"
+                      >
+                        -50 ELO ➔ +500 GEMS
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleDeductElo(100)}
+                        disabled={currentElo <= 100}
+                        className="min-h-[44px] py-2.5 px-3 bg-yellow-400 hover:bg-yellow-300 text-black font-black text-xs uppercase tracking-wider border-2 border-black shadow-[4px_4px_0px_#000] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed transition-all active:translate-x-0.5 active:translate-y-0.5"
+                      >
+                        -100 ELO ➔ +1,000 GEMS
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleDeductElo(200)}
+                        disabled={currentElo <= 200}
+                        className="min-h-[44px] py-2.5 px-3 bg-yellow-400 hover:bg-yellow-300 text-black font-black text-xs uppercase tracking-wider border-2 border-black shadow-[4px_4px_0px_#000] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed transition-all active:translate-x-0.5 active:translate-y-0.5"
+                      >
+                        -200 ELO ➔ +2,000 GEMS
+                      </button>
+                    </div>
+                  </div>
+                </div>
               </div>
             )}
 
-            {/* ============================================================== */}
-            {/* TAB 3: SECRET UNLOCK                                           */}
-            {/* ============================================================== */}
-            {activeTab === 'secrets' && (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                {SECRET_PLAYERS.filter((player) => player.id !== 'boy_friend' && player.id !== 'girl_friend').map((player) => {
-                  const isUnlocked = Boolean(unlockedSecretMap[player.id]);
-                  const isAffordable = gemBalance >= 800;
-                  const isAnimating = animatingUnlockId === player.id;
+            {/* TAB 2: SECRET BLUEPRINTS (6-DIGIT PIN VAULT) */}
+            {activeTab === 'secret_blueprints' && (
+              <div className="space-y-4">
+                <div className="p-3 sm:p-4 bg-[#12141a] border-2 border-yellow-400/40 flex flex-wrap items-center justify-between gap-3 shadow-[2px_2px_0px_#000]">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <KeyRound className="w-5 h-5 text-yellow-400 shrink-0" />
+                    <div>
+                      <h4 className="text-xs sm:text-sm font-black uppercase text-white">
+                        SECRET CHARACTER 6-DIGIT PIN DECRYPTION
+                      </h4>
+                      <p className="text-[11px] text-neutral-300 font-medium">
+                        Spend 1 Mugen Crypto to decrypt any secret AI opponent's 6-digit access PIN. Unlocks the character and provides direct access to battle in the Secret Arena.
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onClose();
+                      onOpenSecretArena();
+                    }}
+                    className="min-h-[38px] px-3.5 py-1.5 bg-yellow-400 hover:bg-yellow-300 text-black font-mono font-black text-xs uppercase border-2 border-black shadow-[2px_2px_0px_#000] shrink-0 cursor-pointer flex items-center gap-1.5 active:translate-x-0.5 active:translate-y-0.5"
+                  >
+                    <Swords className="w-3.5 h-3.5 text-black" />
+                    <span>OPEN SECRET ARENA</span>
+                  </button>
+                </div>
 
-                  return (
-                    <div
-                      key={player.id}
-                      className={`bg-[#0c0d14] border-2 border-slate-300 p-4 flex flex-col justify-between gap-3 w-full shadow-[4px_4px_0px_#fff] ${
-                        isAnimating ? 'animate-secret-reveal' : ''
-                      }`}
-                    >
-                      <div className="space-y-3">
-                        <div className="flex items-start gap-3">
-                          {/* Avatar Display */}
-                          <div className="w-16 h-16 bg-black border-2 border-amber-400 overflow-hidden shrink-0 shadow-[2px_2px_0px_#000]">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+                  {SECRET_PLAYERS.map((player) => {
+                    const isUnlocked = unlockedCodes.includes(player.id);
+                    return (
+                      <div
+                        key={player.id}
+                        className="bg-[#0e1117] border-2 sm:border-3 border-black shadow-[4px_4px_0px_#000] p-3.5 sm:p-4 flex flex-col justify-between relative group"
+                      >
+                        {/* Status Tag */}
+                        <div className="flex items-center justify-between pb-2 mb-2 border-b border-neutral-800">
+                          <span className="text-[10px] font-mono font-black px-1.5 py-0.5 bg-neutral-900 text-yellow-400 border border-yellow-400/40 uppercase">
+                            6-DIGIT PIN
+                          </span>
+                          <span
+                            className={`text-[10px] font-mono font-black uppercase px-1.5 py-0.5 border ${
+                              isUnlocked
+                                ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/50'
+                                : 'bg-neutral-800 text-neutral-400 border-neutral-700'
+                            }`}
+                          >
+                            {isUnlocked ? 'DECRYPTED' : 'ENCRYPTED'}
+                          </span>
+                        </div>
+
+                        {/* Character Info */}
+                        <div className="flex gap-3 items-center mb-3">
+                          <div className="w-14 h-14 bg-black border-2 border-neutral-700 shrink-0 overflow-hidden relative">
                             {player.avatarSrc ? (
                               <img
                                 src={player.avatarSrc}
-                                alt={player.realName}
+                                alt={player.publicName}
                                 className="w-full h-full object-cover"
                               />
                             ) : (
-                              <div className={`w-full h-full ${player.avatarBg} flex items-center justify-center text-2xl`}>
-                                {player.avatarIcon}
+                              <div className="w-full h-full flex items-center justify-center text-xl font-bold bg-neutral-800">
+                                {player.publicName[0]}
                               </div>
                             )}
                           </div>
-
                           <div className="min-w-0 flex-1">
-                            <div className="flex items-center justify-between gap-1">
-                              <h3 className="text-base font-black uppercase text-amber-400 truncate">
-                                {player.realName}
-                              </h3>
-                              <span className="text-[10px] font-mono font-black uppercase px-2 py-0.5 bg-amber-400 text-black border border-black shrink-0 flex items-center gap-1">
-                                <MugenGemIcon className="w-4 h-4 text-black shrink-0" />
-                                <span>800 GEMS</span>
-                              </span>
-                            </div>
-                            <p className="text-xs font-bold text-slate-300 truncate mt-0.5">
+                            <h4 className="text-sm font-black uppercase text-white truncate group-hover:text-yellow-400 transition-colors">
+                              {player.publicName}
+                            </h4>
+                            <p className="text-[11px] font-bold text-yellow-300/90 truncate">
                               {player.title}
+                            </p>
+                            <p className="text-[10px] text-neutral-400 line-clamp-1 italic">
+                              "{player.tagline}"
                             </p>
                           </div>
                         </div>
 
-                        <p className="text-xs font-mono text-zinc-300 bg-black/60 p-2 border border-white/10">
-                          {player.description}
-                        </p>
-                      </div>
-
-                      <div className="pt-3 border-t border-slate-800">
+                        {/* Button Actions: Brutalist Yellow */}
                         {isUnlocked ? (
-                          <div className="space-y-2">
-                            <div className="bg-black border-2 border-amber-400 p-3 text-center font-mono font-black text-amber-400 text-xl tracking-[0.3em]">
-                              {player.passcode}
-                            </div>
-
-                            <button
-                              onClick={() => {
-                                onClose();
-                                onOpenSecretArena();
-                              }}
-                              className="w-full min-h-[48px] bg-amber-400 text-black font-black uppercase border-2 border-black cursor-pointer shadow-[2px_2px_0px_#fff] active:translate-x-0.5 active:translate-y-0.5 flex items-center justify-center gap-2"
-                            >
-                              <ArrowRight className="w-4 h-4 text-black shrink-0" />
-                              <span>PLAY NOW IN ARENA</span>
-                            </button>
-                          </div>
-                        ) : !isAffordable ? (
                           <button
-                            disabled
-                            className="w-full py-2.5 bg-neutral-900 text-zinc-500 border-2 border-slate-800 font-mono font-black text-xs uppercase flex items-center justify-center gap-2 cursor-not-allowed opacity-70"
+                            type="button"
+                            onClick={() => setSelectedBotForCode(player)}
+                            className="w-full min-h-[44px] py-2.5 px-3 bg-yellow-400 hover:bg-yellow-300 text-black font-black text-xs uppercase tracking-wider border-2 border-black shadow-[4px_4px_0px_#000] flex items-center justify-center gap-2 cursor-pointer transition-transform active:translate-x-0.5 active:translate-y-0.5"
                           >
-                            <Lock className="w-4 h-4 text-zinc-500" />
-                            <span>LOCKED (NEED {800 - gemBalance} MORE GEMS)</span>
+                            <KeyRound className="w-4 h-4 text-black stroke-[2.5]" />
+                            <span>VIEW 6-DIGIT PIN</span>
                           </button>
                         ) : (
                           <button
-                            onClick={() => handleUnlockSecretPlayer(player.id, player.realName)}
-                            className="w-full py-3 bg-amber-400 hover:bg-amber-300 text-black font-black text-xs uppercase tracking-wider border-2 border-black shadow-[3px_3px_0px_#fff] flex items-center justify-center gap-2 cursor-pointer active:translate-x-0.5 active:translate-y-0.5"
+                            type="button"
+                            onClick={() => handleUnlockSecretBlueprint(player)}
+                            disabled={cryptoBalance < 1}
+                            className={`w-full min-h-[44px] py-2.5 px-3 text-xs font-black uppercase tracking-wider border-2 border-black shadow-[4px_4px_0px_#000] flex items-center justify-center gap-2 transition-transform ${
+                              cryptoBalance >= 1
+                                ? 'bg-yellow-400 hover:bg-yellow-300 text-black cursor-pointer active:translate-x-0.5 active:translate-y-0.5'
+                                : 'bg-neutral-800 text-neutral-500 border-neutral-700 cursor-not-allowed opacity-60'
+                            }`}
                           >
-                            <Unlock className="w-4 h-4 text-black shrink-0" />
-                            <span>UNLOCK CHARACTER (800 GEMS)</span>
+                            <Unlock className="w-4 h-4 text-black stroke-[2.5]" />
+                            <span>DECRYPT PIN (1 CRYPTO)</span>
                           </button>
                         )}
                       </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
+                </div>
               </div>
             )}
 
-          </main>
+            {/* TAB 3: CHEST VAULT */}
+            {activeTab === 'chest_vault' && (
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+                  {CHEST_CATALOG.map((chest) => {
+                    const canAfford = gemBalance >= chest.cost;
+                    return (
+                      <div
+                        key={chest.id}
+                        className={`bg-[#0e1117] border-2 sm:border-3 ${chest.borderColorClass} shadow-[4px_4px_0px_#000] p-3.5 sm:p-4 flex flex-col justify-between`}
+                      >
+                        <div>
+                          <div className="flex items-center justify-between pb-2 mb-2 border-b border-neutral-800">
+                            <span className="text-[10px] font-mono font-black uppercase text-neutral-400">
+                              REWARD CHEST
+                            </span>
+                            <div className="flex items-center gap-1 text-amber-400 font-mono font-black text-xs">
+                              <MugenGemIcon className="w-3.5 h-3.5 text-amber-400" />
+                              <span>{chest.cost}</span>
+                            </div>
+                          </div>
 
+                          <div className="py-3 sm:py-4 flex justify-center">
+                            <Package className={`w-12 h-12 sm:w-14 sm:h-14 ${chest.accentTextClass} animate-pulse`} />
+                          </div>
+
+                          <h4 className="text-sm font-black uppercase text-white mb-1">
+                            {chest.name}
+                          </h4>
+                          <p className="text-[11px] text-neutral-300 font-medium leading-relaxed mb-4 line-clamp-3">
+                            {chest.description}
+                          </p>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => handleBuyChest(chest)}
+                          disabled={!canAfford}
+                          className={`w-full min-h-[44px] py-2.5 px-3 text-xs font-black uppercase tracking-wider border-2 border-black shadow-[4px_4px_0px_#000] flex items-center justify-center gap-1.5 transition-transform ${
+                            canAfford
+                              ? 'bg-yellow-400 hover:bg-yellow-300 text-black cursor-pointer active:translate-x-0.5 active:translate-y-0.5'
+                              : 'bg-neutral-800 text-neutral-500 border-neutral-700 cursor-not-allowed opacity-60'
+                          }`}
+                        >
+                          <MugenGemIcon className="w-3.5 h-3.5" />
+                          <span>UNLOCK ({chest.cost} GEMS)</span>
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
-
       </div>
 
-      {/* Interactive 3-Tap Chest Opening Animation Modal */}
-      {activeOpeningEvent && (
+      {/* Secret PIN Decryption Modal */}
+      <SecretEngineCodeModal
+        isOpen={Boolean(selectedBotForCode)}
+        onClose={() => setSelectedBotForCode(null)}
+        player={selectedBotForCode}
+        onLaunchArena={() => {
+          setSelectedBotForCode(null);
+          onClose();
+          onOpenSecretArena();
+        }}
+      />
+
+      {/* Chest Acquisition Routing Choice Modal */}
+      {purchasedChestForChoice && (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center p-3 sm:p-4 bg-black/95 backdrop-blur-md animate-in fade-in duration-150"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Chest Routing Choice"
+          onClick={handleStorePurchasedChestInTrophyRoom}
+        >
+          <div
+            className="w-full max-w-sm sm:max-w-md bg-[#0a0c10] border-3 border-yellow-400 text-white shadow-[0_0_35px_rgba(250,204,21,0.35),8px_8px_0px_#000000] p-4 sm:p-6 relative flex flex-col items-center text-center gap-3.5 sm:gap-4 animate-in zoom-in-95 duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              onClick={handleStorePurchasedChestInTrophyRoom}
+              className="absolute top-2.5 right-2.5 p-1.5 bg-neutral-900 hover:bg-neutral-800 text-neutral-400 hover:text-white border border-neutral-700 cursor-pointer"
+              title="Store in Trophy Room and Close"
+              aria-label="Store in Trophy Room and Close"
+            >
+              <X className="w-4 h-4" />
+            </button>
+
+            <div className="w-14 h-14 bg-yellow-400 border-2 border-black flex items-center justify-center text-black shadow-[3px_3px_0px_#fff]">
+              <Package className="w-8 h-8 stroke-[2.5]" />
+            </div>
+
+            <div>
+              <span className="text-[10px] font-mono font-black text-yellow-400 uppercase tracking-widest px-2 py-0.5 bg-yellow-400/10 border border-yellow-400/30">
+                CHEST UNLOCKED
+              </span>
+              <h3 className="text-base sm:text-lg font-black uppercase text-white mt-1.5">
+                {purchasedChestForChoice.chest.name}
+              </h3>
+              <p className="text-xs text-neutral-300 font-medium mt-1 leading-relaxed max-w-sm">
+                Would you like to open your chest immediately to reveal mystery rewards, or store it in your Trophy Room to open later?
+              </p>
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-2.5 w-full pt-1">
+              <button
+                type="button"
+                onClick={handleOpenPurchasedChestNow}
+                className="flex-1 min-h-[44px] py-2.5 px-3 bg-yellow-400 hover:bg-yellow-300 text-black font-black text-xs uppercase tracking-wider border-2 border-black shadow-[4px_4px_0px_#000] flex items-center justify-center gap-1.5 cursor-pointer active:translate-x-0.5 active:translate-y-0.5 transition-all"
+              >
+                <Zap className="w-4 h-4 text-black stroke-[2.5]" />
+                <span>OPEN IMMEDIATELY</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={handleStorePurchasedChestInTrophyRoom}
+                className="flex-1 min-h-[44px] py-2.5 px-3 bg-black hover:bg-neutral-900 text-yellow-400 font-black text-xs uppercase tracking-wider border-2 border-yellow-400 shadow-[4px_4px_0px_#facc15] flex items-center justify-center gap-1.5 cursor-pointer active:translate-x-0.5 active:translate-y-0.5 transition-all"
+              >
+                <Trophy className="w-4 h-4 text-yellow-400 stroke-[2.5]" />
+                <span>STORE IN TROPHY ROOM</span>
+              </button>
+            </div>
+
+            <p className="text-[10px] text-neutral-400 font-mono">
+              Stored chests can be accessed anytime from the Trophy Room Chest Vault.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Chest Opening Award Host Modal */}
+      {activeChestEvent && (
         <ChestModal
-          isOpen={Boolean(activeOpeningEvent)}
-          result={activeOpeningEvent.result || 'win'}
-          matchId={activeOpeningEvent.matchId}
+          isOpen={Boolean(activeChestEvent)}
+          result={activeChestEvent.result}
+          matchId={activeChestEvent.matchId}
+          initialEloBoost={activeChestEvent.eloBoost}
           userId={userId}
-          onApplyEloBoost={(boost) => {
-            onEloDeduct(-boost);
-          }}
-          onClose={handleChestModalClose}
-          onPlaySecretPlayer={(_reward: SecretPlayerRewardDef) => {
-            setActiveOpeningEvent(null);
+          onClose={() => setActiveChestEvent(null)}
+          onPlaySecretPlayer={() => {
+            setActiveChestEvent(null);
             onClose();
-            onOpenSecretArena();
           }}
         />
       )}
-    </div>
+    </>
   );
 };

@@ -6,15 +6,19 @@ import { computeSecretBotTurn, getPlayerActionDialogue, respondToUserChat } from
 import { SecretChatOverlay } from './components/SecretChatOverlay';
 import { ChessBoard } from '../components/ChessBoard';
 import { sounds } from '../utils/audio';
-import { RotateCcw, ArrowLeft, Swords, BookOpen, Trophy, Send, MessageSquare, Lock, Heart } from 'lucide-react';
+import { RotateCcw, ArrowLeft, Swords, BookOpen, Trophy, Send, MessageSquare, Lock, Heart, Code, KeyRound, X } from 'lucide-react';
 import { usePredictor } from '../predictor/PredictorContext';
 import { reportGameEnd } from '../chest/reportGameEnd';
 import { extractStandardMetrics } from '../predictor/adapters/standardAdapter';
+import { useAuth } from '../context/AuthContext';
+import { getUnlockedSecretCodes } from '../economy/mugenStore';
+import { SecretEngineCodeModal } from './components/SecretEngineCodeModal';
 
 interface SecretMatchViewProps {
   botConfig: SecretPlayerConfig;
   playerColor?: PieceColor;
   onExit: () => void;
+  onHome?: () => void;
   onOpenRules: () => void;
 }
 
@@ -22,10 +26,16 @@ export const SecretMatchView: React.FC<SecretMatchViewProps> = ({
   botConfig,
   playerColor = 'white',
   onExit,
+  onHome,
   onOpenRules,
 }) => {
+  const { user } = useAuth();
   const { finalizeMatch } = usePredictor();
   const botColor: PieceColor = playerColor === 'white' ? 'black' : 'white';
+  const [isEngineCodeModalOpen, setIsEngineCodeModalOpen] = useState(false);
+
+  const activeUserId = user?.id || 'guest';
+  const isCodeUnlocked = getUnlockedSecretCodes(activeUserId).includes(botConfig.id);
 
   const [match, setMatch] = useState<MatchState>(() => {
     const now = Date.now();
@@ -300,6 +310,18 @@ export const SecretMatchView: React.FC<SecretMatchViewProps> = ({
         </div>
 
         <div className="flex items-center gap-2">
+          {isCodeUnlocked && (
+            <button
+              type="button"
+              onClick={() => setIsEngineCodeModalOpen(true)}
+              className="px-3 py-1.5 bg-yellow-400 hover:bg-yellow-300 text-black font-mono font-black text-xs uppercase flex items-center gap-1.5 border-2 border-black shadow-[4px_4px_0px_#000] cursor-pointer transition-transform active:translate-x-0.5 active:translate-y-0.5"
+              title="View Secret PIN"
+            >
+              <KeyRound className="w-3.5 h-3.5 text-black stroke-[2.5]" />
+              <span className="hidden sm:inline">VIEW SECRET PIN</span>
+              <span className="sm:hidden">PIN</span>
+            </button>
+          )}
           <button
             onClick={handleRestartMatch}
             className="p-1.5 bg-neutral-900 hover:bg-amber-400 hover:text-black border-2 border-white text-white shadow-[2px_2px_0px_#ffffff] cursor-pointer"
@@ -313,6 +335,14 @@ export const SecretMatchView: React.FC<SecretMatchViewProps> = ({
             title="Rules"
           >
             <BookOpen className="w-4 h-4" />
+          </button>
+          <button
+            onClick={onHome || onExit}
+            className="p-1.5 bg-red-600 hover:bg-red-700 active:translate-x-0.5 active:translate-y-0.5 border-2 border-black text-white shadow-[2px_2px_0px_#000000] cursor-pointer"
+            title="Exit to Home"
+            aria-label="Exit to Home"
+          >
+            <X className="w-4 h-4 stroke-[2.5]" />
           </button>
         </div>
       </header>
@@ -513,6 +543,13 @@ export const SecretMatchView: React.FC<SecretMatchViewProps> = ({
       <footer className="w-full max-w-7xl mx-auto mt-3 pt-2 border-t-2 border-slate-800 text-[10px] font-mono text-center text-slate-500 uppercase">
         MugenChessX Secret Players Arena · Crimson & Cream Board Palette · Babai & Golu
       </footer>
+
+      {/* Secret Engine Code Inspector Modal */}
+      <SecretEngineCodeModal
+        isOpen={isEngineCodeModalOpen}
+        onClose={() => setIsEngineCodeModalOpen(false)}
+        player={botConfig}
+      />
     </div>
   );
 };

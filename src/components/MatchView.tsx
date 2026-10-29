@@ -22,7 +22,7 @@ import {
 } from '../game/engine';
 import { CRAFTABLE_MAP } from '../game/craftables';
 import { reportGameEnd, triggerChestModalNow } from '../chest/reportGameEnd';
-import { addGems } from '../economy/mugenStore';
+import { addGems, getEloShieldStatus, consumeEloShield } from '../economy/mugenStore';
 import {
   ArrowLeft,
   Flag,
@@ -30,6 +30,7 @@ import {
   Trophy,
   History,
   Shield,
+  ShieldCheck,
   Layers,
   Crown,
   Clock,
@@ -327,12 +328,20 @@ const MatchViewContent: React.FC<MatchViewContentProps> = ({
 
   const [showEndGameNotice, setShowEndGameNotice] = useState(!isCheckmate);
 
-  const { observeMoveAction, finalizeMatch, latestMatchCards } = usePredictor();
+  const { observeMoveAction, finalizeMatch, latestMatchCards, applyRatingBoost } = usePredictor();
   const [earnedMatchCards, setEarnedMatchCards] = useState<AchievementCard[]>([]);
   const displayMatchCards = earnedMatchCards.length > 0 ? earnedMatchCards : latestMatchCards;
   const [isMatchTrophyRoomOpen, setIsMatchTrophyRoomOpen] = useState(false);
   const [selectedTrophyCard, setSelectedTrophyCard] = useState<AchievementCard | null>(null);
+  const [isEloShieldSaved, setIsEloShieldSaved] = useState(false);
   const hasFinalizedRef = useRef(false);
+
+  useEffect(() => {
+    if (isEloShieldSaved) {
+      const timer = setTimeout(() => setIsEloShieldSaved(false), 12000);
+      return () => clearTimeout(timer);
+    }
+  }, [isEloShieldSaved]);
 
   const standardMetrics = useMemo(
     () => extractStandardMetrics(activeMatch, myColor),
@@ -371,6 +380,18 @@ const MatchViewContent: React.FC<MatchViewContentProps> = ({
         isBotMatch ? 'grandmaster' : 'pvp_human'
       );
       setEarnedMatchCards(cards);
+
+      // ELO Protection Barrier Hook: On loss, check shield status
+      if (outcome === 'loss' && user?.id) {
+        const shieldStatus = getEloShieldStatus(user.id);
+        if (shieldStatus.active) {
+          consumeEloShield(user.id);
+          setIsEloShieldSaved(true);
+          const lossDelta = Math.abs(cards[0]?.ratingDelta || 16);
+          applyRatingBoost(lossDelta);
+        }
+      }
+
       try {
         const mode = activePunisherBotId ? 'punisher' : !isBotMatch ? 'multiplayer' : activeMatch.gameMode === 'crafted' ? 'crafted' : 'standard';
         const myMoves = activeMatch.moveHistory.filter((m) => m.piece.color === myColor).length;
@@ -857,6 +878,38 @@ const MatchViewContent: React.FC<MatchViewContentProps> = ({
           )}
         </div>
       </header>
+
+      {/* High-Visibility ELO Shield Notification Banner */}
+      {isEloShieldSaved && (
+        <aside
+          aria-label="ELO Shield Protection Notification"
+          className="fixed top-14 left-1/2 -translate-x-1/2 z-[100] w-[calc(100vw-2rem)] max-w-lg animate-in fade-in slide-in-from-top-4 duration-300 pointer-events-auto"
+        >
+          <div className="flex items-center justify-between gap-3 bg-black/95 text-white border-3 border-emerald-500 p-3 sm:p-4 shadow-[0_0_25px_rgba(16,185,129,0.4),4px_4px_0px_#000000]">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-emerald-500 text-black border-2 border-black animate-pulse shrink-0">
+                <ShieldCheck className="w-6 h-6 shrink-0 stroke-[2.5]" />
+              </div>
+              <div className="flex flex-col">
+                <span className="text-xs sm:text-sm font-black tracking-wider uppercase text-emerald-400 font-mono">
+                  ELO SHIELD SAVED YOUR RATING!
+                </span>
+                <span className="text-[10px] text-neutral-300 font-bold uppercase font-mono">
+                  Loss penalty bypassed · 1 Shield charge consumed
+                </span>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setIsEloShieldSaved(false)}
+              className="p-1.5 text-neutral-400 hover:text-white hover:bg-neutral-800 border border-transparent hover:border-neutral-600 cursor-pointer"
+              aria-label="Dismiss Notification"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </aside>
+      )}
 
       {/* MAIN WORKSPACE: Fixed 3-zone column on mobile (<768px), 3-col grid on desktop (>=768px) */}
       <main className={`flex-1 min-h-0 w-full mx-auto flex flex-col md:grid md:grid-cols-[1fr_320px] lg:grid-cols-[300px_1fr_320px] ${

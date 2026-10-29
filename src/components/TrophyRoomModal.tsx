@@ -81,11 +81,20 @@ export const TrophyRoomModal: React.FC<TrophyRoomModalProps> = ({
 
   const pendingChestsCount = pendingChestsList.length;
 
-  // Refresh store when modal opens
+  // Refresh store when modal opens or storage events fire
   useEffect(() => {
     if (isOpen) {
       setStoreTick((t) => t + 1);
     }
+    const handleUpdate = () => {
+      setStoreTick((t) => t + 1);
+    };
+    window.addEventListener('trophy_room_updated', handleUpdate);
+    window.addEventListener('mugen_chest_stored', handleUpdate);
+    return () => {
+      window.removeEventListener('trophy_room_updated', handleUpdate);
+      window.removeEventListener('mugen_chest_stored', handleUpdate);
+    };
   }, [isOpen]);
 
   // Synchronize selected card when modal opens or cards change

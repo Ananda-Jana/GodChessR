@@ -38,7 +38,7 @@ import { usePWAInstall } from '../hooks/usePWAInstall';
 import { posToNotation } from '../game/engine';
 import { usePredictor } from '../predictor/PredictorContext';
 import { TrophyRoomModal } from './TrophyRoomModal';
-import { MugenGemStore } from '../economy/MugenGemStore';
+import { MugenGemStore, StoreTab } from '../economy/MugenGemStore';
 import type { TrainerId } from '../training/types';
 import { TRAINER_PROFILES } from '../training/data';
 import { SecretArenaModal } from '../secret/components/SecretArenaModal';
@@ -56,6 +56,11 @@ import type { PunisherBotId } from '../chess3d/chess3dBot';
 import type { Team as Team3D, TimeControl3D } from '../chess3d/types';
 import { CraftGameHub } from '../craftgame/CraftGameHub';
 import bannerHeroImage from '../assets/banner-hero.png';
+
+export type NavigationOrigin =
+  | { type: 'store'; initialTab: StoreTab }
+  | { type: 'all_modes' }
+  | null;
 
 interface DashboardProps {
   onExitPreGameViews?: () => void;
@@ -76,6 +81,8 @@ interface DashboardProps {
   }) => void;
   lastCompletedMatch?: { match: MatchState; completedAt: number } | null;
   onClearLastGame?: () => void;
+  initialSecretArenaOpen?: boolean;
+  onClearInitialSecretArena?: () => void;
 }
 
 const BANNER_IMAGES = [
@@ -86,6 +93,7 @@ const BANNER_IMAGES = [
 interface DropupThumbProps {
   src?: string;
   alt: string;
+  label: string;
   fallbackIcon: React.ReactNode;
   fallbackBgClass: string;
 }
@@ -93,31 +101,37 @@ interface DropupThumbProps {
 const DropupThumb: React.FC<DropupThumbProps> = ({
   src,
   alt,
+  label,
   fallbackIcon,
   fallbackBgClass,
 }) => {
   const [hasError, setHasError] = useState(false);
 
-  if (src && !hasError) {
-    return (
-      <div className="play-dropup-thumb-wrapper w-full h-full relative overflow-hidden rounded-md bg-black/40 border border-white/10">
+  return (
+    <>
+      {src && !hasError ? (
         <img
           src={src}
           alt={alt}
           loading="lazy"
           decoding="async"
           onError={() => setHasError(true)}
-          className="play-dropup-thumb w-full h-full object-cover object-center"
+          className="play-dropup-thumb w-full h-full object-cover object-center rounded-[10px] select-none transition-transform duration-200 group-hover:scale-105"
         />
-        <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/80 via-black/20 to-transparent pointer-events-none" />
-      </div>
-    );
-  }
+      ) : (
+        <div className={`w-full h-full flex flex-col items-center justify-center rounded-[10px] pb-3 ${fallbackBgClass}`}>
+          {fallbackIcon}
+        </div>
+      )}
 
-  return (
-    <div className={`play-dropup-fallback-badge w-full h-full flex items-center justify-center rounded-md border ${fallbackBgClass}`}>
-      {fallbackIcon}
-    </div>
+      {/* Smooth dark gradient covering bottom 45% of the square fading to transparent at top */}
+      <div className="absolute inset-x-0 bottom-0 h-[45%] bg-gradient-to-t from-black/90 via-black/45 to-transparent pointer-events-none z-10" />
+
+      {/* White semi-bold text floating fixedly over the bottom portion of the fade */}
+      <span className="absolute bottom-1.5 inset-x-1 z-20 text-center text-white font-semibold text-[10px] sm:text-[11px] leading-tight drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)] truncate px-0.5 select-none">
+        {label}
+      </span>
+    </>
   );
 };
 
@@ -174,6 +188,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
   onStart3dMatch,
   lastCompletedMatch,
   onClearLastGame,
+  initialSecretArenaOpen,
+  onClearInitialSecretArena,
 }) => {
   const { user, token, logout, updateProfile } = useAuth();
   const {
@@ -189,6 +205,26 @@ export const Dashboard: React.FC<DashboardProps> = ({
   const { isInstallable, install } = usePWAInstall();
   const [isTrophyRoomOpen, setIsTrophyRoomOpen] = useState(false);
   const [isStoreOpen, setIsStoreOpen] = useState(false);
+  const [storeInitialTab, setStoreInitialTab] = useState<StoreTab>('ore_conversion');
+  const [secretArenaOrigin, setSecretArenaOrigin] = useState<NavigationOrigin>(() => {
+    try {
+      const stored = sessionStorage.getItem('mugen_secret_arena_origin');
+      if (stored) return JSON.parse(stored);
+    } catch {}
+    return null;
+  });
+
+  const updateSecretArenaOrigin = (origin: NavigationOrigin) => {
+    setSecretArenaOrigin(origin);
+    try {
+      if (origin) {
+        sessionStorage.setItem('mugen_secret_arena_origin', JSON.stringify(origin));
+      } else {
+        sessionStorage.removeItem('mugen_secret_arena_origin');
+      }
+    } catch {}
+  };
+
   const [searchQuery, setSearchQuery] = useState('');
   const [players, setPlayers] = useState<UserProfile[]>([]);
   const [activeMatches, setActiveMatches] = useState<MatchState[]>([]);
@@ -207,6 +243,14 @@ export const Dashboard: React.FC<DashboardProps> = ({
       setEditBio(user.bio || '');
     }
   }, [user]);
+
+  useEffect(() => {
+    if (initialSecretArenaOpen) {
+      setIsSecretArenaOpen(true);
+      onClearInitialSecretArena?.();
+    }
+  }, [initialSecretArenaOpen, onClearInitialSecretArena]);
+
   const [isCullingOpen, setIsCullingOpen] = useState(false);
   const [isCullingMatchActive, setIsCullingMatchActive] = useState(false);
   const [isSecretArenaOpen, setIsSecretArenaOpen] = useState(false);
@@ -240,6 +284,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
     setIsTrophyRoomOpen(false);
     setIsAboutOpen(false);
     setActiveBottomTab(null);
+    updateSecretArenaOrigin(null);
+    setStoreInitialTab('ore_conversion');
     onExitPreGameViews?.();
   };
 
@@ -530,8 +576,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
           backgroundImage: "url('/assets/aistudio/image_1fd5a868.png')",
         }}
       >
-        {/* Darkened overlay for readability (increased darkness >80%) */}
-        <div className="absolute inset-0 bg-black/88 backdrop-brightness-50" />
+        {/* Darkened overlay for readability (98% darkness) */}
+        <div className="absolute inset-0 bg-black/98 backdrop-brightness-50" />
       </div>
 
       {isCullingOpen ? (
@@ -691,19 +737,15 @@ export const Dashboard: React.FC<DashboardProps> = ({
                   setIsMobileNavDropdownOpen(false);
                   onOpenBotModal();
                 }}
-                className="play-dropup-item group aspect-square flex flex-col items-center justify-between p-1.5 relative overflow-hidden rounded-xl border border-white/10 bg-white/[0.04] text-center"
+                className="play-dropup-item group aspect-square relative w-full h-full p-0 overflow-hidden rounded-[10px] border border-white/15 bg-zinc-950 flex items-center justify-center cursor-pointer select-none"
               >
-                <div className="w-full flex-1 relative flex items-center justify-center overflow-hidden rounded-lg mb-1 min-h-0">
-                  <DropupThumb
-                    src="/assets/aistudio/image_53255c02.png"
-                    alt="Bot Match"
-                    fallbackBgClass="bg-amber-400/20 border-amber-400/30"
-                    fallbackIcon={<Bot className="w-5 h-5 text-amber-400" />}
-                  />
-                </div>
-                <span className="text-[10px] sm:text-[11px] font-black uppercase text-[#fff8f0] group-hover:text-amber-300 leading-tight line-clamp-2 text-center w-full px-0.5 shrink-0">
-                  Bot Match
-                </span>
+                <DropupThumb
+                  src="/assets/aistudio/image_53255c02.png"
+                  alt="Bot Match"
+                  label="Bot Match"
+                  fallbackBgClass="bg-amber-400/20 border-amber-400/30"
+                  fallbackIcon={<Bot className="w-6 h-6 text-amber-400" />}
+                />
               </button>
 
               {/* Punisher Robot */}
@@ -716,19 +758,15 @@ export const Dashboard: React.FC<DashboardProps> = ({
                   setIsMobileNavDropdownOpen(false);
                   if (onOpenPunisher) onOpenPunisher();
                 }}
-                className="play-dropup-item group aspect-square flex flex-col items-center justify-between p-1.5 relative overflow-hidden rounded-xl border border-white/10 bg-white/[0.04] text-center"
+                className="play-dropup-item group aspect-square relative w-full h-full p-0 overflow-hidden rounded-[10px] border border-white/15 bg-zinc-950 flex items-center justify-center cursor-pointer select-none"
               >
-                <div className="w-full flex-1 relative flex items-center justify-center overflow-hidden rounded-lg mb-1 min-h-0">
-                  <DropupThumb
-                    src="/assets/aistudio/image_6c6f27fb.png"
-                    alt="Punisher AI"
-                    fallbackBgClass="bg-red-500/20 border-red-500/30"
-                    fallbackIcon={<Zap className="w-5 h-5 text-red-400 fill-current" />}
-                  />
-                </div>
-                <span className="text-[10px] sm:text-[11px] font-black uppercase text-[#fff8f0] group-hover:text-red-300 leading-tight line-clamp-2 text-center w-full px-0.5 shrink-0">
-                  Punisher AI
-                </span>
+                <DropupThumb
+                  src="/assets/aistudio/image_6c6f27fb.png"
+                  alt="Punisher AI"
+                  label="Punisher AI"
+                  fallbackBgClass="bg-red-500/20 border-red-500/30"
+                  fallbackIcon={<Zap className="w-6 h-6 text-red-400 fill-current" />}
+                />
               </button>
 
               {/* Classic Bot */}
@@ -742,19 +780,15 @@ export const Dashboard: React.FC<DashboardProps> = ({
                   if (onOpenClassicBotModal) onOpenClassicBotModal();
                   else onOpenBotModal();
                 }}
-                className="play-dropup-item group aspect-square flex flex-col items-center justify-between p-1.5 relative overflow-hidden rounded-xl border border-white/10 bg-white/[0.04] text-center"
+                className="play-dropup-item group aspect-square relative w-full h-full p-0 overflow-hidden rounded-[10px] border border-white/15 bg-zinc-950 flex items-center justify-center cursor-pointer select-none"
               >
-                <div className="w-full flex-1 relative flex items-center justify-center overflow-hidden rounded-lg mb-1 min-h-0">
-                  <DropupThumb
-                    src="/assets/aistudio/image_80f7eb8b.png"
-                    alt="Classic Bot"
-                    fallbackBgClass="bg-emerald-500/20 border-emerald-500/30"
-                    fallbackIcon={<Swords className="w-5 h-5 text-emerald-400" />}
-                  />
-                </div>
-                <span className="text-[10px] sm:text-[11px] font-black uppercase text-[#fff8f0] group-hover:text-emerald-300 leading-tight line-clamp-2 text-center w-full px-0.5 shrink-0">
-                  Classic Bot
-                </span>
+                <DropupThumb
+                  src="/assets/aistudio/image_80f7eb8b.png"
+                  alt="Classic Bot"
+                  label="Classic Bot"
+                  fallbackBgClass="bg-emerald-500/20 border-emerald-500/30"
+                  fallbackIcon={<Swords className="w-6 h-6 text-emerald-400" />}
+                />
               </button>
 
               {/* Crafted Bot */}
@@ -768,19 +802,15 @@ export const Dashboard: React.FC<DashboardProps> = ({
                   if (onOpenCraftedBotModal) onOpenCraftedBotModal();
                   else onOpenBotModal();
                 }}
-                className="play-dropup-item group aspect-square flex flex-col items-center justify-between p-1.5 relative overflow-hidden rounded-xl border border-white/10 bg-white/[0.04] text-center"
+                className="play-dropup-item group aspect-square relative w-full h-full p-0 overflow-hidden rounded-[10px] border border-white/15 bg-zinc-950 flex items-center justify-center cursor-pointer select-none"
               >
-                <div className="w-full flex-1 relative flex items-center justify-center overflow-hidden rounded-lg mb-1 min-h-0">
-                  <DropupThumb
-                    src="/assets/aistudio/image_4aa74391.png"
-                    alt="Crafted Bot"
-                    fallbackBgClass="bg-emerald-400/20 border-emerald-400/30"
-                    fallbackIcon={<Sparkles className="w-5 h-5 text-emerald-300" />}
-                  />
-                </div>
-                <span className="text-[10px] sm:text-[11px] font-black uppercase text-[#fff8f0] group-hover:text-emerald-300 leading-tight line-clamp-2 text-center w-full px-0.5 shrink-0">
-                  Crafted Bot
-                </span>
+                <DropupThumb
+                  src="/assets/aistudio/image_4aa74391.png"
+                  alt="Crafted Bot"
+                  label="Crafted Bot"
+                  fallbackBgClass="bg-emerald-400/20 border-emerald-400/30"
+                  fallbackIcon={<Sparkles className="w-6 h-6 text-emerald-300" />}
+                />
               </button>
 
               {/* Culling Game */}
@@ -793,19 +823,15 @@ export const Dashboard: React.FC<DashboardProps> = ({
                   setIsMobileNavDropdownOpen(false);
                   setIsCullingOpen(true);
                 }}
-                className="play-dropup-item group aspect-square flex flex-col items-center justify-between p-1.5 relative overflow-hidden rounded-xl border border-white/10 bg-white/[0.04] text-center"
+                className="play-dropup-item group aspect-square relative w-full h-full p-0 overflow-hidden rounded-[10px] border border-white/15 bg-zinc-950 flex items-center justify-center cursor-pointer select-none"
               >
-                <div className="w-full flex-1 relative flex items-center justify-center overflow-hidden rounded-lg mb-1 min-h-0">
-                  <DropupThumb
-                    src="/assets/aistudio/image_9087d774.png"
-                    alt="Culling Game"
-                    fallbackBgClass="bg-[#ef4216]/20 border-[#ff7818]/30"
-                    fallbackIcon={<GamepadSkull size={20} className="text-[#ff9a24]" />}
-                  />
-                </div>
-                <span className="text-[10px] sm:text-[11px] font-black uppercase text-[#fff8f0] group-hover:text-[#ffb94f] leading-tight line-clamp-2 text-center w-full px-0.5 shrink-0">
-                  Culling Game
-                </span>
+                <DropupThumb
+                  src="/assets/aistudio/image_9087d774.png"
+                  alt="Culling Game"
+                  label="Culling Game"
+                  fallbackBgClass="bg-[#ef4216]/20 border-[#ff7818]/30"
+                  fallbackIcon={<GamepadSkull size={24} className="text-[#ff9a24]" />}
+                />
               </button>
 
               {/* Hashira Training */}
@@ -818,19 +844,15 @@ export const Dashboard: React.FC<DashboardProps> = ({
                   setIsMobileNavDropdownOpen(false);
                   if (onOpenHashiraTraining) onOpenHashiraTraining('thukuna');
                 }}
-                className="play-dropup-item group aspect-square flex flex-col items-center justify-between p-1.5 relative overflow-hidden rounded-xl border border-white/10 bg-white/[0.04] text-center"
+                className="play-dropup-item group aspect-square relative w-full h-full p-0 overflow-hidden rounded-[10px] border border-white/15 bg-zinc-950 flex items-center justify-center cursor-pointer select-none"
               >
-                <div className="w-full flex-1 relative flex items-center justify-center overflow-hidden rounded-lg mb-1 min-h-0">
-                  <DropupThumb
-                    src="/assets/aistudio/image_e0bfff75.png"
-                    alt="Hashira Dojo"
-                    fallbackBgClass="bg-orange-500/20 border-orange-500/30"
-                    fallbackIcon={<Crown className="w-5 h-5 text-orange-400" />}
-                  />
-                </div>
-                <span className="text-[10px] sm:text-[11px] font-black uppercase text-[#fff8f0] group-hover:text-orange-300 leading-tight line-clamp-2 text-center w-full px-0.5 shrink-0">
-                  Hashira Dojo
-                </span>
+                <DropupThumb
+                  src="/assets/aistudio/image_e0bfff75.png"
+                  alt="Hashira Dojo"
+                  label="Hashira Dojo"
+                  fallbackBgClass="bg-orange-500/20 border-orange-500/30"
+                  fallbackIcon={<Crown className="w-6 h-6 text-orange-400" />}
+                />
               </button>
 
               {/* 3D Chess Arcade */}
@@ -843,18 +865,14 @@ export const Dashboard: React.FC<DashboardProps> = ({
                   setIsMobileNavDropdownOpen(false);
                   setIs3dPreviewModalOpen(true);
                 }}
-                className="play-dropup-item group aspect-square flex flex-col items-center justify-between p-1.5 relative overflow-hidden rounded-xl border border-white/10 bg-white/[0.04] text-center"
+                className="play-dropup-item group aspect-square relative w-full h-full p-0 overflow-hidden rounded-[10px] border border-white/15 bg-zinc-950 flex items-center justify-center cursor-pointer select-none"
               >
-                <div className="w-full flex-1 relative flex items-center justify-center overflow-hidden rounded-lg mb-1 min-h-0">
-                  <DropupThumb
-                    alt="3D Arcade"
-                    fallbackBgClass="bg-purple-500/20 border-purple-500/30"
-                    fallbackIcon={<Box className="w-5 h-5 text-purple-400" />}
-                  />
-                </div>
-                <span className="text-[10px] sm:text-[11px] font-black uppercase text-[#fff8f0] group-hover:text-purple-300 leading-tight line-clamp-2 text-center w-full px-0.5 shrink-0">
-                  3D Arcade
-                </span>
+                <DropupThumb
+                  alt="3D Arcade"
+                  label="3D Arcade"
+                  fallbackBgClass="bg-purple-950/40 border-purple-500/30"
+                  fallbackIcon={<Box className="w-7 h-7 text-purple-400" />}
+                />
               </button>
 
               {/* Rose Paradise */}
@@ -868,18 +886,14 @@ export const Dashboard: React.FC<DashboardProps> = ({
                     setIsMobileNavDropdownOpen(false);
                     onOpenRose();
                   }}
-                  className="play-dropup-item group aspect-square flex flex-col items-center justify-between p-1.5 relative overflow-hidden rounded-xl border border-white/10 bg-white/[0.04] text-center"
+                  className="play-dropup-item group aspect-square relative w-full h-full p-0 overflow-hidden rounded-[10px] border border-white/15 bg-zinc-950 flex items-center justify-center cursor-pointer select-none"
                 >
-                  <div className="w-full flex-1 relative flex items-center justify-center overflow-hidden rounded-lg mb-1 min-h-0">
-                    <DropupThumb
-                      alt="Rose Paradise"
-                      fallbackBgClass="bg-rose-500/20 border-rose-500/30"
-                      fallbackIcon={<Heart className="w-5 h-5 text-rose-400 fill-rose-400" />}
-                    />
-                  </div>
-                  <span className="text-[10px] sm:text-[11px] font-black uppercase text-[#fff8f0] group-hover:text-rose-300 leading-tight line-clamp-2 text-center w-full px-0.5 shrink-0">
-                    Rose Paradise
-                  </span>
+                  <DropupThumb
+                    alt="Rose Paradise"
+                    label="Rose Paradise"
+                    fallbackBgClass="bg-rose-950/40 border-rose-500/30"
+                    fallbackIcon={<Heart className="w-7 h-7 text-rose-400 fill-rose-400" />}
+                  />
                 </button>
               )}
 
@@ -893,19 +907,15 @@ export const Dashboard: React.FC<DashboardProps> = ({
                   setIsMobileNavDropdownOpen(false);
                   setIsSecretArenaOpen(true);
                 }}
-                className="play-dropup-item group aspect-square flex flex-col items-center justify-between p-1.5 relative overflow-hidden rounded-xl border border-white/10 bg-white/[0.04] text-center"
+                className="play-dropup-item group aspect-square relative w-full h-full p-0 overflow-hidden rounded-[10px] border border-white/15 bg-zinc-950 flex items-center justify-center cursor-pointer select-none"
               >
-                <div className="w-full flex-1 relative flex items-center justify-center overflow-hidden rounded-lg mb-1 min-h-0">
-                  <DropupThumb
-                    src="/assets/aistudio/image_ba67a0d0.png"
-                    alt="Secret Arena"
-                    fallbackBgClass="bg-cyan-500/20 border-cyan-500/30"
-                    fallbackIcon={<Lock className="w-5 h-5 text-cyan-400" />}
-                  />
-                </div>
-                <span className="text-[10px] sm:text-[11px] font-black uppercase text-[#fff8f0] group-hover:text-cyan-300 leading-tight line-clamp-2 text-center w-full px-0.5 shrink-0">
-                  Secret Arena
-                </span>
+                <DropupThumb
+                  src="/assets/aistudio/image_ba67a0d0.png"
+                  alt="Secret Arena"
+                  label="Secret Arena"
+                  fallbackBgClass="bg-cyan-500/20 border-cyan-500/30"
+                  fallbackIcon={<Lock className="w-6 h-6 text-cyan-400" />}
+                />
               </button>
 
               {/* Rules & Guides */}
@@ -918,18 +928,14 @@ export const Dashboard: React.FC<DashboardProps> = ({
                   setIsMobileNavDropdownOpen(false);
                   onOpenRules();
                 }}
-                className="play-dropup-item group aspect-square flex flex-col items-center justify-between p-1.5 relative overflow-hidden rounded-xl border border-white/10 bg-white/[0.04] text-center"
+                className="play-dropup-item group aspect-square relative w-full h-full p-0 overflow-hidden rounded-[10px] border border-white/15 bg-zinc-950 flex items-center justify-center cursor-pointer select-none"
               >
-                <div className="w-full flex-1 relative flex items-center justify-center overflow-hidden rounded-lg mb-1 min-h-0">
-                  <DropupThumb
-                    alt="Rulebook"
-                    fallbackBgClass="bg-amber-400/20 border-amber-400/30"
-                    fallbackIcon={<BookOpen className="w-5 h-5 text-amber-400" />}
-                  />
-                </div>
-                <span className="text-[10px] sm:text-[11px] font-black uppercase text-[#fff8f0] group-hover:text-amber-300 leading-tight line-clamp-2 text-center w-full px-0.5 shrink-0">
-                  Rulebook
-                </span>
+                <DropupThumb
+                  alt="Rulebook"
+                  label="Rulebook"
+                  fallbackBgClass="bg-amber-950/40 border-amber-400/30"
+                  fallbackIcon={<BookOpen className="w-7 h-7 text-amber-400" />}
+                />
               </button>
 
               {/* Trophies & Chests */}
@@ -942,20 +948,16 @@ export const Dashboard: React.FC<DashboardProps> = ({
                   setIsMobileNavDropdownOpen(false);
                   setIsTrophyRoomOpen(true);
                 }}
-                className="play-dropup-item group aspect-square flex flex-col items-center justify-between p-1.5 relative overflow-hidden rounded-xl border border-white/10 bg-white/[0.04] text-center"
+                className="play-dropup-item group aspect-square relative w-full h-full p-0 overflow-hidden rounded-[10px] border border-white/15 bg-zinc-950 flex items-center justify-center cursor-pointer select-none"
               >
-                <div className="w-full flex-1 relative flex items-center justify-center overflow-hidden rounded-lg mb-1 min-h-0">
-                  <DropupThumb
-                    alt="Trophy Vault"
-                    fallbackBgClass="bg-amber-400/20 border-amber-400/30"
-                    fallbackIcon={<Trophy className="w-5 h-5 text-amber-400" />}
-                  />
-                </div>
-                <span className="text-[10px] sm:text-[11px] font-black uppercase text-[#fff8f0] group-hover:text-amber-300 leading-tight line-clamp-2 text-center w-full px-0.5 shrink-0">
-                  Trophy Vault
-                </span>
+                <DropupThumb
+                  alt="Trophy Vault"
+                  label="Trophy Vault"
+                  fallbackBgClass="bg-amber-950/40 border-amber-400/30"
+                  fallbackIcon={<Trophy className="w-7 h-7 text-amber-400" />}
+                />
                 {predictorState.earnedCards.length > 0 && (
-                  <span className="absolute top-1 right-1 px-1.5 py-0.2 bg-amber-400 text-black text-[9px] font-mono font-black rounded-full z-10 shadow-md">
+                  <span className="absolute top-1.5 right-1.5 px-1.5 py-0.2 bg-amber-400 text-black text-[9px] font-mono font-black rounded-full z-20 shadow-md">
                     {predictorState.earnedCards.length}
                   </span>
                 )}
@@ -971,18 +973,14 @@ export const Dashboard: React.FC<DashboardProps> = ({
                   setIsMobileNavDropdownOpen(false);
                   setIsAllGameModesOpen(true);
                 }}
-                className="play-dropup-item group aspect-square flex flex-col items-center justify-between p-1.5 relative overflow-hidden rounded-xl border border-white/10 bg-white/[0.04] text-center"
+                className="play-dropup-item group aspect-square relative w-full h-full p-0 overflow-hidden rounded-[10px] border border-white/15 bg-zinc-950 flex items-center justify-center cursor-pointer select-none"
               >
-                <div className="w-full flex-1 relative flex items-center justify-center overflow-hidden rounded-lg mb-1 min-h-0">
-                  <DropupThumb
-                    alt="All Modes"
-                    fallbackBgClass="bg-[#ef4216]/20 border-[#ff7818]/30"
-                    fallbackIcon={<Play className="w-5 h-5 text-[#ff9a24] fill-[#ff9a24]" />}
-                  />
-                </div>
-                <span className="text-[10px] sm:text-[11px] font-black uppercase text-[#fff8f0] group-hover:text-[#ffb94f] leading-tight line-clamp-2 text-center w-full px-0.5 shrink-0">
-                  All Modes
-                </span>
+                <DropupThumb
+                  alt="All Modes"
+                  label="All Modes"
+                  fallbackBgClass="bg-[#ef4216]/20 border-[#ff7818]/30"
+                  fallbackIcon={<Play className="w-7 h-7 text-[#ff9a24] fill-[#ff9a24]" />}
+                />
               </button>
             </div>
           </div>
@@ -1261,16 +1259,15 @@ export const Dashboard: React.FC<DashboardProps> = ({
           min-height: 44px;
           min-width: 44px;
           aspect-ratio: 1 / 1;
-          padding: 0.375rem;
+          padding: 0;
           background: rgba(255, 255, 255, 0.03);
-          border: 1px solid rgba(255, 255, 255, 0.08);
-          border-radius: 0.75rem;
+          border: 1px solid rgba(255, 255, 255, 0.12);
+          border-radius: 10px;
           display: flex;
-          flex-direction: column;
           align-items: center;
-          justify-content: space-between;
+          justify-content: center;
           text-align: center;
-          transition: background-color 0.18s ease, border-color 0.18s ease, transform 0.15s ease, box-shadow 0.18s ease;
+          transition: border-color 0.18s ease, transform 0.15s ease, box-shadow 0.18s ease;
           color: #FFF8F0;
           cursor: pointer;
           position: relative;
@@ -1280,25 +1277,13 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
         .play-dropup-item:hover,
         .play-dropup-item:focus-visible {
-          background: rgba(255, 120, 24, 0.12);
-          border-color: rgba(255, 154, 36, 0.45);
-          box-shadow: 0 4px 12px rgba(255, 120, 24, 0.15);
+          border-color: rgba(255, 154, 36, 0.55);
+          box-shadow: 0 4px 14px rgba(255, 120, 24, 0.18);
         }
 
         .play-dropup-item:active {
-          background: rgba(255, 120, 24, 0.22);
-          border-color: rgba(255, 154, 36, 0.65);
+          border-color: rgba(255, 154, 36, 0.75);
           transform: scale(0.96);
-        }
-
-        .play-dropup-thumb-wrapper {
-          position: relative;
-          width: 100%;
-          height: 100%;
-          border-radius: 0.5rem;
-          overflow: hidden;
-          background: #08080a;
-          box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1);
         }
 
         .play-dropup-thumb {
@@ -1306,6 +1291,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
           height: 100%;
           object-fit: cover;
           object-position: center;
+          border-radius: 10px;
           display: block;
           transition: transform 0.25s ease;
         }
@@ -1313,7 +1299,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
         .play-dropup-fallback-badge {
           width: 100%;
           height: 100%;
-          border-radius: 0.5rem;
+          border-radius: 10px;
           display: flex;
           align-items: center;
           justify-content: center;
@@ -3299,7 +3285,26 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
       <SecretArenaModal
         isOpen={isSecretArenaOpen}
-        onClose={() => setIsSecretArenaOpen(false)}
+        onClose={() => {
+          setIsSecretArenaOpen(false);
+          updateSecretArenaOrigin(null);
+          setActiveBottomTab(null);
+        }}
+        onBack={() => {
+          setIsSecretArenaOpen(false);
+          const origin = secretArenaOrigin;
+          updateSecretArenaOrigin(null);
+          if (origin?.type === 'store') {
+            setStoreInitialTab(origin.initialTab);
+            setIsStoreOpen(true);
+            setActiveBottomTab('store');
+          } else if (origin?.type === 'all_modes') {
+            setIsAllGameModesOpen(true);
+            setActiveBottomTab('modes');
+          } else {
+            setActiveBottomTab(null);
+          }
+        }}
         onStartSecretMatch={(bot) => {
           setIsSecretArenaOpen(false);
           onStartSecretMatch && onStartSecretMatch(bot);
@@ -3336,7 +3341,11 @@ export const Dashboard: React.FC<DashboardProps> = ({
         onOpenBotModal={onOpenBotModal}
         onOpenClassicBotModal={onOpenClassicBotModal || onOpenBotModal}
         onOpenCraftedBotModal={onOpenCraftedBotModal || onOpenBotModal}
-        onOpenSecretArena={() => setIsSecretArenaOpen(true)}
+        onOpenSecretArena={() => {
+          setIsAllGameModesOpen(false);
+          updateSecretArenaOrigin({ type: 'all_modes' });
+          setIsSecretArenaOpen(true);
+        }}
         onOpenCulling={() => setIsCullingOpen(true)}
         onOpenRose={onOpenRose}
         onOpen3dChess={() => setIs3dPreviewModalOpen(true)}
@@ -3386,13 +3395,22 @@ export const Dashboard: React.FC<DashboardProps> = ({
       {/* Mugen Gem Store Modal */}
       <MugenGemStore
         isOpen={isStoreOpen}
-        onClose={() => setIsStoreOpen(false)}
+        onClose={() => {
+          setIsStoreOpen(false);
+          setStoreInitialTab('ore_conversion');
+          setActiveBottomTab(null);
+        }}
         userId={user?.id ?? 'guest'}
         currentElo={predictorState.currentRating}
         onEloDeduct={(amt) => {
           applyRatingBoost(-amt);
         }}
-        onOpenSecretArena={() => setIsSecretArenaOpen(true)}
+        onOpenSecretArena={() => {
+          setIsStoreOpen(false);
+          updateSecretArenaOrigin({ type: 'store', initialTab: 'secret_blueprints' });
+          setIsSecretArenaOpen(true);
+        }}
+        initialTab={storeInitialTab}
       />
 
       {/* Craft Your Own Game Hub Modal */}

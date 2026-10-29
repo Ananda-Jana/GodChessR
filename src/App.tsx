@@ -77,6 +77,7 @@ function AppContent() {
   const [selectedToolForTraining, setSelectedToolForTraining] = useState<TrainingToolId>('opening');
   const [botInitialGameMode, setBotInitialGameMode] = useState<'standard' | 'crafted' | 'classic'>('standard');
   const [activeSecretBot, setActiveSecretBot] = useState<SecretPlayerConfig | null>(null);
+  const [returnToSecretArena, setReturnToSecretArena] = useState(false);
   const [active3dMatchParams, setActive3dMatchParams] = useState<{
     botId?: PunisherBotId;
     playerTeam?: Team3D;
@@ -735,7 +736,17 @@ function AppContent() {
       <>
         <SecretMatchView
           botConfig={activeSecretBot}
-          onExit={() => setActiveSecretBot(null)}
+          onExit={() => {
+            setActiveSecretBot(null);
+            setReturnToSecretArena(true);
+          }}
+          onHome={() => {
+            setActiveSecretBot(null);
+            setReturnToSecretArena(false);
+            try {
+              sessionStorage.removeItem('mugen_secret_arena_origin');
+            } catch {}
+          }}
           onOpenRules={() => setIsRulesOpen(true)}
         />
         <RulesModal
@@ -841,6 +852,8 @@ function AppContent() {
             setLastCompletedMatch(null);
             localStorage.removeItem('dice_chess_last_game');
           }}
+          initialSecretArenaOpen={returnToSecretArena}
+          onClearInitialSecretArena={() => setReturnToSecretArena(false)}
         />
       )}
 

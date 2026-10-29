@@ -1,6 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { SecretPlayerConfig } from '../types';
-import { KeyRound, Lock, ShieldAlert } from 'lucide-react';
+import { KeyRound, Lock, ShieldAlert, Code } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
+import { getUnlockedSecretCodes } from '../../economy/mugenStore';
+import { SecretEngineCodeModal } from './SecretEngineCodeModal';
 
 interface SecretPlayerCardProps {
   player: SecretPlayerConfig;
@@ -8,6 +11,9 @@ interface SecretPlayerCardProps {
 }
 
 export const SecretPlayerCard: React.FC<SecretPlayerCardProps> = ({ player, onSelect }) => {
+  const { user } = useAuth();
+  const [isCodeModalOpen, setIsCodeModalOpen] = useState(false);
+  const isCodeUnlocked = getUnlockedSecretCodes(user?.id || 'guest').includes(player.id);
   const isBoyOrGirl = player.id === 'boy_friend' || player.id === 'girl_friend';
 
   return (
@@ -90,25 +96,56 @@ export const SecretPlayerCard: React.FC<SecretPlayerCardProps> = ({ player, onSe
             )}
 
             {/* Action Button - Mobile inline inside details block */}
-            <button
-              onClick={() => onSelect(player)}
-              className="md:hidden w-full mt-2 py-2 px-2.5 bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500 hover:from-amber-300 hover:to-yellow-200 text-black font-black text-[11px] uppercase tracking-wider border-2 border-black shadow-[2px_2px_0px_#ffffff] flex items-center justify-center gap-1.5 cursor-pointer active:translate-x-0.5 active:translate-y-0.5 transition-all shrink-0 z-10"
-            >
-              <KeyRound className="w-3.5 h-3.5 text-black shrink-0" />
-              <span>Enter PIN & Play</span>
-            </button>
+            <div className="md:hidden flex flex-col gap-1.5 w-full mt-2">
+              {isCodeUnlocked && (
+                <button
+                  type="button"
+                  onClick={() => setIsCodeModalOpen(true)}
+                  className="w-full py-2 px-2 bg-yellow-400 hover:bg-yellow-300 text-black font-black text-[11px] uppercase tracking-wider border-2 border-black shadow-[2px_2px_0px_#000] flex items-center justify-center gap-1.5 cursor-pointer active:translate-x-0.5 active:translate-y-0.5"
+                >
+                  <KeyRound className="w-3.5 h-3.5 text-black stroke-[2.5]" />
+                  <span>View 6-Digit PIN</span>
+                </button>
+              )}
+              <button
+                onClick={() => onSelect(player)}
+                className="w-full py-2 px-2.5 bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500 hover:from-amber-300 hover:to-yellow-200 text-black font-black text-[11px] uppercase tracking-wider border-2 border-black shadow-[2px_2px_0px_#ffffff] flex items-center justify-center gap-1.5 cursor-pointer active:translate-x-0.5 active:translate-y-0.5 transition-all shrink-0 z-10"
+              >
+                <KeyRound className="w-3.5 h-3.5 text-black shrink-0" />
+                <span>Enter PIN & Play</span>
+              </button>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Action Button - Desktop Only */}
-      <button
-        onClick={() => onSelect(player)}
-        className="hidden md:flex w-full mt-3 min-h-[44px] py-3.5 sm:py-3 px-3 bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500 hover:from-amber-300 hover:to-yellow-200 text-black font-black text-xs uppercase tracking-wider border-2 border-black shadow-[3px_3px_0px_#ffffff] items-center justify-center gap-2 cursor-pointer active:translate-x-0.5 active:translate-y-0.5 transition-all shrink-0 z-10"
-      >
-        <KeyRound className="w-4 h-4 text-black shrink-0" />
-        <span>Enter PIN & Challenge</span>
-      </button>
+      {/* Action Buttons - Desktop Only */}
+      <div className="hidden md:flex flex-col gap-2 w-full mt-3">
+        {isCodeUnlocked && (
+          <button
+            type="button"
+            onClick={() => setIsCodeModalOpen(true)}
+            className="w-full py-2.5 px-3 bg-yellow-400 hover:bg-yellow-300 text-black font-black text-xs uppercase tracking-wider border-2 border-black shadow-[3px_3px_0px_#000] flex items-center justify-center gap-2 cursor-pointer active:translate-x-0.5 active:translate-y-0.5 transition-all shrink-0 z-10"
+          >
+            <KeyRound className="w-4 h-4 text-black stroke-[2.5] shrink-0" />
+            <span>View 6-Digit PIN</span>
+          </button>
+        )}
+        <button
+          onClick={() => onSelect(player)}
+          className="w-full min-h-[44px] py-3.5 sm:py-3 px-3 bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500 hover:from-amber-300 hover:to-yellow-200 text-black font-black text-xs uppercase tracking-wider border-2 border-black shadow-[3px_3px_0px_#ffffff] items-center justify-center gap-2 cursor-pointer active:translate-x-0.5 active:translate-y-0.5 transition-all shrink-0 z-10 flex"
+        >
+          <KeyRound className="w-4 h-4 text-black shrink-0" />
+          <span>Enter PIN & Challenge</span>
+        </button>
+      </div>
+
+      {/* Code Inspector Modal */}
+      <SecretEngineCodeModal
+        isOpen={isCodeModalOpen}
+        onClose={() => setIsCodeModalOpen(false)}
+        player={player}
+      />
     </div>
   );
 };
