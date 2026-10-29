@@ -65,6 +65,20 @@ const CENTER_CONTROL_TABLE_8X8: number[][] = [
   [ 0, -5,  0,  5,  5,  0, -5,  0],
 ];
 
+// 10x10 Board Positional Table
+const CENTER_CONTROL_TABLE_10X10: number[][] = [
+  [0,  0, -5,  0,  5,  5,  0, -5,  0,  0],
+  [0,  0, -5,  0,  5,  5,  0, -5,  0,  0],
+  [0,  5,  5, 10, 15, 15, 10,  5,  5,  0],
+  [0,  5, 10, 20, 25, 25, 20, 10,  5,  0],
+  [0, 10, 20, 35, 40, 40, 35, 20, 10,  0],
+  [0, 10, 20, 35, 40, 40, 35, 20, 10,  0],
+  [0,  5, 10, 20, 25, 25, 20, 10,  5,  0],
+  [0,  5,  5, 10, 15, 15, 10,  5,  5,  0],
+  [0,  0, -5,  0,  5,  5,  0, -5,  0,  0],
+  [0,  0, -5,  0,  5,  5,  0, -5,  0,  0],
+];
+
 /**
  * Static evaluation of a Culling Board state
  * Positive values favor White, negative values favor Black
@@ -75,18 +89,19 @@ export function evaluateCullingBoard(board: CullingBoard, turnCount: number, boa
   let whitePositional = 0;
   let blackPositional = 0;
 
-  const is8x8 = boardSize === '8x8' || board.length === 8;
-  const dim = is8x8 ? 8 : 7;
-  const table = is8x8 ? CENTER_CONTROL_TABLE_8X8 : CENTER_CONTROL_TABLE_7X7;
+  const dim = board.length;
+  const is10x10 = boardSize === '10x10' || dim === 10;
+  const is8x8 = boardSize === '8x8' || dim === 8;
+  const table = is10x10 ? CENTER_CONTROL_TABLE_10X10 : is8x8 ? CENTER_CONTROL_TABLE_8X8 : CENTER_CONTROL_TABLE_7X7;
   const maxIdx = dim - 1;
 
   for (let y = 0; y < dim; y++) {
     for (let x = 0; x < dim; x++) {
-      const piece = board[y][x];
+      const piece = board[y]?.[x];
       if (!piece) continue;
 
       const baseVal = CULLING_PIECE_VALUES[piece.type] || 100;
-      const posVal = table[y][x] || 0;
+      const posVal = table[y]?.[x] || 0;
 
       // Special state adjustments
       let bonus = 0;
@@ -104,7 +119,7 @@ export function evaluateCullingBoard(board: CullingBoard, turnCount: number, boa
         whitePositional += posVal;
       } else {
         blackMaterial += baseVal + bonus;
-        blackPositional += table[maxIdx - y][x] || 0;
+        blackPositional += table[maxIdx - y]?.[x] || 0;
       }
     }
   }
@@ -144,12 +159,12 @@ function compareMovesForOrdering(a: CullingMove, b: CullingMove): number {
 const transpositionTable = new Map<string, { score: number; depth: number }>();
 const MAX_TT_SIZE = 40000;
 
-function computeBoardKey(board: CullingBoard, turn: CullingPieceColor, boardSize?: CullingBoardSize): string {
+function computeBoardKey(board: CullingBoard, turn: CullingPieceColor, _boardSize?: CullingBoardSize): string {
   let s = turn[0];
-  const dim = boardSize === '8x8' || board.length === 8 ? 8 : 7;
+  const dim = board.length;
   for (let y = 0; y < dim; y++) {
     for (let x = 0; x < dim; x++) {
-      const p = board[y][x];
+      const p = board[y]?.[x];
       if (p) s += `${x}${y}${p.type[8] || p.type[0]}${p.color[0]}`;
     }
   }

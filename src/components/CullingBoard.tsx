@@ -35,8 +35,9 @@ export const CullingBoard: React.FC<CullingBoardProps> = ({
   maxDimension,
   boardSize,
 }) => {
-  const activeBoardSize: CullingBoardSize = boardSize || match.boardSize || (match.board.length === 8 ? '8x8' : '7x7');
-  const dim = activeBoardSize === '8x8' ? 8 : 7;
+  const dim = match.board.length;
+  const activeBoardSize: CullingBoardSize =
+    boardSize || match.boardSize || (dim === 10 ? '10x10' : dim === 8 ? '8x8' : '7x7');
   const maxIdx = dim - 1;
 
   const [selectedPos, setSelectedPos] = useState<CullingPos | null>(null);
@@ -58,7 +59,7 @@ export const CullingBoard: React.FC<CullingBoardProps> = ({
   const handleSquareClick = (x: number, y: number) => {
     if (!isValidCullingPos(x, y, activeBoardSize)) return;
 
-    const clickedPiece = match.board[y][x];
+    const clickedPiece = match.board[y]?.[x];
 
     // Trigger piece name inspection callback if piece clicked
     if (clickedPiece && onPieceClick) {
@@ -121,7 +122,13 @@ export const CullingBoard: React.FC<CullingBoardProps> = ({
     >
       {/* Board Grid: Anchored to Viewport */}
       <div
-        className={`grid ${dim === 8 ? 'grid-cols-8 grid-rows-8' : 'grid-cols-7 grid-rows-7'} board-grid-mobile border-0 md:border-2 border-black/40 dark:border-white/20 bg-transparent aspect-square touch-manipulation select-none max-w-full max-h-full w-full h-full`}
+        className={`grid ${
+          dim === 10
+            ? 'grid-cols-10 grid-rows-10'
+            : dim === 8
+            ? 'grid-cols-8 grid-rows-8'
+            : 'grid-cols-7 grid-rows-7'
+        } board-grid-mobile border-0 md:border-2 border-black/40 dark:border-white/20 bg-transparent aspect-square touch-manipulation select-none max-w-full max-h-full w-full h-full`}
         style={maxDimension ? { maxWidth: `${maxDimension}px`, maxHeight: `${maxDimension}px` } : undefined}
       >
         {rowIndices.map((y) =>

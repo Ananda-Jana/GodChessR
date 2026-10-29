@@ -14,27 +14,15 @@
 
 import type { CullingOpeningLesson } from './types';
 import type { CullingBoard, CullingPiece, CullingPieceColor, CullingPieceType } from '../types/cullingGame';
-import { createInitialCullingBoard } from '../game/cullingEngine';
-
-function mX(x: number): number {
-  if (x <= 0) return 0;
-  if (x >= 8) return 6;
-  return x - 1;
-}
-
-function mY(y: number): number {
-  if (y <= 0) return 0;
-  if (y >= 8) return 6;
-  return y - 1;
-}
+import { createInitialCullingBoard, createEmptyCullingBoard } from '../game/cullingEngine';
 
 function mPos(pos: { x: number; y: number }): { x: number; y: number } {
   if (!pos) return pos;
-  return { x: mX(pos.x), y: mY(pos.y) };
+  return { x: pos.x, y: pos.y };
 }
 
 function createEmptyCullingGrid(): CullingBoard {
-  return Array.from({ length: 7 }, () => Array<CullingPiece | null>(7).fill(null));
+  return createEmptyCullingBoard();
 }
 
 function putPiece(
@@ -46,19 +34,21 @@ function putPiece(
   idSuffix: string,
   extra?: Partial<CullingPiece>
 ): void {
-  const nx = mX(x);
-  const ny = mY(y);
-  board[ny][nx] = {
-    id: `${color[0]}_${type}_${idSuffix}`,
-    type,
-    color,
-    hasMoved: extra?.hasMoved ?? true,
-    ...extra,
-  };
+  if (board[y]) {
+    board[y][x] = {
+      id: `${color[0]}_${type}_${idSuffix}`,
+      type,
+      color,
+      hasMoved: extra?.hasMoved ?? true,
+      ...extra,
+    };
+  }
 }
 
 function clearCell(board: CullingBoard, y: number, x: number): void {
-  board[mY(y)][mX(x)] = null;
+  if (board[y]) {
+    board[y][x] = null;
+  }
 }
 
 /**

@@ -42,6 +42,11 @@ const SERVER_INSTANCE_ID = process.env.INSTANCE_ID || process.env.HOSTNAME || 's
 
 export function initWebSocketServer(server: HttpServer) {
   const wss = new WebSocketServer({ server, path: '/ws' });
+
+  wss.on('error', (err) => {
+    console.error(`[WSS SERVER ERROR] Instance: ${SERVER_INSTANCE_ID} | Error:`, err);
+  });
+
   initCullingSocket(wss);
   registerRoseSocket(wss);
   registerChess3dSocket(wss);

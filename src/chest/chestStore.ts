@@ -51,6 +51,7 @@ export interface ChestStoreData {
   claimedRewards?: ClaimedChestReward[];
   awardedMatchIds: string[];
   appliedBoostMatchIds?: string[];
+  lastRewardType?: string;
 }
 
 const DEFAULT_STORE_DATA: ChestStoreData = {
@@ -60,6 +61,7 @@ const DEFAULT_STORE_DATA: ChestStoreData = {
   claimedRewards: [],
   awardedMatchIds: [],
   appliedBoostMatchIds: [],
+  lastRewardType: undefined,
 };
 
 // In-memory fallback if localStorage is disabled, full, or blocked
@@ -83,6 +85,7 @@ export function getChestStore(userId?: string): ChestStoreData {
           claimedRewards: Array.isArray(parsed?.claimedRewards) ? parsed.claimedRewards : [],
           awardedMatchIds: Array.isArray(parsed?.awardedMatchIds) ? parsed.awardedMatchIds : [],
           appliedBoostMatchIds: Array.isArray(parsed?.appliedBoostMatchIds) ? parsed.appliedBoostMatchIds : [],
+          lastRewardType: typeof parsed?.lastRewardType === 'string' ? parsed.lastRewardType : undefined,
         };
       }
     }
@@ -105,6 +108,7 @@ export function saveChestStore(data: ChestStoreData, userId?: string): void {
     claimedRewards: Array.isArray(data.claimedRewards) ? data.claimedRewards.slice(-100) : [],
     awardedMatchIds: (data.awardedMatchIds || []).slice(-50),
     appliedBoostMatchIds: (data.appliedBoostMatchIds || []).slice(-50),
+    lastRewardType: typeof data.lastRewardType === 'string' ? data.lastRewardType : undefined,
   };
 
   memoryFallback[key] = sanitized;
@@ -313,4 +317,46 @@ export function getClaimedRewards(userId?: string): ClaimedChestReward[] {
   const store = getChestStore(userId);
   return store.claimedRewards || [];
 }
+
+export type ChestRewardOutcomeType = 'secret_player' | 'gems';
+
+export interface ChestRewardDecision {
+  type: ChestRewardOutcomeType;
+  pickedReward?: PickedRewardResult;
+  gemAmount?: number;
+}
+
+/**
+ * Determines the reward for the next chest opened.
+ * Enforces:
+ * 1. No two consecutive chests can give out secret player IDs / cards (if last was secret_player, force gems).
+ * 2. If secret player ID unlocks, the next chest opened must give Mugen Gems.
+ * 3. Gems can appear consecutively sometimes.
+ * 4. Extensible scope for any other future randomness types.
+ */
+export function determineNextChestReward(isWin: boolean, userId?: string): ChestRewardDecision {
+  const store = getChestStore(userId);
+
+  let chosenType: ChestRewardOutcomeType = 'gems';
+  if (store.lastRewardType === 'secret_player') {
+    chosenType = 'gems';
+  } else {
+    // 50% chance between secret player and gems (extensible for future types)
+    chosenType = Math.random() < 0.5 ? 'secret_player' : 'gems';
+  }
+
+  store.lastRewardType = chosenType;
+  saveChestStore(store, userId);
+
+  if (chosenType === 'secret_player') {
+    const picked = pickRandomReward(userId);
+    return { type: 'secret_player', pickedReward: picked };
+  } else {
+    const randomGems = isWin
+      ? Math.floor(Math.random() * 201) + 500
+      : Math.floor(Math.random() * 151) + 50;
+    return { type: 'gems', gemAmount: randomGems };
+  }
+}
+
 

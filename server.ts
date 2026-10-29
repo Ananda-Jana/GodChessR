@@ -17,21 +17,20 @@ import { initWebSocketServer } from './server/socket.ts';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const isProd = process.env.NODE_ENV === 'production' || (process.env.NODE_ENV !== 'development' && fs.existsSync(path.resolve(__dirname, 'dist')));
-const PORT = !isProd
-  ? 3000
-  : (() => {
-      if (process.env.NGINX_PORT && process.env.PORT === process.env.NGINX_PORT) {
-        return process.env.DEFAULT_APP_PORT ? parseInt(process.env.DEFAULT_APP_PORT, 10) : 3000;
-      }
-      if (process.env.PORT) {
-        return parseInt(process.env.PORT, 10);
-      }
-      if (process.env.DEFAULT_APP_PORT) {
-        return parseInt(process.env.DEFAULT_APP_PORT, 10);
-      }
-      return 3000;
-    })();
+const isProd = process.env.NODE_ENV === 'production';
+
+// Parse --port / -p CLI args or default to PORT env var or 3000
+const portArgIndex = process.argv.findIndex((arg) => arg === '--port' || arg === '-p');
+const cliPort = portArgIndex !== -1 && process.argv[portArgIndex + 1] ? parseInt(process.argv[portArgIndex + 1], 10) : null;
+const PORT = cliPort || (process.env.PORT ? parseInt(process.env.PORT, 10) : 3000);
+
+process.on('uncaughtException', (err) => {
+  console.error('[UNCAUGHT EXCEPTION]', err);
+});
+
+process.on('unhandledRejection', (reason) => {
+  console.error('[UNHANDLED REJECTION]', reason);
+});
 
 async function startServer() {
   const app = express();
@@ -253,21 +252,38 @@ async function startServer() {
   if (!isProd) {
     const { createServer: createViteServer } = await import('vite');
     const vite = await createViteServer({
-      server: { middlewareMode: true, hmr: { server } },
+      server: { middlewareMode: true, hmr: false },
       appType: 'spa',
     });
     app.use(vite.middlewares);
   } else {
     const distPath = path.resolve(__dirname, 'dist');
     app.use(express.static(distPath));
-    app.get('*', (req, res) => {
+    app.get('*', (_req, res) => {
       res.sendFile(path.join(distPath, 'index.html'));
     });
   }
 
+  server.on('error', (err: any) => {
+    if (err.code === 'EADDRINUSE') {
+      console.error(`[HTTP SERVER ERROR] Port ${PORT} already in use.`);
+    } else {
+      console.error('[HTTP SERVER ERROR]', err);
+    }
+  });
+
   server.listen(PORT, '0.0.0.0', () => {
     console.log(`> Custom Multiplayer Dice Chess server listening on http://0.0.0.0:${PORT}`);
   });
+
+  const shutdown = () => {
+    server.close(() => {
+      process.exit(0);
+    });
+  };
+
+  process.on('SIGTERM', shutdown);
+  process.on('SIGINT', shutdown);
 }
 
 startServer().catch((err) => {

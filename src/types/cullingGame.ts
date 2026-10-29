@@ -29,13 +29,13 @@ export type CullingPieceType =
   | 'culling_swarm';
 
 export interface CullingPos {
-  x: number; // 0 to 6: Files A through G
-  y: number; // 0 to 6: Ranks 1 through 7
+  x: number; // 0 to 9: Space encompassing L, A-H, R
+  y: number; // 0 to 9: Space encompassing Bottom, 1-8, Top
 }
 
-export type CullingSquare = string; // e.g., 'A1', 'G7'
+export type CullingSquare = string; // e.g., 'A1', 'L3', 'R5', 'B9'
 
-export type CullingBoardSize = '7x7' | '8x8';
+export type CullingBoardSize = '7x7' | '8x8' | '10x10';
 
 export interface CullingMatchConfig {
   boardSize?: CullingBoardSize;
@@ -44,33 +44,79 @@ export interface CullingMatchConfig {
 }
 
 /**
- * Returns true if (x, y) is one of the valid playable squares on the board.
- * - 7x7 board: x in 0..6, y in 0..6 (49 squares)
- * - 8x8 board: x in 0..7, y in 0..7 (64 squares)
+ * Returns true if (x, y) is one of the 88 playable squares on the cross-shaped board.
+ * - Center 8x8: x in 1..8, y in 1..8 (64 squares)
+ * - Bottom Arm: x in 2..7, y = 0 (6 squares)
+ * - Top Arm: x in 2..7, y = 9 (6 squares)
+ * - Left Arm: x = 0, y in 2..7 (6 squares)
+ * - Right Arm: x = 9, y in 2..7 (6 squares)
+ * Total: 64 + 6 + 6 + 6 + 6 = 88 squares.
+ * Corners (0,0), (1,0), (0,1), etc. are void.
  */
-export function isValidCullingPos(x: number, y: number, boardSize: CullingBoardSize = '7x7'): boolean {
-  const maxIdx = boardSize === '8x8' ? 7 : 6;
-  return x >= 0 && x <= maxIdx && y >= 0 && y <= maxIdx;
+export function isValidCullingPos(x: number, y: number, boardSize: CullingBoardSize = '10x10'): boolean {
+  if (boardSize === '7x7') return x >= 0 && x <= 6 && y >= 0 && y <= 6;
+  if (boardSize === '8x8') return x >= 0 && x <= 7 && y >= 0 && y <= 7;
+  
+  // 10x10 Cross Battlefield (Default)
+  if (x < 0 || x > 9 || y < 0 || y > 9) return false;
+
+  // Center 8x8
+  if (x >= 1 && x <= 8 && y >= 1 && y <= 8) return true;
+
+  // Bottom & Top Arms (File indices 2..7 correspond to B..G)
+  if (x >= 2 && x <= 7 && (y === 0 || y === 9)) return true;
+
+  // Left & Right Arms (Rank indices 2..7 correspond to Ranks 2..7)
+  if (y >= 2 && y <= 7 && (x === 0 || x === 9)) return true;
+
+  return false;
 }
 
-export const TOTAL_PLAYABLE_SQUARES = 49;
+export const TOTAL_PLAYABLE_SQUARES = 88;
 
 export const FILES = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
 
-export function posToCullingSquare(pos: CullingPos, boardSize: CullingBoardSize = '7x7'): CullingSquare {
+export function posToCullingSquare(pos: CullingPos, boardSize: CullingBoardSize = '10x10'): CullingSquare {
   if (!isValidCullingPos(pos.x, pos.y, boardSize)) return 'VOID';
-  const fileLetter = FILES[pos.x];
-  return `${fileLetter}${pos.y + 1}`;
+  
+  if (boardSize !== '10x10') {
+    const fileLetter = FILES[pos.x];
+    return `${fileLetter}${pos.y + 1}`;
+  }
+
+  // 10x10 Cross Labeling
+  if (pos.x === 0) return `L${pos.y}`;
+  if (pos.x === 9) return `R${pos.y}`;
+  
+  // y=0 is Bottom arm, y=9 is Top arm
+  const fileLetter = FILES[pos.x - 1];
+  return `${fileLetter}${pos.y}`;
 }
 
-export function cullingSquareToPos(sq: CullingSquare, boardSize: CullingBoardSize = '7x7'): CullingPos | null {
+export function cullingSquareToPos(sq: CullingSquare, boardSize: CullingBoardSize = '10x10'): CullingPos | null {
   if (!sq || sq.length < 2 || sq === 'VOID') return null;
-  const fileChar = sq[0].toUpperCase();
-  const rank = parseInt(sq.slice(1), 10);
-  const x = FILES.indexOf(fileChar);
-  if (x === -1 || isNaN(rank)) return null;
-  const y = rank - 1;
-  const pos = { x, y };
+  const firstChar = sq[0].toUpperCase();
+  const rest = sq.slice(1);
+  const rankVal = parseInt(rest, 10);
+
+  if (boardSize !== '10x10') {
+    const x = FILES.indexOf(firstChar);
+    if (x === -1 || isNaN(rankVal)) return null;
+    const pos = { x, y: rankVal - 1 };
+    return isValidCullingPos(pos.x, pos.y, boardSize) ? pos : null;
+  }
+
+  // 10x10 Logic
+  let x = -1;
+  if (firstChar === 'L') x = 0;
+  else if (firstChar === 'R') x = 9;
+  else {
+    const fileIdx = FILES.indexOf(firstChar);
+    if (fileIdx !== -1) x = fileIdx + 1;
+  }
+
+  if (x === -1 || isNaN(rankVal)) return null;
+  const pos = { x, y: rankVal };
   return isValidCullingPos(pos.x, pos.y, boardSize) ? pos : null;
 }
 

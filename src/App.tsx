@@ -87,6 +87,7 @@ function AppContent() {
 
   // Punisher Robot Selector Mode State
   const [isPunisherSelectorOpen, setIsPunisherSelectorOpen] = useState(false);
+  const [initialPunisherBot, setInitialPunisherBot] = useState<PunisherBotId | undefined>(undefined);
   const [punisherMatch, setPunisherMatch] = useState<MatchState | null>(null);
   const [activePunisherBotId, setActivePunisherBotId] = useState<PunisherBotId | null>(null);
 
@@ -787,8 +788,15 @@ function AppContent() {
       <AnimatePresence>
         {isPunisherSelectorOpen && (
           <PunisherSelector 
-            onSelect={handleStartPunisherMatch}
-            onClose={() => setIsPunisherSelectorOpen(false)}
+            initialSelectedBot={initialPunisherBot}
+            onSelect={(botId) => {
+              setInitialPunisherBot(undefined);
+              handleStartPunisherMatch(botId);
+            }}
+            onClose={() => {
+              setInitialPunisherBot(undefined);
+              setIsPunisherSelectorOpen(false);
+            }}
           />
         )}
       </AnimatePresence>

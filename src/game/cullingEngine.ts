@@ -43,66 +43,84 @@ import {
 export const CULLING_BOARD_SIZES = {
   '7x7': { rows: 7, cols: 7, maxIndex: 6 },
   '8x8': { rows: 8, cols: 8, maxIndex: 7 },
+  '10x10': { rows: 10, cols: 10, maxIndex: 9 },
 } as const;
 
 // Precomputed sets of all valid (x,y) position strings for O(1) boundary checks
-const VALID_POS_SET_7X7: Set<string> = (() => {
+const VALID_POS_SET_7X7 = new Set<string>();
+for (let y = 0; y < 7; y++) for (let x = 0; x < 7; x++) VALID_POS_SET_7X7.add(`${x},${y}`);
+
+const VALID_POS_SET_8X8 = new Set<string>();
+for (let y = 0; y < 8; y++) for (let x = 0; x < 8; x++) VALID_POS_SET_8X8.add(`${x},${y}`);
+
+const VALID_POS_SET_10X10: Set<string> = (() => {
   const s = new Set<string>();
-  for (let y = 0; y < 7; y++) {
-    for (let x = 0; x < 7; x++) {
+  // Center 8x8
+  for (let y = 1; y <= 8; y++) {
+    for (let x = 1; x <= 8; x++) {
       s.add(`${x},${y}`);
     }
+  }
+  // Bottom & Top Arms
+  for (let x = 2; x <= 7; x++) {
+    s.add(`${x},0`);
+    s.add(`${x},9`);
+  }
+  // Left & Right Arms
+  for (let y = 2; y <= 7; y++) {
+    s.add(`${0},${y}`);
+    s.add(`${9},${y}`);
   }
   return s;
 })();
 
-const VALID_POS_SET_8X8: Set<string> = (() => {
-  const s = new Set<string>();
-  for (let y = 0; y < 8; y++) {
-    for (let x = 0; x < 8; x++) {
-      s.add(`${x},${y}`);
-    }
-  }
-  return s;
-})();
-
-export function getValidPosSet(size: CullingBoardSize = '7x7'): Set<string> {
-  return size === '8x8' ? VALID_POS_SET_8X8 : VALID_POS_SET_7X7;
+export function getValidPosSet(size: CullingBoardSize = '10x10'): Set<string> {
+  if (size === '7x7') return VALID_POS_SET_7X7;
+  if (size === '8x8') return VALID_POS_SET_8X8;
+  return VALID_POS_SET_10X10;
 }
 
-export function isValidPos(x: number, y: number, size: CullingBoardSize = '7x7'): boolean {
-  return getValidPosSet(size).has(`${x},${y}`);
+export function isValidPos(
+  x: number,
+  y: number,
+  size?: CullingBoardSize | number | CullingBoard
+): boolean {
+  if (x < 0 || y < 0) return false;
+  if (!size) {
+    return VALID_POS_SET_10X10.has(`${x},${y}`);
+  }
+  if (typeof size === 'string') {
+    return getValidPosSet(size).has(`${x},${y}`);
+  }
+  if (typeof size === 'number') {
+    return x >= 0 && x < size && y >= 0 && y < size;
+  }
+  if (Array.isArray(size)) {
+    const dim = size.length;
+    const bSize: CullingBoardSize = dim === 10 ? '10x10' : dim === 8 ? '8x8' : '7x7';
+    return getValidPosSet(bSize).has(`${x},${y}`);
+  }
+  return false;
 }
 
 /**
- * Creates an empty 7x7 board (kept for backward compatibility)
+ * Creates an empty board of specified size ('7x7' | '8x8' | '10x10')
  */
+export function createEmptyBoard(size: CullingBoardSize = '10x10'): CullingBoard {
+  const dim = size === '7x7' ? 7 : size === '8x8' ? 8 : 10;
+  const board: CullingBoard = [];
+  for (let y = 0; y < dim; y++) {
+    const row: (CullingPiece | null)[] = [];
+    for (let x = 0; x < dim; x++) {
+      row.push(null);
+    }
+    board.push(row);
+  }
+  return board;
+}
+
 export function createEmptyCullingBoard(): CullingBoard {
-  const board: CullingBoard = [];
-  for (let y = 0; y < 7; y++) {
-    const row: (CullingPiece | null)[] = [];
-    for (let x = 0; x < 7; x++) {
-      row.push(null);
-    }
-    board.push(row);
-  }
-  return board;
-}
-
-/**
- * Creates an empty board of specified size ('7x7' | '8x8')
- */
-export function createEmptyBoard(size: CullingBoardSize = '7x7'): CullingBoard {
-  if (size === '7x7') return createEmptyCullingBoard();
-  const board: CullingBoard = [];
-  for (let y = 0; y < 8; y++) {
-    const row: (CullingPiece | null)[] = [];
-    for (let x = 0; x < 8; x++) {
-      row.push(null);
-    }
-    board.push(row);
-  }
-  return board;
+  return createEmptyBoard('10x10');
 }
 
 /**
@@ -115,73 +133,105 @@ export function cloneCullingBoard(board: CullingBoard): CullingBoard {
 }
 
 /**
- * Creates the initial Culling Game board (7x7) with 180° rotationally symmetric setup.
+ * Creates the initial Culling Game board (10x10) with 180° rotationally symmetric setup.
  */
 export function createInitialCullingBoard(): CullingBoard {
-  const board = createEmptyCullingBoard();
+  const board = createEmptyBoard('10x10');
 
-  // White team: protagonists (Rank 1: y=0, Rank 2: y=1)
-  board[0][6] = { id: 'w_gojo', type: 'culling_gojo', color: 'white', hasMoved: false };
-  board[0][5] = { id: 'w_yuji', type: 'culling_yuji', color: 'white', hasMoved: false };
-  board[0][4] = { id: 'w_mechamaru', type: 'culling_mechamaru', color: 'white', hasMoved: false };
-  board[0][3] = { id: 'w_panda', type: 'culling_panda', color: 'white', hasMoved: false, pandaCore: 'panda' };
-  board[0][2] = { id: 'w_nanami', type: 'culling_nanami', color: 'white', hasMoved: false };
-  board[0][1] = { id: 'w_maki', type: 'culling_maki', color: 'white', hasMoved: false };
-  board[0][0] = { id: 'w_hakari', type: 'culling_hakari', color: 'white', hasMoved: false };
-  for (let x = 0; x < 7; x++) {
-    board[1][x] = { id: `w_pawn_${x}`, type: 'culling_pawn', color: 'white', hasMoved: false };
+  // White team: Rank 1 (y=1) characters
+  board[1][8] = { id: 'w_gojo', type: 'culling_gojo', color: 'white', hasMoved: false };
+  board[1][7] = { id: 'w_yuji', type: 'culling_yuji', color: 'white', hasMoved: false };
+  board[1][6] = { id: 'w_mechamaru', type: 'culling_mechamaru', color: 'white', hasMoved: false };
+  board[1][5] = { id: 'w_panda', type: 'culling_panda', color: 'white', hasMoved: false, pandaCore: 'panda' };
+  board[1][4] = { id: 'w_nanami', type: 'culling_nanami', color: 'white', hasMoved: false };
+  board[1][3] = { id: 'w_maki', type: 'culling_maki', color: 'white', hasMoved: false };
+  board[1][2] = { id: 'w_hakari', type: 'culling_hakari', color: 'white', hasMoved: false };
+  
+  // White team: Rank 2 (y=2) pawns + arms?
+  // Following the common setup: center pawns on Rank 2
+  for (let x = 1; x <= 8; x++) {
+    board[2][x] = { id: `w_pawn_${x}`, type: 'culling_pawn', color: 'white', hasMoved: false };
   }
 
-  // Black team: antagonists (Exact 180° mirror: (x,y) -> (6-x, 6-y))
-  board[6][0] = { id: 'b_sukuna', type: 'culling_sukuna', color: 'black', hasMoved: false };
-  board[6][1] = { id: 'b_kenjaku', type: 'culling_kenjaku', color: 'black', hasMoved: false };
-  board[6][2] = { id: 'b_uraume', type: 'culling_uraume', color: 'black', hasMoved: false };
-  board[6][3] = { id: 'b_yorozu', type: 'culling_yorozu', color: 'black', hasMoved: false, pandaCore: 'panda' };
-  board[6][4] = { id: 'b_reggie', type: 'culling_reggie', color: 'black', hasMoved: false };
-  board[6][5] = { id: 'b_naoya', type: 'culling_naoya', color: 'black', hasMoved: false };
-  board[6][6] = { id: 'b_kurourushi', type: 'culling_kurourushi', color: 'black', hasMoved: false };
-  for (let x = 0; x < 7; x++) {
-    board[5][x] = { id: `b_pawn_${x}`, type: 'culling_pawn', color: 'black', hasMoved: false };
+  // Black team: (9-x, 9-y) mirror
+  board[8][1] = { id: 'b_sukuna', type: 'culling_sukuna', color: 'black', hasMoved: false };
+  board[8][2] = { id: 'b_kenjaku', type: 'culling_kenjaku', color: 'black', hasMoved: false };
+  board[8][3] = { id: 'b_uraume', type: 'culling_uraume', color: 'black', hasMoved: false };
+  board[8][4] = { id: 'b_yorozu', type: 'culling_yorozu', color: 'black', hasMoved: false, pandaCore: 'panda' };
+  board[8][5] = { id: 'b_reggie', type: 'culling_reggie', color: 'black', hasMoved: false };
+  board[8][6] = { id: 'b_naoya', type: 'culling_naoya', color: 'black', hasMoved: false };
+  board[8][7] = { id: 'b_kurourushi', type: 'culling_kurourushi', color: 'black', hasMoved: false };
+  
+  for (let x = 1; x <= 8; x++) {
+    board[7][x] = { id: `b_pawn_${x}`, type: 'culling_pawn', color: 'black', hasMoved: false };
   }
 
   return board;
 }
 
 /**
- * Creates initial board based on size ('7x7' | '8x8')
+ * Creates initial board based on size ('7x7' | '8x8' | '10x10')
  */
-export function createInitialBoard(size: CullingBoardSize = '7x7'): CullingBoard {
-  if (size === '7x7') return createInitialCullingBoard();
+export function createInitialBoard(size: CullingBoardSize = '10x10'): CullingBoard {
+  if (size === '10x10') return createInitialCullingBoard();
 
-  const board = createEmptyBoard('8x8');
+  const dim = size === '7x7' ? 7 : 8;
+  const board = createEmptyBoard(size);
 
-  // White team on 8x8: Rank 1 (y=0) characters, Rank 2 (y=1) pawns
-  // White characters assigned to x=0..6; x=7 extra pawn
-  board[0][0] = { id: 'w_hakari', type: 'culling_hakari', color: 'white', hasMoved: false };
-  board[0][1] = { id: 'w_maki', type: 'culling_maki', color: 'white', hasMoved: false };
-  board[0][2] = { id: 'w_nanami', type: 'culling_nanami', color: 'white', hasMoved: false };
-  board[0][3] = { id: 'w_panda', type: 'culling_panda', color: 'white', hasMoved: false, pandaCore: 'panda' };
-  board[0][4] = { id: 'w_mechamaru', type: 'culling_mechamaru', color: 'white', hasMoved: false };
-  board[0][5] = { id: 'w_yuji', type: 'culling_yuji', color: 'white', hasMoved: false };
-  board[0][6] = { id: 'w_gojo', type: 'culling_gojo', color: 'white', hasMoved: false };
-  board[0][7] = { id: 'w_pawn_extra_0', type: 'culling_pawn', color: 'white', hasMoved: false };
+  if (size === '7x7') {
+    // 7x7 setup with ALL 14 Culling Sorcerers + Pawns
+    // White team (y=0: characters, y=1: pawns)
+    board[0][0] = { id: 'w_hakari', type: 'culling_hakari', color: 'white', hasMoved: false };
+    board[0][1] = { id: 'w_maki', type: 'culling_maki', color: 'white', hasMoved: false };
+    board[0][2] = { id: 'w_nanami', type: 'culling_nanami', color: 'white', hasMoved: false };
+    board[0][3] = { id: 'w_panda', type: 'culling_panda', color: 'white', hasMoved: false, pandaCore: 'panda' };
+    board[0][4] = { id: 'w_mechamaru', type: 'culling_mechamaru', color: 'white', hasMoved: false };
+    board[0][5] = { id: 'w_yuji', type: 'culling_yuji', color: 'white', hasMoved: false };
+    board[0][6] = { id: 'w_gojo', type: 'culling_gojo', color: 'white', hasMoved: false };
 
-  for (let x = 0; x < 8; x++) {
-    board[1][x] = { id: `w_pawn_${x}`, type: 'culling_pawn', color: 'white', hasMoved: false };
+    for (let x = 0; x < 7; x++) {
+      board[1][x] = { id: `w_pawn_${x}`, type: 'culling_pawn', color: 'white', hasMoved: false };
+      board[5][x] = { id: `b_pawn_${x}`, type: 'culling_pawn', color: 'black', hasMoved: false };
+    }
+
+    // Black team (y=6: characters)
+    board[6][0] = { id: 'b_sukuna', type: 'culling_sukuna', color: 'black', hasMoved: false };
+    board[6][1] = { id: 'b_kenjaku', type: 'culling_kenjaku', color: 'black', hasMoved: false };
+    board[6][2] = { id: 'b_uraume', type: 'culling_uraume', color: 'black', hasMoved: false };
+    board[6][3] = { id: 'b_yorozu', type: 'culling_yorozu', color: 'black', hasMoved: false, pandaCore: 'panda' };
+    board[6][4] = { id: 'b_reggie', type: 'culling_reggie', color: 'black', hasMoved: false };
+    board[6][5] = { id: 'b_naoya', type: 'culling_naoya', color: 'black', hasMoved: false };
+    board[6][6] = { id: 'b_kurourushi', type: 'culling_kurourushi', color: 'black', hasMoved: false };
+
+    return board;
   }
 
-  // Black team on 8x8: Rank 8 (y=7) characters, Rank 7 (y=6) pawns (180° mirror (7-x, 7-y))
-  board[7][7] = { id: 'b_kurourushi', type: 'culling_kurourushi', color: 'black', hasMoved: false };
-  board[7][6] = { id: 'b_naoya', type: 'culling_naoya', color: 'black', hasMoved: false };
-  board[7][5] = { id: 'b_reggie', type: 'culling_reggie', color: 'black', hasMoved: false };
-  board[7][4] = { id: 'b_yorozu', type: 'culling_yorozu', color: 'black', hasMoved: false, pandaCore: 'panda' };
-  board[7][3] = { id: 'b_uraume', type: 'culling_uraume', color: 'black', hasMoved: false };
-  board[7][2] = { id: 'b_kenjaku', type: 'culling_kenjaku', color: 'black', hasMoved: false };
-  board[7][1] = { id: 'b_sukuna', type: 'culling_sukuna', color: 'black', hasMoved: false };
-  board[7][0] = { id: 'b_pawn_extra_0', type: 'culling_pawn', color: 'black', hasMoved: false };
+  if (size === '8x8') {
+    // 8x8 setup with ALL 14 Culling Sorcerers + Pawns
+    // White team (y=0: characters, y=1: pawns)
+    board[0][0] = { id: 'w_hakari', type: 'culling_hakari', color: 'white', hasMoved: false };
+    board[0][1] = { id: 'w_maki', type: 'culling_maki', color: 'white', hasMoved: false };
+    board[0][2] = { id: 'w_nanami', type: 'culling_nanami', color: 'white', hasMoved: false };
+    board[0][3] = { id: 'w_panda', type: 'culling_panda', color: 'white', hasMoved: false, pandaCore: 'panda' };
+    board[0][4] = { id: 'w_mechamaru', type: 'culling_mechamaru', color: 'white', hasMoved: false };
+    board[0][5] = { id: 'w_yuji', type: 'culling_yuji', color: 'white', hasMoved: false };
+    board[0][6] = { id: 'w_gojo', type: 'culling_gojo', color: 'white', hasMoved: false };
 
-  for (let x = 0; x < 8; x++) {
-    board[6][x] = { id: `b_pawn_${x}`, type: 'culling_pawn', color: 'black', hasMoved: false };
+    for (let x = 0; x < 8; x++) {
+      board[1][x] = { id: `w_pawn_${x}`, type: 'culling_pawn', color: 'white', hasMoved: false };
+      board[6][x] = { id: `b_pawn_${x}`, type: 'culling_pawn', color: 'black', hasMoved: false };
+    }
+
+    // Black team (y=7: characters)
+    board[7][1] = { id: 'b_sukuna', type: 'culling_sukuna', color: 'black', hasMoved: false };
+    board[7][2] = { id: 'b_kenjaku', type: 'culling_kenjaku', color: 'black', hasMoved: false };
+    board[7][3] = { id: 'b_uraume', type: 'culling_uraume', color: 'black', hasMoved: false };
+    board[7][4] = { id: 'b_yorozu', type: 'culling_yorozu', color: 'black', hasMoved: false, pandaCore: 'panda' };
+    board[7][5] = { id: 'b_reggie', type: 'culling_reggie', color: 'black', hasMoved: false };
+    board[7][6] = { id: 'b_naoya', type: 'culling_naoya', color: 'black', hasMoved: false };
+    board[7][7] = { id: 'b_kurourushi', type: 'culling_kurourushi', color: 'black', hasMoved: false };
+
+    return board;
   }
 
   return board;
@@ -195,12 +245,13 @@ export function createInitialCullingMatch(
   whitePlayer: { userId: string; username: string; displayName: string; avatarId?: string },
   blackPlayer: { userId: string; username: string; displayName: string; avatarId?: string },
   timeControl: 120 | 300 = 300,
-  boardSize: CullingBoardSize = '7x7'
+  boardSize: CullingBoardSize = '10x10'
 ): CullingMatchState {
   const now = Date.now();
   const board = createInitialBoard(boardSize);
   const initialSig = generateBoardSignature(board, 'white', false, undefined, boardSize);
-  const is8x8 = boardSize === '8x8';
+  const is10x10 = boardSize === '10x10';
+
   return {
     id,
     board,
@@ -217,8 +268,8 @@ export function createInitialCullingMatch(
     blackTimeRemaining: timeControl,
     lastTurnStartTime: now,
     history: [],
-    whiteKingPos: is8x8 ? { x: 6, y: 0 } : { x: 6, y: 0 }, // G1: Gojo
-    blackKingPos: is8x8 ? { x: 1, y: 7 } : { x: 0, y: 6 }, // B8 / A7: Sukuna
+    whiteKingPos: is10x10 ? { x: 8, y: 1 } : { x: board.length - 1, y: 0 },
+    blackKingPos: is10x10 ? { x: 1, y: 8 } : { x: 0, y: board.length - 1 },
     whiteCaptureCount: 0,
     blackCaptureCount: 0,
     halfmoveClock: 0,
@@ -230,26 +281,36 @@ export function createInitialCullingMatch(
 
 /**
  * Returns true if a pawn at (pos.x, pos.y) has reached the far rank.
- * White promotes at max rank; Black promotes at rank 0.
+ * In 10x10 Cross Battlefield, promotion rank depends on the file's far edge:
+ * - Files L(0), R(9): White y=7, Black y=2
+ * - Files A(1), H(8): White y=8, Black y=1
+ * - Files B-G (2-7): White y=9, Black y=0
  */
 export function isPawnPromotionSquare(
   color: CullingPieceColor,
   pos: CullingPos,
-  boardSize: CullingBoardSize = '7x7'
+  boardSize: CullingBoardSize = '10x10'
 ): boolean {
-  const maxIdx = boardSize === '8x8' ? 7 : 6;
+  if (boardSize !== '10x10') {
+    const maxIdx = boardSize === '8x8' ? 7 : 6;
+    return color === 'white' ? pos.y >= maxIdx : pos.y <= 0;
+  }
+
+  // 10x10 Cross logic
+  const x = pos.x;
   if (color === 'white') {
-    return pos.y >= maxIdx;
+    if (x === 0 || x === 9) return pos.y >= 7;
+    if (x === 1 || x === 8) return pos.y >= 8;
+    return pos.y >= 9;
   } else {
+    if (x === 0 || x === 9) return pos.y <= 2;
+    if (x === 1 || x === 8) return pos.y <= 1;
     return pos.y <= 0;
   }
 }
 
 /**
  * Dynamically computes whether a piece at pos is restricted by an enemy Warden's Ratio Field.
- * Any enemy piece in the 8 adjacent squares around a Warden is restricted to 1 square max,
- * and Artillery strikes are disabled.
- * Skirmishers (Maki, Naoya) possess Heavenly Restriction and IGNORE this restriction.
  */
 export function isPieceRestrictedByWarden(
   board: CullingBoard,
@@ -260,12 +321,15 @@ export function isPieceRestrictedByWarden(
     return false; // Heavenly Restriction: immune to Warden Ratio Field
   }
 
+  const dim = board.length;
+  const boardSize: CullingBoardSize = dim === 10 ? '10x10' : dim === 8 ? '8x8' : '7x7';
+
   for (let dy = -1; dy <= 1; dy++) {
     for (let dx = -1; dx <= 1; dx++) {
       if (dx === 0 && dy === 0) continue;
       const nx = pos.x + dx;
       const ny = pos.y + dy;
-      if (isValidPos(nx, ny)) {
+      if (isValidPos(nx, ny, boardSize)) {
         const neighbor = board[ny][nx];
         if (neighbor && neighbor.color !== piece.color && getPieceRole(neighbor.type) === 'warden') {
           return true;
@@ -279,16 +343,12 @@ export function isPieceRestrictedByWarden(
 
 /**
  * Authoritative check whether target piece can be captured.
- * Under rebalanced rules, pawn/swarm immunities and turn 1-5 immunities are removed.
- * Kept for interface backward compatibility.
  */
 export function canPieceBeCaptured(
   target: CullingPiece,
   _attacker: CullingPiece,
   _turnCount?: number
 ): boolean {
-  // All pieces can be targeted for capture.
-  // Bulwark Shell breaking is handled authoritatively during move execution.
   return true;
 }
 
@@ -300,7 +360,7 @@ export function findKingPos(
   color: CullingPieceColor,
   cachedPos?: CullingPos | null
 ): CullingPos | null {
-  const dim = board.length === 8 ? 8 : 7;
+  const dim = board.length;
   const kingType: CullingPieceType = color === 'white' ? 'culling_gojo' : 'culling_sukuna';
   if (cachedPos && board[cachedPos.y]?.[cachedPos.x]) {
     const candidate = board[cachedPos.y][cachedPos.x];
@@ -321,17 +381,18 @@ export function findKingPos(
 
 /**
  * Checks if a specific square target is under attack by any piece of attackerColor.
- * Used for King check detection, Domain Step landing safety, and Rusher Jackpot safety.
  */
 export function isSquareAttackedBy(
   board: CullingBoard,
   target: CullingPos,
   attackerColor: CullingPieceColor
 ): boolean {
-  const dim = board.length === 8 ? 8 : 7;
+  const dim = board.length;
+  const boardSize: CullingBoardSize = dim === 10 ? '10x10' : dim === 8 ? '8x8' : '7x7';
+
   for (let y = 0; y < dim; y++) {
     for (let x = 0; x < dim; x++) {
-      const piece = board[y][x];
+      const piece = board[y]?.[x];
       if (!piece || piece.color !== attackerColor) continue;
 
       const role = getPieceRole(piece.type);
@@ -344,21 +405,18 @@ export function isSquareAttackedBy(
 
       switch (role) {
         case 'sovereign': {
-          // 1 step in 8 directions
           if (dist === 1) return true;
           break;
         }
 
         case 'vanguard': {
-          // Slides up to 3 squares in 8 directions (capped at 1 if restricted)
           const maxSteps = restricted ? 1 : 3;
           if (dist <= maxSteps && (absDx === absDy || dx === 0 || dy === 0)) {
-            // Verify ray is clear between piece and target
             const stepX = dx === 0 ? 0 : dx / absDx;
             const stepY = dy === 0 ? 0 : dy / absDy;
             let clear = true;
             for (let s = 1; s < dist; s++) {
-              if (board[y + stepY * s][x + stepX * s]) {
+              if (board[y + stepY * s]?.[x + stepX * s]) {
                 clear = false;
                 break;
               }
@@ -369,19 +427,16 @@ export function isSquareAttackedBy(
         }
 
         case 'artillery': {
-          // 1 step in 8 directions
           if (dist === 1) return true;
-          // Ranged Strike at distance 2 if middle is empty and not restricted
           if (!restricted && dist === 2 && (absDx === absDy || dx === 0 || dy === 0)) {
             const midX = x + dx / 2;
             const midY = y + dy / 2;
-            if (!board[midY][midX]) return true;
+            if (midY >= 0 && midY < dim && midX >= 0 && midX < dim && !board[midY]?.[midX]) return true;
           }
           break;
         }
 
         case 'bulwark': {
-          // Knight L-jumps
           if ((absDx === 1 && absDy === 2) || (absDx === 2 && absDy === 1)) {
             return true;
           }
@@ -389,14 +444,13 @@ export function isSquareAttackedBy(
         }
 
         case 'warden': {
-          // Orthogonal rays up to 3 (capped at 1 if restricted)
           const maxSteps = restricted ? 1 : 3;
           if (dist <= maxSteps && (dx === 0 || dy === 0)) {
             const stepX = dx === 0 ? 0 : (dx > 0 ? 1 : -1);
             const stepY = dy === 0 ? 0 : (dy > 0 ? 1 : -1);
             let clear = true;
             for (let s = 1; s < dist; s++) {
-              if (board[y + stepY * s][x + stepX * s]) {
+              if (board[y + stepY * s]?.[x + stepX * s]) {
                 clear = false;
                 break;
               }
@@ -407,7 +461,6 @@ export function isSquareAttackedBy(
         }
 
         case 'skirmisher': {
-          // 1 step in 8 directions OR 2 squares orthogonally
           if (dist === 1) return true;
           if ((absDx === 2 && dy === 0) || (absDy === 2 && dx === 0)) {
             return true;
@@ -416,7 +469,6 @@ export function isSquareAttackedBy(
         }
 
         case 'rusher': {
-          // Diagonal rays up to 2 (capped at 1 if restricted) OR 1 step orthogonally
           if ((absDx === 1 && dy === 0) || (absDy === 1 && dx === 0)) return true;
           const maxDiag = restricted ? 1 : 2;
           if (absDx === absDy && absDx <= maxDiag) {
@@ -424,7 +476,7 @@ export function isSquareAttackedBy(
             const stepY = dy > 0 ? 1 : -1;
             let clear = true;
             for (let s = 1; s < absDx; s++) {
-              if (board[y + stepY * s][x + stepX * s]) {
+              if (board[y + stepY * s]?.[x + stepX * s]) {
                 clear = false;
                 break;
               }
@@ -435,14 +487,12 @@ export function isSquareAttackedBy(
         }
 
         case 'pawn': {
-          // Attacks 1 step diagonally forward
           const forwardY = attackerColor === 'white' ? 1 : -1;
           if (dy === forwardY && absDx === 1) return true;
           break;
         }
 
         case 'swarm': {
-          // Deprecated unit: 1 step in 8 directions
           if (dist === 1) return true;
           break;
         }
@@ -480,14 +530,18 @@ function getRayMoves(
   dx: number,
   dy: number,
   maxSteps: number,
-  piece: CullingPiece
+  piece: CullingPiece,
+  boardSize?: CullingBoardSize
 ): CullingPos[] {
   const moves: CullingPos[] = [];
+  const dim = board.length;
+  const bSize = boardSize || (dim === 10 ? '10x10' : dim === 8 ? '8x8' : '7x7');
   for (let step = 1; step <= maxSteps; step++) {
     const nx = from.x + dx * step;
     const ny = from.y + dy * step;
-    if (!isValidPos(nx, ny)) break;
-    const occupant = board[ny][nx];
+    if (ny < 0 || ny >= dim || nx < 0 || nx >= (board[ny]?.length ?? dim)) break;
+    if (!isValidPos(nx, ny, bSize)) break;
+    const occupant = board[ny]?.[nx];
     if (!occupant) {
       moves.push({ x: nx, y: ny });
     } else {
@@ -508,6 +562,11 @@ export function getPseudoLegalMovesForSquare(
   from: CullingPos
 ): CullingMove[] {
   const board = match.board;
+  if (!board) return [];
+  const dim = board.length;
+  const boardSize: CullingBoardSize =
+    match.boardSize || (dim === 10 ? '10x10' : dim === 8 ? '8x8' : '7x7');
+
   const piece = board[from.y]?.[from.x];
   if (!piece) return [];
 
@@ -515,13 +574,18 @@ export function getPseudoLegalMovesForSquare(
   const role = getPieceRole(piece.type);
   const moves: CullingMove[] = [];
 
+  const isPosValid = (x: number, y: number): boolean => {
+    if (y < 0 || y >= dim || x < 0 || x >= (board[y]?.length ?? dim)) return false;
+    return isValidPos(x, y, boardSize);
+  };
+
   const addMove = (
     to: CullingPos,
     actionType: CullingSpecialAction = 'move',
     extra?: Partial<CullingMove>
   ) => {
-    if (!isValidPos(to.x, to.y)) return;
-    const target = board[to.y][to.x];
+    if (!isPosValid(to.x, to.y)) return;
+    const target = board[to.y]?.[to.x];
     if (target && target.color === piece.color) return;
 
     const moveSan = `${posToCullingSquare(from)}${target ? 'x' : '-'}${posToCullingSquare(to)}`;
@@ -555,7 +619,7 @@ export function getPseudoLegalMovesForSquare(
     for (const [dx, dy] of dirs) {
       const nx = from.x + dx;
       const ny = from.y + dy;
-      if (isValidPos(nx, ny) && !board[ny][nx]) {
+      if (isPosValid(nx, ny) && !board[ny]?.[nx]) {
         // Step must be to a square NOT attacked by the opponent
         if (!isSquareAttackedBy(board, { x: nx, y: ny }, oppColor)) {
           addMove({ x: nx, y: ny }, 'move', {
@@ -586,8 +650,8 @@ export function getPseudoLegalMovesForSquare(
       for (const [dx, dy] of dirs) {
         const nx = from.x + dx;
         const ny = from.y + dy;
-        if (isValidPos(nx, ny)) {
-          const occ = board[ny][nx];
+        if (isPosValid(nx, ny)) {
+          const occ = board[ny]?.[nx];
           if (!occ || occ.color !== piece.color) {
             addMove({ x: nx, y: ny }, 'move');
           }
@@ -605,7 +669,7 @@ export function getPseudoLegalMovesForSquare(
         for (const [ox, oy] of step2Offsets) {
           const tx = from.x + ox;
           const ty = from.y + oy;
-          if (isValidPos(tx, ty) && !board[ty][tx]) {
+          if (isPosValid(tx, ty) && !board[ty]?.[tx]) {
             // Landing square must not be attacked
             if (!isSquareAttackedBy(board, { x: tx, y: ty }, oppColor)) {
               addMove({ x: tx, y: ty }, 'teleport', {
@@ -638,8 +702,8 @@ export function getPseudoLegalMovesForSquare(
         for (let step = 1; step <= maxSteps; step++) {
           const nx = from.x + dx * step;
           const ny = from.y + dy * step;
-          if (!isValidPos(nx, ny)) break;
-          const occ = board[ny][nx];
+          if (!isPosValid(nx, ny)) break;
+          const occ = board[ny]?.[nx];
           if (!occ) {
             addMove({ x: nx, y: ny }, 'move');
           } else {
@@ -675,8 +739,8 @@ export function getPseudoLegalMovesForSquare(
       for (const [dx, dy] of dirs) {
         const nx = from.x + dx;
         const ny = from.y + dy;
-        if (isValidPos(nx, ny)) {
-          const occ = board[ny][nx];
+        if (isPosValid(nx, ny)) {
+          const occ = board[ny]?.[nx];
           if (!occ || occ.color !== piece.color) {
             addMove({ x: nx, y: ny }, 'move');
           }
@@ -696,8 +760,8 @@ export function getPseudoLegalMovesForSquare(
           const midY = from.y + oy / 2;
           const tx = from.x + ox;
           const ty = from.y + oy;
-          if (isValidPos(tx, ty) && !board[midY][midX]) {
-            const target = board[ty][tx];
+          if (isPosValid(midX, midY) && isPosValid(tx, ty) && !board[midY]?.[midX]) {
+            const target = board[ty]?.[tx];
             if (target && target.color !== piece.color) {
               addMove({ x: tx, y: ty }, 'shoot', {
                 isSpecialAbility: true,
@@ -723,8 +787,8 @@ export function getPseudoLegalMovesForSquare(
       for (const [ox, oy] of knightOffsets) {
         const nx = from.x + ox;
         const ny = from.y + oy;
-        if (isValidPos(nx, ny)) {
-          const occ = board[ny][nx];
+        if (isPosValid(nx, ny)) {
+          const occ = board[ny]?.[nx];
           if (!occ || occ.color !== piece.color) {
             addMove({ x: nx, y: ny }, 'move');
           }
@@ -741,7 +805,7 @@ export function getPseudoLegalMovesForSquare(
       const orthoDirs = [[0, 1], [0, -1], [1, 0], [-1, 0]];
       const maxSteps = restricted ? 1 : 3;
       for (const [dx, dy] of orthoDirs) {
-        for (const pos of getRayMoves(board, from, dx, dy, maxSteps, piece)) {
+        for (const pos of getRayMoves(board, from, dx, dy, maxSteps, piece, boardSize)) {
           addMove(pos, 'move');
         }
       }
@@ -762,8 +826,8 @@ export function getPseudoLegalMovesForSquare(
       for (const [dx, dy] of dirs) {
         const nx = from.x + dx;
         const ny = from.y + dy;
-        if (isValidPos(nx, ny)) {
-          const occ = board[ny][nx];
+        if (isPosValid(nx, ny)) {
+          const occ = board[ny]?.[nx];
           if (!occ || occ.color !== piece.color) {
             addMove({ x: nx, y: ny }, 'move');
           }
@@ -775,8 +839,8 @@ export function getPseudoLegalMovesForSquare(
       for (const [ox, oy] of hopOffsets) {
         const nx = from.x + ox;
         const ny = from.y + oy;
-        if (isValidPos(nx, ny)) {
-          const occ = board[ny][nx];
+        if (isPosValid(nx, ny)) {
+          const occ = board[ny]?.[nx];
           if (!occ || occ.color !== piece.color) {
             addMove({ x: nx, y: ny }, 'move');
           }
@@ -793,7 +857,7 @@ export function getPseudoLegalMovesForSquare(
       const diagDirs = [[-1, -1], [-1, 1], [1, -1], [1, 1]];
       const maxDiag = restricted ? 1 : 2;
       for (const [dx, dy] of diagDirs) {
-        for (const pos of getRayMoves(board, from, dx, dy, maxDiag, piece)) {
+        for (const pos of getRayMoves(board, from, dx, dy, maxDiag, piece, boardSize)) {
           addMove(pos, 'move');
         }
       }
@@ -802,8 +866,8 @@ export function getPseudoLegalMovesForSquare(
       for (const [dx, dy] of orthoDirs) {
         const nx = from.x + dx;
         const ny = from.y + dy;
-        if (isValidPos(nx, ny)) {
-          const occ = board[ny][nx];
+        if (isPosValid(nx, ny)) {
+          const occ = board[ny]?.[nx];
           if (!occ || occ.color !== piece.color) {
             addMove({ x: nx, y: ny }, 'move');
           }
@@ -820,8 +884,8 @@ export function getPseudoLegalMovesForSquare(
       const fwdY = from.y + fwd;
 
       // 1 step forward (into empty square)
-      if (isValidPos(from.x, fwdY) && !board[fwdY][from.x]) {
-        const isPromotion = isPawnPromotionSquare(piece.color, { x: from.x, y: fwdY });
+      if (isPosValid(from.x, fwdY) && !board[fwdY]?.[from.x]) {
+        const isPromotion = isPawnPromotionSquare(piece.color, { x: from.x, y: fwdY }, boardSize);
         addMove({ x: from.x, y: fwdY }, 'move', {
           isPromotion,
           promotedTo: isPromotion ? (piece.color === 'white' ? 'culling_nanami' : 'culling_reggie') : undefined,
@@ -831,10 +895,10 @@ export function getPseudoLegalMovesForSquare(
       // Diagonal captures
       for (const dx of [-1, 1]) {
         const diagX = from.x + dx;
-        if (isValidPos(diagX, fwdY)) {
-          const occ = board[fwdY][diagX];
+        if (isPosValid(diagX, fwdY)) {
+          const occ = board[fwdY]?.[diagX];
           if (occ && occ.color !== piece.color) {
-            const isPromotion = isPawnPromotionSquare(piece.color, { x: diagX, y: fwdY });
+            const isPromotion = isPawnPromotionSquare(piece.color, { x: diagX, y: fwdY }, boardSize);
             addMove({ x: diagX, y: fwdY }, 'move', {
               isPromotion,
               promotedTo: isPromotion ? (piece.color === 'white' ? 'culling_nanami' : 'culling_reggie') : undefined,
@@ -855,8 +919,8 @@ export function getPseudoLegalMovesForSquare(
       for (const [dx, dy] of dirs) {
         const nx = from.x + dx;
         const ny = from.y + dy;
-        if (isValidPos(nx, ny)) {
-          const occ = board[ny][nx];
+        if (isPosValid(nx, ny)) {
+          const occ = board[ny]?.[nx];
           if (!occ || occ.color !== piece.color) {
             addMove({ x: nx, y: ny }, 'move');
           }
@@ -990,10 +1054,10 @@ export function getLegalMovesForSquare(match: CullingMatchState, from: CullingPo
  */
 export function getAllLegalMoves(match: CullingMatchState): CullingMove[] {
   const moves: CullingMove[] = [];
-  const dim = match.board.length === 8 ? 8 : 7;
+  const dim = match.board.length;
   for (let y = 0; y < dim; y++) {
     for (let x = 0; x < dim; x++) {
-      const piece = match.board[y][x];
+      const piece = match.board[y]?.[x];
       if (piece && piece.color === match.turn) {
         moves.push(...getLegalMovesForSquare(match, { x, y }));
       }
@@ -1010,16 +1074,16 @@ export function generateBoardSignature(
   turn: CullingPieceColor,
   jackpotPending?: boolean,
   jackpotPos?: CullingPos,
-  boardSize?: CullingBoardSize
+  _boardSize?: CullingBoardSize
 ): string {
   let sig = `${turn}`;
   if (jackpotPending && jackpotPos) {
     sig += `_jp${jackpotPos.x}${jackpotPos.y}`;
   }
-  const dim = boardSize === '8x8' || board.length === 8 ? 8 : 7;
+  const dim = board.length;
   for (let y = 0; y < dim; y++) {
     for (let x = 0; x < dim; x++) {
-      const p = board[y][x];
+      const p = board[y]?.[x];
       if (p) {
         sig += `_${x}${y}${p.color[0]}${p.type}_${p.pandaCore || '0'}_${p.specialUsed ? '1' : '0'}`;
       }

@@ -1,6 +1,6 @@
 [
   {
-    "id": "ch_test_1793117990000",
+    "id": "ch_test_1793255279085",
     "challenger": {
       "userId": "usr_alice_test",
       "username": "alice",
@@ -16,12 +16,12 @@
     "status": "accepted",
     "timeControl": 300,
     "moveSuggestions": "included",
-    "createdAt": 1793117990000,
-    "expiresAt": 1793118290000,
-    "matchId": "match_test_1793117990001"
+    "createdAt": 1793255279085,
+    "expiresAt": 1793255579085,
+    "matchId": "match_test_1793255279085"
   },
   {
-    "id": "ch_test_1793210881719",
+    "id": "ch_test_1793255415014",
     "challenger": {
       "userId": "usr_alice_test",
       "username": "alice",
@@ -37,8 +37,8 @@
     "status": "accepted",
     "timeControl": 300,
     "moveSuggestions": "included",
-    "createdAt": 1793210881719,
-    "expiresAt": 1793211181719,
-    "matchId": "match_test_1793210881719"
+    "createdAt": 1793255415014,
+    "expiresAt": 1793255715014,
+    "matchId": "match_test_1793255415014"
   }
 ]

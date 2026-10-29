@@ -814,6 +814,31 @@ export const RoseParadiseView: React.FC<RoseParadiseViewProps> = ({ onBack }) =>
       {/* ==================== 1. LOBBY VIEW (CULLING MULTIPLAYER LOGIC & ROOM GENERATION) ==================== */}
       {!activeMatch && (
         <div className="z-10 max-w-5xl mx-auto w-full flex flex-col gap-6 my-auto py-4">
+          {/* Small Banner featuring attached image asset /assets/aistudio/image_0ba7d09e.png optimized for desktop and mobile */}
+          <div className="flex justify-center px-2">
+            <div className="relative overflow-hidden rounded-xl border-2 sm:border-3 border-rose-500 shadow-[4px_4px_0px_#f43f5e] bg-gradient-to-r from-rose-950 via-black to-rose-950 p-2.5 sm:p-3.5 flex items-center gap-3 sm:gap-4 max-w-md sm:max-w-lg w-full">
+              <div className="w-12 h-12 sm:w-16 sm:h-16 shrink-0 border-2 border-rose-400 overflow-hidden shadow-[2px_2px_0px_#000]">
+                <img
+                  src="/assets/aistudio/image_0ba7d09e.png"
+                  alt="Rose Paradise Emblem"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <div className="text-left min-w-0 flex-1">
+                <div className="text-[10px] sm:text-xs font-mono font-black uppercase text-rose-300 tracking-wider flex items-center gap-1">
+                  <Sparkles className="w-3 h-3 text-rose-400 shrink-0" />
+                  <span>Official Rose Paradigm Garden</span>
+                </div>
+                <div className="text-xs sm:text-sm font-black uppercase text-white truncate">
+                  Couples 1v1 · Harmony & Summons
+                </div>
+                <div className="text-[10px] text-neutral-300 font-mono hidden sm:block mt-0.5">
+                  Tactical romantic combat with petals, heart links, and sacred summons.
+                </div>
+              </div>
+            </div>
+          </div>
+
           <div className="text-center">
             <div className="inline-flex items-center gap-2 px-3 py-1 bg-amber-400 text-black border-2 border-black shadow-[2px_2px_0px_#000] text-xs font-black uppercase mb-2">
               <Sparkles className="w-3.5 h-3.5" />

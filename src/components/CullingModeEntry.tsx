@@ -59,7 +59,7 @@ export const CullingModeEntry: React.FC<CullingModeEntryProps> = ({ onBack, onMa
   // Common setup state
   const [selectedSide, setSelectedSide] = useState<'white' | 'black' | 'random'>('random');
   const [timeControl, setTimeControl] = useState<120 | 300>(300);
-  const [selectedBoardSize, setSelectedBoardSize] = useState<CullingBoardSize>('7x7');
+  const [selectedBoardSize, setSelectedBoardSize] = useState<CullingBoardSize>('10x10');
 
   // Direct Challenge Multiplayer state
   const [joinCodeInput, setJoinCodeInput] = useState('');
@@ -452,41 +452,59 @@ export const CullingModeEntry: React.FC<CullingModeEntryProps> = ({ onBack, onMa
               <span className="text-xs font-mono font-bold uppercase text-neutral-500 dark:text-neutral-400 block mb-2 text-center">
                 Board Size:
               </span>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-3 gap-2 sm:gap-3">
+                <button
+                  type="button"
+                  onClick={() => setSelectedBoardSize('10x10')}
+                  className={`p-2.5 border-3 border-black dark:border-white font-black text-left cursor-pointer transition-transform min-h-[64px] flex flex-col justify-center select-none active:translate-x-0.5 active:translate-y-0.5 ${
+                    selectedBoardSize === '10x10'
+                      ? 'bg-amber-400 text-black shadow-[3px_3px_0px_#000]'
+                      : 'bg-white dark:bg-[#1e293b] text-neutral-600 dark:text-neutral-300'
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs sm:text-sm uppercase tracking-wide">10×10 CROSS</span>
+                    {selectedBoardSize === '10x10' && (
+                      <span className="text-[9px] bg-black text-amber-400 px-1 py-0.5 font-mono">ACTIVE</span>
+                    )}
+                  </div>
+                  <span className="text-[9px] font-bold opacity-80 mt-0.5">88 Sq • Standard</span>
+                </button>
+
                 <button
                   type="button"
                   onClick={() => setSelectedBoardSize('7x7')}
-                  className={`p-3 border-3 border-black dark:border-white font-black text-left cursor-pointer transition-transform min-h-[64px] flex flex-col justify-center select-none active:translate-x-0.5 active:translate-y-0.5 ${
+                  className={`p-2.5 border-3 border-black dark:border-white font-black text-left cursor-pointer transition-transform min-h-[64px] flex flex-col justify-center select-none active:translate-x-0.5 active:translate-y-0.5 ${
                     selectedBoardSize === '7x7'
                       ? 'bg-amber-400 text-black shadow-[3px_3px_0px_#000]'
                       : 'bg-white dark:bg-[#1e293b] text-neutral-600 dark:text-neutral-300'
                   }`}
                 >
                   <div className="flex items-center justify-between">
-                    <span className="text-sm uppercase tracking-wide">7×7 GRID</span>
+                    <span className="text-xs sm:text-sm uppercase tracking-wide">7×7 GRID</span>
                     {selectedBoardSize === '7x7' && (
-                      <span className="text-[10px] bg-black text-amber-400 px-1.5 py-0.5 font-mono">ACTIVE</span>
+                      <span className="text-[9px] bg-black text-amber-400 px-1 py-0.5 font-mono">ACTIVE</span>
                     )}
                   </div>
-                  <span className="text-[10px] font-bold opacity-80 mt-0.5">49 Squares • Culling Format</span>
+                  <span className="text-[9px] font-bold opacity-80 mt-0.5">49 Sq • Compact</span>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => setSelectedBoardSize('8x8')}
-                  className={`p-3 border-3 border-black dark:border-white font-black text-left cursor-pointer transition-transform min-h-[64px] flex flex-col justify-center select-none active:translate-x-0.5 active:translate-y-0.5 ${
+                  className={`p-2.5 border-3 border-black dark:border-white font-black text-left cursor-pointer transition-transform min-h-[64px] flex flex-col justify-center select-none active:translate-x-0.5 active:translate-y-0.5 ${
                     selectedBoardSize === '8x8'
                       ? 'bg-amber-400 text-black shadow-[3px_3px_0px_#000]'
                       : 'bg-white dark:bg-[#1e293b] text-neutral-600 dark:text-neutral-300'
                   }`}
                 >
                   <div className="flex items-center justify-between">
-                    <span className="text-sm uppercase tracking-wide">8×8 GRID</span>
+                    <span className="text-xs sm:text-sm uppercase tracking-wide">8×8 GRID</span>
                     {selectedBoardSize === '8x8' && (
-                      <span className="text-[10px] bg-black text-amber-400 px-1.5 py-0.5 font-mono">ACTIVE</span>
+                      <span className="text-[9px] bg-black text-amber-400 px-1 py-0.5 font-mono">ACTIVE</span>
                     )}
                   </div>
-                  <span className="text-[10px] font-bold opacity-80 mt-0.5">64 Squares • Classic Format</span>
+                  <span className="text-[9px] font-bold opacity-80 mt-0.5">64 Sq • Classic</span>
                 </button>
               </div>
             </div>

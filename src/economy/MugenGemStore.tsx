@@ -11,8 +11,7 @@ import {
   getUnlockedSecretCodes,
   unlockSecretCode,
 } from './mugenStore';
-import { MugenGemIcon } from './MugenGemIcon';
-import { MugenCryptoIcon } from './MugenCryptoIcon';
+import { MugenGemIcon, MugenCryptoIcon, CurrencyAllocatedSlot } from './CurrencyIcons';
 import {
   unlockSecretPlayer,
   PendingChestEvent,
@@ -216,6 +215,13 @@ export const MugenGemStore: React.FC<MugenGemStoreProps> = ({
 
   // Handle Secret Blueprint 6-digit PIN Unlock
   const handleUnlockSecretBlueprint = (botConfig: SecretPlayerConfig) => {
+    if (botConfig.id === 'boy_friend' || botConfig.id === 'girl_friend') {
+      showNotification(
+        `${botConfig.publicName} (${botConfig.realName}) is permanently locked in the store and cannot be purchased. Know the secret PIN to challenge!`,
+        'error'
+      );
+      return;
+    }
     if (unlockedCodes.includes(botConfig.id)) {
       setSelectedBotForCode(botConfig);
       return;
@@ -331,10 +337,10 @@ export const MugenGemStore: React.FC<MugenGemStoreProps> = ({
             <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0 ml-auto sm:ml-0">
               {/* Gem Balance Badge */}
               <div
-                className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1 sm:py-1.5 bg-amber-500/10 border-2 border-amber-500/40 shadow-[2px_2px_0px_#000]"
+                className="flex items-center gap-2 sm:gap-2.5 px-2.5 sm:px-3 py-1 sm:py-1.5 bg-amber-500/15 border-2 border-amber-500/50 shadow-[2px_2px_0px_#000]"
                 title="Current Mugen Gems"
               >
-                <MugenGemIcon className="w-4 h-4 sm:w-5 sm:h-5 text-amber-400 shrink-0" />
+                <CurrencyAllocatedSlot type="gem" size="md" />
                 <div className="flex flex-col">
                   <span className="text-[8px] sm:text-[9px] font-mono uppercase text-amber-300 font-bold leading-none">
                     GEMS
@@ -347,10 +353,10 @@ export const MugenGemStore: React.FC<MugenGemStoreProps> = ({
 
               {/* Crypto Balance Badge */}
               <div
-                className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1 sm:py-1.5 bg-yellow-400/10 border-2 border-yellow-400/40 shadow-[2px_2px_0px_#000]"
+                className="flex items-center gap-2 sm:gap-2.5 px-2.5 sm:px-3 py-1 sm:py-1.5 bg-yellow-400/15 border-2 border-yellow-400/50 shadow-[2px_2px_0px_#000]"
                 title="Current Mugen Crypto"
               >
-                <MugenCryptoIcon className="w-4 h-4 sm:w-5 sm:h-5 text-yellow-400 shrink-0" />
+                <CurrencyAllocatedSlot type="crypto" size="md" />
                 <div className="flex flex-col">
                   <span className="text-[8px] sm:text-[9px] font-mono uppercase text-yellow-300 font-bold leading-none">
                     CRYPTO
@@ -470,28 +476,42 @@ export const MugenGemStore: React.FC<MugenGemStoreProps> = ({
                           type="button"
                           onClick={() => handleConvertGemsToCrypto(1000)}
                           disabled={gemBalance < 1000}
-                          className={`min-h-[44px] py-2.5 px-3 text-xs font-black uppercase tracking-wider border-2 border-black shadow-[4px_4px_0px_#000] flex items-center justify-center gap-1.5 transition-all ${
+                          className={`min-h-[50px] py-2 px-3 text-xs font-black uppercase tracking-wider border-2 border-black shadow-[4px_4px_0px_#000] flex items-center justify-between gap-2 transition-all ${
                             gemBalance >= 1000
                               ? 'bg-yellow-400 hover:bg-yellow-300 text-black cursor-pointer active:translate-x-0.5 active:translate-y-0.5'
                               : 'bg-neutral-800 text-neutral-500 border-neutral-700 cursor-not-allowed opacity-60'
                           }`}
                         >
-                          <ArrowLeftRight className="w-3.5 h-3.5 text-black" />
-                          <span>1,000 GEMS ➔ 1 CRYPTO</span>
+                          <div className="flex items-center gap-2">
+                            <CurrencyAllocatedSlot type="gem" size="sm" />
+                            <span>1,000 GEMS</span>
+                          </div>
+                          <span className="font-mono font-bold text-neutral-800 text-xs">➔</span>
+                          <div className="flex items-center gap-2">
+                            <CurrencyAllocatedSlot type="crypto" size="sm" />
+                            <span>1 CRYPTO</span>
+                          </div>
                         </button>
 
                         <button
                           type="button"
                           onClick={() => handleConvertGemsToCrypto(2000)}
                           disabled={gemBalance < 2000}
-                          className={`min-h-[44px] py-2.5 px-3 text-xs font-black uppercase tracking-wider border-2 border-black shadow-[4px_4px_0px_#000] flex items-center justify-center gap-1.5 transition-all ${
+                          className={`min-h-[50px] py-2 px-3 text-xs font-black uppercase tracking-wider border-2 border-black shadow-[4px_4px_0px_#000] flex items-center justify-between gap-2 transition-all ${
                             gemBalance >= 2000
                               ? 'bg-yellow-400 hover:bg-yellow-300 text-black cursor-pointer active:translate-x-0.5 active:translate-y-0.5'
                               : 'bg-neutral-800 text-neutral-500 border-neutral-700 cursor-not-allowed opacity-60'
                           }`}
                         >
-                          <Zap className="w-3.5 h-3.5 text-black" />
-                          <span>2,000 GEMS ➔ 2 CRYPTO</span>
+                          <div className="flex items-center gap-2">
+                            <CurrencyAllocatedSlot type="gem" size="sm" />
+                            <span>2,000 GEMS</span>
+                          </div>
+                          <span className="font-mono font-bold text-neutral-800 text-xs">➔</span>
+                          <div className="flex items-center gap-2">
+                            <CurrencyAllocatedSlot type="crypto" size="sm" />
+                            <span>2 CRYPTO</span>
+                          </div>
                         </button>
                       </div>
 
@@ -546,25 +566,40 @@ export const MugenGemStore: React.FC<MugenGemStoreProps> = ({
                           type="button"
                           onClick={() => handleDeductElo(50)}
                           disabled={currentElo <= 50}
-                          className="min-h-[44px] py-2.5 px-3 bg-yellow-400 hover:bg-yellow-300 text-black font-black text-xs uppercase tracking-wider border-2 border-black shadow-[4px_4px_0px_#000] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed transition-all active:translate-x-0.5 active:translate-y-0.5"
+                          className="min-h-[48px] py-2 px-3 bg-yellow-400 hover:bg-yellow-300 text-black font-black text-xs uppercase tracking-wider border-2 border-black shadow-[4px_4px_0px_#000] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed transition-all active:translate-x-0.5 active:translate-y-0.5 flex items-center justify-between gap-2"
                         >
-                          -50 ELO ➔ +500 GEMS
+                          <span>-50 ELO RATING</span>
+                          <span className="font-mono text-xs font-bold text-neutral-800">➔</span>
+                          <div className="flex items-center gap-1.5">
+                            <CurrencyAllocatedSlot type="gem" size="sm" />
+                            <span>+500 GEMS</span>
+                          </div>
                         </button>
                         <button
                           type="button"
                           onClick={() => handleDeductElo(100)}
                           disabled={currentElo <= 100}
-                          className="min-h-[44px] py-2.5 px-3 bg-yellow-400 hover:bg-yellow-300 text-black font-black text-xs uppercase tracking-wider border-2 border-black shadow-[4px_4px_0px_#000] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed transition-all active:translate-x-0.5 active:translate-y-0.5"
+                          className="min-h-[48px] py-2 px-3 bg-yellow-400 hover:bg-yellow-300 text-black font-black text-xs uppercase tracking-wider border-2 border-black shadow-[4px_4px_0px_#000] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed transition-all active:translate-x-0.5 active:translate-y-0.5 flex items-center justify-between gap-2"
                         >
-                          -100 ELO ➔ +1,000 GEMS
+                          <span>-100 ELO RATING</span>
+                          <span className="font-mono text-xs font-bold text-neutral-800">➔</span>
+                          <div className="flex items-center gap-1.5">
+                            <CurrencyAllocatedSlot type="gem" size="sm" />
+                            <span>+1,000 GEMS</span>
+                          </div>
                         </button>
                         <button
                           type="button"
                           onClick={() => handleDeductElo(200)}
                           disabled={currentElo <= 200}
-                          className="min-h-[44px] py-2.5 px-3 bg-yellow-400 hover:bg-yellow-300 text-black font-black text-xs uppercase tracking-wider border-2 border-black shadow-[4px_4px_0px_#000] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed transition-all active:translate-x-0.5 active:translate-y-0.5"
+                          className="min-h-[48px] py-2 px-3 bg-yellow-400 hover:bg-yellow-300 text-black font-black text-xs uppercase tracking-wider border-2 border-black shadow-[4px_4px_0px_#000] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed transition-all active:translate-x-0.5 active:translate-y-0.5 flex items-center justify-between gap-2"
                         >
-                          -200 ELO ➔ +2,000 GEMS
+                          <span>-200 ELO RATING</span>
+                          <span className="font-mono text-xs font-bold text-neutral-800">➔</span>
+                          <div className="flex items-center gap-1.5">
+                            <CurrencyAllocatedSlot type="gem" size="sm" />
+                            <span>+2,000 GEMS</span>
+                          </div>
                         </button>
                       </div>
 
@@ -644,14 +679,18 @@ export const MugenGemStore: React.FC<MugenGemStoreProps> = ({
                         type="button"
                         onClick={handleActivateEloShield}
                         disabled={cryptoBalance < 1}
-                        className={`w-full min-h-[44px] py-2.5 px-3 text-xs font-black uppercase tracking-wider border-2 border-black shadow-[4px_4px_0px_#000] flex items-center justify-center gap-2 transition-all ${
+                        className={`w-full min-h-[48px] py-2 px-3 text-xs font-black uppercase tracking-wider border-2 border-black shadow-[4px_4px_0px_#000] flex items-center justify-center gap-2.5 transition-all ${
                           cryptoBalance >= 1
                             ? 'bg-yellow-400 hover:bg-yellow-300 text-black cursor-pointer active:translate-x-0.5 active:translate-y-0.5'
                             : 'bg-neutral-800 text-neutral-500 border-neutral-700 cursor-not-allowed opacity-60'
                         }`}
                       >
-                        <ShieldCheck className="w-4 h-4" />
-                        <span>ACTIVATE ELO SHIELD (1 CRYPTO)</span>
+                        <ShieldCheck className="w-4 h-4 shrink-0" />
+                        <span>ACTIVATE ELO SHIELD</span>
+                        <div className="flex items-center gap-1.5 bg-black/15 px-2 py-0.5 rounded border border-black/20">
+                          <CurrencyAllocatedSlot type="crypto" size="sm" />
+                          <span className="font-mono font-bold">1 CRYPTO</span>
+                        </div>
                       </button>
 
                       <details className="border border-neutral-800 bg-black/50 p-2.5 text-xs text-neutral-300 group">
@@ -714,28 +753,42 @@ export const MugenGemStore: React.FC<MugenGemStoreProps> = ({
                           type="button"
                           onClick={() => handleConvertGemsToCrypto(1000)}
                           disabled={gemBalance < 1000}
-                          className={`min-h-[44px] py-2.5 px-3 text-xs font-black uppercase tracking-wider border-2 border-black shadow-[4px_4px_0px_#000] flex items-center justify-center gap-1.5 transition-all ${
+                          className={`min-h-[50px] py-2 px-3 text-xs font-black uppercase tracking-wider border-2 border-black shadow-[4px_4px_0px_#000] flex items-center justify-between gap-2 transition-all ${
                             gemBalance >= 1000
                               ? 'bg-yellow-400 hover:bg-yellow-300 text-black cursor-pointer active:translate-x-0.5 active:translate-y-0.5'
                               : 'bg-neutral-800 text-neutral-500 border-neutral-700 cursor-not-allowed opacity-60'
                           }`}
                         >
-                          <ArrowLeftRight className="w-3.5 h-3.5" />
-                          <span>1,000 GEMS ➔ 1 CRYPTO</span>
+                          <div className="flex items-center gap-2">
+                            <CurrencyAllocatedSlot type="gem" size="sm" />
+                            <span>1,000 GEMS</span>
+                          </div>
+                          <span className="font-mono font-bold text-neutral-800 text-xs">➔</span>
+                          <div className="flex items-center gap-2">
+                            <CurrencyAllocatedSlot type="crypto" size="sm" />
+                            <span>1 CRYPTO</span>
+                          </div>
                         </button>
 
                         <button
                           type="button"
                           onClick={() => handleConvertGemsToCrypto(2000)}
                           disabled={gemBalance < 2000}
-                          className={`min-h-[44px] py-2.5 px-3 text-xs font-black uppercase tracking-wider border-2 border-black shadow-[4px_4px_0px_#000] flex items-center justify-center gap-1.5 transition-all ${
+                          className={`min-h-[50px] py-2 px-3 text-xs font-black uppercase tracking-wider border-2 border-black shadow-[4px_4px_0px_#000] flex items-center justify-between gap-2 transition-all ${
                             gemBalance >= 2000
                               ? 'bg-yellow-400 hover:bg-yellow-300 text-black cursor-pointer active:translate-x-0.5 active:translate-y-0.5'
                               : 'bg-neutral-800 text-neutral-500 border-neutral-700 cursor-not-allowed opacity-60'
                           }`}
                         >
-                          <Zap className="w-3.5 h-3.5" />
-                          <span>2,000 GEMS ➔ 2 CRYPTO</span>
+                          <div className="flex items-center gap-2">
+                            <CurrencyAllocatedSlot type="gem" size="sm" />
+                            <span>2,000 GEMS</span>
+                          </div>
+                          <span className="font-mono font-bold text-neutral-800 text-xs">➔</span>
+                          <div className="flex items-center gap-2">
+                            <CurrencyAllocatedSlot type="crypto" size="sm" />
+                            <span>2 CRYPTO</span>
+                          </div>
                         </button>
                       </div>
                     </div>
@@ -801,14 +854,18 @@ export const MugenGemStore: React.FC<MugenGemStoreProps> = ({
                         type="button"
                         onClick={handleActivateEloShield}
                         disabled={cryptoBalance < 1}
-                        className={`w-full min-h-[44px] py-2.5 px-3 text-xs font-black uppercase tracking-wider border-2 border-black shadow-[4px_4px_0px_#000] flex items-center justify-center gap-2 transition-all ${
+                        className={`w-full min-h-[48px] py-2 px-3 text-xs font-black uppercase tracking-wider border-2 border-black shadow-[4px_4px_0px_#000] flex items-center justify-center gap-2.5 transition-all ${
                           cryptoBalance >= 1
                             ? 'bg-yellow-400 hover:bg-yellow-300 text-black cursor-pointer active:translate-x-0.5 active:translate-y-0.5'
                             : 'bg-neutral-800 text-neutral-500 border-neutral-700 cursor-not-allowed opacity-60'
                         }`}
                       >
-                        <ShieldCheck className="w-4 h-4" />
-                        <span>ACTIVATE ELO SHIELD (1 CRYPTO)</span>
+                        <ShieldCheck className="w-4 h-4 shrink-0" />
+                        <span>ACTIVATE ELO SHIELD</span>
+                        <div className="flex items-center gap-1.5 bg-black/15 px-2 py-0.5 rounded border border-black/20">
+                          <CurrencyAllocatedSlot type="crypto" size="sm" />
+                          <span className="font-mono font-bold">1 CRYPTO</span>
+                        </div>
                       </button>
                     </div>
                   </div>
@@ -837,25 +894,40 @@ export const MugenGemStore: React.FC<MugenGemStoreProps> = ({
                         type="button"
                         onClick={() => handleDeductElo(50)}
                         disabled={currentElo <= 50}
-                        className="min-h-[44px] py-2.5 px-3 bg-yellow-400 hover:bg-yellow-300 text-black font-black text-xs uppercase tracking-wider border-2 border-black shadow-[4px_4px_0px_#000] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed transition-all active:translate-x-0.5 active:translate-y-0.5"
+                        className="min-h-[48px] py-2 px-3 bg-yellow-400 hover:bg-yellow-300 text-black font-black text-xs uppercase tracking-wider border-2 border-black shadow-[4px_4px_0px_#000] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed transition-all active:translate-x-0.5 active:translate-y-0.5 flex items-center justify-between gap-2"
                       >
-                        -50 ELO ➔ +500 GEMS
+                        <span>-50 ELO RATING</span>
+                        <span className="font-mono text-xs font-bold text-neutral-800">➔</span>
+                        <div className="flex items-center gap-1.5">
+                          <CurrencyAllocatedSlot type="gem" size="sm" />
+                          <span>+500 GEMS</span>
+                        </div>
                       </button>
                       <button
                         type="button"
                         onClick={() => handleDeductElo(100)}
                         disabled={currentElo <= 100}
-                        className="min-h-[44px] py-2.5 px-3 bg-yellow-400 hover:bg-yellow-300 text-black font-black text-xs uppercase tracking-wider border-2 border-black shadow-[4px_4px_0px_#000] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed transition-all active:translate-x-0.5 active:translate-y-0.5"
+                        className="min-h-[48px] py-2 px-3 bg-yellow-400 hover:bg-yellow-300 text-black font-black text-xs uppercase tracking-wider border-2 border-black shadow-[4px_4px_0px_#000] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed transition-all active:translate-x-0.5 active:translate-y-0.5 flex items-center justify-between gap-2"
                       >
-                        -100 ELO ➔ +1,000 GEMS
+                        <span>-100 ELO RATING</span>
+                        <span className="font-mono text-xs font-bold text-neutral-800">➔</span>
+                        <div className="flex items-center gap-1.5">
+                          <CurrencyAllocatedSlot type="gem" size="sm" />
+                          <span>+1,000 GEMS</span>
+                        </div>
                       </button>
                       <button
                         type="button"
                         onClick={() => handleDeductElo(200)}
                         disabled={currentElo <= 200}
-                        className="min-h-[44px] py-2.5 px-3 bg-yellow-400 hover:bg-yellow-300 text-black font-black text-xs uppercase tracking-wider border-2 border-black shadow-[4px_4px_0px_#000] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed transition-all active:translate-x-0.5 active:translate-y-0.5"
+                        className="min-h-[48px] py-2 px-3 bg-yellow-400 hover:bg-yellow-300 text-black font-black text-xs uppercase tracking-wider border-2 border-black shadow-[4px_4px_0px_#000] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed transition-all active:translate-x-0.5 active:translate-y-0.5 flex items-center justify-between gap-2"
                       >
-                        -200 ELO ➔ +2,000 GEMS
+                        <span>-200 ELO RATING</span>
+                        <span className="font-mono text-xs font-bold text-neutral-800">➔</span>
+                        <div className="flex items-center gap-1.5">
+                          <CurrencyAllocatedSlot type="gem" size="sm" />
+                          <span>+2,000 GEMS</span>
+                        </div>
                       </button>
                     </div>
                   </div>
@@ -893,6 +965,7 @@ export const MugenGemStore: React.FC<MugenGemStoreProps> = ({
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                   {SECRET_PLAYERS.map((player) => {
+                    const isPermanentLocked = player.id === 'boy_friend' || player.id === 'girl_friend';
                     const isUnlocked = unlockedCodes.includes(player.id);
                     return (
                       <div
@@ -906,12 +979,14 @@ export const MugenGemStore: React.FC<MugenGemStoreProps> = ({
                           </span>
                           <span
                             className={`text-[10px] font-mono font-black uppercase px-1.5 py-0.5 border ${
-                              isUnlocked
+                              isPermanentLocked
+                                ? 'bg-red-500/20 text-red-400 border-red-500/50'
+                                : isUnlocked
                                 ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/50'
                                 : 'bg-neutral-800 text-neutral-400 border-neutral-700'
                             }`}
                           >
-                            {isUnlocked ? 'DECRYPTED' : 'ENCRYPTED'}
+                            {isPermanentLocked ? 'PERMANENTLY LOCKED' : isUnlocked ? 'DECRYPTED' : 'ENCRYPTED'}
                           </span>
                         </div>
 
@@ -932,7 +1007,7 @@ export const MugenGemStore: React.FC<MugenGemStoreProps> = ({
                           </div>
                           <div className="min-w-0 flex-1">
                             <h4 className="text-sm font-black uppercase text-white truncate group-hover:text-yellow-400 transition-colors">
-                              {player.publicName}
+                              {player.publicName} ({player.realName})
                             </h4>
                             <p className="text-[11px] font-bold text-yellow-300/90 truncate">
                               {player.title}
@@ -944,7 +1019,16 @@ export const MugenGemStore: React.FC<MugenGemStoreProps> = ({
                         </div>
 
                         {/* Button Actions: Brutalist Yellow */}
-                        {isUnlocked ? (
+                        {isPermanentLocked ? (
+                          <button
+                            type="button"
+                            disabled
+                            className="w-full min-h-[44px] py-2.5 px-3 bg-neutral-900 text-neutral-400 border-2 border-neutral-700 shadow-[2px_2px_0px_#000] flex items-center justify-center gap-2 cursor-not-allowed opacity-80 font-black text-xs uppercase tracking-wider"
+                          >
+                            <ShieldAlert className="w-4 h-4 text-red-400 shrink-0" />
+                            <span>PIN ONLY (NOT FOR SALE)</span>
+                          </button>
+                        ) : isUnlocked ? (
                           <button
                             type="button"
                             onClick={() => setSelectedBotForCode(player)}
@@ -958,14 +1042,18 @@ export const MugenGemStore: React.FC<MugenGemStoreProps> = ({
                             type="button"
                             onClick={() => handleUnlockSecretBlueprint(player)}
                             disabled={cryptoBalance < 1}
-                            className={`w-full min-h-[44px] py-2.5 px-3 text-xs font-black uppercase tracking-wider border-2 border-black shadow-[4px_4px_0px_#000] flex items-center justify-center gap-2 transition-transform ${
+                            className={`w-full min-h-[48px] py-2 px-3 text-xs font-black uppercase tracking-wider border-2 border-black shadow-[4px_4px_0px_#000] flex items-center justify-center gap-2.5 transition-transform ${
                               cryptoBalance >= 1
                                 ? 'bg-yellow-400 hover:bg-yellow-300 text-black cursor-pointer active:translate-x-0.5 active:translate-y-0.5'
                                 : 'bg-neutral-800 text-neutral-500 border-neutral-700 cursor-not-allowed opacity-60'
                             }`}
                           >
-                            <Unlock className="w-4 h-4 text-black stroke-[2.5]" />
-                            <span>DECRYPT PIN (1 CRYPTO)</span>
+                            <Unlock className="w-4 h-4 text-black stroke-[2.5] shrink-0" />
+                            <span>DECRYPT PIN</span>
+                            <div className="flex items-center gap-1.5 bg-black/15 px-2 py-0.5 rounded border border-black/20">
+                              <CurrencyAllocatedSlot type="crypto" size="sm" />
+                              <span className="font-mono font-bold">1 CRYPTO</span>
+                            </div>
                           </button>
                         )}
                       </div>
@@ -991,9 +1079,9 @@ export const MugenGemStore: React.FC<MugenGemStoreProps> = ({
                             <span className="text-[10px] font-mono font-black uppercase text-neutral-400">
                               REWARD CHEST
                             </span>
-                            <div className="flex items-center gap-1 text-amber-400 font-mono font-black text-xs">
-                              <MugenGemIcon className="w-3.5 h-3.5 text-amber-400" />
-                              <span>{chest.cost}</span>
+                            <div className="flex items-center gap-1.5 bg-black/70 border border-amber-400/50 px-2 py-1 rounded shadow-inner text-amber-400 font-mono font-black text-xs">
+                              <CurrencyAllocatedSlot type="gem" size="sm" />
+                              <span className="text-sm font-black">{chest.cost}</span>
                             </div>
                           </div>
 
@@ -1013,13 +1101,13 @@ export const MugenGemStore: React.FC<MugenGemStoreProps> = ({
                           type="button"
                           onClick={() => handleBuyChest(chest)}
                           disabled={!canAfford}
-                          className={`w-full min-h-[44px] py-2.5 px-3 text-xs font-black uppercase tracking-wider border-2 border-black shadow-[4px_4px_0px_#000] flex items-center justify-center gap-1.5 transition-transform ${
+                          className={`w-full min-h-[48px] py-2 px-3 text-xs font-black uppercase tracking-wider border-2 border-black shadow-[4px_4px_0px_#000] flex items-center justify-center gap-2.5 transition-transform ${
                             canAfford
                               ? 'bg-yellow-400 hover:bg-yellow-300 text-black cursor-pointer active:translate-x-0.5 active:translate-y-0.5'
                               : 'bg-neutral-800 text-neutral-500 border-neutral-700 cursor-not-allowed opacity-60'
                           }`}
                         >
-                          <MugenGemIcon className="w-3.5 h-3.5" />
+                          <CurrencyAllocatedSlot type="gem" size="sm" />
                           <span>UNLOCK ({chest.cost} GEMS)</span>
                         </button>
                       </div>

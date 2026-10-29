@@ -3,7 +3,7 @@ import { ChestSvg } from './ChestSvg';
 import { RewardCard } from './RewardCard';
 import { GemRewardCard } from './GemRewardCard';
 import { SecretPlayerRewardDef } from './chestConfig';
-import { pickRandomReward, unlockSecretPlayer, recordClaimedReward, PickedRewardResult } from './chestStore';
+import { pickRandomReward, unlockSecretPlayer, recordClaimedReward, PickedRewardResult, determineNextChestReward } from './chestStore';
 import { addGems } from '../economy/mugenStore';
 import { MugenGemIcon } from '../economy/MugenGemIcon';
 import { X, Sparkles, ShieldAlert } from 'lucide-react';
@@ -243,66 +243,63 @@ export const ChestModal: React.FC<ChestModalProps> = ({
         setTapCount(3);
         setIsWindup(true);
 
-        // Mutually exclusive randomized reward (50% chance for Secret Player Card, 50% chance for Mugen Gems)
-        const isGemDrop = Math.random() < 0.5;
-
-        if (isGemDrop) {
-          const randomGems = isWin
-            ? Math.floor(Math.random() * 201) + 500
-            : Math.floor(Math.random() * 151) + 50;
-
-          setGemsAwarded(randomGems);
-          setRewardResult(null);
-          addGems(userId || 'guest', randomGems);
-
+        if (resigned) {
+          const delta = resignedEloBoost;
+          if (matchId && onApplyEloBoost) {
+            try {
+              onApplyEloBoost(delta, matchId);
+            } catch {
+              // Fail safe
+            }
+          }
           recordClaimedReward(
             {
-              id: 'gem_loot_payout',
-              name: `${randomGems} Mugen Gems`,
-              role: 'Currency Loot',
-              title: 'Vault Payout',
-              rarity: 'Rare',
-              avatarUrl: '/assets/aistudio/image_93cd5708.png',
-              quote: 'Gleaming crystals of pure combat resonance.',
-              flavor: `Awarded +${randomGems} Mugen Gems directly to your wallet.`,
+              id: 'elo_consolation',
+              name: 'Resilience Spirit',
+              role: 'Tactical Grit',
+              title: 'Resilience Honor',
+              rarity: 'Common',
+              avatarUrl: '/assets/aistudio/image_4aa74391.png',
+              quote: 'Honor remains in standing tall through defeat.',
+              flavor: `Awarded +${delta} ELO rating boost.`,
             },
             true,
             matchId,
-            undefined,
+            delta,
             userId
           );
         } else {
-          setGemsAwarded(0);
-          if (!resigned) {
-            const picked = pickRandomReward(userId);
-            setRewardResult(picked);
-            unlockSecretPlayer(picked.reward.id, userId);
-            recordClaimedReward(picked.reward, picked.isOwned, matchId, undefined, userId);
-          } else {
-            const delta = resignedEloBoost;
-            if (matchId && onApplyEloBoost) {
-              try {
-                onApplyEloBoost(delta, matchId);
-              } catch {
-                // Fail safe
-              }
-            }
+          const decision = determineNextChestReward(isWin, userId);
+
+          if (decision.type === 'gems') {
+            const randomGems = decision.gemAmount || (isWin ? 600 : 100);
+
+            setGemsAwarded(randomGems);
+            setRewardResult(null);
+            addGems(userId || 'guest', randomGems);
+
             recordClaimedReward(
               {
-                id: 'elo_consolation',
-                name: 'Resilience Spirit',
-                role: 'Tactical Grit',
-                title: 'Resilience Honor',
-                rarity: 'Common',
-                avatarUrl: '/assets/aistudio/image_4aa74391.png',
-                quote: 'Honor remains in standing tall through defeat.',
-                flavor: `Awarded +${delta} ELO rating boost.`,
+                id: 'gem_loot_payout',
+                name: `${randomGems} Mugen Gems`,
+                role: 'Currency Loot',
+                title: 'Vault Payout',
+                rarity: 'Rare',
+                avatarUrl: '/assets/aistudio/image_93cd5708.png',
+                quote: 'Gleaming crystals of pure combat resonance.',
+                flavor: `Awarded +${randomGems} Mugen Gems directly to your wallet.`,
               },
               true,
               matchId,
-              delta,
+              undefined,
               userId
             );
+          } else {
+            setGemsAwarded(0);
+            const picked = decision.pickedReward || pickRandomReward(userId);
+            setRewardResult(picked);
+            unlockSecretPlayer(picked.reward.id, userId);
+            recordClaimedReward(picked.reward, picked.isOwned, matchId, undefined, userId);
           }
         }
 

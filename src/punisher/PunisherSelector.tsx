@@ -17,6 +17,7 @@ import { ModeArtPanel } from '../components/ModeArtPanel';
 interface PunisherSelectorProps {
   onSelect: (botId: PunisherBotId) => void;
   onClose: () => void;
+  initialSelectedBot?: PunisherBotId;
 }
 
 const ALL_PUNISHER_BOTS = [BANGLA_BOT_ENTRY, ...CHESS_BOTS] as const;
@@ -61,9 +62,9 @@ const BOT_DESCRIPTION: Record<PunisherBotId, string> = {
   'chrome-reaper': 'The final boss calculator. Evaluates multi-ply combinations in milliseconds.',
 };
 
-export const PunisherSelector: React.FC<PunisherSelectorProps> = ({ onSelect, onClose }) => {
+export const PunisherSelector: React.FC<PunisherSelectorProps> = ({ onSelect, onClose, initialSelectedBot }) => {
   const [hoveredBot, setHoveredBot] = useState<PunisherBotId | null>(null);
-  const [selectedBotDetail, setSelectedBotDetail] = useState<PunisherBotId | null>(null);
+  const [selectedBotDetail, setSelectedBotDetail] = useState<PunisherBotId | null>(initialSelectedBot || null);
 
   // Lock body scroll while selector modal is open
   useEffect(() => {

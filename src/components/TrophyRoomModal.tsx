@@ -35,7 +35,7 @@ import {
 import { triggerChestModalNow } from '../chest/reportGameEnd';
 import { ChestSvg } from '../chest/ChestSvg';
 import { getGems } from '../economy/mugenStore';
-import { MugenGemIcon } from '../economy/MugenGemIcon';
+import { MugenGemIcon, CurrencyAllocatedSlot } from '../economy/CurrencyIcons';
 
 interface TrophyRoomModalProps {
   isOpen: boolean;
@@ -274,8 +274,8 @@ export const TrophyRoomModal: React.FC<TrophyRoomModalProps> = ({
 
             <div className="flex items-center gap-1.5 shrink-0">
               {/* Live Gem Balance Badge */}
-              <div className="px-2.5 py-1 bg-amber-400 text-black border border-black font-mono font-black text-xs flex items-center gap-1 shadow-[2px_2px_0px_#fff]">
-                <MugenGemIcon className="w-4 h-4 text-black shrink-0" />
+              <div className="px-2 py-1 bg-amber-400 text-black border border-black font-mono font-black text-xs flex items-center gap-1.5 shadow-[2px_2px_0px_#fff]">
+                <CurrencyAllocatedSlot type="gem" size="sm" />
                 <span>{getGems(user?.id || 'guest')} GEMS</span>
               </div>
 

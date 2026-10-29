@@ -234,11 +234,11 @@ assert(hostClientColor === hostClientMatch.turn, 'Culling: First-move player (Wh
 assert(guestClientColor !== guestClientMatch.turn, 'Culling: Second-move player (Black) board is locked awaiting White');
 
 // Step 9.4: The first player (White - Alice) makes the first legal move
-// White Pawn at D2 (x=4, y=2) advances to D3 (x=4, y=3)
+// White Pawn at (x=3, y=1) advances to (x=3, y=2)
 const whiteMoveRes = executeCullingMove(
   hostClientMatch,
-  { x: 4, y: 2 },
-  { x: 4, y: 3 },
+  { x: 3, y: 1 },
+  { x: 3, y: 2 },
   'move'
 );
 
@@ -254,11 +254,11 @@ const guestUpdatedMatch = testCullingRooms.get(cullingMatchId)!.match;
 assert(guestUpdatedMatch.turn === guestClientColor, 'Culling: Second player (Black) board unlocks on their turn');
 
 // Step 9.5: Second player (Black - Bob) responds with legal move
-// Black Pawn at D7 (x=4, y=7) advances to D6 (x=4, y=6)
+// Black Pawn at (x=3, y=5) advances to (x=3, y=4)
 const blackMoveRes = executeCullingMove(
   guestUpdatedMatch,
-  { x: 4, y: 7 },
-  { x: 4, y: 6 },
+  { x: 3, y: 5 },
+  { x: 3, y: 4 },
   'move'
 );
 

@@ -52,6 +52,7 @@ import { AllGameModesModal } from './AllGameModesModal';
 import { WalkWithMastersCard } from './HashiraTrainingCard';
 import { Chess3dEntryCard } from '../chess3d/Chess3dEntryCard';
 import { Chess3dRulesPreviewModal } from '../chess3d/Chess3dRulesPreviewModal';
+import { ChromeReaper } from '../punisher/ChessBotFaces_with_Gestures';
 import type { PunisherBotId } from '../chess3d/chess3dBot';
 import type { Team as Team3D, TimeControl3D } from '../chess3d/types';
 import { CraftGameHub } from '../craftgame/CraftGameHub';
@@ -71,7 +72,7 @@ interface DashboardProps {
   onOpenCraftTheory: () => void;
   onOpenRose?: () => void;
   onOpenHashiraTraining?: (trainerId?: TrainerId) => void;
-  onOpenPunisher?: () => void;
+  onOpenPunisher?: (botId?: PunisherBotId) => void;
   onStartSecretMatch?: (botConfig: SecretPlayerConfig) => void;
   onStart3dMatch?: (params: {
     botId?: PunisherBotId;
@@ -2085,6 +2086,188 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
             {/* Desktop Column 1 (Left Column) */}
             <div className="contents lg:flex lg:flex-col lg:gap-4">
+              {/* SUMMONER BUTTON: Silver Glass Pill (Border Radius: 7px, Non-Brutalist) */}
+              <div className="order-1 lg:order-none block md:hidden w-full">
+                <style>{`
+                  .glass-pill-summoner {
+                    --tint: 217, 217, 217;
+                    --base: #141414;
+                    --fill-hot: rgba(var(--tint), 0.16);
+                    --fill-cold: rgba(var(--tint), 0.02);
+                    --border-hot: #d9d9d9;
+                    --border-cold: #4a4a4a;
+                    --text: #e6e6e6;
+                    --icon-bg: #a9a9a9;
+                    --icon-fg: #141414;
+                    --glow: rgba(var(--tint), 0.12);
+
+                    position: relative;
+                    isolation: isolate;
+                    display: flex;
+                    align-items: center;
+                    gap: 12px;
+                    width: 100%;
+                    min-height: 56px;
+                    padding: 10px 14px;
+                    border: 0;
+                    border-radius: 5px;
+                    font-family: Inter, system-ui, -apple-system, sans-serif;
+                    letter-spacing: 0.01em;
+                    color: var(--text);
+                    cursor: pointer;
+                    background:
+                      linear-gradient(135deg, var(--fill-hot) 0%, var(--fill-cold) 70%),
+                      var(--base);
+                    box-shadow:
+                      inset 0 1px 0 rgba(255, 255, 255, 0.18),
+                      inset 0 -1px 0 rgba(0, 0, 0, 0.45),
+                      0 0 14px var(--glow),
+                      0 4px 14px rgba(0, 0, 0, 0.5);
+                    -webkit-tap-highlight-color: transparent;
+                    touch-action: manipulation;
+                    user-select: none;
+                    overflow: hidden;
+                    transition: transform 0.18s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.25s ease;
+                  }
+
+                  /* gradient border (one-sided light) */
+                  .glass-pill-summoner::before {
+                    content: "";
+                    position: absolute;
+                    inset: 0;
+                    padding: 1px;
+                    border-radius: inherit;
+                    background: linear-gradient(135deg, var(--border-hot) 0%, var(--border-cold) 60%, transparent 100%);
+                    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+                    -webkit-mask-composite: xor;
+                    mask-composite: exclude;
+                    pointer-events: none;
+                    z-index: 1;
+                  }
+
+                  /* sheen sweep */
+                  .glass-pill-summoner::after {
+                    content: "";
+                    position: absolute;
+                    top: 0; bottom: 0; left: -60%;
+                    width: 40%;
+                    background: linear-gradient(105deg, transparent, rgba(255, 255, 255, 0.22), transparent);
+                    transform: skewX(-18deg);
+                    opacity: 0;
+                    pointer-events: none;
+                    z-index: 2;
+                  }
+
+                  .glass-pill-summoner .pill__hit {
+                    position: absolute;
+                    inset: -4px;
+                    min-height: 44px;
+                    pointer-events: none;
+                  }
+
+                  @media (hover: hover) {
+                    .glass-pill-summoner:hover {
+                      box-shadow:
+                        inset 0 1px 0 rgba(255, 255, 255, 0.25),
+                        0 0 22px var(--glow),
+                        0 6px 18px rgba(0, 0, 0, 0.55);
+                    }
+                    .glass-pill-summoner:hover::after {
+                      animation: summonerSheen 0.9s ease forwards;
+                    }
+                  }
+
+                  .glass-pill-summoner:active {
+                    transform: scale(0.96);
+                  }
+
+                  .glass-pill-summoner:focus-visible {
+                    outline: 2px solid rgba(var(--tint), 0.7);
+                    outline-offset: 3px;
+                  }
+
+                  @keyframes summonerSheen {
+                    0% { left: -60%; opacity: 0; }
+                    20% { opacity: 1; }
+                    100% { left: 130%; opacity: 0; }
+                  }
+
+                  @keyframes summonerBreathe {
+                    0%, 100% {
+                      box-shadow:
+                        inset 0 1px 0 rgba(255, 255, 255, 0.18),
+                        0 0 10px var(--glow),
+                        0 4px 14px rgba(0, 0, 0, 0.5);
+                    }
+                    50% {
+                      box-shadow:
+                        inset 0 1px 0 rgba(255, 255, 255, 0.18),
+                        0 0 22px var(--glow),
+                        0 4px 14px rgba(0, 0, 0, 0.5);
+                    }
+                  }
+
+                  @media (hover: none) {
+                    .glass-pill-summoner:active::after {
+                      animation: summonerSheen 0.6s ease forwards;
+                    }
+                    .glass-pill-summoner[data-live="true"] {
+                      animation: summonerBreathe 2.8s ease-in-out infinite;
+                    }
+                  }
+
+                  @media (prefers-reduced-motion: reduce) {
+                    .glass-pill-summoner,
+                    .glass-pill-summoner::after {
+                      animation: none !important;
+                      transition: none !important;
+                    }
+                  }
+                `}</style>
+                <button
+                  type="button"
+                  data-live="true"
+                  onClick={() => {
+                    if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+                      try {
+                        navigator.vibrate(8);
+                      } catch {
+                        // ignore
+                      }
+                    }
+                    onOpenPunisher && onOpenPunisher('chrome-reaper');
+                  }}
+                  className="glass-pill-summoner group"
+                  style={{ borderRadius: '5px' }}
+                  title="Play against dark and HOT robots - Chrome Reaper"
+                >
+                  <span className="pill__hit" aria-hidden="true" />
+                  {/* Scary Bot Face Icon (No black square behind it) */}
+                  <div className="relative shrink-0 flex items-center justify-center">
+                    <ChromeReaper size={42} mood="angry" />
+                  </div>
+                  <div className="flex-1 min-w-0 text-left">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[10px] font-semibold text-[#a9a9a9] tracking-wider uppercase">
+                        SUMMONER · PUNISHER DIRECT
+                      </span>
+                    </div>
+                    <div className="text-[13px] sm:text-sm font-medium text-[#e6e6e6] tracking-[0.01em] truncate leading-tight mt-0.5">
+                      Play against dark and HOT robots
+                    </div>
+                    <div className="text-[11px] text-[#8e8e99] tracking-tight truncate leading-tight mt-0.5">
+                      Chrome Reaper & ruthless high-ELO tactical AI
+                    </div>
+                  </div>
+                  <div className="shrink-0 w-7 h-7 rounded-full bg-[#a9a9a9] text-[#141414] flex items-center justify-center opacity-85 group-hover:opacity-100 transition-opacity">
+                    <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round">
+                      <line x1="7" y1="7" x2="17" y2="17" />
+                      <polyline points="17 7 17 17 7 17" />
+                    </svg>
+                  </div>
+                </button>
+              </div>
+
               {/* FEATURE BANNER: CHESS HASHIRA TRAINING */}
               <div className="order-1 lg:order-none bg-gradient-to-r from-yellow-950 via-neutral-900 to-black text-white border-4 border-amber-400 p-4 sm:p-5 shadow-[6px_6px_0px_#eab308] flex flex-col sm:flex-row lg:flex-col sm:items-center lg:items-start justify-between gap-4 relative overflow-hidden min-w-0">
                 <div className="flex items-center gap-3.5 relative z-10">
@@ -2277,7 +2460,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                     id="punisher-cont"
                     className="punisher-cont w-20 h-20 sm:w-24 sm:h-24 bg-black border-3 border-red-600 flex items-center justify-center shrink-0 shadow-[4px_4px_0px_#000000] overflow-hidden relative group cursor-pointer"
                     data-container="punisher-cont"
-                    onClick={onOpenPunisher}
+                    onClick={() => onOpenPunisher && onOpenPunisher()}
                     title="Enter Punisher Robot Selector"
                   >
                     {/* Ominous red radial glow backdrop */}
@@ -2309,7 +2492,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
                 <div className="flex flex-wrap items-center gap-3 shrink-0 relative z-10 lg:mt-auto">
                   <button
-                    onClick={onOpenPunisher}
+                    onClick={() => onOpenPunisher && onOpenPunisher()}
                     className="relative z-10 py-3 px-5 bg-[#2727F5] hover:bg-[#4a4aff] text-white font-black text-xs sm:text-sm uppercase tracking-wider border-2 border-black shadow-[3px_3px_0px_#000000] flex items-center justify-center gap-2 shrink-0 cursor-pointer active:translate-x-0.5 active:translate-y-0.5"
                   >
                     <Zap className="w-4 h-4 fill-current" />
