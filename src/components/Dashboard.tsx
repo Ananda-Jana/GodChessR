@@ -73,6 +73,7 @@ interface DashboardProps {
   onOpenRose?: () => void;
   onOpenHashiraTraining?: (trainerId?: TrainerId) => void;
   onOpenPunisher?: (botId?: PunisherBotId) => void;
+  onStartLeagueBotMatch?: (botId: PunisherBotId) => void;
   onStartSecretMatch?: (botConfig: SecretPlayerConfig) => void;
   onStart3dMatch?: (params: {
     botId?: PunisherBotId;
@@ -184,6 +185,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
   onOpenRose,
   onOpenHashiraTraining,
   onOpenPunisher,
+  onStartLeagueBotMatch,
   onExitPreGameViews,
   onStartSecretMatch,
   onStart3dMatch,
@@ -251,6 +253,64 @@ export const Dashboard: React.FC<DashboardProps> = ({
       onClearInitialSecretArena?.();
     }
   }, [initialSecretArenaOpen, onClearInitialSecretArena]);
+
+  useEffect(() => {
+    const handleOpenPunisherBot = (e: Event) => {
+      const custom = e as CustomEvent;
+      const botId = custom.detail?.botId;
+      setIsTrophyRoomOpen(false);
+      if (onOpenPunisher) {
+        onOpenPunisher(botId);
+      }
+    };
+
+    const handleOpenLeagueBotMatch = (e: Event) => {
+      const custom = e as CustomEvent;
+      const botId = custom.detail?.botId;
+      setIsTrophyRoomOpen(false);
+      if (onStartLeagueBotMatch && botId) {
+        onStartLeagueBotMatch(botId);
+      }
+    };
+
+    const handleOpenPlayerChallenge = (e: Event) => {
+      const custom = e as CustomEvent;
+      const target = custom.detail?.targetPlayer;
+      setIsTrophyRoomOpen(false);
+      if (target) {
+        setChallengeModalTarget(target);
+      }
+    };
+
+    const handleOpenMultiplayerChallenge = () => {
+      setIsTrophyRoomOpen(false);
+      // Smoothly scroll down to the online players arena rather than opening the modes tab
+      const el = document.getElementById('players') || document.getElementById('matches');
+      el?.scrollIntoView({ behavior: 'smooth' });
+    };
+
+    const handleToastNotice = (e: Event) => {
+      const custom = e as CustomEvent;
+      const msg = custom.detail?.message;
+      if (msg) {
+        setSentNotice(msg);
+        setTimeout(() => setSentNotice(null), 5000);
+      }
+    };
+
+    window.addEventListener('open_punisher_bot', handleOpenPunisherBot);
+    window.addEventListener('open_league_bot_match', handleOpenLeagueBotMatch);
+    window.addEventListener('open_player_challenge', handleOpenPlayerChallenge);
+    window.addEventListener('open_multiplayer_challenge', handleOpenMultiplayerChallenge);
+    window.addEventListener('app_toast_notice', handleToastNotice);
+    return () => {
+      window.removeEventListener('open_punisher_bot', handleOpenPunisherBot);
+      window.removeEventListener('open_league_bot_match', handleOpenLeagueBotMatch);
+      window.removeEventListener('open_player_challenge', handleOpenPlayerChallenge);
+      window.removeEventListener('open_multiplayer_challenge', handleOpenMultiplayerChallenge);
+      window.removeEventListener('app_toast_notice', handleToastNotice);
+    };
+  }, [onOpenPunisher, onStartLeagueBotMatch]);
 
   const [isCullingOpen, setIsCullingOpen] = useState(false);
   const [isCullingMatchActive, setIsCullingMatchActive] = useState(false);
@@ -2110,7 +2170,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                     min-height: 56px;
                     padding: 10px 14px;
                     border: 0;
-                    border-radius: 5px;
+                    border-radius: 5px !important;
                     font-family: Inter, system-ui, -apple-system, sans-serif;
                     letter-spacing: 0.01em;
                     color: var(--text);
@@ -2136,7 +2196,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                     position: absolute;
                     inset: 0;
                     padding: 1px;
-                    border-radius: inherit;
+                    border-radius: 5px !important;
                     background: linear-gradient(135deg, var(--border-hot) 0%, var(--border-cold) 60%, transparent 100%);
                     -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
                     -webkit-mask-composite: xor;
@@ -2237,14 +2297,14 @@ export const Dashboard: React.FC<DashboardProps> = ({
                     }
                     onOpenPunisher && onOpenPunisher('chrome-reaper');
                   }}
-                  className="glass-pill-summoner group"
+                  className="glass-pill-summoner group rounded-[5px]"
                   style={{ borderRadius: '5px' }}
                   title="Play against dark and HOT robots - Chrome Reaper"
                 >
                   <span className="pill__hit" aria-hidden="true" />
                   {/* Scary Bot Face Icon (No black square behind it) */}
-                  <div className="relative shrink-0 flex items-center justify-center">
-                    <ChromeReaper size={42} mood="angry" />
+                  <div className="relative shrink-0 flex items-center justify-center bg-transparent border-0 shadow-none p-0">
+                    <ChromeReaper size={42} mood="angry" className="bg-transparent text-red-500" />
                   </div>
                   <div className="flex-1 min-w-0 text-left">
                     <div className="flex items-center gap-1.5">
@@ -3119,11 +3179,12 @@ export const Dashboard: React.FC<DashboardProps> = ({
         </>
       )}
 
-      {/* Fixed Bottom Tab Bar (Mobile only, md:hidden) */}
-      <nav
-        aria-label="Mobile Navigation"
-        className="md:hidden fixed bottom-0 left-0 right-0 z-[200] overflow-visible bg-zinc-950/95 supports-[backdrop-filter]:bg-zinc-950/80 supports-[backdrop-filter]:backdrop-blur-xl border-t border-white/10 text-white pb-[env(safe-area-inset-bottom)]"
-      >
+      {/* Fixed Bottom Tab Bar (Mobile only, md:hidden, suppressed when Trophy Room is open) */}
+      {!isTrophyRoomOpen && (
+        <nav
+          aria-label="Mobile Navigation"
+          className="md:hidden fixed bottom-0 left-0 right-0 z-[200] overflow-visible bg-zinc-950/95 supports-[backdrop-filter]:bg-zinc-950/80 supports-[backdrop-filter]:backdrop-blur-xl border-t border-white/10 text-white pb-[env(safe-area-inset-bottom)]"
+        >
         <div className="grid grid-cols-[1fr_1fr_auto_1fr_1fr] h-16 max-w-md mx-auto items-center px-1 overflow-visible">
           {/* Tab 1: Modes */}
           <button
@@ -3260,6 +3321,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
           </button>
         </div>
       </nav>
+      )}
 
       {/* Centered Mobile Profile Modal (Mobile only, md:hidden) */}
       {isMobileProfileOpen && (

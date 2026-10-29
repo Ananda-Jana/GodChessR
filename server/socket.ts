@@ -4,6 +4,7 @@ import { initCullingSocket } from './cullingSocket.ts';
 import { registerRoseSocket } from './rose/roseSocket.ts';
 import { registerChess3dSocket } from './chess3d/chess3dSocket.ts';
 import { db } from './db.ts';
+import { processMatchEndLeagueTrophies } from './league.ts';
 import { getUserIdFromSession } from './auth.ts';
 import type {
   MatchState,
@@ -646,6 +647,25 @@ export function initWebSocketServer(server: HttpServer) {
       else if (match.result.winner === 'white') blackUser.stats.losses += 1;
       else if (match.result.winner === 'draw') blackUser.stats.draws += 1;
       db.saveUser(blackUser);
+    }
+
+    // Process League Trophies & Ranks authoritatively
+    const leagueResults = processMatchEndLeagueTrophies({
+      matchId: match.id,
+      mode: match.gameMode || 'standard',
+      whiteUserId: match.whitePlayer.userId,
+      blackUserId: match.blackPlayer.userId,
+      winnerColor: match.result.winner,
+      isBotMatch: match.blackPlayer.userId.startsWith('bot_') || match.whitePlayer.userId.startsWith('bot_'),
+      resignedUserId: match.result.reason === 'resignation' ? (match.result.winner === 'white' ? match.blackPlayer.userId : match.whitePlayer.userId) : undefined,
+    });
+
+    if (leagueResults.whiteResult || leagueResults.blackResult) {
+      broadcastToMatch(match.id, {
+        type: 'league:updated',
+        matchId: match.id,
+        leagueResults,
+      });
     }
 
     // Zero-bloat guarantee: delete completed match document after 45 seconds so no old games are stored

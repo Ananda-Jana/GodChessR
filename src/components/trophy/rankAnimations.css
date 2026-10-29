@@ -1,0 +1,86 @@
+/* rankAnimations.css - Hardware-Accelerated CSS Keyframes for League Ranks */
+
+@keyframes rank-rust-drift {
+  0% { transform: translateY(0px) rotate(0deg); opacity: 0.7; }
+  50% { transform: translateY(-3px) rotate(1deg); opacity: 0.9; }
+  100% { transform: translateY(0px) rotate(0deg); opacity: 0.7; }
+}
+
+@keyframes rank-shiny-sweep {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes rank-metal-spark {
+  0%, 100% { filter: drop-shadow(0 0 2px rgba(56, 189, 248, 0.4)); }
+  50% { filter: drop-shadow(0 0 8px rgba(56, 189, 248, 0.8)); }
+}
+
+@keyframes rank-mugen-pulse {
+  0%, 100% { transform: scale(1); filter: drop-shadow(0 0 4px rgba(168, 85, 247, 0.5)); }
+  50% { transform: scale(1.03); filter: drop-shadow(0 0 14px rgba(168, 85, 247, 0.9)); }
+}
+
+@keyframes rank-iron-glow {
+  0%, 100% { filter: drop-shadow(0 0 6px rgba(245, 158, 11, 0.6)); }
+  50% { filter: drop-shadow(0 0 16px rgba(245, 158, 11, 0.95)); }
+}
+
+@keyframes rank-crimson-flicker {
+  0%, 100% { opacity: 0.95; filter: drop-shadow(0 0 8px rgba(239, 68, 68, 0.7)); }
+  25% { opacity: 0.8; filter: drop-shadow(0 0 4px rgba(239, 68, 68, 0.4)); }
+  50% { opacity: 1; filter: drop-shadow(0 0 16px rgba(239, 68, 68, 1)); }
+}
+
+@keyframes rank-deity-halo {
+  0% { transform: rotate(0deg); filter: drop-shadow(0 0 10px rgba(251, 191, 36, 0.8)); }
+  50% { filter: drop-shadow(0 0 22px rgba(251, 191, 36, 1)); }
+  100% { transform: rotate(360deg); filter: drop-shadow(0 0 10px rgba(251, 191, 36, 0.8)); }
+}
+
+.rank-anim-rusted {
+  animation: rank-rust-drift 4s ease-in-out infinite;
+}
+
+.rank-anim-shiny {
+  background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.4) 50%, rgba(255,255,255,0) 100%);
+  background-size: 200% 100%;
+  animation: rank-shiny-sweep 3s linear infinite;
+}
+
+.rank-anim-metal1, .rank-anim-metal2 {
+  animation: rank-metal-spark 2.5s ease-in-out infinite;
+}
+
+.rank-anim-mugen1, .rank-anim-mugen2, .rank-anim-mugen3 {
+  animation: rank-mugen-pulse 2s ease-in-out infinite;
+}
+
+.rank-anim-iron, .rank-anim-conqueror {
+  animation: rank-iron-glow 2s ease-in-out infinite;
+}
+
+.rank-anim-dukekiller {
+  animation: rank-crimson-flicker 1.5s steps(2, start) infinite;
+}
+
+.rank-anim-deity {
+  animation: rank-mugen-pulse 1.8s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rank-anim-rusted,
+  .rank-anim-shiny,
+  .rank-anim-metal1,
+  .rank-anim-metal2,
+  .rank-anim-mugen1,
+  .rank-anim-mugen2,
+  .rank-anim-mugen3,
+  .rank-anim-iron,
+  .rank-anim-conqueror,
+  .rank-anim-dukekiller,
+  .rank-anim-deity {
+    animation: none !important;
+    transform: none !important;
+  }
+}

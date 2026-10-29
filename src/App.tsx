@@ -191,12 +191,15 @@ function AppContent() {
     []
   );
 
-  const handleStartPunisherMatch = (botId: PunisherBotId) => {
+  const [isCurrentMatchLeague, setIsCurrentMatchLeague] = useState<boolean>(false);
+
+  const handleStartPunisherMatch = (botId: PunisherBotId, isLeague = false) => {
     if (!user) return;
     if (punisherTimeoutRef.current) {
       clearTimeout(punisherTimeoutRef.current);
       punisherTimeoutRef.current = null;
     }
+    setIsCurrentMatchLeague(isLeague);
     setIsBotThinking(false);
     setIsPunisherSelectorOpen(false);
     setActivePunisherBotId(botId);
@@ -213,7 +216,7 @@ function AppContent() {
     const now = Date.now();
     // Use 'classic' mode for "simple chess" as requested (standard board, no prince, no dice)
     const initialMatch: MatchState = {
-      id: `punisher_${botId}_${now}`,
+      id: isLeague ? `league_bot_${botId}_${now}` : `punisher_${botId}_${now}`,
       whitePlayer: {
         userId: user.id,
         username: user.username,
@@ -248,6 +251,10 @@ function AppContent() {
 
     setPunisherMatch(initialMatch);
     sounds.playChallenge();
+  };
+
+  const handleStartLeagueBotMatch = (botId: PunisherBotId) => {
+    handleStartPunisherMatch(botId, true);
   };
 
   // Last completed game review state (retained for 10 minutes then auto-flushed)
@@ -809,6 +816,7 @@ function AppContent() {
               clearTimeout(punisherTimeoutRef.current);
               punisherTimeoutRef.current = null;
             }
+            setIsCurrentMatchLeague(false);
             setIsBotThinking(false);
             setBotMatch(null);
             setPunisherMatch(null);
@@ -825,6 +833,7 @@ function AppContent() {
           isBotMatch={Boolean(botMatch || punisherMatch)}
           isBotThinking={isBotThinking}
           activePunisherBotId={activePunisherBotId}
+          isLeagueMatch={isCurrentMatchLeague}
         />
       ) : (
         <Dashboard
@@ -848,6 +857,7 @@ function AppContent() {
             setIsHashiraModalOpen(true);
           }}
           onOpenPunisher={() => setIsPunisherSelectorOpen(true)}
+          onStartLeagueBotMatch={handleStartLeagueBotMatch}
           onExitPreGameViews={() => {
             setIsPunisherSelectorOpen(false);
             setIsBotModalOpen(false);

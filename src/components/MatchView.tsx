@@ -70,6 +70,7 @@ interface MatchViewProps {
   isBotMatch?: boolean;
   isBotThinking?: boolean;
   activePunisherBotId?: PunisherBotId | null;
+  isLeagueMatch?: boolean;
 }
 
 export const MatchView: React.FC<MatchViewProps> = (props) => {
@@ -99,6 +100,7 @@ const MatchViewContent: React.FC<MatchViewContentProps> = ({
   isBotMatch = false,
   isBotThinking = false,
   activePunisherBotId = null,
+  isLeagueMatch = false,
   user,
   activeMatch,
 }) => {
@@ -393,7 +395,7 @@ const MatchViewContent: React.FC<MatchViewContentProps> = ({
       }
 
       try {
-        const mode = activePunisherBotId ? 'punisher' : !isBotMatch ? 'multiplayer' : activeMatch.gameMode === 'crafted' ? 'crafted' : 'standard';
+        const mode = isLeagueMatch ? 'league' : activePunisherBotId ? 'punisher' : !isBotMatch ? 'multiplayer' : activeMatch.gameMode === 'crafted' ? 'crafted' : 'standard';
         const myMoves = activeMatch.moveHistory.filter((m) => m.piece.color === myColor).length;
         const isResigned = activeMatch.result?.reason === 'resignation' && activeMatch.result.winner !== myColor;
         reportGameEnd({ matchId: activeMatch.id, mode, result: outcome, moves: myMoves, isTraining: false, userId: user.id, resigned: isResigned });
@@ -537,7 +539,7 @@ const MatchViewContent: React.FC<MatchViewContentProps> = ({
 
   const handleConfirmResign = () => {
     try {
-      const mode = activePunisherBotId ? 'punisher' : !isBotMatch ? 'multiplayer' : activeMatch.gameMode === 'crafted' ? 'crafted' : 'standard';
+      const mode = isLeagueMatch ? 'league' : activePunisherBotId ? 'punisher' : !isBotMatch ? 'multiplayer' : activeMatch.gameMode === 'crafted' ? 'crafted' : 'standard';
       const myMoves = activeMatch.moveHistory.filter((m) => m.piece.color === myColor).length;
       reportGameEnd({ matchId: activeMatch.id, mode, result: 'loss', moves: myMoves, isTraining: false, userId: user?.id, resigned: true });
     } catch {}
@@ -879,7 +881,18 @@ const MatchViewContent: React.FC<MatchViewContentProps> = ({
         </div>
       </header>
 
-      {/* High-Visibility ELO Shield Notification Banner */}
+      {/* Official League Match Banner */}
+      {isLeagueMatch && (
+        <div className="bg-amber-400 text-black px-3 sm:px-6 py-1.5 text-[11px] font-mono font-black uppercase flex items-center justify-between border-b-2 border-black z-30 shadow-[0_2px_4px_rgba(0,0,0,0.15)]">
+          <div className="flex items-center gap-2">
+            <Trophy className="w-4 h-4 fill-black shrink-0" />
+            <span className="tracking-wide">OFFICIAL LEAGUE RANKED MATCH</span>
+          </div>
+          <span className="text-[10px] font-bold text-black/90 hidden sm:inline">
+            Ranked Stakes: +TR on Win · 0 TR on Loss (Bot Shield Protection)
+          </span>
+        </div>
+      )}
       {isEloShieldSaved && (
         <aside
           aria-label="ELO Shield Protection Notification"
@@ -1433,8 +1446,8 @@ const MatchViewContent: React.FC<MatchViewContentProps> = ({
           )}
         </div>
 
-        {/* ZONE 3 (Mobile Only): Fixed-Height 104px Dice Stage Directly Under the Board */}
-        <div className="md:hidden h-[104px] min-h-[104px] max-h-[104px] w-full px-1.5 pb-1 shrink-0 flex items-stretch">
+        {/* ZONE 3 (Mobile Only): Stage Directly Under the Board */}
+        <div className={`md:hidden ${!isDicePhaseActive && !isPlacingCraftPiece ? 'h-auto py-1' : 'h-[104px] min-h-[104px] max-h-[104px]'} w-full px-1.5 pb-1 shrink-0 flex items-stretch`}>
           {isPlacingCraftPiece ? (
             <div className="w-full h-full bg-red-600 text-white border-3 border-black dark:border-white px-2.5 py-2 shadow-[3px_3px_0px_#000] flex items-center justify-between gap-2 overflow-hidden">
               <div className="flex-1 min-w-0">

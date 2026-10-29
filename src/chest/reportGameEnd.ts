@@ -87,6 +87,36 @@ export function reportGameEnd(report: GameEndReport): void {
     // Store in pending in case player saves or refreshes
     addPendingChestEvent(event, report.userId);
 
+    // Non-blocking authoritative league trophy update
+    try {
+      const token = localStorage.getItem('multiplayer_auth_token') || sessionStorage.getItem('multiplayer_auth_token');
+      if (token) {
+        fetch('/api/league/process-match', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            matchId: report.matchId,
+            mode: report.mode,
+            winner: report.result === 'win' ? 'white' : report.result === 'loss' ? 'black' : 'draw',
+            isBotMatch: report.mode !== 'multiplayer',
+            resignedUserId: report.resigned ? report.userId : undefined,
+          }),
+        })
+          .then((res) => res.json())
+          .then((data) => {
+            if (data?.result) {
+              window.dispatchEvent(new CustomEvent('league:updated', { detail: data.result }));
+            }
+          })
+          .catch(() => {});
+      }
+    } catch {
+      // Safe catch
+    }
+
     // Instantly notify listeners to display the post-game chest award modal
     listeners.forEach((listener) => {
       try {

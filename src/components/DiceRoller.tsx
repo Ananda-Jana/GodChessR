@@ -230,7 +230,7 @@ export const DiceRoller: React.FC<DiceRollerProps> = ({
     }
   };
 
-  // --- POST-DICE PHASE STATUS PANEL (Both Mobile Stage & Desktop Side Panel) ---
+  // --- POST-DICE PHASE STATUS PANEL (Compact Minimal Turn Indicator) ---
   if (!diceActive) {
     const turnSummary = isGameOver
       ? 'MATCH COMPLETED'
@@ -242,37 +242,24 @@ export const DiceRoller: React.FC<DiceRollerProps> = ({
       ? `BOT THINKING (${turnColorLabel}'S TURN)`
       : `WAITING FOR OPPONENT (${turnColorLabel}'S TURN)`;
 
-    const isClassic = gameMode === 'classic';
-
     if (variant === 'stage') {
       return (
         <div
           role="region"
-          aria-label="Chess phase status"
-          className="w-full h-full bg-white dark:bg-[#0a0a0c] border-3 border-black dark:border-white px-3 py-2 shadow-[3px_3px_0px_#000000] dark:shadow-[3px_3px_0px_#ffffff] flex items-center justify-between gap-2.5 overflow-hidden"
+          aria-label="Chess turn status"
+          className="w-full py-1.5 px-3 bg-neutral-100 dark:bg-[#141416] border border-black/20 dark:border-white/20 rounded-md flex items-center justify-between gap-2 overflow-hidden"
         >
-          <div className="w-11 h-11 shrink-0 bg-amber-400 text-black border-3 border-black flex items-center justify-center shadow-[2px_2px_0px_#000]">
-            <Sparkles className="w-5 h-5" aria-hidden="true" />
-          </div>
-          <div className="flex-1 min-w-0 flex flex-col justify-center gap-0.5">
-            <span className="text-xs font-black uppercase tracking-tight text-black dark:text-white truncate">
-              {isClassic ? 'TRADITIONAL CHESS (NO PRINCE)' : 'NORMAL CHESS - dice phase over'}
-            </span>
-            <div className="flex items-center gap-1.5 text-[11px] font-mono font-black uppercase text-amber-600 dark:text-amber-400 truncate">
-              <span
-                aria-hidden="true"
-                className={`w-2.5 h-2.5 shrink-0 ${
-                  effectiveTurnColor === 'white'
-                    ? 'bg-white border border-black'
-                    : 'bg-black border border-white'
-                }`}
-              />
-              <span className="truncate">{turnSummary}</span>
-            </div>
-            <span className="text-[10px] font-mono font-bold text-neutral-600 dark:text-neutral-400 uppercase truncate">
-              {isClassic
-                ? 'Standard FIDE rules · Pure deterministic moves'
-                : '3+ captures reached · All legal moves active'}
+          <div className="flex items-center gap-2 min-w-0">
+            <span
+              aria-hidden="true"
+              className={`w-2.5 h-2.5 rounded-full shrink-0 ${
+                effectiveTurnColor === 'white'
+                  ? 'bg-white border border-black'
+                  : 'bg-black border border-white'
+              }`}
+            />
+            <span className="text-xs font-mono font-black uppercase text-black dark:text-white truncate">
+              {turnSummary}
             </span>
           </div>
         </div>
@@ -282,38 +269,20 @@ export const DiceRoller: React.FC<DiceRollerProps> = ({
     return (
       <div
         role="region"
-        aria-label="Chess phase status"
-        className="w-full bg-white dark:bg-[#0a0a0c] border-3 border-black dark:border-white p-4 shadow-[4px_4px_0px_#000000] dark:shadow-[4px_4px_0px_#ffffff] flex flex-col gap-3"
+        aria-label="Chess turn status"
+        className="w-full bg-white dark:bg-[#0a0a0c] border-2 border-black dark:border-white px-3.5 py-2.5 shadow-[2px_2px_0px_#000000] dark:shadow-[2px_2px_0px_#ffffff] flex items-center justify-between gap-2"
       >
-        <div className="flex items-center justify-between gap-2">
-          <span className="text-xs font-black uppercase tracking-wider text-black dark:text-white flex items-center gap-1.5">
-            <Sparkles className="w-4 h-4 text-amber-500 shrink-0" aria-hidden="true" />
-            {isClassic ? 'TRADITIONAL CHESS (NO PRINCE)' : 'NORMAL CHESS - dice phase over'}
-          </span>
-          <span className="text-[10px] font-mono font-black uppercase text-amber-600 dark:text-amber-400">
-            {isClassic ? 'NO DICE' : '3+ CAPTURES'}
-          </span>
-        </div>
-
-        <div className="flex items-center gap-2.5 bg-neutral-100 dark:bg-[#141416] border-2 border-black dark:border-white px-3 py-2.5">
+        <div className="flex items-center gap-2 font-mono text-xs font-black uppercase text-black dark:text-white truncate">
           <span
             aria-hidden="true"
-            className={`w-3 h-3 shrink-0 ${
+            className={`w-3 h-3 rounded-full shrink-0 ${
               effectiveTurnColor === 'white'
                 ? 'bg-white border border-black'
                 : 'bg-black border border-white'
             }`}
           />
-          <span className="text-xs font-mono font-black uppercase text-black dark:text-white truncate">
-            {turnSummary}
-          </span>
+          <span className="truncate">{turnSummary}</span>
         </div>
-
-        <p className="text-xs font-bold text-neutral-700 dark:text-neutral-300 leading-snug">
-          {isClassic
-            ? 'Authentic classical FIDE rules active. No prince piece, no dice rolls, no crafting perks. Move any legal piece directly.'
-            : '3 captures reached — dice restrictions are permanently off. Move any legal piece directly.'}
-        </p>
       </div>
     );
   }

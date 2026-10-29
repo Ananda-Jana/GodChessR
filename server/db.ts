@@ -15,6 +15,15 @@ if (!fs.existsSync(DATA_DIR)) {
 export interface UserRecord extends UserProfile {
   passwordHash: string;
   salt: string;
+  trophies?: number;
+  leagueRank?: string;
+  shieldMatches?: number;
+  leagueStats?: {
+    wins: number;
+    losses: number;
+    draws: number;
+    peakTrophies: number;
+  };
 }
 
 export class FileDatabase {
@@ -58,6 +67,10 @@ export class FileDatabase {
   private loadAll() {
     const rawUsers = this.safeReadJson<UserRecord[]>(this.usersFile, []);
     for (const u of rawUsers) {
+      if (typeof u.trophies !== 'number') u.trophies = 0;
+      if (!u.leagueRank) u.leagueRank = 'rusted_chrome';
+      if (typeof u.shieldMatches !== 'number') u.shieldMatches = 0;
+      if (!u.leagueStats) u.leagueStats = { wins: 0, losses: 0, draws: 0, peakTrophies: u.trophies };
       this.users.set(u.id, u);
       this.usernameIndex.set(u.username.toLowerCase(), u.id);
     }

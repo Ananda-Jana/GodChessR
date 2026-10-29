@@ -14,6 +14,12 @@ import {
 } from './server/auth.ts';
 import type { AuthenticatedRequest } from './server/auth.ts';
 import { initWebSocketServer } from './server/socket.ts';
+import { processMatchEndLeagueTrophies } from './server/league.ts';
+import {
+  getRankFromTrophies,
+  getNextRank,
+  getRankProgress,
+} from './src/league/rankConfig.ts';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -246,6 +252,67 @@ async function startServer() {
     }
 
     return res.json({ match });
+  });
+
+  // League: Get user rank
+  app.get('/api/league/rank', authMiddleware, (req: AuthenticatedRequest, res) => {
+    const user = db.findUserById(req.user!.id);
+    if (!user) return res.status(404).json({ error: 'User not found.' });
+    const trophies = user.trophies || 0;
+    const rank = getRankFromTrophies(trophies);
+    const nextRank = getNextRank(rank.id);
+    const progress = getRankProgress(trophies);
+    return res.json({
+      trophies,
+      leagueRank: user.leagueRank || rank.id,
+      rank,
+      nextRank,
+      progress,
+      shieldMatches: user.shieldMatches || 0,
+      leagueStats: user.leagueStats || { wins: 0, losses: 0, draws: 0, peakTrophies: trophies },
+    });
+  });
+
+  // League: Leaderboard
+  app.get('/api/league/leaderboard', (_req, res) => {
+    const topUsers = Array.from(db.users.values())
+      .sort((a, b) => (b.trophies || 0) - (a.trophies || 0))
+      .slice(0, 50)
+      .map((u) => {
+        const tr = u.trophies || 0;
+        const rank = getRankFromTrophies(tr);
+        return {
+          id: u.id,
+          username: u.username,
+          displayName: u.displayName,
+          avatarId: u.avatarId,
+          trophies: tr,
+          leagueRank: rank.id,
+          rankName: rank.name,
+          animationId: rank.animationId,
+          primaryColor: rank.primaryColor,
+          glowColor: rank.glowColor,
+          tierNumber: rank.tierNumber,
+        };
+      });
+    return res.json({ leaderboard: topUsers });
+  });
+
+  // League: Process Match (Client reporting for bot matches or offline matches)
+  app.post('/api/league/process-match', authMiddleware, (req: AuthenticatedRequest, res) => {
+    const { matchId, mode, winner, isBotMatch, resignedUserId } = req.body;
+    if (!matchId) {
+      return res.status(400).json({ error: 'matchId is required' });
+    }
+    const result = processMatchEndLeagueTrophies({
+      matchId,
+      mode: mode || 'pvp',
+      whiteUserId: req.user!.id,
+      winnerColor: winner,
+      isBotMatch: isBotMatch !== false,
+      resignedUserId,
+    });
+    return res.json({ result: result.whiteResult });
   });
 
   // --- VITE DEV OR PRODUCTION STATIC SERVING ---
