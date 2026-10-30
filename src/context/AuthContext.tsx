@@ -88,9 +88,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const res = await fetch('/api/auth/me', {
           headers: { Authorization: `Bearer ${token}` },
         });
-        if (res.ok) {
+        const contentType = res.headers.get('content-type') || '';
+        if (res.ok && contentType.includes('application/json')) {
           const data = await res.json();
-          setUser(data.user);
+          if (data.user) {
+            setUser(data.user);
+            return;
+          }
         } else if (res.status === 401) {
           // Token is genuinely invalid or expired on server (unrecoverable 401)
           try {
@@ -101,15 +105,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           } catch {}
           setTokenState(null);
           setUser(null);
-        } else {
-          // Server returned non-401 error (500, 502, 503, gateway glitch): Keep cached user session!
-          console.warn('Non-401 response from /api/auth/me during session check:', res.status);
+          return;
         }
       } catch (err) {
-        // Network error (device offline or weak mobile connectivity): Retain cached user session!
+        // Network error (device offline or static host without backend): Retain cached session!
         console.warn('Network error checking session status, maintaining local cached session:', err);
       } finally {
         setIsLoading(false);
+      }
+
+      // If token exists (e.g. guest token or cached session on static host) but server is unreachable:
+      const cached = getCachedUser();
+      if (cached) {
+        setUser(cached);
+      } else if (token.startsWith('token_guest_') || token === 'guest_token') {
+        const guestId = `usr_guest_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+        const guestUser: UserProfile = {
+          id: guestId,
+          username: `guest_${guestId.slice(-4)}`,
+          displayName: 'Guest Player',
+          avatarId: 'avatar_knight',
+          stats: { wins: 0, losses: 0, draws: 0, totalGames: 0 },
+          createdAt: Date.now(),
+        };
+        setUser(guestUser);
       }
     }
     loadMe();
@@ -123,11 +142,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password }),
       });
-      const data = await res.json();
-      if (!res.ok) {
-        setError(data.error || 'Login failed. Please check your credentials.');
+      const contentType = res.headers.get('content-type') || '';
+      if (!res.ok || !contentType.includes('application/json')) {
+        let errMessage = 'Accounts are unavailable offline. Continue as Guest to play.';
+        if (contentType.includes('application/json')) {
+          const data = await res.json().catch(() => null);
+          if (data?.error) errMessage = data.error;
+        }
+        setError(errMessage);
         return false;
       }
+      const data = await res.json();
       try {
         if (typeof window !== 'undefined' && window.localStorage) {
           window.localStorage.setItem('dice_chess_token', data.token);
@@ -137,7 +162,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(data.user);
       return true;
     } catch (err) {
-      setError('Network error. Unable to reach server.');
+      setError('Accounts are unavailable offline. Continue as Guest to play.');
       return false;
     }
   };
@@ -155,11 +180,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, displayName, password, avatarId }),
       });
-      const data = await res.json();
-      if (!res.ok) {
-        setError(data.error || 'Registration failed.');
+      const contentType = res.headers.get('content-type') || '';
+      if (!res.ok || !contentType.includes('application/json')) {
+        let errMessage = 'Accounts are unavailable offline. Continue as Guest to play.';
+        if (contentType.includes('application/json')) {
+          const data = await res.json().catch(() => null);
+          if (data?.error) errMessage = data.error;
+        }
+        setError(errMessage);
         return false;
       }
+      const data = await res.json();
       try {
         if (typeof window !== 'undefined' && window.localStorage) {
           window.localStorage.setItem('dice_chess_token', data.token);
@@ -169,7 +200,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(data.user);
       return true;
     } catch (err) {
-      setError('Network error. Unable to reach server.');
+      setError('Accounts are unavailable offline. Continue as Guest to play.');
       return false;
     }
   };
@@ -241,23 +272,48 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
       });
-      const data = await res.json();
-      if (!res.ok) {
-        setError(data.error || 'Guest login failed.');
-        return false;
-      }
-      try {
-        if (typeof window !== 'undefined' && window.localStorage) {
-          window.localStorage.setItem('dice_chess_token', data.token);
+      const contentType = res.headers.get('content-type') || '';
+      if (res.ok && contentType.includes('application/json')) {
+        const data = await res.json();
+        if (data.token && data.user) {
+          try {
+            if (typeof window !== 'undefined' && window.localStorage) {
+              window.localStorage.setItem('dice_chess_token', data.token);
+            }
+          } catch {}
+          setTokenState(data.token);
+          setUser(data.user);
+          return true;
         }
-      } catch {}
-      setTokenState(data.token);
-      setUser(data.user);
-      return true;
-    } catch (err) {
-      setError('Network error. Unable to reach server.');
-      return false;
+      }
+    } catch (_) {
+      // Offline / Static host fallback
     }
+
+    // Fallback for static host / offline: create or reuse local guest profile
+    const cached = getCachedUser();
+    const guestId = (cached && cached.id?.startsWith('usr_guest'))
+      ? cached.id
+      : `usr_guest_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+    const guestToken = `token_guest_${guestId}`;
+
+    const guestUser: UserProfile = {
+      id: guestId,
+      username: cached?.username || `guest_${guestId.slice(-4)}`,
+      displayName: cached?.displayName || 'Guest Player',
+      avatarId: cached?.avatarId || 'avatar_knight',
+      stats: cached?.stats || { wins: 0, losses: 0, draws: 0, totalGames: 0 },
+      createdAt: cached?.createdAt || Date.now(),
+    };
+
+    try {
+      if (typeof window !== 'undefined' && window.localStorage) {
+        window.localStorage.setItem('dice_chess_token', guestToken);
+      }
+    } catch {}
+    setTokenState(guestToken);
+    setUser(guestUser);
+    return true;
   };
 
   const clearError = () => setError(null);

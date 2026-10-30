@@ -1,0 +1,70 @@
+rules_version = '2';
+
+/**
+ * FIRESTORE SECURITY RULES - MUGENCHESSX
+ * 
+ * SECURITY DISCLAIMER & ANTI-CHEAT WARNING:
+ * Firestore security rules enforce per-user document ownership and basic field validation.
+ * However, client-writable currency (Gems, Keys, Tickets) and ratings cannot be 100%
+ * cheat-proof against malicious client tampering without server-side validation or
+ * Cloud Functions (which require the Firebase Blaze plan). The delta caps and range checks
+ * below provide best-effort client validation under the Spark (Free) plan.
+ */
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // Default deny everything
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // User Primary Document & Subcollections
+    match /users/{userId} {
+      allow read: if isOwner(userId);
+      allow create: if isOwner(userId)
+        && request.resource.data.schemaVersion is number
+        && request.resource.data.account.uid == userId;
+
+      allow update: if isOwner(userId)
+        // Basic schema and timestamp validation
+        && request.resource.data.updatedAt is number
+        && request.resource.data.updatedAt >= resource.data.updatedAt
+        // Best-effort anti-cheat rate caps (e.g. Gems increase max +10,000 per write)
+        && (
+          !('wallet' in request.resource.data) || !('wallet' in resource.data) ||
+          request.resource.data.wallet.gems <= resource.data.wallet.gems + 10000
+        )
+        // Rating delta cap (max +500 ELO per single write)
+        && (
+          !('growth' in request.resource.data) || !('growth' in resource.data) ||
+          request.resource.data.growth.rating <= resource.data.growth.rating + 500
+        );
+
+      allow delete: if isOwner(userId);
+
+      // Subcollections under user (profile, progress, wallet, inventory, matches)
+      match /{subcollection}/{docId} {
+        allow read, write: if isOwner(userId);
+      }
+    }
+
+    // Public Read-Only Leaderboard Collection
+    match /leaderboard/{userId} {
+      allow read: if true;
+      allow write: if isOwner(userId)
+        && request.resource.data.rating is number
+        && request.resource.data.displayName is string
+        && request.resource.data.displayName.size() <= 40;
+    }
+  }
+}

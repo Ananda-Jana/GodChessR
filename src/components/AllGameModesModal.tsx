@@ -23,6 +23,7 @@ export interface AllGameModesModalProps {
   onOpenCraftedBotModal?: () => void;
   onOpenSecretArena?: () => void;
   onOpenCulling?: () => void;
+  onOpenHeroDuel?: () => void;
   onOpenRose?: () => void;
   onOpenCraftTheory?: () => void;
   onOpen3dChess?: () => void;
@@ -39,6 +40,7 @@ export const AllGameModesModal: React.FC<AllGameModesModalProps> = ({
   onOpenCraftedBotModal,
   onOpenSecretArena,
   onOpenCulling,
+  onOpenHeroDuel,
   onOpenRose,
   onOpen3dChess,
   onJumpToMultiplayer,
@@ -564,6 +566,43 @@ export const AllGameModesModal: React.FC<AllGameModesModalProps> = ({
                 >
                   <Swords className="w-4 h-4" />
                   ⚔️ CULLING MODE
+                </button>
+              </div>
+            </div>
+
+            {/* HERO DUEL STANDALONE MODE (SQUARE CARD) */}
+            <div
+              className="relative overflow-hidden bg-cover bg-center border-4 border-amber-400 p-4 sm:p-5 shadow-[6px_6px_0px_#fbbf24] flex flex-col justify-between gap-4 active:scale-98 transition-all min-w-0 aspect-square shrink-0"
+              style={{ backgroundImage: "url('/assets/aistudio/image_9087d774.png')" }}
+            >
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_20%,rgba(0,0,0,0.85)_95%)] z-0 pointer-events-none" />
+
+              <div className="flex items-center gap-3.5 relative z-10 bg-black/80 p-3 border border-amber-400/40 backdrop-blur-sm rounded-xl shadow-lg">
+                <div className="w-12 h-12 bg-amber-400 border-2 border-black flex items-center justify-center text-black shrink-0 shadow-[2px_2px_0px_#000]">
+                  <Swords className="w-7 h-7 text-black" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h3 className="text-sm sm:text-base font-black uppercase text-amber-400 drop-shadow">
+                      Hero Duel (7×8 Arena)
+                    </h3>
+                    <span className="text-[10px] px-1.5 py-0.5 bg-amber-400 text-black font-black uppercase shadow-sm">
+                      4 Heroes · Cards
+                    </span>
+                  </div>
+                  <p className="text-xs font-bold text-neutral-300 mt-0.5">
+                    No pawns. Draft 4 champions, activate tactical powers, and slay the enemy Captain to collect procedural cards.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-3 shrink-0 relative z-10 lg:mt-auto">
+                <button
+                  onClick={() => handleSelect(onOpenHeroDuel)}
+                  className="py-3 px-5 bg-amber-400 hover:bg-amber-300 text-black font-black text-xs sm:text-sm uppercase tracking-wider border-2 border-black shadow-[3px_3px_0px_#000000] flex items-center justify-center gap-2 shrink-0 cursor-pointer relative z-10"
+                >
+                  <Swords className="w-4 h-4" />
+                  👑 PLAY HERO DUEL
                 </button>
               </div>
             </div>

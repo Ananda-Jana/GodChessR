@@ -1,0 +1,37 @@
+/**
+ * FIREBASE CLIENT INITIALIZATION TEMPLATE
+ * 
+ * Sets up Firebase App, Auth, and Firestore with persistent offline caching.
+ * Inert unless VITE_ENABLE_FIREBASE === "true".
+ */
+
+import { initializeApp, getApps, getApp, FirebaseApp } from "firebase/app";
+import { getAuth, Auth } from "firebase/auth";
+import {
+  initializeFirestore,
+  persistentLocalCache,
+  persistentMultipleTabManager,
+  Firestore,
+} from "firebase/firestore";
+import { firebaseConfig, isFirebaseSyncEnabled } from "./firebaseConfig";
+
+let app: FirebaseApp | null = null;
+let auth: Auth | null = null;
+let db: Firestore | null = null;
+
+if (typeof window !== "undefined" && isFirebaseSyncEnabled()) {
+  try {
+    app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
+    auth = getAuth(app);
+    db = initializeFirestore(app, {
+      localCache: persistentLocalCache({
+        tabManager: persistentMultipleTabManager(),
+      }),
+    });
+    console.log("[FirebaseSync] Firebase client initialized with offline persistence.");
+  } catch (err) {
+    console.warn("[FirebaseSync] Error initializing Firebase client:", err);
+  }
+}
+
+export { app, auth, db };

@@ -5,7 +5,8 @@ export type ModeArtKey =
   | 'classic-bot'
   | 'culling-game'
   | 'secret-arena'
-  | 'crafted-pieces';
+  | 'crafted-pieces'
+  | 'hero-duel';
 
 export const MODE_ART_MAP: Record<ModeArtKey, string> = {
   'hashira-training': '/assets/aistudio/image_e0bfff75.png',
@@ -15,6 +16,7 @@ export const MODE_ART_MAP: Record<ModeArtKey, string> = {
   'culling-game': '/assets/aistudio/image_9087d774.png',
   'secret-arena': '/assets/aistudio/image_ba67a0d0.png',
   'crafted-pieces': '/assets/aistudio/image_4aa74391.png',
+  'hero-duel': '/assets/aistudio/image_9087d774.png',
 };
 
 export const MODE_FALLBACK_GRADIENTS: Record<ModeArtKey, string> = {
@@ -25,4 +27,5 @@ export const MODE_FALLBACK_GRADIENTS: Record<ModeArtKey, string> = {
   'culling-game': 'from-red-950 via-neutral-950 to-black border-red-600',
   'secret-arena': 'from-purple-950 via-neutral-950 to-black border-purple-500',
   'crafted-pieces': 'from-slate-900 via-amber-950 to-black border-amber-400',
+  'hero-duel': 'from-red-950 via-amber-950 to-black border-amber-500',
 };

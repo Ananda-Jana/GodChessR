@@ -53,6 +53,7 @@ import { WalkWithMastersCard } from './HashiraTrainingCard';
 import { Chess3dEntryCard } from '../chess3d/Chess3dEntryCard';
 import { Chess3dRulesPreviewModal } from '../chess3d/Chess3dRulesPreviewModal';
 import { CraftGameHub } from '../craftgame/CraftGameHub';
+import { MusicButton } from './MusicButton';
 import bannerHeroImage from '../assets/banner-hero.png';
 import { PassTicketGraphic } from '../economy/PassTicketGraphic';
 import { ChromeReaper } from '../punisher/ChessBotFaces_with_Gestures';
@@ -72,6 +73,7 @@ interface DashboardProps {
   onOpenCraftedBotModal?: () => void;
   onOpenCraftTheory: () => void;
   onOpenRose?: () => void;
+  onOpenHeroDuel?: () => void;
   onOpenHashiraTraining?: (trainerId?: TrainerId) => void;
   onOpenPunisher?: (botId?: PunisherBotId) => void;
   onStartLeagueBotMatch?: (botId: PunisherBotId) => void;
@@ -184,6 +186,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
   onOpenCraftedBotModal,
   onOpenCraftTheory,
   onOpenRose,
+  onOpenHeroDuel,
   onOpenHashiraTraining,
   onOpenPunisher,
   onStartLeagueBotMatch,
@@ -701,6 +704,9 @@ export const Dashboard: React.FC<DashboardProps> = ({
             <Flame className="w-5 h-5 text-amber-400 group-hover:scale-110 transition-transform shrink-0" />
           </button>
 
+          {/* Music Soundtrack Button */}
+          <MusicButton />
+
           {/* Rules Button */}
           <button
             type="button"
@@ -978,6 +984,28 @@ export const Dashboard: React.FC<DashboardProps> = ({
                     label="Rose Paradise"
                     fallbackBgClass="bg-rose-950/40 border-rose-500/30"
                     fallbackIcon={<Heart className="w-7 h-7 text-rose-400 fill-rose-400" />}
+                  />
+                </button>
+              )}
+
+              {/* Hero Duel */}
+              {onOpenHeroDuel && (
+                <button
+                  type="button"
+                  role="menuitem"
+                  title="Hero Duel - 7x8 Hero Board & Card Collection"
+                  aria-label="Hero Duel - 7x8 Hero Board & Card Collection"
+                  onClick={() => {
+                    setIsMobileNavDropdownOpen(false);
+                    onOpenHeroDuel();
+                  }}
+                  className="play-dropup-item group aspect-square relative w-full h-full p-0 overflow-hidden rounded-[10px] border border-white/15 bg-zinc-950 flex items-center justify-center cursor-pointer select-none"
+                >
+                  <DropupThumb
+                    alt="Hero Duel"
+                    label="Hero Duel"
+                    fallbackBgClass="bg-amber-500/20 border-amber-500/30"
+                    fallbackIcon={<ShieldCheck className="w-7 h-7 text-amber-400" />}
                   />
                 </button>
               )}
@@ -1647,6 +1675,19 @@ export const Dashboard: React.FC<DashboardProps> = ({
             <span>Players</span>
           </a>
 
+          {/* Hero Duel */}
+          {onOpenHeroDuel && (
+            <button
+              type="button"
+              onClick={onOpenHeroDuel}
+              className="mcx-nav2-item"
+              title="Enter 7x8 Hero Duel Arena"
+            >
+              <Swords className="w-3.5 h-3.5 text-amber-400" />
+              <span>Hero Duel</span>
+            </button>
+          )}
+
           {/* Culling */}
           <button
             type="button"
@@ -1692,6 +1733,9 @@ export const Dashboard: React.FC<DashboardProps> = ({
             <Flame className="w-3.5 h-3.5 text-zinc-400" />
             <span>Masters</span>
           </button>
+
+          {/* Music Soundtrack Button */}
+          <MusicButton isDesktop={true} />
 
           {/* Rules */}
           <button
@@ -2940,6 +2984,43 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 </div>
               </div>
 
+              {/* HERO DUEL STANDALONE MODE CARD */}
+              <div 
+                className="order-4 lg:order-none relative overflow-hidden bg-cover bg-center border-4 border-amber-400 p-4 sm:p-5 shadow-[6px_6px_0px_#fbbf24] flex flex-col justify-between gap-4 active:scale-98 transition-all min-w-0 aspect-square"
+                style={{ backgroundImage: "url('/assets/aistudio/image_9087d774.png')" }}
+              >
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_20%,rgba(0,0,0,0.85)_95%)] z-0 pointer-events-none" />
+
+                <div className="flex items-center gap-3.5 relative z-10 bg-black/80 p-3 border border-amber-400/40 backdrop-blur-sm rounded-xl shadow-lg">
+                  <div className="w-12 h-12 bg-amber-400 border-2 border-black flex items-center justify-center text-black shrink-0 shadow-[2px_2px_0px_#000]">
+                    <Swords className="w-7 h-7 text-black" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h3 className="text-sm sm:text-base font-black uppercase text-amber-400 drop-shadow">
+                        Hero Duel (7×8 Arena)
+                      </h3>
+                      <span className="text-[10px] px-1.5 py-0.5 bg-amber-400 text-black font-black uppercase shadow-sm">
+                        NEW · 4 HEROES
+                      </span>
+                    </div>
+                    <p className="text-xs font-bold text-neutral-300 mt-0.5">
+                      4 heroes. 7x8 board. Collect a card for every kill. Draft, execute active powers & slay the enemy Captain!
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-3 shrink-0 relative z-10 lg:mt-auto">
+                  <button
+                    onClick={() => onOpenHeroDuel && onOpenHeroDuel()}
+                    className="py-3 px-5 bg-amber-400 hover:bg-amber-300 text-black font-black text-xs sm:text-sm uppercase tracking-wider border-2 border-black shadow-[3px_3px_0px_#000000] flex items-center justify-center gap-2 shrink-0 cursor-pointer relative z-10 active:translate-x-0.5 active:translate-y-0.5"
+                  >
+                    <Swords className="w-4 h-4" />
+                    👑 PLAY HERO DUEL
+                  </button>
+                </div>
+              </div>
+
               {/* 3D Annihilatic Chess Arcade Entry Card (Desktop Right Column & Mobile before Rose Paradise) */}
               <div className="order-5 lg:order-none min-w-0">
                 <Chess3dEntryCard onOpen={() => setIs3dPreviewModalOpen(true)} />
@@ -3672,6 +3753,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
           setIsSecretArenaOpen(true);
         }}
         onOpenCulling={() => setIsCullingOpen(true)}
+        onOpenHeroDuel={onOpenHeroDuel}
         onOpenRose={onOpenRose}
         onOpen3dChess={() => setIs3dPreviewModalOpen(true)}
         onOpenCraftTheory={onOpenCraftTheory}

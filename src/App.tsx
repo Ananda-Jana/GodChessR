@@ -4,6 +4,8 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import { SocketProvider, useSocket } from './context/SocketContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { PredictorProvider } from './predictor/PredictorContext';
+import { MusicProvider } from './context/MusicContext';
+import { MusicModal } from './components/MusicModal';
 import { AuthModal } from './components/AuthModal';
 import { Dashboard } from './components/Dashboard';
 import { MatchView } from './components/MatchView';
@@ -21,6 +23,7 @@ import { SecretMatchView } from './secret/SecretMatchView';
 import type { SecretPlayerConfig } from './secret/types';
 import { Chess3dArcadeView } from './chess3d/Chess3dArcadeView';
 import type { Team as Team3D, TimeControl3D } from './chess3d/types';
+import { HeroDuelEntry } from './hero-duel';
 import {
   MatchState,
   PieceColor,
@@ -79,6 +82,7 @@ function AppContent() {
   const [isBotModalOpen, setIsBotModalOpen] = useState(false);
   const [showCraftTheory, setShowCraftTheory] = useState(false);
   const [isRoseOpen, setIsRoseOpen] = useState(false);
+  const [isHeroDuelOpen, setIsHeroDuelOpen] = useState(false);
   const [isHashiraTrainingOpen, setIsHashiraTrainingOpen] = useState(false);
   const [isHashiraModalOpen, setIsHashiraModalOpen] = useState(false);
   const [selectedTrainerForTraining, setSelectedTrainerForTraining] = useState<TrainerId>('thukuna');
@@ -995,6 +999,10 @@ function AppContent() {
     );
   }
 
+  if (isHeroDuelOpen) {
+    return <HeroDuelEntry onBack={() => setIsHeroDuelOpen(false)} />;
+  }
+
   if (active3dMatchParams) {
     return (
       <Chess3dArcadeView
@@ -1100,6 +1108,7 @@ function AppContent() {
           }}
           onOpenCraftTheory={() => setShowCraftTheory(true)}
           onOpenRose={() => setIsRoseOpen(true)}
+          onOpenHeroDuel={() => setIsHeroDuelOpen(true)}
           onOpenHashiraTraining={(trainerId?: TrainerId) => {
             if (trainerId) setSelectedTrainerForTraining(trainerId);
             setIsHashiraModalOpen(true);
@@ -1174,6 +1183,9 @@ function AppContent() {
 
       {/* Global Elo Streak Notification Banner */}
       <EloStreakNotification />
+
+      {/* Background Music Control Modal */}
+      <MusicModal />
     </>
   );
 }
@@ -1184,7 +1196,9 @@ export default function App() {
       <AuthProvider>
         <PredictorProvider>
           <SocketProvider>
-            <AppContent />
+            <MusicProvider>
+              <AppContent />
+            </MusicProvider>
           </SocketProvider>
         </PredictorProvider>
       </AuthProvider>

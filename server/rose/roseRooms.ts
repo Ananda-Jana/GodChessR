@@ -179,6 +179,8 @@ export function joinRoseRoom(
   roomsByCode.delete(norm);
   if (norm.startsWith('ROSE')) {
     roomsByCode.delete(norm.slice(4));
+  } else {
+    roomsByCode.delete(`ROSE${norm}`);
   }
 
   // Complementary role & opposite color for boyfriend vs girlfriend
@@ -251,6 +253,8 @@ export function destroyRoom(roomId: string) {
     roomsByCode.delete(norm);
     if (norm.startsWith('ROSE')) {
       roomsByCode.delete(norm.slice(4));
+    } else {
+      roomsByCode.delete(`ROSE${norm}`);
     }
     if (room.match.whiteSeat) userActiveRoom.delete(room.match.whiteSeat.userId);
     if (room.match.blackSeat) userActiveRoom.delete(room.match.blackSeat.userId);

@@ -33,6 +33,11 @@ export function useRoseRoom() {
   const [reactions, setReactions] = useState<RoseReaction[]>([]);
   const [chatMessages, setChatMessages] = useState<RoseChatMessage[]>([]);
   
+  const userRef = useRef(user);
+  userRef.current = user;
+  const tokenRef = useRef(token);
+  tokenRef.current = token;
+
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimeoutRef = useRef<any>(null);
 
@@ -46,8 +51,10 @@ export function useRoseRoom() {
     wsRef.current = ws;
 
     ws.onopen = () => {
-      if (token) {
-        ws.send(JSON.stringify({ type: 'auth', token }));
+      const currentToken = tokenRef.current;
+      const currentUser = userRef.current;
+      if (currentToken) {
+        ws.send(JSON.stringify({ type: 'auth', token: currentToken }));
       }
       // Re-associate socket with any active match matching Culling Game resync logic
       if (matchRef.current) {
@@ -55,7 +62,7 @@ export function useRoseRoom() {
           JSON.stringify({
             type: 'rose:resync',
             matchId: matchRef.current.id,
-            userId: user?.id,
+            userId: currentUser?.id,
           })
         );
       } else {
@@ -89,26 +96,32 @@ export function useRoseRoom() {
             setStatusMessage('Searching for Rose Partner in matchmaking queue...');
             break;
 
-          case 'rose:match_started':
+          case 'rose:match_started': {
+            const currentMatch = data.match;
+            const currentUser = userRef.current;
+            const assignedColor = data.yourColor || (currentMatch?.whiteSeat?.userId === currentUser?.id ? 'white' : 'black');
+            const assignedRole = data.yourRole || (assignedColor === 'white' ? 'boyfriend' : 'girlfriend');
+
             setStatusMessage('Opponent joined! Launching game...');
             setIsJoiningChallenge(false);
             setJoiningCode(null);
             setIsCreatingChallenge(false);
             setIsWaitingForPartner(false);
             setIsQueueing(false);
+            setHostedCode(null);
             setPendingMove(false);
             setError(null);
             sounds.playChallenge();
 
             // Smooth 300ms transition matching Culling Game
             setTimeout(() => {
-              setMatch(data.match);
-              if (data.yourColor) setMyColor(data.yourColor);
-              if (data.yourRole) setMyRole(data.yourRole);
-              setHostedCode(null);
+              setMatch(currentMatch);
+              setMyColor(assignedColor);
+              setMyRole(assignedRole);
               setStatusMessage(null);
             }, 300);
             break;
+          }
 
           case 'rose:state':
             setMatch(data.match);
@@ -190,7 +203,14 @@ export function useRoseRoom() {
       setIsQueueing(false);
       setJoiningCode(null);
     };
-  }, [token, user?.id]);
+  }, []);
+
+  // Send auth token when token becomes available on existing socket
+  useEffect(() => {
+    if (token && wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+      wsRef.current.send(JSON.stringify({ type: 'auth', token }));
+    }
+  }, [token]);
 
   useEffect(() => {
     connect();
@@ -217,15 +237,16 @@ export function useRoseRoom() {
       return;
     }
     setIsCreatingChallenge(true);
+    const currentUser = userRef.current;
     send({
       type: 'rose:create_challenge',
       role,
-      userId: user?.id,
-      displayName: user?.displayName,
-      avatarId: user?.avatarId,
-      token,
+      userId: currentUser?.id,
+      displayName: currentUser?.displayName || currentUser?.username || 'Partner',
+      avatarId: currentUser?.avatarId,
+      token: tokenRef.current,
     });
-  }, [send, user, token]);
+  }, [send]);
 
   const joinQueue = useCallback((role: RoseRole) => {
     setError(null);
@@ -235,15 +256,16 @@ export function useRoseRoom() {
       return;
     }
     setIsQueueing(true);
+    const currentUser = userRef.current;
     send({
       type: 'rose:join_queue',
       role,
-      userId: user?.id,
-      displayName: user?.displayName,
-      avatarId: user?.avatarId,
-      token,
+      userId: currentUser?.id,
+      displayName: currentUser?.displayName || currentUser?.username || 'Partner',
+      avatarId: currentUser?.avatarId,
+      token: tokenRef.current,
     });
-  }, [send, user, token]);
+  }, [send]);
 
   const cancelQueue = useCallback(() => {
     if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
@@ -259,7 +281,9 @@ export function useRoseRoom() {
       setError('Please enter a room code.');
       return;
     }
-    if (hostedCode && (cleanCode === hostedCode || cleanCode === hostedCode.replace(/[\s-]/g, ''))) {
+    const cleanSuffix = cleanCode.replace(/^ROSE/, '');
+    const hostedSuffix = hostedCode ? hostedCode.trim().toUpperCase().replace(/^ROSE/, '') : '';
+    if (hostedCode && (cleanCode === hostedCode || cleanSuffix === hostedSuffix)) {
       setError('You cannot join your own room code.');
       return;
     }
@@ -271,22 +295,24 @@ export function useRoseRoom() {
     setIsJoiningChallenge(true);
     setJoiningCode(cleanCode);
     setStatusMessage('Connecting to room...');
+    const currentUser = userRef.current;
     send({
       type: 'rose:join_challenge',
       code: cleanCode,
-      userId: user?.id,
-      displayName: user?.displayName,
-      avatarId: user?.avatarId,
-      token,
+      userId: currentUser?.id,
+      displayName: currentUser?.displayName || currentUser?.username || 'Partner',
+      avatarId: currentUser?.avatarId,
+      token: tokenRef.current,
     });
-  }, [send, hostedCode, user, token]);
+  }, [send, hostedCode]);
 
   const cancelRoom = useCallback(() => {
+    const currentUser = userRef.current;
     if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN && hostedCode) {
       send({
         type: 'rose:cancel_challenge',
         code: hostedCode,
-        userId: user?.id,
+        userId: currentUser?.id,
       });
     } else {
       send({ type: 'rose:cancel_challenge' });
@@ -298,7 +324,7 @@ export function useRoseRoom() {
     setIsWaitingForPartner(false);
     setStatusMessage(null);
     setHostedCode(null);
-  }, [send, hostedCode, user?.id]);
+  }, [send, hostedCode]);
 
   const sendMove = useCallback((from: Position, to: Position) => {
     setError(null);
@@ -308,9 +334,9 @@ export function useRoseRoom() {
       roomId: match?.id,
       from,
       to,
-      userId: user?.id,
+      userId: userRef.current?.id,
     });
-  }, [send, match?.id, user?.id]);
+  }, [send, match?.id]);
 
   const sendSummon = useCallback((pieceType: RoseSummonPieceType, to: Position) => {
     setError(null);
@@ -319,18 +345,18 @@ export function useRoseRoom() {
       roomId: match?.id,
       pieceType,
       to,
-      userId: user?.id,
+      userId: userRef.current?.id,
     });
-  }, [send, match?.id, user?.id]);
+  }, [send, match?.id]);
 
   const sendReaction = useCallback((text: string) => {
     send({
       type: 'rose:reaction',
       roomId: match?.id,
       text,
-      userId: user?.id,
+      userId: userRef.current?.id,
     });
-  }, [send, match?.id, user?.id]);
+  }, [send, match?.id]);
 
   const sendChat = useCallback((text: string) => {
     if (!text.trim()) return;
@@ -338,17 +364,17 @@ export function useRoseRoom() {
       type: 'rose:chat',
       roomId: match?.id,
       text: text.trim(),
-      userId: user?.id,
+      userId: userRef.current?.id,
     });
-  }, [send, match?.id, user?.id]);
+  }, [send, match?.id]);
 
   const resignMatch = useCallback(() => {
     send({
       type: 'rose:resign',
       roomId: match?.id,
-      userId: user?.id,
+      userId: userRef.current?.id,
     });
-  }, [send, match?.id, user?.id]);
+  }, [send, match?.id]);
 
   const refreshRooms = useCallback(() => {
     send({ type: 'rose:list_challenges' });

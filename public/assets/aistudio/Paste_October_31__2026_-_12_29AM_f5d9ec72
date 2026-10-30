@@ -1,0 +1,868 @@
+# FOLLOW-UP REWORK PROMPT: SHRINE SIEGE 2.0
+## Transform the existing Hero Duel / Shrine Siege into a polished, tactical, mobile-first strategy game
+
+**IMPORTANT: This is an upgrade to an ALREADY IMPLEMENTED game mode. Do not rebuild the entire project. First understand the current implementation, identify its problems, and then improve the existing isolated Hero Duel module.**
+
+---
+
+# 1. PRIMARY OBJECTIVE
+
+The current Shrine Siege implementation does not feel sufficiently strategic, interactive, or satisfying.
+
+Problems to investigate:
+
+- Battles feel like heroes fighting automatically without meaningful player control.
+- There is insufficient strategic decision-making.
+- Deployment and lane selection do not create meaningful consequences.
+- Shrine capture does not create enough tension or tactical opportunities.
+- The board, kingdoms, towers, and shrines do not look like properly designed game structures.
+- Hero movement and combat sometimes feel disconnected from player intentions.
+- Mobile interaction and responsiveness are insufficient.
+- The gameplay lacks the satisfying progression of a Clash of Clans-style attack.
+- Players do not always understand why they are winning or losing.
+- There is insufficient visual feedback for attacks, abilities, damage, captures, and destruction.
+
+**Your job is to redesign the gameplay experience, not merely improve its appearance.**
+
+The finished game should make players feel that their decisions directly determine the outcome.
+
+# 2. ABSOLUTE SCOPE LOCK
+
+Work exclusively inside:
+
+`src/hero-duel/`
+
+Rules:
+
+1. Do not modify other game modes.
+2. Do not modify the application-level routing or mode registration.
+3. Do not modify Dashboard, App, global game components, or unrelated shared components.
+4. Do not modify the Rose Paradise mode or any previous work.
+5. Do not modify card generation, card grammar, card dictionary, rarity, collection, code generation, card rendering, PNG export, pity system, or existing card reward logic.
+6. Do not change the economy, gems, equipment purchases, or existing collection storage.
+7. Do not introduce a backend, server, database, authentication dependency, or cloud requirement.
+8. Preserve existing hero identities, artwork, equipment, and abilities wherever possible.
+9. Preserve Classic Duel if it exists.
+10. Do not remove existing functionality just because a new implementation is easier.
+
+You may refactor existing Shrine Siege components and create new components inside `src/hero-duel/`.
+
+**Card integration must remain compatible with the existing card reward function.** The only permitted card-related changes are minimal integration fixes if strictly necessary. Never redesign the card system.
+
+# 3. FIRST: AUDIT THE EXISTING IMPLEMENTATION
+
+Before writing code, inspect the entire `src/hero-duel/` folder.
+
+Identify:
+
+- Current board rendering and dimensions.
+- Current simulation engine.
+- Hero movement and pathfinding.
+- Shrine capture implementation.
+- Throne and tower combat.
+- Hero targeting and auto-behavior.
+- Player order handling.
+- Bot decision-making.
+- Ability execution and cooldowns.
+- Deployment logic.
+- Mobile layout.
+- Existing card reward integration.
+- Existing persistence and configuration.
+
+Create:
+
+`SHRINE_SIEGE_AUDIT.md`
+
+For every major issue, document:
+
+| Problem | Root cause | Proposed fix |
+|---|---|---|
+| Heroes fight without meaningful strategy | Weak order priority | Tactical command system |
+| Shrines feel unimportant | Weak objective incentives | Stronger objective economy |
+| Mobile controls are awkward | Desktop-oriented interaction | Mobile command interface |
+| Structures look unfinished | Weak board rendering | Dedicated battlefield architecture |
+
+Do not assume the earlier implementation is correct.
+
+If something already works, preserve it instead of rewriting it.
+
+# 4. GAMEPLAY REDESIGN: MAKE EVERY DECISION MATTER
+
+## 4.1 New strategic gameplay loop
+
+The player should experience six distinct phases:
+
+1. Scout the enemy battlefield.
+2. Select a deployment strategy.
+3. Deploy heroes into meaningful positions.
+4. Execute attacks and defend objectives.
+5. Adapt orders according to enemy movements.
+6. Destroy the enemy Throne or achieve Dominion.
+
+The player must have enough control to influence the battle continuously without having to manually move every hero every second.
+
+The game should combine:
+
+- Real-time tactical combat.
+- Hero-specific autonomous behavior.
+- Meaningful commander orders.
+- Lane-based strategy.
+- Shrine control.
+- Structure destruction.
+- Tactical abilities.
+- Defensive positioning.
+
+## 4.2 Replace passive auto-battle with a tactical command system
+
+Implement four distinct command types.
+
+**A. ATTACK**
+
+Select a hero or multiple heroes and select an enemy target.
+
+The selected heroes prioritize that target but can defend themselves when necessary.
+
+**B. DEFEND**
+
+Select a shrine, tower, or region.
+
+Heroes establish defensive positions and engage approaching enemies.
+
+**C. CAPTURE**
+
+Assign heroes to a specific shrine.
+
+They attempt to secure it, protect it, and prevent enemy recapture.
+
+**D. REGROUP**
+
+Selected heroes return to a chosen rally point and regroup before attacking.
+
+Add an additional RETREAT command for low-health heroes.
+
+Commands must visibly affect hero behavior.
+
+A hero must not silently ignore an order because its default AI decided to do something else.
+
+Only critical self-defense behavior may temporarily override an order.
+
+Show the active command above each hero.
+
+Allow the player to cancel an order and return a hero to autonomous behavior.
+
+## 4.3 Introduce command groups
+
+Allow players to select:
+
+- One hero.
+- Multiple heroes.
+- Entire team.
+
+On desktop:
+
+- Click a hero to select.
+- Shift-click to add heroes.
+- Drag a selection rectangle where practical.
+- Right-click or use command buttons to issue orders.
+
+On mobile:
+
+- Tap to select.
+- Multi-select through visible hero-selection chips.
+- Tap an objective or enemy.
+- Choose the command from a contextual action bar.
+
+Never require hover interactions.
+
+## 4.4 Introduce meaningful formations
+
+Implement three formations:
+
+**Wedge**
+- Fast heroes lead.
+- Tank follows or protects the group.
+- Effective for aggressive attacks.
+
+**Defensive Line**
+- Tank occupies the front.
+- Ranged heroes remain behind.
+- Effective for defending shrines.
+
+**Split Push**
+- Team divides into two groups.
+- Creates pressure on two different lanes.
+- Effective when the enemy overcommits to one shrine.
+
+Formation changes should influence hero positioning and targeting.
+
+Avoid implementing formations as cosmetic labels. They must change actual behavior.
+
+# 5. REDESIGN THE BATTLEFIELD
+
+The existing board and its structures need a substantial visual and architectural improvement.
+
+Do not render the kingdoms, towers, and shrines as ordinary flat squares with simple labels.
+
+Create a dedicated battlefield renderer using React components and SVG/CSS as appropriate.
+
+Keep the simulation engine independent of rendering.
+
+## 5.1 Board dimensions
+
+Use a configurable board, preferably 11 columns x 15 rows.
+
+Do not hardcode dimensions across multiple components.
+
+The board must provide:
+
+- A player kingdom at the bottom.
+- An enemy kingdom at the top.
+- Three strategic lanes.
+- Three central shrines.
+- Two towers protecting each kingdom.
+- Obstacles and tactical choke points.
+- Enough space for heroes to move and formations to develop.
+
+Maintain perfect rotational symmetry between both sides.
+
+## 5.2 Kingdom design
+
+Each kingdom should look like an actual fantasy fortress.
+
+Player kingdom:
+
+- Large central throne/castle.
+- Two defensive towers.
+- Defensive walls.
+- A visible entrance or gate.
+- Distinctive player-side architectural identity.
+
+Enemy kingdom:
+
+- Same structural layout.
+- Rotated or mirrored orientation.
+- Distinctive enemy-side color treatment.
+
+Structures must have proper SVG illustrations rather than emoji or generic placeholder icons.
+
+Visual details:
+
+- Stone walls.
+- Castle towers.
+- Battlements.
+- Gate architecture.
+- Roof silhouettes.
+- Window lighting.
+- Structural shadows.
+- Damage states.
+
+Use a consistent visual scale so heroes, towers, and castles feel like parts of the same world.
+
+## 5.3 Tower mechanics
+
+Each kingdom has two towers.
+
+Towers should:
+
+- Automatically attack enemies within range.
+- Display their remaining HP.
+- Have visible attack projectiles.
+- Show an attack animation.
+- Stop functioning when destroyed.
+- Create a meaningful strategic opening when destroyed.
+
+The destruction of one tower should change the battlefield visibly.
+
+## 5.4 Throne mechanics
+
+The Throne must be the most visually important structure.
+
+It should:
+
+- Have a distinctive large castle design.
+- Display its health.
+- Have an active shield while protected by towers.
+- Show damage effects as its HP decreases.
+- Trigger a dramatic destruction animation when destroyed.
+
+Make the Throne visually distinguishable from ordinary towers.
+
+## 5.5 Shrine design
+
+The three shrines must be visually prominent.
+
+Create three different visual positions:
+
+- LEFT SHRINE.
+- CENTRAL SHRINE.
+- RIGHT SHRINE.
+
+Each shrine should have:
+
+- A raised stone platform.
+- A central magical structure or monument.
+- Glowing ownership indicators.
+- A circular capture-progress indicator.
+- A contested animation.
+- Distinct player/enemy ownership colors.
+- A subtle magical particle or energy effect.
+
+The center shrine should be especially important visually.
+
+However, do not make it so powerful that the two side shrines become irrelevant.
+
+Shrines should look like strategic objectives, not decorative board tiles.
+
+# 6. MAKE SHRINE CONTROL STRATEGICALLY IMPORTANT
+
+Preserve the existing Dominion concept but improve how it influences decisions.
+
+Each shrine provides:
+
+- Cooldown recharge advantage.
+- Dominion progression.
+- Tactical positioning.
+- A strategic route toward the enemy kingdom.
+
+Add a clear shrine information panel when selected.
+
+It should display:
+
+- Current owner.
+- Capture progress.
+- Number of nearby allied heroes.
+- Number of nearby enemy heroes.
+- Whether contested.
+- Cooldown bonus.
+- Dominion contribution.
+
+Introduce diminishing returns for excessive shrine stacking if necessary.
+
+For example, three heroes occupying one shrine should not automatically outperform distributing heroes across multiple objectives.
+
+The game must reward intelligent allocation rather than simply sending all four heroes to the center.
+
+# 7. MAKE ATTACKING STRUCTURES A REAL STRATEGY
+
+Introduce three viable attack strategies.
+
+### Strategy A: Direct assault
+
+Send a tank and damage-oriented heroes through one lane.
+
+Destroy one defensive tower, then open an attack route toward the Throne.
+
+Risk: the enemy can capture the other shrines while your team commits to the assault.
+
+### Strategy B: Shrine domination
+
+Distribute heroes between the central and side shrines.
+
+Build Dominion advantage and force the opponent to respond.
+
+Risk: the enemy can exploit the time spent controlling objectives to destroy your towers.
+
+### Strategy C: Split attack
+
+Use an assassin or fast hero to pressure one side while the main group attacks another.
+
+Risk: isolated heroes can be eliminated.
+
+These must be genuine viable strategies, not scripted outcomes.
+
+The bot must understand these strategies and respond intelligently.
+
+# 8. HEROES MUST FEEL DIFFERENT
+
+Do not make every hero behave like an identical unit with different artwork.
+
+Preserve the existing nine heroes and their identities.
+
+Use their existing abilities and passives, adapting only what is necessary for real-time gameplay.
+
+Their roles must influence:
+
+- Preferred distance.
+- Target selection.
+- Formation positioning.
+- Lane assignment.
+- Defensive behavior.
+- Objective preference.
+- Retreat decisions.
+
+For example:
+
+- MugenKING: team leader, supports nearby allies and controls engagements.
+- Malevolent Shrine Priest: ranged controller, protects the rear line.
+- Dr. Methanogenic: area denial and shrine control.
+- Captain Englland: fast frontline commander.
+- AJX: assassin, targets vulnerable enemies and flanks.
+- Yjkstra: pathfinder, captures distant objectives and exploits openings.
+- Ironclad Warden: tank, holds chokepoints and protects allies.
+- BlackMonkey: flank attacker and distraction specialist.
+- Part King Kong: bruiser, disrupts enemy formations.
+
+Every hero must have a visible role indicator.
+
+Do not allow heroes to randomly abandon strategic positions.
+
+# 9. ABILITIES SHOULD CREATE TACTICAL MOMENTS
+
+Abilities must be more than buttons that occasionally activate.
+
+Implement clear targeting previews.
+
+Before activation, show:
+
+- Valid target area.
+- Range.
+- Expected affected enemies.
+- Cooldown.
+- Relevant restrictions.
+
+Examples:
+
+**Dr. Methanogenic**
+Gas cloud should visibly deny access to a contested shrine.
+
+**Part King Kong**
+Ground Slam should disrupt a clustered enemy formation.
+
+**Ironclad Warden**
+Wall placement should block a narrow route and create a defensive advantage.
+
+**AJX**
+Null Jump should create an opportunity to attack a vulnerable backline or escape.
+
+The player should understand what an ability will accomplish before using it.
+
+Prevent invalid targets and explain why an ability cannot be used.
+
+Preserve all existing cooldown and ability compatibility where possible.
+
+# 10. REBUILD THE BOT'S STRATEGIC INTELLIGENCE
+
+The bot must not simply send heroes toward the nearest shrine.
+
+It should operate as a tactical commander.
+
+Implement a decision system with:
+
+1. Battlefield evaluation.
+2. Shrine ownership evaluation.
+3. Hero health evaluation.
+4. Tower health evaluation.
+5. Enemy formation evaluation.
+6. Lane pressure evaluation.
+7. Ability opportunity evaluation.
+8. Strategic objective selection.
+
+Example decisions:
+
+- If the enemy controls two shrines, contest the weakest one.
+- If an enemy tower is nearly destroyed, concentrate an assault.
+- If a shrine is undefended, capture it.
+- If a hero is critically damaged, retreat or protect it.
+- If the enemy clusters, use area-control abilities.
+- If the enemy attacks one lane, exploit the opposite lane.
+- If Dominion is close to completion, prioritize breaking the enemy's shrine control.
+
+Difficulty:
+
+**Easy:** understandable mistakes, slow reactions, limited strategic coordination.
+
+**Normal:** reasonable lane distribution, shrine awareness, tactical ability usage.
+
+**Hard:** counter-strategy, target prioritization, defensive adaptation, coordinated attacks.
+
+The bot must follow the same rules, movement restrictions, cooldowns, and visibility as the player.
+
+No cheating.
+
+# 11. ADD A PROPER PRE-BATTLE STRATEGY SCREEN
+
+Before the battle, provide an actual deployment planning experience.
+
+Show:
+
+- Selected four heroes.
+- Their role descriptions.
+- Their available abilities.
+- Their starting positions.
+- Lane assignments.
+- Formation selection.
+- A preview of the enemy kingdom.
+
+Allow the player to rearrange deployment positions.
+
+Provide three deployment presets:
+
+1. Balanced.
+2. Aggressive.
+3. Defensive.
+
+Presets should arrange the four selected heroes intelligently but remain editable.
+
+The player must understand that deployment influences the opening battle.
+
+Do not automatically start the match immediately after the draft.
+
+# 12. MOBILE-FIRST REDESIGN
+
+This is a critical requirement.
+
+The current experience must not be a desktop game squeezed into a mobile viewport.
+
+Design the mobile interface independently.
+
+## Mobile battlefield
+
+- Board fits the available viewport width.
+- No horizontal page scrolling.
+- No clipped towers or shrines.
+- Touch targets should ideally be 44–48 px.
+- Board cells scale intelligently.
+- Avoid excessive text inside cells.
+- Hero selection remains accessible.
+
+## Mobile HUD
+
+Top:
+
+- Match timer.
+- Player and enemy Dominion.
+- Shrine ownership indicators.
+
+Center:
+
+- Battlefield.
+
+Bottom:
+
+- Selected hero information.
+- Ability buttons.
+- Contextual command controls.
+
+Add a compact collapsible battle log and information sheet.
+
+## Mobile command interaction
+
+When a player selects a hero, show a contextual command bar:
+
+ATTACK | DEFEND | CAPTURE | MOVE | RETREAT | AUTO
+
+When an ability is selected, enter a clear targeting mode.
+
+Provide a visible Cancel button.
+
+Never rely on desktop right-click or hover behavior.
+
+## Desktop
+
+Use a three-column strategy-game layout:
+
+- Left: battle log and allied hero roster.
+- Center: battlefield.
+- Right: selected hero information, commands, and tactical guide.
+
+The battlefield must receive the majority of the available space.
+
+Do not let sidebars shrink the board excessively.
+
+# 13. VISUAL DESIGN SYSTEM
+
+Create a coherent modern fantasy strategy-game aesthetic.
+
+The game should look like a polished standalone PC/mobile strategy title.
+
+Suggested direction:
+
+**Player kingdom**
+- Deep crimson.
+- Muted copper.
+- Warm golden highlights.
+
+**Enemy kingdom**
+- Dark indigo.
+- Deep violet.
+- Cold blue highlights.
+
+**Neutral shrines**
+- Warm ivory stone.
+- Golden magical energy.
+
+**Battlefield**
+- Deep charcoal.
+- Desaturated stone.
+- Subtle terrain variation.
+
+Visual requirements:
+
+- Layered battlefield depth using 2D rendering.
+- Detailed SVG structure illustrations.
+- Consistent shadows.
+- Controlled lighting.
+- Smooth movement interpolation.
+- Clearly readable HP bars.
+- Polished attack effects.
+- Distinct ownership colors.
+- High-quality cooldown indicators.
+- Subtle hover and selection states on desktop.
+- Clear touch feedback on mobile.
+
+Avoid:
+
+- Emoji-based structures.
+- Generic colored rectangles.
+- Excessive gradients.
+- Random decorative particles.
+- Unnecessary glassmorphism.
+- Oversized UI panels.
+- Excessive animations that obscure combat.
+- Unreadable small text.
+- Fake 3D effects.
+
+The design should be sophisticated, restrained, and visually consistent.
+
+# 14. GAME FEEDBACK AND SATISFACTION
+
+Every important action needs feedback.
+
+Implement:
+
+- Hero attack animations.
+- Projectile movement.
+- Damage indicators.
+- HP pip changes.
+- Tower attack animations.
+- Tower destruction effects.
+- Shrine capture effects.
+- Dominion progress notifications.
+- Ability-specific effects.
+- Throne damage and destruction effects.
+
+Add a compact event feed:
+
+"LEFT SHRINE CAPTURED"
+
+"ENEMY TOWER DESTROYED"
+
+"YOUR CENTER SHRINE IS CONTESTED"
+
+"AJX ELIMINATED THE PRIEST"
+
+"YOUR THRONE IS UNDER ATTACK"
+
+"DOMINION ADVANTAGE: 2–1"
+
+Events should be concise and informative.
+
+Provide a slow-motion option, pause, and reduced-motion support.
+
+# 15. MAKE THE MATCH FAIR AND UNDERSTANDABLE
+
+Every defeat should be explainable.
+
+At the end of a match, show:
+
+- Winner.
+- Victory condition.
+- Match duration.
+- Heroes eliminated.
+- Towers destroyed.
+- Shrine control time.
+- Dominion progression.
+- Damage dealt.
+- Most influential hero.
+- Key tactical event.
+
+Where practical, identify the decisive mistake or turning point.
+
+For example:
+
+"Your opponent captured two shrines early while your entire team attacked the left tower."
+
+Do not invent statistics. Calculate them from actual match events.
+
+# 16. PERFORMANCE AND ENGINE SAFETY
+
+Preserve the deterministic simulation architecture if it already works.
+
+Requirements:
+
+- Fixed simulation timestep.
+- No React render on every simulation tick.
+- No unnecessary component remounting.
+- No duplicate timers.
+- Correct pause/resume behavior.
+- Correct slow-motion behavior.
+- Proper cleanup of animation frames and subscriptions.
+- Stable hero movement.
+- No overlapping units.
+- No infinite pathfinding loops.
+- No stuck commands.
+- No ability activation after match end.
+
+Keep simulation logic separate from rendering.
+
+Avoid introducing large dependencies.
+
+# 17. CARD SYSTEM: ABSOLUTELY PROTECTED
+
+This section is non-negotiable.
+
+The existing card system is already implemented.
+
+Do not modify:
+
+- Card generation algorithms.
+- Card templates.
+- Card dictionaries.
+- Card grammar.
+- Card rarity.
+- Collection storage.
+- Card code generation.
+- PNG rendering/export.
+- Existing card reward calculations.
+- Existing reward persistence.
+
+A hero kill must continue to grant cards through the existing mechanism.
+
+Preserve the current maximum reward limits and duplicate handling.
+
+At the end, inspect the card-related diff and explicitly confirm that the existing card-generation and collection logic remain untouched.
+
+# 18. IMPLEMENTATION STRATEGY
+
+Do not make a giant unverified rewrite.
+
+Work in the following sequence:
+
+**Phase 1: Audit**
+- Inspect existing files.
+- Write the audit report.
+- Identify reusable components.
+- Identify broken gameplay systems.
+
+**Phase 2: Core gameplay**
+- Fix hero movement.
+- Fix command execution.
+- Fix targeting.
+- Fix shrine logic.
+- Fix structure combat.
+- Fix formations.
+- Fix bot strategy.
+
+Test before continuing.
+
+**Phase 3: Battlefield redesign**
+- Build proper kingdoms.
+- Build proper towers.
+- Build proper shrines.
+- Build visual terrain.
+- Integrate existing hero artwork.
+
+**Phase 4: Interface redesign**
+- Rebuild mobile interface.
+- Rebuild desktop interface.
+- Improve deployment.
+- Add contextual command controls.
+
+**Phase 5: Feedback**
+- Add animations.
+- Add battle messages.
+- Add combat feedback.
+- Improve victory and defeat screens.
+
+**Phase 6: Verification**
+- Run tests.
+- Run build.
+- Test mobile dimensions.
+- Test desktop.
+- Test every hero.
+- Test every ability.
+- Test all victory conditions.
+- Verify card rewards.
+- Verify Classic Duel.
+
+After each phase:
+1. Run the relevant tests.
+2. Run the type check/build.
+3. Review the changed-file list.
+4. Confirm the scope lock.
+5. Fix regressions before moving forward.
+
+If the build breaks, fix the problem before continuing.
+
+Do not silently skip unfinished functionality.
+
+# 19. REQUIRED GAMEPLAY TEST SCENARIOS
+
+Test these actual situations:
+
+1. Four heroes attacking one enemy tower.
+2. Two heroes defending a shrine while two attack another lane.
+3. All three shrines contested.
+4. One team holding two shrines while the other attacks the Throne.
+5. A low-HP assassin retreating.
+6. A tank blocking a narrow route.
+7. A Warden wall interrupting an enemy push.
+8. A player issuing an attack order and then changing to defense.
+9. A bot responding to a split push.
+10. A tower being destroyed while heroes are nearby.
+11. A Throne becoming vulnerable.
+12. Dominion reaching 100.
+13. A complete battle on a 320px mobile viewport.
+14. A complete battle on desktop.
+15. A hero kill granting the correct card.
+
+Also test that a hero never becomes permanently stuck after its target dies or an objective changes ownership.
+
+# 20. FINAL ACCEPTANCE CRITERIA
+
+The redesign is complete only when:
+
+- The game feels like a tactical strategy game rather than a passive auto-battler.
+- Player commands produce predictable and visible behavior.
+- Different deployment strategies produce different battle outcomes.
+- All three lanes have strategic value.
+- All three shrines matter.
+- Direct attacks and Dominion strategies are both viable.
+- Each hero has a meaningful battlefield role.
+- The bot responds intelligently.
+- Structures look like actual fantasy architecture.
+- The board is visually polished.
+- Mobile controls are genuinely usable.
+- Desktop controls are equally complete.
+- Combat feedback is clear.
+- No major gameplay system is merely decorative or simulated visually without affecting the engine.
+- Existing card generation and reward systems work unchanged.
+- Other game modes remain untouched.
+- Classic Duel still works if it was previously available.
+- The project builds successfully.
+
+# 21. FINAL REPORT
+
+Provide:
+
+1. Root causes identified in the original implementation.
+2. Gameplay systems changed.
+3. New tactical mechanics introduced.
+4. Board and structure improvements.
+5. Mobile improvements.
+6. Bot intelligence improvements.
+7. Files created.
+8. Files modified.
+9. Files explicitly left untouched.
+10. Build and test results.
+11. Known limitations.
+12. Confirmation that no files outside `src/hero-duel/` were changed.
+13. Confirmation that card generation, card rendering, and collection logic were not modified.
+
+**FINAL DESIGN PRINCIPLE:**
+
+A player should never feel that they are simply watching four AI-controlled heroes fight.
+
+They should feel like a commander making meaningful decisions: choosing a lane, creating an opening, defending an objective, sacrificing a hero, exploiting an enemy mistake, and finally destroying the opposing kingdom.
+
+Build a game that people would genuinely want to replay because they can improve their strategy, not merely because they can collect more cards.

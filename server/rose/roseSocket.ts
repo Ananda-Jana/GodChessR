@@ -211,7 +211,6 @@ export function registerRoseSocket(wss: WebSocketServer) {
                   yourRole: joinRes.guestSeat.role,
                 }));
 
-                broadcastRoom(room, { type: 'rose:state', match: room.match });
                 broadcastPublicRoseRooms();
                 return;
               }
@@ -319,9 +318,6 @@ export function registerRoseSocket(wss: WebSocketServer) {
             yourColor: res.guestSeat.color,
             yourRole: res.guestSeat.role,
           }));
-
-          // Broadcast state to all sockets in room
-          broadcastRoom(room, { type: 'rose:state', match: room.match });
 
           // Update lobby list
           broadcastPublicRoseRooms();

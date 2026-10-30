@@ -1,0 +1,172 @@
+/**
+ * PLAYER SCHEMA DATA MODEL TEMPLATE - MUGENCHESSX
+ * 
+ * Maps all player progress, currencies, unlocks, and settings from local state
+ * into a single unified Firestore document representation.
+ */
+
+export interface AccountData {
+  uid: string;
+  username: string;
+  displayName: string;
+  email?: string | null;
+  avatarId: string;
+  createdAt: number;
+  lastLoginAt: number;
+  authProvider: "anonymous" | "password" | "google" | "custom_express";
+}
+
+export interface GrowthData {
+  level: number;
+  xp: number;
+  rating: number; // Predictor ELO
+  highestRating: number;
+  earnedCards: string[];
+  streak: number;
+  wins: number;
+  losses: number;
+  draws: number;
+  totalGames: number;
+}
+
+export interface ModeProgressData {
+  journey: {
+    completedNodeIds: string[];
+    unlockedNodeIds: string[];
+    bossDefeats: Record<string, number>;
+    totalVictories: number;
+    currentRating: number;
+  };
+  hashiraKatas: {
+    completedLessons: Record<string, { completedAt: number; stars: number }>;
+    unlockedRanks: string[];
+  };
+  cullingDojo: {
+    completedLessonIds: string[];
+  };
+  secretPlayers: {
+    unlockedPlayerIds: string[];
+  };
+}
+
+export interface WalletData {
+  gems: number;
+  keys: number;
+  passTickets: number;
+  gemSpendHistory: Array<{ timestamp: number; amount: number; description: string }>;
+  keySpendHistory: Array<{ timestamp: number; amount: number; description: string }>;
+  passTicketSpendHistory: Array<{ timestamp: number; amount: number; description: string }>;
+}
+
+export interface InventoryData {
+  unlockedThemes: string[];
+  chests: Array<{
+    id: string;
+    rarity: "common" | "rare" | "epic" | "legendary";
+    gems: number;
+    unlockedAt: number;
+    openedAt?: number;
+  }>;
+}
+
+export interface MugenPassData {
+  level: number;
+  tier: "free" | "premium" | "vip";
+  xp: number;
+  claimedTierRewards: Record<number, boolean>;
+}
+
+export interface SettingsData {
+  theme: "dark" | "light";
+}
+
+export interface MatchSummary {
+  matchId: string;
+  mode: string;
+  winner: string;
+  playedAt: number;
+}
+
+export interface MugenPlayerDoc {
+  account: AccountData;
+  growth: GrowthData;
+  modes: ModeProgressData;
+  wallet: WalletData;
+  inventory: InventoryData;
+  mugenPass: MugenPassData;
+  settings: SettingsData;
+  matches: MatchSummary[];
+  schemaVersion: number;
+  updatedAt: number;
+}
+
+export const createDefaultPlayerDoc = (uid: string, displayName = "Player", avatarId = "avatar_knight"): MugenPlayerDoc => {
+  const now = Date.now();
+  return {
+    account: {
+      uid,
+      username: displayName.toLowerCase().replace(/\s+/g, "_"),
+      displayName,
+      email: null,
+      avatarId,
+      createdAt: now,
+      lastLoginAt: now,
+      authProvider: "anonymous",
+    },
+    growth: {
+      level: 1,
+      xp: 0,
+      rating: 1200,
+      highestRating: 1200,
+      earnedCards: [],
+      streak: 0,
+      wins: 0,
+      losses: 0,
+      draws: 0,
+      totalGames: 0,
+    },
+    modes: {
+      journey: {
+        completedNodeIds: [],
+        unlockedNodeIds: ["node_1_rookie"],
+        bossDefeats: {},
+        totalVictories: 0,
+        currentRating: 1200,
+      },
+      hashiraKatas: {
+        completedLessons: {},
+        unlockedRanks: ["white_belt"],
+      },
+      cullingDojo: {
+        completedLessonIds: [],
+      },
+      secretPlayers: {
+        unlockedPlayerIds: [],
+      },
+    },
+    wallet: {
+      gems: 100,
+      keys: 5,
+      passTickets: 0,
+      gemSpendHistory: [],
+      keySpendHistory: [],
+      passTicketSpendHistory: [],
+    },
+    inventory: {
+      unlockedThemes: ["classic_wood", "dark_slate"],
+      chests: [],
+    },
+    mugenPass: {
+      level: 1,
+      tier: "free",
+      xp: 0,
+      claimedTierRewards: {},
+    },
+    settings: {
+      theme: "dark",
+    },
+    matches: [],
+    schemaVersion: 1,
+    updatedAt: now,
+  };
+};

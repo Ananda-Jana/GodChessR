@@ -1,0 +1,21 @@
+/**
+ * FIREBASE CONFIGURATION TEMPLATE - MUGENCHESSX
+ * 
+ * Instructions:
+ * Values are loaded from environment variables (import.meta.env.VITE_FIREBASE_*)
+ * with fallback placeholders for mugenchessx.
+ * Copy your web app config from Firebase Console > Project settings > Your apps.
+ */
+
+export const firebaseConfig = {
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "YOUR_FIREBASE_API_KEY_HERE",
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "mugenchessx.firebaseapp.com",
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "mugenchessx",
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "mugenchessx.appspot.com",
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "YOUR_MESSAGING_SENDER_ID",
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || "YOUR_FIREBASE_APP_ID",
+};
+
+export const isFirebaseSyncEnabled = (): boolean => {
+  return import.meta.env.VITE_ENABLE_FIREBASE === "true";
+};
