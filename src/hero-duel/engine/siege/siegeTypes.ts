@@ -49,6 +49,17 @@ export interface SiegeHeroInstance {
   abilityCooldownSec: number;
   currentAbilityCooldown: number;
   abilityUnlocked: boolean; // Gated by reaching a shrine
+  abilityLevel?: number; // 1 to 3
+  assignedAbilityId?:
+    | 'royalMeteor'
+    | 'curseSeal'
+    | 'toxicFlask'
+    | 'rallyBanner'
+    | 'phaseDaggers'
+    | 'jetBoots'
+    | 'bastionShield'
+    | 'spikyBall'
+    | 'seismicSlam';
   isAlive: boolean;
   statuses: {
     type: 'silenced' | 'rooted' | 'slowed' | 'disarmed' | 'shielded' | 'buffed';
@@ -120,6 +131,7 @@ export interface SiegeState {
   tick: number;
   turn: number;
   elapsedSeconds: number;
+  shrineTimerTriggered?: boolean;
   heroes: SiegeHeroInstance[];
   pawns: SiegePawnInstance[];
   shrines: SiegeShrine[];
@@ -134,6 +146,7 @@ export interface SiegeState {
   damageFlashes: DamageFlash[];
   eliminatedUnitIds: string[];
   shrineModal: ShrineModalState | null; // When non-null, turn timer is paused for ability selection
+  upgradeModal?: { heroInstanceId: string; eliminatedEnemyName: string } | null; // When non-null, modal offers mid-game upgrades
   projectiles: VisualProjectile[];
   floatingNumbers: FloatingNumber[];
   winner: TeamSide | 'draw' | null;

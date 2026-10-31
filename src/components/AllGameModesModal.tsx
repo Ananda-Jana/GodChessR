@@ -573,13 +573,13 @@ export const AllGameModesModal: React.FC<AllGameModesModalProps> = ({
             {/* HERO DUEL STANDALONE MODE (SQUARE CARD) */}
             <div
               className="relative overflow-hidden bg-cover bg-center border-4 border-amber-400 p-4 sm:p-5 shadow-[6px_6px_0px_#fbbf24] flex flex-col justify-between gap-4 active:scale-98 transition-all min-w-0 aspect-square shrink-0"
-              style={{ backgroundImage: "url('/assets/aistudio/image_9087d774.png')" }}
+              style={{ backgroundImage: "url('/assets/aistudio/image_9466e3bd.png')" }}
             >
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_20%,rgba(0,0,0,0.85)_95%)] z-0 pointer-events-none" />
 
               <div className="flex items-center gap-3.5 relative z-10 bg-black/80 p-3 border border-amber-400/40 backdrop-blur-sm rounded-xl shadow-lg">
-                <div className="w-12 h-12 bg-amber-400 border-2 border-black flex items-center justify-center text-black shrink-0 shadow-[2px_2px_0px_#000]">
-                  <Swords className="w-7 h-7 text-black" />
+                <div className="w-12 h-12 bg-amber-400 border-2 border-black rounded-lg overflow-hidden flex items-center justify-center text-black shrink-0 shadow-[2px_2px_0px_#000]">
+                  <img src="/assets/aistudio/image_9466e3bd.png" alt="Hero Duel Banner" className="w-full h-full object-cover" />
                 </div>
                 <div>
                   <div className="flex items-center gap-2 flex-wrap">

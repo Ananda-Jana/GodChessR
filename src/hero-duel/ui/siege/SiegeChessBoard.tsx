@@ -67,7 +67,7 @@ export const SiegeChessBoard: React.FC<SiegeChessBoardProps> = ({
   const colLabels = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
 
   return (
-    <div className="flex flex-col items-center justify-center select-none w-full max-w-[min(92vw,calc(100dvh-165px),500px)] my-auto">
+    <div className="flex flex-col items-center justify-center select-none w-full max-w-[min(92vw,calc(100dvh-200px),480px)] my-auto">
       {/* Outer Board Tray matching ChessBoard theme */}
       <div
         className="relative w-full aspect-square board-edge-mobile p-0 sm:p-2 border-0 sm:border-4 transition-colors soft-board-tray rounded-none sm:rounded-2xl shadow-2xl bg-[#1c080d] border-[#BC1434]/60"
@@ -141,6 +141,37 @@ export const SiegeChessBoard: React.FC<SiegeChessBoardProps> = ({
                     </span>
                   )}
 
+                  {/* Shrine 60-Second Continuous Countdown Timer on top-left square of the shrine */}
+                  {((x === 1 && y === 3) || (x === 5 && y === 3)) && (() => {
+                    const currentShrine = (x === 1 && y === 3) ? shrineLeft : shrineRight;
+                    if (!currentShrine) return null;
+                    const elapsed = currentShrine.dominionTimer || 0;
+                    const remaining = Math.max(0, 60 - elapsed);
+                    const isUrgent = state.shrineTimerTriggered && remaining <= 10;
+                    const isCritical = state.shrineTimerTriggered && remaining <= 5;
+
+                    return (
+                      <div
+                        className={`absolute top-0.5 left-1 z-30 pointer-events-none px-1 py-0.5 rounded font-mono font-black text-[9px] leading-tight select-none shadow-sm ${
+                          isCritical
+                            ? 'bg-red-600 text-white border border-red-300 animate-pulse shadow-[0_0_12px_rgba(239,68,68,1)]'
+                            : isUrgent
+                            ? 'bg-amber-500 text-black border border-amber-200 animate-pulse'
+                            : state.shrineTimerTriggered
+                            ? 'bg-amber-400 text-black border border-white'
+                            : 'bg-black/70 text-amber-300/80 border border-amber-400/30'
+                        }`}
+                        title={
+                          state.shrineTimerTriggered
+                            ? `Continuous Shrine Countdown: ${remaining}s remaining`
+                            : '60s Shrine Timer (Triggers when any shrine has units from both teams)'
+                        }
+                      >
+                        {state.shrineTimerTriggered ? `${remaining}s` : '60s'}
+                      </div>
+                    );
+                  })()}
+
                   {/* Move Destination Dot indicator from ChessBoard (40-45% of square) */}
                   {isMoveTarget && (
                     <div className="absolute w-[42%] h-[42%] bg-amber-400 border-2 border-black/40 rounded-full soft-move-dot shadow-sm pointer-events-none flex items-center justify-center z-10 animate-pulse">
@@ -167,9 +198,15 @@ export const SiegeChessBoard: React.FC<SiegeChessBoardProps> = ({
                     </div>
                   )}
 
-                  {/* Red Damage Flash Overlay (300ms) */}
+                  {/* Glowing Elemental Pulse / Damage Flash Overlay */}
                   {flash && (
-                    <div className="absolute inset-0 z-40 bg-red-600/70 animate-ping pointer-events-none" />
+                    <div
+                      className="absolute inset-0 z-40 rounded-sm animate-pulse pointer-events-none ring-2 ring-white shadow-[0_0_16px_rgba(255,255,255,0.8)]"
+                      style={{
+                        backgroundColor: flash.color || '#ef5350',
+                        opacity: 0.75,
+                      }}
+                    />
                   )}
 
                   {/* Hero Piece - No background disk, pure piece sitting directly on chess square */}
@@ -286,6 +323,161 @@ export const SiegeChessBoard: React.FC<SiegeChessBoardProps> = ({
               />
             </div>
           )}
+
+          {/* Audio Warning Tick Effect for Shrine Hold Timer <= 5s */}
+          {(() => {
+            const minRemaining = Math.min(
+              ...state.shrines.map((s) => (s.dominionTimer ? Math.max(0, 60 - s.dominionTimer) : 60))
+            );
+            if (state.shrineTimerTriggered && minRemaining <= 5 && minRemaining > 0) {
+              try {
+                const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(880, ctx.currentTime);
+                gain.gain.setValueAtTime(0.12, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.08);
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start();
+                osc.stop(ctx.currentTime + 0.08);
+              } catch {
+                // Ignore audio ctx restriction
+              }
+            }
+            return null;
+          })()}
+
+          {/* 9 Equipment Ability Visual Animation Overlay System (O(1) Constant Time Performance) */}
+          {state.projectiles.map((p) => {
+            const fromX = (p.from.x / COLS) * 100 + 6.25;
+            const fromY = (p.from.y / ROWS) * 100 + 6.25;
+            const toX = (p.to.x / COLS) * 100 + 6.25;
+            const toY = (p.to.y / ROWS) * 100 + 6.25;
+
+            const currX = fromX + (toX - fromX) * (p.progress || 1);
+            const currY = fromY + (toY - fromY) * (p.progress || 1);
+
+            return (
+              <div
+                key={p.id}
+                className="absolute inset-0 pointer-events-none z-40 overflow-hidden"
+              >
+                {/* 1. Royal Meteor (Falling Fireball + Fire Shockwave) */}
+                {(p.id.includes('royalMeteor') || p.id.includes('meteor')) && (
+                  <>
+                    <div
+                      className="absolute w-12 h-12 rounded-full bg-gradient-to-r from-red-600 via-amber-500 to-yellow-300 shadow-[0_0_24px_rgba(239,68,68,0.9)] animate-ping"
+                      style={{
+                        left: `${currX - 6}%`,
+                        top: `${currY - 6}%`,
+                      }}
+                    />
+                    <div
+                      className="absolute w-8 h-8 rounded-full bg-yellow-300 border-2 border-white shadow-[0_0_16px_rgba(255,235,59,1)] flex items-center justify-center font-black text-xs text-red-900"
+                      style={{
+                        left: `${currX - 4}%`,
+                        top: `${currY - 4}%`,
+                      }}
+                    >
+                      🔥
+                    </div>
+                  </>
+                )}
+
+                {/* 2. Bastion Shield (Expanding Golden Dome) */}
+                {p.id.includes('bastionShield') && (
+                  <div
+                    className="absolute w-16 h-16 rounded-full border-4 border-amber-300 bg-amber-400/30 shadow-[0_0_20px_rgba(251,191,36,0.8)] animate-pulse"
+                    style={{
+                      left: `${currX - 8}%`,
+                      top: `${currY - 8}%`,
+                    }}
+                  />
+                )}
+
+                {/* 3. Curse Seal (Crimson Magic Sigil) */}
+                {p.id.includes('curseSeal') && (
+                  <div
+                    className="absolute w-14 h-14 rounded-full border-2 border-purple-500 bg-purple-950/40 shadow-[0_0_18px_rgba(168,85,247,0.8)] animate-spin"
+                    style={{
+                      left: `${currX - 7}%`,
+                      top: `${currY - 7}%`,
+                    }}
+                  />
+                )}
+
+                {/* 4. Toxic Flask (Poison Acid Cloud) */}
+                {(p.type === 'gas_cloud' || p.id.includes('toxicFlask')) && (
+                  <div
+                    className="absolute w-14 h-14 rounded-full bg-emerald-500/40 border-2 border-emerald-400 shadow-[0_0_18px_rgba(16,185,129,0.9)] animate-pulse"
+                    style={{
+                      left: `${currX - 7}%`,
+                      top: `${currY - 7}%`,
+                    }}
+                  />
+                )}
+
+                {/* 5. Rally Banner (Golden War Banner Shockwave) */}
+                {p.id.includes('rallyBanner') && (
+                  <div
+                    className="absolute w-16 h-16 rounded-full border-4 border-yellow-400 bg-yellow-300/20 shadow-[0_0_20px_rgba(234,179,8,0.8)] animate-ping"
+                    style={{
+                      left: `${currX - 8}%`,
+                      top: `${currY - 8}%`,
+                    }}
+                  />
+                )}
+
+                {/* 6. Phase Daggers (Purple Shadow Dash) */}
+                {(p.type === 'hero_slash' || p.id.includes('phaseDaggers')) && (
+                  <div
+                    className="absolute w-10 h-10 rounded-full bg-indigo-500/60 border-2 border-indigo-300 shadow-[0_0_16px_rgba(99,102,241,0.9)] animate-bounce"
+                    style={{
+                      left: `${currX - 5}%`,
+                      top: `${currY - 5}%`,
+                    }}
+                  />
+                )}
+
+                {/* 7. Jet Boots (Thruster Exhaust Flame Trail) */}
+                {p.id.includes('jetBoots') && (
+                  <div
+                    className="absolute w-8 h-8 rounded-full bg-orange-500 shadow-[0_0_14px_rgba(249,115,22,1)]"
+                    style={{
+                      left: `${currX - 4}%`,
+                      top: `${currY - 4}%`,
+                    }}
+                  />
+                )}
+
+                {/* 8. Spiky Ball (Rolling Spiked Sphere) */}
+                {p.id.includes('spikyBall') && (
+                  <div
+                    className="absolute w-10 h-10 rounded-full bg-slate-800 border-2 border-slate-400 shadow-[0_0_14px_rgba(0,0,0,0.9)] animate-spin flex items-center justify-center text-xs"
+                    style={{
+                      left: `${currX - 5}%`,
+                      top: `${currY - 5}%`,
+                    }}
+                  >
+                    ⚙️
+                  </div>
+                )}
+
+                {/* 9. Seismic Slam (Ground Fissures Shockwave) */}
+                {p.id.includes('seismicSlam') && (
+                  <div
+                    className="absolute w-16 h-16 rounded-full border-4 border-amber-700 bg-amber-900/50 shadow-[0_0_18px_rgba(180,83,9,0.9)] animate-pulse"
+                    style={{
+                      left: `${currX - 8}%`,
+                      top: `${currY - 8}%`,
+                    }}
+                  />
+                )}
+              </div>
+            );
+          })}
 
           {/* Floating Combat Damage Numbers */}
           {state.floatingNumbers.map((fn) => (

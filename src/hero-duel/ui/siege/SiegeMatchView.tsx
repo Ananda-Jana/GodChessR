@@ -1,14 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { HeroId } from '../../types/heroDuelTypes';
 import { createInitialSiegeState } from '../../engine/siege/siegeState';
 import {
   processPlayerTurnPhase,
   processBotTurnPhase,
+  processOrthogonalAutoAttacks,
   unlockHeroAbility,
   skipHeroAbilityUnlock,
   executeHeroAbility,
   getValidHeroMoves,
   isCoordOnShrine,
+  applyAbilityUpgrade,
+  dismissAbilityUpgrade,
 } from '../../engine/siege/siegeSim';
 import { calculateBotTurnMoves } from '../../ai/siege/siegeBot';
 import { SiegeState, SiegeHeroInstance, Coord, PlayerAction } from '../../engine/siege/siegeTypes';
@@ -20,7 +23,11 @@ import { ArrowLeft, Shield, Sparkles, Swords, Zap, Lock } from 'lucide-react';
 import { getHeroById } from '../../heroes/heroRegistry';
 import { HeroPiece, heroIdToPieceType } from '../../art/heroAvatarHelper';
 import { haptics } from '../../utils/haptics';
+import { heroDuelAudio } from '../../utils/heroDuelAudio';
 import { SiegeRulebookModal } from './SiegeRulebookModal';
+import { HeroBottomDock, HeroDockItem } from '../HeroBottomDock';
+import { MidGameUpgradeModal } from '../MidGameUpgradeModal';
+import { HERO_DUEL_ABILITY_SUMMARIES } from '../../config/siegeRulesCodex';
 
 interface SiegeMatchViewProps {
   heroes: HeroId[];
@@ -95,9 +102,109 @@ export const SiegeMatchView: React.FC<SiegeMatchViewProps> = ({
     setSelectedHeroId(hero.instanceId);
   };
 
+  // Real-time 1-second interval loop: auto-attacks, 7s ability cooldown decrement, and shrine countdown ticks
+  useEffect(() => {
+    if (phase !== 'battle' || state.winner) return;
+
+    const interval = setInterval(() => {
+      setState((prev) => {
+        if (prev.winner) return prev;
+
+        // 1. Decrement cooldowns every second for all living heroes
+        const updatedHeroes = prev.heroes.map((h) => {
+          if (h.currentAbilityCooldown > 0) {
+            return {
+              ...h,
+              currentAbilityCooldown: Math.max(0, h.currentAbilityCooldown - 1),
+            };
+          }
+          return h;
+        });
+
+        // 2. Continuous orthogonal auto-attack tick for units in adjacent contact (1-second tick)
+        const { nextState: combatState, anyAttackHappened } = processOrthogonalAutoAttacks(
+          {
+            ...prev,
+            heroes: updatedHeroes,
+          },
+          true // isSecondTick = true (increments 60s shrine countdown timer by 1s)
+        );
+
+        if (anyAttackHappened) {
+          heroDuelAudio.playMoveThock();
+        }
+
+        return combatState;
+      });
+
+      // 3. Audio warning & hold ticks for shrine countdown (60s timer)
+      const shrineHoldValues = state.shrines.map((s) => ({
+        elapsed: s.dominionTimer || 0,
+        isHolding: (s.dominionTimer || 0) > 0 || s.occupierTeam !== null,
+      }));
+
+      const activeHolds = shrineHoldValues.filter((s) => s.isHolding);
+      if (activeHolds.length > 0) {
+        const minRemaining = Math.min(...activeHolds.map((s) => Math.max(0, 60 - s.elapsed)));
+        if (minRemaining <= 5 && minRemaining > 0) {
+          heroDuelAudio.playWarningTick();
+        } else if (minRemaining > 5) {
+          heroDuelAudio.playShrineHoldTick();
+        }
+      }
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [phase, state.winner, state.shrines]);
+
+  // Clear damage flashes automatically after brief burst
+  useEffect(() => {
+    if (state.damageFlashes.length > 0) {
+      const timer = setTimeout(() => {
+        setState((prev) => ({ ...prev, damageFlashes: [] }));
+      }, 450);
+      return () => clearTimeout(timer);
+    }
+  }, [state.damageFlashes.length]);
+
+  // Clear visual ability projectiles automatically after animation duration (1.25s)
+  useEffect(() => {
+    if (state.projectiles.length > 0) {
+      const timer = setTimeout(() => {
+        setState((prev) => ({ ...prev, projectiles: [] }));
+      }, 1250);
+      return () => clearTimeout(timer);
+    }
+  }, [state.projectiles.length]);
+
+  // Active squad heroes for the bottom bar (exactly 4 heroes)
+  const squadHeroes = useMemo(() => state.heroes.filter((h) => h.team === 1), [state.heroes]);
+
+  // Memoized Hero Dock items with strict separation of name, 15 HP scaleX, and ability square
+  // (Must be called unconditionally on every render before any early returns)
+  const dockItems: HeroDockItem[] = useMemo(() => {
+    return squadHeroes.slice(0, 4).map((hero) => ({
+      instanceId: hero.instanceId,
+      name: hero.name,
+      hp: hero.hp,
+      maxHp: 15,
+      isAlive: hero.isAlive,
+      abilityId: hero.assignedAbilityId || 'royalMeteor',
+      abilityUnlocked: hero.abilityUnlocked,
+      cooldownSeconds: hero.currentAbilityCooldown,
+      initialCooldownSeconds: hero.abilityCooldownSec || 7,
+      level: hero.abilityLevel || 1,
+      maxLevel: 3,
+      isActive: selectedHeroId === hero.instanceId,
+    }));
+  }, [squadHeroes, selectedHeroId]);
+
   // 1-Click Move/Action Execution
   const executeDirectPlayerAction = (actions: PlayerAction[]) => {
     if (turnPhase !== 'player_planning' || state.winner || state.shrineModal) return;
+
+    // Wood-tap "thock" sound on every piece move
+    heroDuelAudio.playMoveThock();
 
     setTurnPhase('player_animating');
     setSelectedHeroId(null);
@@ -115,6 +222,7 @@ export const SiegeMatchView: React.FC<SiegeMatchViewProps> = ({
       // Shrine reached ability unlock modal check
       if (unlockedModalHeroId && playerResolved.shrineModal) {
         haptics.shrine();
+        heroDuelAudio.playShrineAcquired();
         return;
       }
 
@@ -253,11 +361,12 @@ export const SiegeMatchView: React.FC<SiegeMatchViewProps> = ({
 
     if (hero.currentAbilityCooldown > 0) {
       haptics.select();
-      setBannerText(`ABILITY COOLDOWN: ${hero.currentAbilityCooldown} TURNS`);
+      setBannerText(`ABILITY COOLDOWN: ${hero.currentAbilityCooldown}s`);
       setTimeout(() => setBannerText(null), 1400);
       return;
     }
 
+    heroDuelAudio.playAbilityWhoosh();
     haptics.ability();
     setState((prev) => executeHeroAbility(prev, instanceId));
   };
@@ -285,12 +394,12 @@ export const SiegeMatchView: React.FC<SiegeMatchViewProps> = ({
     ? state.heroes.find((h) => h.instanceId === state.shrineModal?.heroInstanceId)
     : null;
   const modalHeroDef = modalHero ? getHeroById(modalHero.heroId) : null;
-
-  // Active squad heroes for the bottom bar (exactly 4 heroes)
-  const squadHeroes = state.heroes.filter((h) => h.team === 1);
+  const upgradeModalHero = state.upgradeModal
+    ? state.heroes.find((h) => h.instanceId === state.upgradeModal?.heroInstanceId)
+    : null;
 
   return (
-    <div className="hd-root min-h-screen max-h-screen h-screen flex flex-col justify-between overflow-hidden bg-[#07090e] text-white select-none">
+    <div className="hd-root min-h-[100dvh] max-h-[100dvh] h-[100dvh] flex flex-col justify-between overflow-hidden bg-[#07090e] text-white select-none">
       {/* TOP SECTION: Integrated Compact HUD (Redundant 'Shrine Siege 8×8' header removed) */}
       <div className="w-full max-w-5xl mx-auto px-2 pt-1.5 shrink-0">
         <SiegeHud
@@ -458,159 +567,33 @@ export const SiegeMatchView: React.FC<SiegeMatchViewProps> = ({
         </div>
       </div>
 
-      {/* BOTTOM NAVIGATION BAR: 4 ACTIVE ABILITY USAGE BUTTONS */}
-      <div className="w-full bg-[#0c101a]/95 backdrop-blur-md border-t-2 border-slate-700/80 p-2 sm:p-2.5 z-30 shrink-0 shadow-[0_-4px_20px_rgba(0,0,0,0.6)]">
-        <div className="max-w-4xl mx-auto grid grid-cols-4 gap-1.5 sm:gap-2">
-          {squadHeroes.slice(0, 4).map((hero, idx) => {
-            const def = getHeroById(hero.heroId);
-            const isUnlocked = hero.abilityUnlocked;
-            const onCooldown = hero.currentAbilityCooldown > 0;
-            const isReady = isUnlocked && !onCooldown && hero.isAlive;
-            const isHeroSelected = selectedHeroId === hero.instanceId;
+      {/* BOTTOM NAVIGATION BAR: 1 COLUMN PER HERO (NAME -> 15 HP BAR -> 64PX PURPLE ABILITY SQUARE) */}
+      <HeroBottomDock heroes={dockItems} onActivateAbility={handleTriggerAbility} />
 
-            return (
-              <button
-                key={hero.instanceId}
-                type="button"
-                onClick={() => {
-                  if (!isUnlocked || onCooldown) {
-                    handleTriggerAbility(hero.instanceId);
-                  } else {
-                    handleTriggerAbility(hero.instanceId);
-                  }
-                }}
-                className={`relative p-1.5 sm:p-2 rounded-xl border flex flex-col items-center justify-between text-center transition-all cursor-pointer ${
-                  !hero.isAlive
-                    ? 'bg-neutral-900/60 border-neutral-800 opacity-40 cursor-not-allowed'
-                    : isReady
-                    ? 'bg-gradient-to-b from-purple-900/80 to-purple-950/90 border-purple-400 ring-1 ring-purple-400 shadow-[0_0_12px_rgba(168,85,247,0.4)] animate-pulse active:scale-95'
-                    : isUnlocked && onCooldown
-                    ? 'bg-neutral-900/90 border-neutral-700 text-neutral-400 active:scale-98'
-                    : 'bg-neutral-950 border-neutral-800 text-neutral-500 active:scale-98'
-                }`}
-              >
-                {/* Hero Avatar & Ability Title */}
-                <div className="flex items-center gap-1 w-full justify-center">
-                  <div className="w-5 h-5 flex items-center justify-center shrink-0 drop-shadow-md">
-                    <HeroPiece type={heroIdToPieceType(hero.heroId)} color="white" className="w-full h-full" />
-                  </div>
-                  <span className="text-[9px] sm:text-[10px] font-black uppercase text-white truncate max-w-[70px]">
-                    {hero.name}
-                  </span>
-                </div>
-
-                <div className="text-[9px] sm:text-[10px] font-bold text-amber-300 truncate w-full mt-0.5">
-                  {def?.active.name || 'Ability'}
-                </div>
-
-                {/* Status Indicator */}
-                <div className="w-full mt-1">
-                  {!isUnlocked ? (
-                    <span className="inline-flex items-center gap-0.5 text-[8px] font-mono font-bold px-1 py-0.5 rounded bg-black/60 text-amber-400 border border-amber-500/30">
-                      <Lock className="w-2.5 h-2.5" />
-                      <span>Shrine</span>
-                    </span>
-                  ) : onCooldown ? (
-                    <span className="inline-block text-[8px] font-mono font-bold px-1 py-0.5 rounded bg-neutral-800 text-neutral-300">
-                      CD: {hero.currentAbilityCooldown}T
-                    </span>
-                  ) : (
-                    <span className="inline-flex items-center gap-0.5 text-[8px] font-black uppercase px-1.5 py-0.5 rounded bg-purple-600 text-white border border-purple-300 shadow">
-                      <Zap className="w-2.5 h-2.5 fill-current" />
-                      <span>1-Tap Cast</span>
-                    </span>
-                  )}
-                </div>
-              </button>
+      {/* MID-GAME ELIMINATION ABILITY UPGRADE MODAL */}
+      {state.upgradeModal && upgradeModalHero && (
+        <MidGameUpgradeModal
+          isOpen={Boolean(state.upgradeModal)}
+          heroName={upgradeModalHero.name}
+          abilityId={upgradeModalHero.assignedAbilityId || 'meteor'}
+          abilityName={
+            HERO_DUEL_ABILITY_SUMMARIES.find(
+              (a) => a.id === (upgradeModalHero.assignedAbilityId || 'meteor')
+            )?.name || 'Equipment Ability'
+          }
+          currentLevel={upgradeModalHero.abilityLevel || 1}
+          onSelectUpgrade={(choice) => {
+            setState((prev) =>
+              applyAbilityUpgrade(prev, state.upgradeModal!.heroInstanceId, choice)
             );
-          })}
-        </div>
-      </div>
-
-      {/* SHRINE REACHED ABILITY UNLOCK MODAL OVERLAY */}
-      {state.shrineModal && modalHero && modalHeroDef && (
-        <div className="fixed inset-0 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in">
-          <div className="bg-[#121218] border-3 border-amber-400 p-5 rounded-2xl max-w-lg w-full shadow-2xl flex flex-col gap-4 text-white">
-            <div className="flex items-center gap-2 border-b border-white/20 pb-2">
-              <Sparkles className="w-5 h-5 text-amber-400 animate-pulse" />
-              <h3 className="font-black text-base uppercase text-amber-400 tracking-wider">
-                ✨ GRAND SHRINE CLAIMED ✨
-              </h3>
-            </div>
-
-            <div className="flex items-center gap-3 bg-black/60 p-3 rounded-xl border border-white/10">
-              <div className="w-12 h-12 p-1 shrink-0 flex items-center justify-center drop-shadow-md">
-                <HeroPiece type={heroIdToPieceType(modalHero.heroId)} color="white" className="w-full h-full" />
-              </div>
-              <div>
-                <span className="text-[10px] font-mono text-amber-400 uppercase font-black">
-                  {modalHero.title}
-                </span>
-                <h4 className="text-sm font-black uppercase text-white">{modalHero.name}</h4>
-                <p className="text-[11px] text-neutral-300">Choose 1 of 3 awakened shrine blessings:</p>
-              </div>
-            </div>
-
-            {/* 3 Ability Choices */}
-            <div className="grid grid-cols-1 gap-2 text-xs">
-              <div
-                onClick={() => handleConfirmUnlock(modalHero.instanceId, modalHeroDef.active.name)}
-                className="p-3 bg-purple-950/70 hover:bg-purple-900/80 border-2 border-purple-500/60 rounded-xl cursor-pointer transition-all flex items-start gap-2.5"
-              >
-                <Zap className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
-                <div className="flex-1 space-y-0.5">
-                  <div className="font-black text-amber-300 uppercase flex items-center justify-between">
-                    <span>{modalHeroDef.active.name}</span>
-                    <span className="text-[9px] text-purple-300 font-mono">Cooldown: 2 Turns</span>
-                  </div>
-                  <p className="text-[11px] text-neutral-200">{modalHeroDef.active.description}</p>
-                </div>
-              </div>
-
-              <div
-                onClick={() => handleConfirmUnlock(modalHero.instanceId, 'Celestial Aegis')}
-                className="p-3 bg-blue-950/70 hover:bg-blue-900/80 border-2 border-blue-500/60 rounded-xl cursor-pointer transition-all flex items-start gap-2.5"
-              >
-                <Shield className="w-4 h-4 text-sky-400 shrink-0 mt-0.5" />
-                <div className="flex-1 space-y-0.5">
-                  <div className="font-black text-sky-300 uppercase flex items-center justify-between">
-                    <span>Celestial Aegis</span>
-                    <span className="text-[9px] text-sky-300 font-mono">Passive Barrier</span>
-                  </div>
-                  <p className="text-[11px] text-neutral-200">
-                    Fortify defenses: grants +4 Shield HP and permanent +20% damage reduction on all squares.
-                  </p>
-                </div>
-              </div>
-
-              <div
-                onClick={() => handleConfirmUnlock(modalHero.instanceId, 'Divine Smite')}
-                className="p-3 bg-red-950/70 hover:bg-red-900/80 border-2 border-red-500/60 rounded-xl cursor-pointer transition-all flex items-start gap-2.5"
-              >
-                <Swords className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
-                <div className="flex-1 space-y-0.5">
-                  <div className="font-black text-red-300 uppercase flex items-center justify-between">
-                    <span>Divine Smite</span>
-                    <span className="text-[9px] text-red-300 font-mono">Instant Strike</span>
-                  </div>
-                  <p className="text-[11px] text-neutral-200">
-                    Call down lightning dealing 5 Holy DMG to the nearest enemy champion.
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex justify-end gap-2 mt-1">
-              <button
-                onClick={handleSkipUnlock}
-                className="w-full py-2 bg-neutral-800 hover:bg-neutral-700 text-neutral-300 font-black text-xs uppercase rounded cursor-pointer border border-white/10"
-              >
-                Skip For Now
-              </button>
-            </div>
-          </div>
-        </div>
+          }}
+          onDismiss={() => {
+            setState((prev) => dismissAbilityUpgrade(prev));
+          }}
+        />
       )}
+
+
 
       {/* Results Modal */}
       {state.winner && (

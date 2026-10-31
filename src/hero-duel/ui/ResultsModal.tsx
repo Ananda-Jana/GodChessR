@@ -1,8 +1,25 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { HeroDuelState } from '../types/heroDuelTypes';
 import { CollectibleHeroCard } from '../types/cardTypes';
 import { Trophy, Skull, Sparkles, ArrowRight, RotateCcw, Download, Eye, ChevronLeft, ChevronRight } from 'lucide-react';
-import { downloadCardPng } from '../cards/cardRenderer';
+import { downloadCardPng, renderCardToCanvas } from '../cards/cardRenderer';
+
+function HeroCardPreview({ card, widthPx }: { card: CollectibleHeroCard; widthPx: number }) {
+  const ref = useRef<HTMLCanvasElement>(null);
+  useEffect(() => {
+    const c = ref.current;
+    if (!c) return;
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    renderCardToCanvas(c, card, (widthPx * dpr) / 750);
+  }, [card, widthPx]);
+  return (
+    <canvas
+      ref={ref}
+      style={{ width: widthPx, height: (widthPx * 1050) / 750, display: 'block' }}
+      aria-label={`${card.heroName} card, ${card.rarity}`}
+    />
+  );
+}
 
 interface ResultsModalProps {
   matchState: HeroDuelState;
@@ -113,16 +130,18 @@ export const ResultsModal: React.FC<ResultsModalProps> = ({
                   <span className="text-[10px] font-mono text-neutral-400">Added to Vault</span>
                 </div>
 
-                <div className="flex flex-col gap-2 max-h-48 overflow-y-auto">
+                <div className="flex flex-col gap-2 max-h-56 overflow-y-auto">
                   {earnedCards.map((card) => (
                     <div
                       key={card.code}
-                      className="flex items-center justify-between p-2.5 bg-black/70 border border-white/15 rounded-lg text-xs"
+                      className="flex items-center justify-between p-2.5 bg-black/70 border border-white/15 rounded-lg text-xs gap-3"
                     >
-                      <div className="flex items-center gap-2">
-                        <Sparkles className="w-4 h-4 text-amber-400 shrink-0" />
+                      <div className="flex items-center gap-3">
+                        <div className="shrink-0 rounded overflow-hidden border border-white/20 shadow">
+                          <HeroCardPreview card={card} widthPx={56} />
+                        </div>
                         <div>
-                          <div className="font-black uppercase text-white truncate max-w-[160px]">
+                          <div className="font-black uppercase text-white truncate max-w-[150px]">
                             {card.heroName}
                           </div>
                           <div className="text-[10px] font-mono text-amber-400">
@@ -133,7 +152,7 @@ export const ResultsModal: React.FC<ResultsModalProps> = ({
 
                       <button
                         onClick={() => downloadCardPng(card)}
-                        className="p-1.5 bg-neutral-800 hover:bg-neutral-700 text-neutral-200 rounded border border-white/20 cursor-pointer flex items-center gap-1 text-[10px] font-bold uppercase"
+                        className="p-2 bg-neutral-800 hover:bg-neutral-700 text-neutral-200 rounded border border-white/20 cursor-pointer flex items-center gap-1 text-[10px] font-bold uppercase shrink-0"
                         title="Download 2x PNG"
                       >
                         <Download className="w-3.5 h-3.5" />

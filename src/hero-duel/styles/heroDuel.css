@@ -120,3 +120,139 @@
     opacity: 1;
   }
 }
+
+/* Clash of Clans Equipment Style Ability Tiles & States */
+@property --p {
+  syntax: '<number>';
+  inherits: false;
+  initial-value: 0;
+}
+
+.ability-tile {
+  position: relative;
+  width: 64px;
+  height: 64px;
+  border-radius: 20px;
+  background: linear-gradient(165deg, #b866e6 0%, #8f34c6 55%, #6b229f 100%);
+  box-shadow:
+    inset 0 0 0 3px #d9a6f5,
+    inset 0 0 0 5px rgba(60, 10, 100, 0.35),
+    inset 0 -8px 12px rgba(40, 0, 70, 0.35),
+    0 3px 0 #3f1260,
+    0 6px 10px rgba(0, 0, 0, 0.45);
+  display: grid;
+  place-items: center;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  contain: layout paint;
+  cursor: pointer;
+}
+
+.ability-tile svg.icon {
+  width: 46px;
+  height: 46px;
+  filter: drop-shadow(0 3px 2px rgba(0, 0, 0, 0.45));
+}
+
+.ability-tile .lvl {
+  position: absolute;
+  left: 4px;
+  bottom: 4px;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  border-radius: 7px;
+  background: #23232b;
+  color: #fff;
+  font: 700 12px/20px system-ui;
+  text-align: center;
+}
+
+.ability-tile .lvl.max {
+  background: #f3c98a;
+  color: #5a3200;
+}
+
+/* States */
+.ability-tile.locked {
+  filter: grayscale(1) brightness(0.5);
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.ability-tile.ready {
+  animation: ability-glow-pulse 1.2s ease-in-out infinite alternate;
+}
+
+@keyframes ability-glow-pulse {
+  from {
+    box-shadow:
+      inset 0 0 0 3px #d9a6f5,
+      inset 0 0 0 5px rgba(60, 10, 100, 0.35),
+      inset 0 -8px 12px rgba(40, 0, 70, 0.35),
+      0 3px 0 #3f1260,
+      0 6px 10px rgba(0, 0, 0, 0.45);
+  }
+  to {
+    box-shadow:
+      inset 0 0 0 3px #ecd2ff,
+      inset 0 0 0 5px rgba(110, 20, 180, 0.5),
+      inset 0 -8px 12px rgba(70, 0, 110, 0.4),
+      0 3px 0 #3f1260,
+      0 0 16px rgba(184, 102, 230, 0.8),
+      0 6px 12px rgba(0, 0, 0, 0.6);
+  }
+}
+
+.ability-tile.cooldown svg.icon {
+  filter: brightness(0.4) blur(0.5px);
+}
+
+.ability-tile .cd {
+  position: absolute;
+  inset: 0;
+  border-radius: 20px;
+  background: conic-gradient(rgba(0, 0, 0, 0.6) calc(var(--p) * 1turn), transparent 0);
+  animation: cdsweep var(--cd-ms) linear forwards;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ability-tile .cd-num {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: system-ui, -apple-system, sans-serif;
+  font-weight: 800;
+  font-size: 24px;
+  color: #ffffff;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.85);
+  pointer-events: none;
+}
+
+@keyframes cdsweep {
+  from {
+    --p: 1;
+  }
+  to {
+    --p: 0;
+  }
+}
+
+.ability-tile.active {
+  box-shadow:
+    inset 0 0 0 3px #d9a6f5,
+    inset 0 0 0 5px rgba(60, 10, 100, 0.35),
+    inset 0 -8px 12px rgba(40, 0, 70, 0.35),
+    0 0 0 2px #ffffff,
+    0 3px 0 #3f1260,
+    0 6px 12px rgba(0, 0, 0, 0.5);
+  transform: scale(1.06);
+  will-change: transform;
+}
+

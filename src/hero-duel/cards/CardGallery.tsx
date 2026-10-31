@@ -335,10 +335,16 @@ const CardInspectModal: React.FC<CardInspectModalProps> = ({
         {/* Info & Actions */}
         <div className="flex-1 w-full flex flex-col justify-between gap-4 text-left">
           <div>
-            <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-black uppercase mb-1" style={{ backgroundColor: card.rarityConfig.bgColor, color: card.rarityConfig.color }}>
-              <span>{card.rarity.toUpperCase()}</span>
-              <span>•</span>
-              <span>#{card.code}</span>
+            <div className="flex items-center justify-between gap-2 mb-1">
+              <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-black uppercase" style={{ backgroundColor: card.rarityConfig.bgColor, color: card.rarityConfig.color }}>
+                <span>{card.rarity.toUpperCase()}</span>
+                <span>•</span>
+                <span>#{card.code}</span>
+              </div>
+
+              <span className="px-2 py-0.5 bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 rounded text-[10px] font-black uppercase flex items-center gap-1">
+                <Check className="w-3 h-3" /> Unlocked in Vault
+              </span>
             </div>
 
             <h2 className="text-xl sm:text-2xl font-black uppercase text-white tracking-tight">

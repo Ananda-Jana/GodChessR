@@ -30,14 +30,16 @@ export const SIEGE_CONFIG = {
     },
   ],
 
-  // Win condition constants
-  DOMINION_WIN_HOLD_TURNS: 8, // Hold both shrines for 8 cumulative turns to win
-  DOMINION_WIN_HOLD_SECONDS: 8.0,
+  // Mandatory Win Condition: 60-second continuous shrine hold
+  DOMINION_WIN_HOLD_TURNS: 60,
+  DOMINION_WIN_HOLD_SECONDS: 60.0,
+  SINGLE_SHRINE_WIN_SECONDS: 60.0,
 
-  // Unit Stats
-  HERO_DEFAULT_HP: 10,
-  HERO_ATTACK_COOLDOWN_SEC: 1.2,
-  PAWN_DEFAULT_HP: 3,
-  PAWN_ATTACK_DAMAGE: 1,
+  // Rebalanced Unit Stats for 3-5 Minute Strategic Matches
+  HERO_DEFAULT_HP: 35,
+  SHRINE_HEAL_PER_SEC: 1,
+  HERO_ATTACK_COOLDOWN_SEC: 1.5,
+  PAWN_DEFAULT_HP: 8,
+  PAWN_ATTACK_DAMAGE: 1.5,
   PAWN_DEFENSE: 0,
 };

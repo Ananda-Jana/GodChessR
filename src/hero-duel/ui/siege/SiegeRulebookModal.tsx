@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
-import { BookOpen, X, Swords, Shield, Sparkles, Zap, Trophy, Heart } from 'lucide-react';
+import { BookOpen, X, Swords, Zap, Trophy } from 'lucide-react';
 import { HeroPiece, heroIdToPieceType } from '../../art/heroAvatarHelper';
 import { ALL_HEROES } from '../../heroes/heroRegistry';
+import { HERO_DUEL_CORE_RULES, HERO_DUEL_ABILITY_SUMMARIES } from '../../config/siegeRulesCodex';
+import { AbilityTile } from '../AbilityTiles';
 
 interface SiegeRulebookModalProps {
   isOpen: boolean;
@@ -73,32 +75,41 @@ export const SiegeRulebookModal: React.FC<SiegeRulebookModalProps> = ({ isOpen, 
         <div className="flex-1 overflow-y-auto space-y-3 font-mono text-xs text-neutral-300 pr-1">
           {activeTab === 'overview' && (
             <div className="space-y-3">
-              <div className="bg-black/50 p-3 rounded-xl border border-white/10 space-y-2">
+              {/* Core Codex Rules */}
+              <div className="bg-black/50 p-3.5 rounded-xl border border-white/10 space-y-2">
                 <h3 className="text-amber-400 font-black uppercase text-sm flex items-center gap-1.5">
-                  <Trophy className="w-4 h-4" /> Objective & Win Conditions
+                  <Trophy className="w-4 h-4" /> Hero Duel Codex Rules
                 </h3>
-                <p className="leading-relaxed text-neutral-200">
-                  Shrine Siege is an 8×8 tactical chess strategy battle. You command 4 chosen Champion Heroes and 4 supporting Pawns. Two win conditions decide the victor:
-                </p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
-                  <div className="p-2.5 bg-neutral-900 rounded-lg border border-amber-500/40">
-                    <div className="font-bold text-amber-300 uppercase">1. Shrine Dominion</div>
-                    <div className="text-[11px] text-neutral-300 mt-1">Hold both 2×2 Grand Shrines simultaneously for 8 continuous seconds to win by divine dominion.</div>
-                  </div>
-                  <div className="p-2.5 bg-neutral-900 rounded-lg border border-red-500/40">
-                    <div className="font-bold text-red-300 uppercase">2. Total Elimination</div>
-                    <div className="text-[11px] text-neutral-300 mt-1">Eliminate all 4 enemy Champion Heroes from the battlefield.</div>
-                  </div>
-                </div>
+                <ul className="space-y-1.5 text-neutral-200 text-[11px] list-disc list-inside leading-relaxed">
+                  {HERO_DUEL_CORE_RULES.map((rule, idx) => (
+                    <li key={idx} className="font-medium text-slate-100">
+                      {rule}
+                    </li>
+                  ))}
+                </ul>
               </div>
 
-              <div className="bg-black/50 p-3 rounded-xl border border-white/10 space-y-2">
-                <h3 className="text-amber-400 font-black uppercase text-sm flex items-center gap-1.5">
-                  <Sparkles className="w-4 h-4" /> 1-Tap Fast Battle System
+              {/* Ability Summaries Grid */}
+              <div className="bg-black/50 p-3.5 rounded-xl border border-purple-500/30 space-y-2">
+                <h3 className="text-purple-400 font-black uppercase text-sm flex items-center gap-1.5">
+                  <Zap className="w-4 h-4 text-purple-400" /> Equipment Ability Summaries
                 </h3>
-                <p className="leading-relaxed text-neutral-200">
-                  No complex queuing required! Simply tap your active champion, then tap any highlighted green move destination, red enemy target, or blue shrine square to execute your action instantly in 1 click.
-                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
+                  {HERO_DUEL_ABILITY_SUMMARIES.map((ab) => (
+                    <div
+                      key={ab.id}
+                      className="p-2.5 bg-neutral-900/90 rounded-xl border border-purple-500/30 flex items-center gap-3"
+                    >
+                      <AbilityTile ability={ab.id} rarity={ab.rarity} state="ready" size={44} />
+                      <div className="space-y-0.5 min-w-0">
+                        <div className="font-bold text-amber-300 uppercase text-[11px]">
+                          {ab.name} <span className="text-[9px] text-purple-300">({ab.heroName})</span>
+                        </div>
+                        <div className="text-[10px] text-neutral-300 leading-tight truncate">{ab.description}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           )}
@@ -107,44 +118,49 @@ export const SiegeRulebookModal: React.FC<SiegeRulebookModalProps> = ({ isOpen, 
             <div className="space-y-3">
               <div className="bg-black/50 p-3 rounded-xl border border-white/10 space-y-2">
                 <h3 className="text-amber-400 font-black uppercase text-sm flex items-center gap-1.5">
-                  <Swords className="w-4 h-4" /> Movement, Striking & HP
+                  <Swords className="w-4 h-4" /> Automatic Orthogonal Attacks (No Manual Targeting)
                 </h3>
                 <p className="leading-relaxed text-neutral-200">
-                  Champions move like chess pieces (Rooks, Knights, Bishops or Kings depending on their class). When moving into an enemy square, your hero strikes to deal attack damage.
+                  You do not need to click an enemy to attack! Simply move your champions into direct orthogonal contact (horizontally or vertically adjacent, 1-square distance).
                 </p>
                 <ul className="list-disc pl-5 space-y-1 text-neutral-300 text-[11px]">
-                  <li><strong className="text-white">Health Bars:</strong> Unhurt heroes show no bar. Once hit, damaged heroes display a health bar underneath in Royal Purple for Player units and Radiant Orange for enemy units.</li>
-                  <li><strong className="text-white">Elimination:</strong> When HP drops to 0, the champion is slain and removed from the board.</li>
+                  <li><strong className="text-emerald-400">Automatic Engagement:</strong> When directly connected horizontally or vertically next to an enemy, your hero automatically attacks every 1.0 second.</li>
+                  <li><strong className="text-amber-300">No Diagonal Attacks:</strong> Diagonal contact cannot trigger attacks. Units must be directly touching horizontally or vertically.</li>
+                  <li><strong className="text-sky-300">No Attack Across Gaps:</strong> Even a 1-square gap prevents attacking; direct contact is mandatory.</li>
+                  <li><strong className="text-white">Elimination:</strong> When HP drops to 0, the piece is removed. Defeating enemies triggers mid-game skill upgrades!</li>
                 </ul>
               </div>
 
               {/* Interactive Mini Board Demo */}
               <div className="bg-neutral-900 border border-white/15 p-3 rounded-xl flex flex-col items-center gap-2">
-                <div className="text-[11px] font-bold text-amber-300 uppercase">Miniature Grid Demonstration (Tap squares)</div>
+                <div className="text-[11px] font-bold text-amber-300 uppercase">Orthogonal Contact Demo (Tap squares)</div>
                 <div className="grid grid-cols-4 gap-1 p-2 bg-black/80 rounded-lg border border-slate-700">
                   {Array.from({ length: 4 }).map((_, y) =>
                     Array.from({ length: 4 }).map((_, x) => {
                       const isSelected = demoPos.x === x && demoPos.y === y;
-                      const isAdjacent = Math.abs(demoPos.x - x) + Math.abs(demoPos.y - y) === 1;
+                      const isOrthogonal = Math.abs(demoPos.x - x) + Math.abs(demoPos.y - y) === 1;
+                      const isDiagonal = Math.abs(demoPos.x - x) === 1 && Math.abs(demoPos.y - y) === 1;
                       return (
                         <div
                           key={`${x}-${y}`}
                           onClick={() => setDemoPos({ x, y })}
-                          className={`w-10 h-10 rounded flex items-center justify-center cursor-pointer border transition-all ${
+                          className={`w-10 h-10 rounded flex items-center justify-center cursor-pointer border transition-all text-[9px] font-bold ${
                             isSelected
-                              ? 'bg-amber-400 text-black border-white font-bold'
-                              : isAdjacent
-                              ? 'bg-emerald-600/30 border-emerald-400 animate-pulse'
-                              : 'bg-slate-800 border-slate-700 hover:bg-slate-700'
+                              ? 'bg-amber-400 text-black border-white'
+                              : isOrthogonal
+                              ? 'bg-red-600/40 text-red-300 border-red-500 animate-pulse'
+                              : isDiagonal
+                              ? 'bg-slate-800/40 text-neutral-500 border-slate-700'
+                              : 'bg-slate-800 text-neutral-400 border-slate-700'
                           }`}
                         >
-                          {isSelected ? 'Hero' : isAdjacent ? 'Move' : ''}
+                          {isSelected ? 'Hero' : isOrthogonal ? 'Auto Hit' : isDiagonal ? 'No Hit' : ''}
                         </div>
                       );
                     })
                   )}
                 </div>
-                <div className="text-[10px] text-neutral-400 text-center">Tap any adjacent square to move your champion.</div>
+                <div className="text-[10px] text-neutral-400 text-center">Green/Red: Orthogonal contact auto-attacks. Diagonal cells cannot attack.</div>
               </div>
             </div>
           )}
@@ -153,19 +169,26 @@ export const SiegeRulebookModal: React.FC<SiegeRulebookModalProps> = ({ isOpen, 
             <div className="space-y-3">
               <div className="bg-black/50 p-3 rounded-xl border border-white/10 space-y-2">
                 <h3 className="text-amber-400 font-black uppercase text-sm flex items-center gap-1.5">
-                  <Zap className="w-4 h-4" /> Grand Shrines & Ability Awakening
+                  <Zap className="w-4 h-4" /> 60-Second Shrine Countdown & Victory Rules
                 </h3>
                 <p className="leading-relaxed text-neutral-200">
-                  Two 2×2 Pagoda Shrines sit in the center of the board. Reaching a shrine unlocks powerful tactical advantages:
+                  Two 2×2 Pagoda Shrines sit at the center of the battlefield. Capturing and holding them dictates victory:
                 </p>
                 <div className="space-y-2 mt-2">
                   <div className="p-2.5 bg-neutral-900 rounded-lg border border-purple-500/40">
-                    <div className="font-bold text-purple-300 uppercase">1. Skill Awakening Modal</div>
-                    <div className="text-[11px] text-neutral-300 mt-0.5">When your champion steps on a shrine, a divine blessing modal appears allowing you to choose 1 of 3 awakened abilities (Signature Active Skill, Celestial Aegis, or Divine Smite).</div>
+                    <div className="font-bold text-purple-300 uppercase">1. Instant Equipment Auto-Unlock & 7s Repeatable Cooldown</div>
+                    <div className="text-[11px] text-neutral-300 mt-0.5">Whichever champion reaches a shrine FIRST automatically unlocks their equipment ability. Abilities have a 7-second cooldown and can be cast repeatedly throughout battle!</div>
                   </div>
-                  <div className="p-2.5 bg-neutral-900 rounded-lg border border-sky-500/40">
-                    <div className="font-bold text-sky-300 uppercase">2. Permanent Shrine Buff</div>
-                    <div className="text-[11px] text-neutral-300 mt-0.5">Heroes standing on a shrine gain fortified defense (+20% permanent damage reduction).</div>
+                  <div className="p-2.5 bg-neutral-900 rounded-lg border border-amber-500/40">
+                    <div className="font-bold text-amber-300 uppercase">2. Top-Left Shrine 60s Countdown & Warning Ticks</div>
+                    <div className="text-[11px] text-neutral-300 mt-0.5">When occupied, an unstoppable timer counts down from 60s on the top-left square of the shrine. When 10 seconds or fewer remain, the timer turns glowing RED and warning audio ticks play!</div>
+                  </div>
+                  <div className="p-2.5 bg-neutral-900 rounded-lg border border-emerald-500/40">
+                    <div className="font-bold text-emerald-300 uppercase">3. Shrine Victory & Average HP Comparison</div>
+                    <div className="text-[11px] text-neutral-300 mt-0.5 space-y-1">
+                      <div>• If a team reaches 60s and the opponent has NO pieces on any shrine at that last second, the occupier wins immediately.</div>
+                      <div>• If both teams occupy shrines (or contest the same shrine), the average HP of pieces of each team standing on the shrine is compared. For example, if the enemy has two pieces and you have one piece, the average HP of their two pieces is compared to your piece's HP. The team with higher average HP wins!</div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -174,7 +197,7 @@ export const SiegeRulebookModal: React.FC<SiegeRulebookModalProps> = ({ isOpen, 
 
           {activeTab === 'heroes' && (
             <div className="space-y-2">
-              <div className="text-[11px] text-neutral-400 mb-1">All 9 Available Champions & Their Roles:</div>
+              <div className="text-[11px] text-neutral-400 mb-1">All 9 Available Champions & Their Equipment:</div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {ALL_HEROES.map((h) => (
                   <div key={h.id} className="bg-black/50 p-2.5 rounded-xl border border-white/10 flex items-center gap-2.5">
@@ -183,7 +206,7 @@ export const SiegeRulebookModal: React.FC<SiegeRulebookModalProps> = ({ isOpen, 
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="text-xs font-black uppercase text-white truncate">{h.name}</div>
-                      <div className="text-[9px] text-amber-300 font-mono capitalize">{h.role} • {h.active.name}</div>
+                      <div className="text-[9px] text-amber-300 font-mono capitalize">{h.role} • 35 HP</div>
                     </div>
                   </div>
                 ))}

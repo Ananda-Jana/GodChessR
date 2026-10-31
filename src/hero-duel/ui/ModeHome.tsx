@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { AiDifficulty } from '../types/heroDuelTypes';
 import { HowToPlayModal } from './HowToPlayModal';
+import { PieceThemeModal } from './PieceThemeModal';
 import {
   Swords,
   Bot,
@@ -10,6 +11,7 @@ import {
   ArrowLeft,
   Shield,
   Crown,
+  Palette,
 } from 'lucide-react';
 
 interface ModeHomeProps {
@@ -29,6 +31,7 @@ export const ModeHome: React.FC<ModeHomeProps> = ({
 }) => {
   const [selectedDifficulty, setSelectedDifficulty] = useState<AiDifficulty>('normal');
   const [isHowToPlayOpen, setIsHowToPlayOpen] = useState(false);
+  const [isThemeModalOpen, setIsThemeModalOpen] = useState(false);
   const [showClassicOptions, setShowClassicOptions] = useState(false);
 
   return (
@@ -50,30 +53,60 @@ export const ModeHome: React.FC<ModeHomeProps> = ({
           </h1>
         </div>
 
-        <button
-          onClick={() => setIsHowToPlayOpen(true)}
-          className="hd-btn-brutal px-3 py-1.5 bg-red-600 hover:bg-red-500 text-white border-2 border-black flex items-center gap-1.5 text-xs cursor-pointer"
-        >
-          <BookOpen className="w-4 h-4" />
-          <span className="hidden sm:inline">Codex</span>
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setIsThemeModalOpen(true)}
+            className="hd-btn-brutal px-3 py-1.5 bg-neutral-800 hover:bg-neutral-700 text-amber-300 border-2 border-amber-400 flex items-center gap-1.5 text-xs cursor-pointer"
+            title="Customise Piece Theme (Vector vs Faceted Busts)"
+          >
+            <Palette className="w-4 h-4 text-amber-400" />
+            <span className="hidden sm:inline">Piece Themes</span>
+          </button>
+
+          <button
+            onClick={() => setIsHowToPlayOpen(true)}
+            className="hd-btn-brutal px-3 py-1.5 bg-red-600 hover:bg-red-500 text-white border-2 border-black flex items-center gap-1.5 text-xs cursor-pointer"
+          >
+            <BookOpen className="w-4 h-4" />
+            <span className="hidden sm:inline">Codex</span>
+          </button>
+        </div>
       </header>
 
       {/* Main Hub Content */}
       <main className="max-w-4xl w-full mx-auto p-4 sm:p-6 flex-1 flex flex-col items-center justify-center gap-6">
-        {/* Hero Banner Card */}
-        <div className="w-full bg-gradient-to-r from-red-950 via-[#181014] to-amber-950 border-4 border-amber-400 rounded-2xl p-6 sm:p-8 shadow-[8px_8px_0px_#fbbf24] text-center relative overflow-hidden">
-          <div className="inline-flex items-center gap-2 px-3 py-1 bg-amber-400 text-black border-2 border-black text-xs font-black uppercase mb-3 shadow-[2px_2px_0px_#000]">
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>Shrine Siege • Real-Time Auto-Battle • 9×13 Grid • Shrines & Dominion</span>
+        {/* Hero Banner Card with Opening Avatar */}
+        <div
+          className="w-full relative overflow-hidden bg-cover bg-center border-4 border-amber-400 rounded-2xl p-6 sm:p-8 shadow-[8px_8px_0px_#fbbf24] text-center flex flex-col items-center justify-center gap-4"
+          style={{ backgroundImage: "url('/assets/aistudio/image_9466e3bd.png')" }}
+        >
+          {/* Vignette Overlay */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/80 to-black/50 z-0 pointer-events-none" />
+
+          {/* Opening Screen Avatar Badge */}
+          <div className="relative z-10 flex items-center justify-center">
+            <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl overflow-hidden border-3 border-amber-400 shadow-[0_0_24px_rgba(251,191,36,0.7)]">
+              <img
+                src="/assets/aistudio/image_9466e3bd.png"
+                alt="Hero Duel Trophy Avatar"
+                className="w-full h-full object-cover"
+              />
+            </div>
           </div>
 
-          <h2 className="text-3xl sm:text-4xl font-black uppercase tracking-tight text-white mb-2 drop-shadow">
-            Shrine Siege
-          </h2>
-          <p className="text-xs sm:text-sm text-neutral-300 font-mono max-w-xl mx-auto leading-relaxed">
-            Lead your 4 champions into real-time tactical war. Capture shrines, defend towers, and destroy the enemy Throne or achieve 100 Dominion!
-          </p>
+          <div className="relative z-10 space-y-2 max-w-xl mx-auto">
+            <div className="inline-flex items-center gap-2 px-3 py-1 bg-amber-400 text-black border-2 border-black text-xs font-black uppercase shadow-[2px_2px_0px_#000]">
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>Hero Duel Arena • Shrine Siege • Card Vault</span>
+            </div>
+
+            <h2 className="text-3xl sm:text-4xl font-black uppercase tracking-tight text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)]">
+              Hero Duel Arena
+            </h2>
+            <p className="text-xs sm:text-sm text-neutral-200 font-mono leading-relaxed drop-shadow">
+              Lead your 4 champions into tactical battle. Capture shrines, activate equipment skills, and slay enemy heroes to collect procedural cards!
+            </p>
+          </div>
         </div>
 
         {/* Primary Shrine Siege Card */}
@@ -159,6 +192,9 @@ export const ModeHome: React.FC<ModeHomeProps> = ({
 
       {/* Codex Modal */}
       {isHowToPlayOpen && <HowToPlayModal onClose={() => setIsHowToPlayOpen(false)} />}
+
+      {/* Piece Theme Customizer Modal */}
+      <PieceThemeModal isOpen={isThemeModalOpen} onClose={() => setIsThemeModalOpen(false)} />
     </div>
   );
 };

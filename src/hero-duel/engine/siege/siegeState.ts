@@ -10,6 +10,8 @@ import {
   HeroRole,
 } from './siegeTypes';
 
+import { HERO_DUEL_ABILITY_MAP } from '../../config/siegeRulesCodex';
+
 export function createInitialSiegeState(
   team1HeroIds: HeroId[],
   team2HeroIds: HeroId[],
@@ -31,10 +33,8 @@ export function createInitialSiegeState(
     }
   };
 
-  const getHpForHero = (hId: HeroId): number => {
-    if (hId === 'ironclad-warden' || hId === 'part-king-kong') return 12;
-    if (hId === 'ajx-assassin' || hId === 'yjkstra-pathfinder') return 8;
-    return SIEGE_CONFIG.HERO_DEFAULT_HP;
+  const getHpForHero = (_hId: HeroId): number => {
+    return SIEGE_CONFIG.HERO_DEFAULT_HP; // 35 HP
   };
 
   const getAttackForHero = (hId: HeroId): number => {
@@ -58,8 +58,10 @@ export function createInitialSiegeState(
   // Team 1 (Player) Heroes on row 7
   team1HeroIds.slice(0, 4).forEach((heroId, idx) => {
     const def = getHeroById(heroId);
-    const hp = getHpForHero(heroId);
-    const placementPos = team1Placements?.[idx]?.pos || { x: defaultPlayerCols[idx], y: 7 };
+    const hp = SIEGE_CONFIG.HERO_DEFAULT_HP;
+    const foundPlacement = team1Placements?.find((p) => p.heroId === heroId);
+    const placementPos = foundPlacement ? foundPlacement.pos : { x: defaultPlayerCols[idx], y: 7 };
+    const abilityDef = HERO_DUEL_ABILITY_MAP[heroId];
 
     heroes.push({
       instanceId: `t1_${idx}_${heroId}`,
@@ -79,9 +81,11 @@ export function createInitialSiegeState(
       moveIntervalSec: 0.8,
       timeSinceLastAttack: 0,
       timeSinceLastMove: 0,
-      abilityCooldownSec: 10,
+      abilityCooldownSec: abilityDef?.cooldownSec || 7,
       currentAbilityCooldown: 0,
       abilityUnlocked: false, // Locked until stepping onto a shrine
+      abilityLevel: 1,
+      assignedAbilityId: abilityDef?.id || 'royalMeteor',
       isAlive: true,
       statuses: [],
       order: { type: 'auto' },
@@ -94,8 +98,10 @@ export function createInitialSiegeState(
   // Team 2 (Bot) Heroes on row 0
   team2HeroIds.slice(0, 4).forEach((heroId, idx) => {
     const def = getHeroById(heroId);
-    const hp = getHpForHero(heroId);
-    const placementPos = team2Placements?.[idx]?.pos || { x: defaultBotCols[idx], y: 0 };
+    const hp = SIEGE_CONFIG.HERO_DEFAULT_HP;
+    const foundPlacement = team2Placements?.find((p) => p.heroId === heroId);
+    const placementPos = foundPlacement ? foundPlacement.pos : { x: defaultBotCols[idx], y: 0 };
+    const abilityDef = HERO_DUEL_ABILITY_MAP[heroId];
 
     heroes.push({
       instanceId: `t2_${idx}_${heroId}`,
@@ -115,9 +121,11 @@ export function createInitialSiegeState(
       moveIntervalSec: 0.8,
       timeSinceLastAttack: 0,
       timeSinceLastMove: 0,
-      abilityCooldownSec: 10,
+      abilityCooldownSec: abilityDef?.cooldownSec || 7,
       currentAbilityCooldown: 0,
       abilityUnlocked: false,
+      abilityLevel: 1,
+      assignedAbilityId: abilityDef?.id || 'royalMeteor',
       isAlive: true,
       statuses: [],
       order: { type: 'auto' },

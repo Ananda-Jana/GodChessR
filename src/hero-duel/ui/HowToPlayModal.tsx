@@ -2,7 +2,14 @@ import React, { useState } from 'react';
 import { HeroId } from '../types/heroDuelTypes';
 import { HEROES } from '../heroes/heroRegistry';
 import { HeroPiece, heroIdToPieceType } from '../art/heroAvatarHelper';
-import { X, BookOpen, Shield, Swords, Flag, RefreshCw, Zap, Crown, AlertTriangle } from 'lucide-react';
+import { X, BookOpen, Swords, Zap } from 'lucide-react';
+
+import {
+  HERO_DUEL_CORE_RULES,
+  HERO_DUEL_ABILITY_SUMMARIES,
+  getHeroEquipmentAbility,
+} from '../config/siegeRulesCodex';
+import { AbilityTile } from './AbilityTiles';
 
 interface HowToPlayModalProps {
   onClose: () => void;
@@ -22,6 +29,7 @@ export const HowToPlayModal: React.FC<HowToPlayModalProps> = ({ onClose }) => {
     'part-king-kong',
   ];
   const activeHero = HEROES[selectedHeroId];
+  const activeEquipment = getHeroEquipmentAbility(selectedHeroId);
 
   return (
     <div
@@ -43,31 +51,53 @@ export const HowToPlayModal: React.FC<HowToPlayModalProps> = ({ onClose }) => {
         <div className="flex items-center gap-2 border-b-2 border-white/20 pb-2">
           <BookOpen className="w-5 h-5 text-amber-400" />
           <h2 className="text-base sm:text-lg font-black uppercase tracking-tight text-amber-400">
-            Shrine Siege • Tactical Codex & Guide
+            Hero Duel • Tactical Codex & Guide
           </h2>
         </div>
 
-        {/* Shrine Siege Turn-Based Rules */}
+        {/* Hero Duel Core Rules */}
         <div className="bg-black/70 border-2 border-amber-400/40 p-4 rounded-xl space-y-2.5 text-xs font-mono">
           <div className="text-sm font-black uppercase text-amber-400 border-b border-white/10 pb-1 flex items-center gap-2">
             <Swords className="w-4 h-4 text-amber-400" />
-            <span>SHRINE SIEGE RULES:</span>
+            <span>HERO DUEL CODEX RULES:</span>
           </div>
           <ul className="space-y-1.5 text-neutral-200 text-[11px] list-disc list-inside leading-relaxed">
-            <li>Turn-based tactical battle on an 8x8 chessboard.</li>
-            <li>Each turn, choose up to [limit based on difficulty] heroes to move or attack.</li>
-            <li>All units move 1 square in any direction.</li>
-            <li>Moving onto an enemy attacks them. Moving onto a shrine captures it.</li>
-            <li>Capture shrines to unlock powerful active abilities for your heroes.</li>
-            <li>Pawns advance automatically each turn.</li>
-            <li>Win by eliminating all enemy heroes OR holding both shrines for 8 turns.</li>
+            {HERO_DUEL_CORE_RULES.map((rule, idx) => (
+              <li key={idx} className="font-medium text-slate-100">
+                {rule}
+              </li>
+            ))}
           </ul>
+        </div>
+
+        {/* 9 Equipment Ability Summaries Grid */}
+        <div className="bg-black/70 border-2 border-purple-500/40 p-4 rounded-xl space-y-2.5 text-xs font-mono">
+          <div className="text-sm font-black uppercase text-purple-400 border-b border-white/10 pb-1 flex items-center gap-2">
+            <Zap className="w-4 h-4 text-purple-400" />
+            <span>ALL 9 HERO EQUIPMENT ABILITIES:</span>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
+            {HERO_DUEL_ABILITY_SUMMARIES.map((ab) => (
+              <div
+                key={ab.id}
+                className="p-2.5 bg-neutral-900/90 rounded-xl border border-purple-500/30 flex items-center gap-3"
+              >
+                <AbilityTile ability={ab.id} rarity={ab.rarity} state="ready" size={48} />
+                <div className="space-y-0.5 min-w-0">
+                  <div className="font-bold text-amber-300 uppercase text-[11px]">
+                    {ab.name} <span className="text-[9px] text-purple-300 font-mono">({ab.heroName})</span>
+                  </div>
+                  <div className="text-[10px] text-neutral-300 leading-tight truncate">{ab.description}</div>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
 
         {/* Interactive Hero Previewer */}
         <div className="border-t border-white/20 pt-3">
           <div className="text-xs font-mono font-black uppercase text-amber-400 mb-2">
-            Select a Hero to Inspect Skills & Attributes:
+            Select a Hero to Inspect Skills & Equipment:
           </div>
 
           {/* Hero Picker Pills */}
@@ -111,14 +141,13 @@ export const HowToPlayModal: React.FC<HowToPlayModalProps> = ({ onClose }) => {
               </div>
 
               <div className="text-xs space-y-1">
-                <div>
-                  <span className="font-black text-purple-400">⚡ Active Skill: {activeHero.active.name}</span>{' '}
-                  <span className="text-[10px] text-neutral-400 font-mono">(CD: {activeHero.active.baseCooldown}s)</span>:
-                  <span className="text-neutral-300 ml-1">{activeHero.active.description}</span>
-                </div>
-                <div>
-                  <span className="font-black text-amber-300">✨ Strategic Passive:</span>{' '}
-                  <span className="text-neutral-300">{activeHero.passives[0]?.name} - {activeHero.passives[0]?.description}</span>
+                <div className="flex items-center gap-2">
+                  <AbilityTile ability={activeEquipment.id} rarity={activeEquipment.rarity} state="ready" size={36} />
+                  <div>
+                    <span className="font-black text-purple-400">⚡ Bound Equipment: {activeEquipment.name}</span>{' '}
+                    <span className="text-[10px] text-neutral-400 font-mono">(CD: {activeEquipment.cooldownSec}s)</span>:
+                    <div className="text-neutral-300">{activeEquipment.description}</div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -135,4 +164,3 @@ export const HowToPlayModal: React.FC<HowToPlayModalProps> = ({ onClose }) => {
     </div>
   );
 };
-
