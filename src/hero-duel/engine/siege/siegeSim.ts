@@ -169,7 +169,7 @@ function applyHeroAction(
       pos: { ...targetPos },
       text: isCrit ? `-${damage} CRIT!` : `-${damage}`,
       color: isCrit ? '#ff9800' : '#ef5350',
-      lifeSec: 1.5,
+      lifeSec: 0.38,
     });
 
     if (enemyHero.hp <= 0) {
@@ -223,7 +223,7 @@ function applyHeroAction(
       pos: { ...targetPos },
       text: `-${rawDmg}`,
       color: '#ef5350',
-      lifeSec: 1.2,
+      lifeSec: 0.38,
     });
 
     if (enemyPawn.hp <= 0) {
@@ -297,7 +297,7 @@ function advancePawns(
             pos: { x: diagX, y: nextY },
             text: `-${pawn.attackDamage}`,
             color: '#ff9800',
-            lifeSec: 1.2,
+            lifeSec: 0.38,
           });
           if (enemyHero.hp <= 0) {
             enemyHero.hp = 0;
@@ -436,12 +436,16 @@ function updateShrinesAndDominion(nextState: SiegeState, isSecondTick: boolean =
       continuousHold = 0;
     }
 
+    const hasHealingOccupant = heroOccupants.some((h) => h.isAlive && h.hp < SIEGE_CONFIG.HERO_DEFAULT_HP);
+    const lastHealTimestamp = (isSecondTick && hasHealingOccupant) ? Date.now() : shrine.lastHealTimestamp;
+
     return {
       ...shrine,
       owner,
       occupierTeam: isContested ? null : owner,
       isContested,
       dominionTimer: continuousHold,
+      lastHealTimestamp,
     };
   });
 
@@ -634,7 +638,7 @@ export function processOrthogonalAutoAttacks(
         pos: { ...targetHero.pos },
         text: `-${damage}`,
         color: hero.team === 1 ? '#ef5350' : '#ff9800',
-        lifeSec: 1.2,
+        lifeSec: 0.38,
       });
 
       if (targetHero.hp <= 0) {
@@ -674,7 +678,7 @@ export function processOrthogonalAutoAttacks(
         pos: { ...targetPawn.pos },
         text: `-${rawDmg}`,
         color: hero.team === 1 ? '#ef5350' : '#ff9800',
-        lifeSec: 1.0,
+        lifeSec: 0.38,
       });
 
       if (targetPawn.hp <= 0) {
@@ -711,7 +715,7 @@ export function processOrthogonalAutoAttacks(
         pos: { ...targetHero.pos },
         text: `-${pawn.attackDamage}`,
         color: pawn.team === 1 ? '#ef5350' : '#ff9800',
-        lifeSec: 1.0,
+        lifeSec: 0.38,
       });
       if (targetHero.hp <= 0) {
         targetHero.hp = 0;
@@ -966,6 +970,7 @@ export function executeHeroAbility(state: SiegeState, instanceId: string): Siege
       return {
         ...h,
         currentAbilityCooldown: cdDuration,
+        abilityGlowUntil: Date.now() + 1400,
       };
     }
     return h;
@@ -1010,7 +1015,7 @@ export function executeHeroAbility(state: SiegeState, instanceId: string): Siege
         pos: { ...target.pos },
         text: `-${dmg} ROYAL METEOR!`,
         color: '#ffb02e',
-        lifeSec: 1.5,
+        lifeSec: 0.38,
       });
       if (target.hp <= 0) {
         target.isAlive = false;
@@ -1045,7 +1050,7 @@ export function executeHeroAbility(state: SiegeState, instanceId: string): Siege
         pos: { ...target.pos },
         text: `-${dmg} CURSED!`,
         color: '#d8b4fe',
-        lifeSec: 1.5,
+        lifeSec: 0.38,
       });
       if (target.hp <= 0) {
         target.isAlive = false;
@@ -1086,7 +1091,7 @@ export function executeHeroAbility(state: SiegeState, instanceId: string): Siege
         pos: { ...target.pos },
         text: `-${dmg} TOXIC!`,
         color: '#bef264',
-        lifeSec: 1.5,
+        lifeSec: 0.38,
       });
       if (target.hp <= 0) {
         target.isAlive = false;
@@ -1118,7 +1123,7 @@ export function executeHeroAbility(state: SiegeState, instanceId: string): Siege
           pos: { ...ally.pos },
           text: `+${diff} HEAL`,
           color: '#4ade80',
-          lifeSec: 1.5,
+          lifeSec: 0.38,
         });
       }
     });
@@ -1150,7 +1155,7 @@ export function executeHeroAbility(state: SiegeState, instanceId: string): Siege
         pos: { ...target.pos },
         text: `-${dmg} PHASE CRIT!`,
         color: '#38bdf8',
-        lifeSec: 1.5,
+        lifeSec: 0.38,
       });
       if (target.hp <= 0) {
         target.isAlive = false;
@@ -1188,7 +1193,7 @@ export function executeHeroAbility(state: SiegeState, instanceId: string): Siege
         pos: { ...target.pos },
         text: `-${dmg} JETPACK!`,
         color: '#38bdf8',
-        lifeSec: 1.5,
+        lifeSec: 0.38,
       });
       if (target.hp <= 0) {
         target.isAlive = false;
@@ -1217,7 +1222,7 @@ export function executeHeroAbility(state: SiegeState, instanceId: string): Siege
         pos: { ...ally.pos },
         text: `+${healAmt} SHIELD`,
         color: '#fbbf24',
-        lifeSec: 1.5,
+        lifeSec: 0.38,
       });
     });
     const enemiesAtShrines = updatedHeroes.filter((e) => e.isAlive && e.team !== hero.team && isCoordOnShrine(e.pos));
@@ -1258,7 +1263,7 @@ export function executeHeroAbility(state: SiegeState, instanceId: string): Siege
         pos: { ...target.pos },
         text: `-${dmg} SPIKE!`,
         color: '#f8fafc',
-        lifeSec: 1.2,
+        lifeSec: 0.38,
       });
       if (target.hp <= 0) {
         target.isAlive = false;
@@ -1299,7 +1304,7 @@ export function executeHeroAbility(state: SiegeState, instanceId: string): Siege
         pos: { ...target.pos },
         text: `-${dmg} SLAM!`,
         color: '#fb923c',
-        lifeSec: 1.5,
+        lifeSec: 0.38,
       });
       if (target.hp <= 0) {
         target.isAlive = false;

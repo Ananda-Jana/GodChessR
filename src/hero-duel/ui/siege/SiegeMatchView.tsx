@@ -177,6 +177,32 @@ export const SiegeMatchView: React.FC<SiegeMatchViewProps> = ({
     }
   }, [state.projectiles.length]);
 
+  // Clear floating combat damage/minus numbers rapidly (380ms) so they slide up, vanish, and don't clutter the board
+  useEffect(() => {
+    if (state.floatingNumbers.length > 0) {
+      const timer = setTimeout(() => {
+        setState((prev) => ({ ...prev, floatingNumbers: [] }));
+      }, 380);
+      return () => clearTimeout(timer);
+    }
+  }, [state.floatingNumbers.length]);
+
+  // Clear ability glow auras after 1.4s
+  useEffect(() => {
+    const glowingHeroes = state.heroes.filter((h) => h.abilityGlowUntil && h.abilityGlowUntil > Date.now());
+    if (glowingHeroes.length > 0) {
+      const maxTime = Math.max(...glowingHeroes.map((h) => h.abilityGlowUntil!));
+      const delay = Math.max(50, maxTime - Date.now());
+      const timer = setTimeout(() => {
+        setState((prev) => ({
+          ...prev,
+          heroes: prev.heroes.map((h) => ({ ...h, abilityGlowUntil: undefined })),
+        }));
+      }, delay);
+      return () => clearTimeout(timer);
+    }
+  }, [state.heroes]);
+
   // Active squad heroes for the bottom bar (exactly 4 heroes)
   const squadHeroes = useMemo(() => state.heroes.filter((h) => h.team === 1), [state.heroes]);
 

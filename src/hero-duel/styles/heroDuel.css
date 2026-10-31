@@ -10,6 +10,26 @@
   color-scheme: dark;
 }
 
+/* Enforce minimum 10px border radius on all boxes, cards, panels, and buttons in Hero Duel */
+.hd-root div,
+.hd-root section,
+.hd-root article,
+.hd-root header,
+.hd-root footer,
+.hd-root aside,
+.hd-root button,
+.hd-root input,
+.hd-root .hd-btn-brutal {
+  border-radius: 10px !important;
+}
+
+.hd-root .rounded-full {
+  border-radius: 9999px !important;
+}
+.hd-root .ability-tile {
+  border-radius: 20px !important;
+}
+
 .hd-board-grid {
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
@@ -254,5 +274,30 @@
     0 6px 12px rgba(0, 0, 0, 0.5);
   transform: scale(1.06);
   will-change: transform;
+}
+
+/* Floating combat minus/damage numbers fast float-up and vanish (380ms) */
+.hd-float-num-fast {
+  animation: hdFloatUpVanish 380ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  will-change: transform, opacity;
+}
+
+@keyframes hdFloatUpVanish {
+  0% {
+    transform: translateY(0px) scale(0.85);
+    opacity: 1;
+  }
+  35% {
+    transform: translateY(-10px) scale(1.15);
+    opacity: 1;
+  }
+  75% {
+    transform: translateY(-18px) scale(0.95);
+    opacity: 0.7;
+  }
+  100% {
+    transform: translateY(-26px) scale(0.8);
+    opacity: 0;
+  }
 }
 

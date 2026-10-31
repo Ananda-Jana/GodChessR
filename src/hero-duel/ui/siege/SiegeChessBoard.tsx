@@ -210,22 +210,25 @@ export const SiegeChessBoard: React.FC<SiegeChessBoardProps> = ({
                   )}
 
                   {/* Hero Piece - No background disk, pure piece sitting directly on chess square */}
-                  {hero && (
-                    <div
-                      onClick={(e) => {
-                        if (interactive && hero.team === 1) {
-                          e.stopPropagation();
-                          onSelectHero(hero);
-                        }
-                      }}
-                      className={`w-full h-full flex flex-col items-center justify-center relative z-20 transition-all duration-300 ${
-                        isSelected
-                          ? 'scale-110 drop-shadow-[0_0_10px_#FFD700]'
-                          : 'hover:scale-105'
-                      }`}
-                    >
-                      {/* SVG Piece Graphic */}
-                      <div className="w-[86%] h-[86%] flex items-center justify-center relative drop-shadow-md">
+                  {hero && (() => {
+                    const isAuraActive = Boolean(hero.abilityGlowUntil && hero.abilityGlowUntil > Date.now());
+                    return (
+                      <div
+                        className={`w-full h-full flex flex-col items-center justify-center relative z-20 transition-all duration-300 ${
+                          isAuraActive
+                            ? 'scale-110 animate-pulse'
+                            : isSelected
+                            ? 'scale-110 drop-shadow-[0_0_10px_#FFD700]'
+                            : 'hover:scale-105'
+                        }`}
+                      >
+                      {/* SVG Piece Graphic with pure glowing bluish-purple aura filter (no box) */}
+                      <div
+                        className="w-[86%] h-[86%] flex items-center justify-center relative drop-shadow-md transition-all duration-300"
+                        style={isAuraActive ? {
+                          filter: 'drop-shadow(0 0 22px #a855f7) sepia(100%) hue-rotate(220deg) saturate(600%) brightness(1.4)'
+                        } : undefined}
+                      >
                         <HeroPiece
                           type={heroIdToPieceType(hero.heroId)}
                           color={hero.team === 1 ? 'white' : 'black'}
@@ -253,7 +256,8 @@ export const SiegeChessBoard: React.FC<SiegeChessBoardProps> = ({
                         </div>
                       )}
                     </div>
-                  )}
+                    );
+                  })()}
 
                   {/* Pawn Piece - Pure chess piece directly on square without background box */}
                   {!hero && pawn && (
@@ -298,6 +302,7 @@ export const SiegeChessBoard: React.FC<SiegeChessBoardProps> = ({
                 captureProgress={shrineLeft.occupierTeam ? 100 : 0}
                 contested={shrineLeft.isContested}
                 size={clampedCell * 1.84}
+                lastHealTimestamp={shrineLeft.lastHealTimestamp}
               />
             </div>
           )}
@@ -320,6 +325,7 @@ export const SiegeChessBoard: React.FC<SiegeChessBoardProps> = ({
                 captureProgress={shrineRight.occupierTeam ? 100 : 0}
                 contested={shrineRight.isContested}
                 size={clampedCell * 1.84}
+                lastHealTimestamp={shrineRight.lastHealTimestamp}
               />
             </div>
           )}
@@ -479,16 +485,16 @@ export const SiegeChessBoard: React.FC<SiegeChessBoardProps> = ({
             );
           })}
 
-          {/* Floating Combat Damage Numbers */}
+          {/* Floating Combat Damage Numbers (Fast 380ms slide-up & vanish) */}
           {state.floatingNumbers.map((fn) => (
             <div
               key={fn.id}
-              className="absolute font-black text-xs sm:text-sm animate-bounce pointer-events-none z-40 transition-all duration-300"
+              className="absolute font-black text-xs sm:text-sm hd-float-num-fast pointer-events-none z-50 select-none"
               style={{
                 left: `${(fn.pos.x / COLS) * 100 + 3}%`,
                 top: `${(fn.pos.y / ROWS) * 100 + 2}%`,
                 color: fn.color,
-                textShadow: '0px 2px 4px rgba(0,0,0,0.9)',
+                textShadow: '0px 2px 4px rgba(0,0,0,0.95), 0px 0px 8px rgba(0,0,0,0.85)',
               }}
             >
               {fn.text}

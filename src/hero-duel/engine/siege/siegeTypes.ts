@@ -66,6 +66,7 @@ export interface SiegeHeroInstance {
     durationSec: number;
   }[];
   order?: HeroOrder;
+  abilityGlowUntil?: number;
   // Stats tracked per hero for post-match analysis
   damageDealt: number;
   kills: number;
@@ -91,6 +92,7 @@ export interface SiegeShrine {
   occupierTeam: TeamSide | null;
   isContested: boolean;
   dominionTimer: number; // Seconds held continuously by owner
+  lastHealTimestamp?: number;
 }
 
 export interface VisualProjectile {

@@ -182,7 +182,7 @@ export const SiegeResultsModal: React.FC<SiegeResultsModalProps> = ({
                       <div className="flex items-center justify-between">
                         <span className="text-xs font-black uppercase text-white truncate">{hero.name}</span>
                         <span className="text-[10px] font-mono text-emerald-400 font-bold flex items-center gap-1">
-                          <Heart className="w-3 h-3 fill-emerald-400" /> {hero.hp}/15 HP
+                          <Heart className="w-3 h-3 fill-emerald-400" /> {hero.hp} / {hero.maxHp || 35} HP
                         </span>
                       </div>
                       <p className="text-[11px] text-amber-300 italic font-serif leading-snug truncate mt-0.5">
