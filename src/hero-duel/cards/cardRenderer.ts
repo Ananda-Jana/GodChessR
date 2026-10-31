@@ -2,55 +2,14 @@ import { CollectibleHeroCard } from '../types/cardTypes';
 import { getPaletteForCard, CardPaletteDef } from './cardPalettes';
 import { getSceneRecipeForCard, SceneRecipe } from './cardStories';
 import { HERO_CARD_VECTOR_ART, HeroVectorArtDef } from './art/heroCardArt';
-import { RARITY_CONFIGS } from '../config/rarityConfig';
+import { HERO_PIECE_ART, HeroPieceType } from '../art/HeroPiecex';
+import { heroIdToPieceType } from '../art/heroAvatarHelper';
+import { CardRarity } from '../config/rarityConfig';
 
 export const CARD_WIDTH = 750;
 export const CARD_HEIGHT = 1050;
 
-export const CARD_BACKGROUND_IMAGES = [
-  '/assets/aistudio/image_3043ca82.png',
-  '/assets/aistudio/image_b9c390da.png',
-  '/assets/aistudio/image_75790540.png',
-  '/assets/aistudio/image_cd6ac775.png',
-  '/assets/aistudio/image_e66dcdcb.png',
-  '/assets/aistudio/image_d155feb3.png',
-  '/assets/aistudio/image_335bc26c.png',
-  '/assets/aistudio/image_1414f352.png',
-  '/assets/aistudio/image_e3f1a1f0.png',
-  '/assets/aistudio/image_880e78e2.png',
-  '/assets/aistudio/image_1e8dde45.png',
-  '/assets/aistudio/007c5c6dcab68b90b1fc2dbdbb307cef_949f61bf.jpg',
-  '/assets/aistudio/7c7afc2a-c919-447b-bdd3-a01f6abeb4e3_1cd6e9c1.png',
-  '/assets/aistudio/142a267298d4d2c449bc7b1a5d1591e7_f07da55b.jpg',
-  '/assets/aistudio/922b8801-3353-40c8-a10a-1a039cef830e_c4c310a4.jpg',
-  '/assets/aistudio/977e49ab-a0b6-432f-97f3-9539ca7f3f27_4c0be097.jpg',
-  '/assets/aistudio/rio_-_Copy_e5c709df.png',
-  '/assets/aistudio/013b0428-767e-4b82-90d4-5807ac930b96_e8298bb4.png',
-  '/assets/aistudio/000z_a65f07b6.png',
-  '/assets/aistudio/c1dbda89-1823-4fd0-b688-d1224a8c97d6_deeb3057.png',
-  '/assets/aistudio/28a1109a-b678-45fa-8b09-49562285e5cc_798ef255.png',
-];
-
-const imageCache: Map<string, HTMLImageElement> = new Map();
-
-function getLoadedImage(src: string, onLoaded?: () => void): HTMLImageElement | null {
-  if (imageCache.has(src)) {
-    const img = imageCache.get(src)!;
-    if (img.complete && img.naturalWidth > 0) {
-      return img;
-    }
-  }
-
-  const img = new Image();
-  img.crossOrigin = 'anonymous';
-  img.src = src;
-  img.onload = () => {
-    imageCache.set(src, img);
-    if (onLoaded) onLoaded();
-  };
-  imageCache.set(src, img);
-  return null;
-}
+export const CARD_BACKGROUND_IMAGES: string[] = [];
 
 /**
  * Seeded PRNG (Mulberry32)
@@ -65,9 +24,53 @@ function mulberry32(a: number) {
 }
 
 /**
- * Renders a Collectible Hero Card using authentic background image assets.
- * Features ONE single outer border framing the card (no multiple/nested borders).
- * Logical dimensions: 750 x 1050 px (export at 2x = 1500 x 2100 px).
+ * Hero Unicolor Theme Map
+ * Each hero has a signature solid-gradient unicolor background color palette
+ */
+const HERO_UNICOLOR_THEMES: Record<string, { bg: string; radial: string; spot: string }> = {
+  'mugen-king': { bg: '#0F172A', radial: 'rgba(56, 189, 248, 0.35)', spot: '#38BDF8' },
+  'malevolent-priest': { bg: '#1F050B', radial: 'rgba(239, 68, 68, 0.35)', spot: '#EF4444' },
+  'dr-methanogenic': { bg: '#042016', radial: 'rgba(34, 197, 94, 0.35)', spot: '#22C55E' },
+  'captain-englland': { bg: '#0A192F', radial: 'rgba(99, 102, 241, 0.35)', spot: '#6366F1' },
+  'ajx-assassin': { bg: '#09090B', radial: 'rgba(168, 85, 247, 0.35)', spot: '#A855F7' },
+  'yjkstra-pathfinder': { bg: '#111827', radial: 'rgba(234, 179, 8, 0.35)', spot: '#EAB308' },
+  'ironclad-warden': { bg: '#1F2937', radial: 'rgba(156, 163, 175, 0.35)', spot: '#9CA3AF' },
+  'black-monkey': { bg: '#18181B', radial: 'rgba(249, 115, 22, 0.35)', spot: '#F97316' },
+  'part-king-kong': { bg: '#241408', radial: 'rgba(245, 158, 11, 0.35)', spot: '#F59E0B' },
+};
+
+/**
+ * Calculates Mugen Gem Value based on card rarity & seed
+ */
+export function getCardGemValue(rarity: CardRarity | string, seed: number): number {
+  const baseOffset = (seed % 100) * 5;
+  switch (rarity) {
+    case 'legendary':
+      return 10000 + baseOffset * 50;
+    case 'mythic':
+      return 5000 + baseOffset * 25;
+    case 'master':
+      return 2500 + baseOffset * 15;
+    case 'epic':
+      return 1200 + baseOffset * 8;
+    case 'rare':
+      return 600 + baseOffset * 4;
+    default:
+      return 150 + (seed % 200);
+  }
+}
+
+/**
+ * Renders a Collectible Hero Card for Hero Duel mode.
+ * Features:
+ * 1. Clean Unicolor Theme background framing the central art window.
+ * 2. Center Hero Icon rendered from vector artwork in HeroPiecex.tsx with smooth shadow.
+ * 3. High-contrast top-left Japanese text (Kanji + Romaji).
+ * 4. Distinct Rarity Category Badge with custom color styling (Epic = Purple, Legendary = Yellow/Gold, etc.).
+ * 5. Mugen Gem Icon & calculated Gem Value display.
+ * 6. Card Code strictly formatted in ALL UPPERCASE (no lowercase letters).
+ *
+ * Dimensions: 750px width x 1050px height (2x PNG export: 1500 x 2100 px).
  */
 export function renderCardToCanvas(
   canvas: HTMLCanvasElement,
@@ -84,19 +87,21 @@ export function renderCardToCanvas(
   ctx.scale(scale, scale);
 
   const seed = card.visualSeed || Math.abs(hashCode(card.code || 'HD100'));
-  const rand = mulberry32(seed);
-
   const palette: CardPaletteDef = getPaletteForCard(seed, card.rarity || 'common');
   const scene: SceneRecipe = getSceneRecipeForCard(card.heroId || 'mugen-king', seed);
   const heroVector: HeroVectorArtDef =
     HERO_CARD_VECTOR_ART[card.heroId] || HERO_CARD_VECTOR_ART['mugen-king'];
 
+  const theme = HERO_UNICOLOR_THEMES[card.heroId] || HERO_UNICOLOR_THEMES['mugen-king'];
+  const rarityColor = getRarityColor(card.rarity);
+  const gemValue = getCardGemValue(card.rarity, seed);
+  const uppercaseCode = (card.code || 'HD100').toUpperCase();
+
   const ink = '#0B0B0F';
   const paper = '#F3EDE0';
-  const rarityColor = getRarityColor(card.rarity);
 
   // ------------------------------------------------------------------
-  // 1. SINGLE OUTER CARD BASE & BORDER (No multiple/nested borders)
+  // 1. BASE CARD CONTAINER (Solid Ink Base with Rounded Corners)
   // ------------------------------------------------------------------
   ctx.fillStyle = ink;
   ctx.beginPath();
@@ -104,7 +109,7 @@ export function renderCardToCanvas(
   ctx.fill();
 
   // ------------------------------------------------------------------
-  // 2. ART WINDOW (x=0, y=0, w=750, h=720 with rounded top corners)
+  // 2. UNICOLOR ART WINDOW (x=0, y=0, w=750, h=720)
   // ------------------------------------------------------------------
   const artX = 0;
   const artY = 0;
@@ -116,100 +121,114 @@ export function renderCardToCanvas(
   ctx.roundRect(artX, artY, artW, artH, [32, 32, 0, 0]);
   ctx.clip();
 
-  // Selected Image Asset for Background
-  const bgImgIndex = Math.abs(card.backgroundIndex ?? seed) % CARD_BACKGROUND_IMAGES.length;
-  const bgSrc = CARD_BACKGROUND_IMAGES[bgImgIndex];
-  const bgImg = getLoadedImage(bgSrc, () => {
-    renderCardToCanvas(canvas, card, scale);
-  });
+  // Unicolor Background Fill
+  ctx.fillStyle = theme.bg;
+  ctx.fillRect(artX, artY, artW, artH);
 
-  if (bgImg) {
-    drawImageCover(ctx, bgImg, artX, artY, artW, artH);
-  } else {
-    // Atmospheric fallback gradient while loading image
-    const fillGrad = ctx.createLinearGradient(0, 0, 0, artH);
-    fillGrad.addColorStop(0, palette.bg || '#1a102f');
-    fillGrad.addColorStop(1, '#05020a');
-    ctx.fillStyle = fillGrad;
-    ctx.fillRect(artX, artY, artW, artH);
-  }
+  // Soft Radial Spotlight Beam in Center
+  const radialGlow = ctx.createRadialGradient(375, 360, 20, 375, 360, 380);
+  radialGlow.addColorStop(0, theme.radial);
+  radialGlow.addColorStop(0.7, 'rgba(0, 0, 0, 0.4)');
+  radialGlow.addColorStop(1, 'rgba(0, 0, 0, 0.85)');
+  ctx.fillStyle = radialGlow;
+  ctx.fillRect(artX, artY, artW, artH);
+
+  // Plinth Base Ring beneath the Hero Artwork
+  drawHeroPlinthRing(ctx, 375, 520, 220, theme.spot, rarityColor);
+
+  // ------------------------------------------------------------------
+  // CENTER HERO ICON ARTWORK (Imported from HeroPiecex.tsx)
+  // ------------------------------------------------------------------
+  const pieceType: HeroPieceType = heroIdToPieceType(card.heroId);
+  drawCenterHeroPiece(ctx, pieceType, 375, 350, 340, theme.spot);
 
   // Soft contrast gradient overlay at lower art section for high text readability
-  const shadowGrad = ctx.createLinearGradient(0, 360, 0, artH);
+  const shadowGrad = ctx.createLinearGradient(0, 420, 0, artH);
   shadowGrad.addColorStop(0, 'rgba(0, 0, 0, 0.0)');
-  shadowGrad.addColorStop(0.6, 'rgba(0, 0, 0, 0.55)');
-  shadowGrad.addColorStop(1, 'rgba(0, 0, 0, 0.88)');
+  shadowGrad.addColorStop(0.6, 'rgba(0, 0, 0, 0.65)');
+  shadowGrad.addColorStop(1, 'rgba(0, 0, 0, 0.95)');
   ctx.fillStyle = shadowGrad;
   ctx.fillRect(artX, artY, artW, artH);
 
   // HERO NAME & ROLE LINE (Carved Typography over art window bottom)
-  drawCarvedHeroName(ctx, card.heroName || heroVector.name, heroVector.roleTitle, palette, ink);
+  drawCarvedHeroName(ctx, card.heroName || heroVector.name, heroVector.roleTitle, theme.spot, ink);
 
   ctx.restore(); // Unclip Art Window
 
   // ------------------------------------------------------------------
-  // 3. TOP-LEFT JAPANESE KANJI & ROMAJI
+  // 3. TOP-LEFT JAPANESE KANJI & ROMAJI (WELL CONTRASTED)
   // ------------------------------------------------------------------
   const kanjiWord = scene.japaneseWord.kanji;
   const romajiWord = scene.japaneseWord.romaji;
 
-  // Vertical Accent Bar left of Kanji (x=36, y=48, w=6, h=54)
-  ctx.fillStyle = palette.spot;
-  ctx.fillRect(36, 48, 6, 54);
-
   ctx.save();
+  // Vertical Accent Bar left of Kanji (x=34, y=44, w=7, h=64)
+  ctx.fillStyle = theme.spot;
+  ctx.fillRect(34, 44, 7, 64);
+
   ctx.font = '900 108px "Noto Serif JP", "Hiragino Mincho ProN", "Yu Mincho", Georgia, serif';
   ctx.textAlign = 'left';
   ctx.textBaseline = 'alphabetic';
 
-  // 10px Stroke in dark ink behind text for pop over images
-  ctx.lineWidth = 12;
-  ctx.strokeStyle = ink;
+  // 16px Heavy Dark Stroke Outline behind Kanji for maximum contrast
+  ctx.lineWidth = 16;
+  ctx.strokeStyle = '#000000';
   ctx.strokeText(kanjiWord, 48, 114);
 
-  // Hard Offset Shadow in Spot Color
-  ctx.fillStyle = palette.spot;
-  ctx.fillText(kanjiWord, 52, 118);
+  // 3D Hard Offset Shadow in Spot Accent Color
+  ctx.fillStyle = theme.spot;
+  ctx.fillText(kanjiWord, 53, 118);
 
-  // White Fill
+  // Bright White Fill
   ctx.fillStyle = '#FFFFFF';
   ctx.fillText(kanjiWord, 48, 114);
 
-  // Romaji beneath
-  ctx.font = '700 24px "Bebas Neue", "Anton", sans-serif';
+  // Romaji beneath Kanji with Dark Outline
+  ctx.font = '900 24px "Bebas Neue", "Anton", sans-serif';
+  ctx.lineWidth = 6;
+  ctx.strokeStyle = '#000000';
+  ctx.strokeText(romajiWord.toUpperCase(), 52, 148);
   ctx.fillStyle = '#FFFFFF';
   ctx.letterSpacing = '4px';
   ctx.fillText(romajiWord.toUpperCase(), 52, 148);
   ctx.restore();
 
   // ------------------------------------------------------------------
-  // 4. TOP-RIGHT RARITY BADGE (x=714 right-aligned, y=36)
+  // 4. TOP-RIGHT RARITY CATEGORY BADGE (x=714 right-aligned, y=36)
   // ------------------------------------------------------------------
   drawRarityBadge(ctx, card.rarity || 'common', 714, 36, rarityColor, ink);
 
   // ------------------------------------------------------------------
-  // 5. STORY BOX (x=16, y=734, w=718, h=146, fill #F3EDE0)
+  // 5. REWARD & STORY BOX (x=16, y=734, w=718, h=146, fill #F3EDE0)
   // ------------------------------------------------------------------
   ctx.save();
   ctx.fillStyle = paper;
   ctx.beginPath();
-  ctx.roundRect(16, 734, 718, 146, 12);
+  ctx.roundRect(16, 734, 718, 146, 14);
   ctx.fill();
 
-  // Story Text
+  // Outer border for story box
+  ctx.lineWidth = 2;
+  ctx.strokeStyle = theme.spot;
+  ctx.stroke();
+
+  // Mugen Gem Icon & Gem Value Badge (Top Right of Story Box)
+  drawGemRewardBadge(ctx, 718 - 180, 746, gemValue);
+
+  // Story Text Quote
   const taleText = scene.tales[seed % scene.tales.length];
   ctx.fillStyle = '#111111';
-  ctx.font = 'italic 500 24px "Playfair Display", "IM Fell English", Georgia, serif';
+  ctx.font = 'italic 500 23px "Playfair Display", "IM Fell English", Georgia, serif';
   ctx.textAlign = 'left';
   ctx.textBaseline = 'top';
 
-  wrapTextLeft(ctx, `“${taleText}”`, 38, 750, 640, 30);
+  wrapTextLeft(ctx, `“${taleText}”`, 36, 750, 480, 28);
 
-  // Spot Color Corner Dot (r=10 at x=710, y=858)
-  ctx.fillStyle = palette.spot;
-  ctx.beginPath();
-  ctx.arc(710, 858, 10, 0, Math.PI * 2);
-  ctx.fill();
+  // Lore Meaning Subtitle Line
+  ctx.fillStyle = '#4B5563';
+  ctx.font = '600 18px sans-serif';
+  ctx.fillText(`Attribute: ${scene.japaneseWord.meaning.toUpperCase()}`, 36, 842);
+
   ctx.restore();
 
   // ------------------------------------------------------------------
@@ -219,7 +238,7 @@ export function renderCardToCanvas(
   ctx.fillStyle = ink;
   ctx.fillRect(16, 892, 718, 142);
 
-  // Left Footer Text: "HERO DUEL" & Defeated Info
+  // Left Footer Text: "HERO DUEL" & Mint/Defeated Info
   ctx.fillStyle = paper;
   ctx.font = '900 30px "Bebas Neue", "Anton", sans-serif';
   ctx.textAlign = 'left';
@@ -230,42 +249,41 @@ export function renderCardToCanvas(
   const mintDateStr = new Date(card.mintedAt || card.unlockedAt || Date.now()).toLocaleDateString();
 
   ctx.fillStyle = '#9A9AA5';
-  ctx.font = '600 20px sans-serif';
+  ctx.font = '600 19px sans-serif';
   ctx.letterSpacing = '0px';
-  ctx.fillText(`Defeated by ${defeatedName} • ${mintDateStr}`, 38, 978);
+  ctx.fillText(`Issued by ${defeatedName} • ${mintDateStr}`, 38, 978);
 
-  // Right Footer Text: Small "No." + HUGE Focal Card Code
+  // Right Footer Text: Small "No." + HUGE Focal Card Code (STRICTLY UPPERCASE)
   ctx.fillStyle = paper;
   ctx.font = '800 22px "Bebas Neue", sans-serif';
   ctx.textAlign = 'right';
-  ctx.fillText('No.', 718 - 270, 942);
+  ctx.fillText('CODE NO.', 718 - 270, 942);
 
   // HUGE CARD CODE (118px)
-  const codeStr = card.code || 'HD100';
   let codeFontSize = 118;
   ctx.font = `900 ${codeFontSize}px "Anton", "Bebas Neue", "Impact", sans-serif`;
-  while (ctx.measureText(codeStr).width > 350 && codeFontSize > 70) {
+  while (ctx.measureText(uppercaseCode).width > 350 && codeFontSize > 70) {
     codeFontSize -= 4;
     ctx.font = `900 ${codeFontSize}px "Anton", "Bebas Neue", "Impact", sans-serif`;
   }
 
-  // 4px Hard Offset Shadow in White at 35% Alpha
-  ctx.fillStyle = 'rgba(255, 255, 255, 0.35)';
-  ctx.fillText(codeStr, 718, 1002);
+  // 4px Hard Offset Shadow in White at 30% Alpha
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+  ctx.fillText(uppercaseCode, 718, 1002);
 
-  // 6px Stroke Outline
+  // 12px Stroke Outline in Black Ink
   ctx.lineWidth = 12;
   ctx.strokeStyle = ink;
-  ctx.strokeText(codeStr, 714, 998);
+  ctx.strokeText(uppercaseCode, 714, 998);
 
   // Spot Color Fill
-  ctx.fillStyle = palette.spot;
-  ctx.fillText(codeStr, 714, 998);
+  ctx.fillStyle = theme.spot;
+  ctx.fillText(uppercaseCode, 714, 998);
 
   ctx.restore();
 
   // ------------------------------------------------------------------
-  // 7. SINGLE CLEAN OUTER BORDER (ONLY ONE BORDER)
+  // 7. SINGLE CLEAN OUTER FRAMING BORDER
   // ------------------------------------------------------------------
   ctx.strokeStyle = rarityColor;
   ctx.lineWidth = 6;
@@ -277,49 +295,224 @@ export function renderCardToCanvas(
 }
 
 // ------------------------------------------------------------------
-// HELPER FUNCTIONS
+// HELPER DRAWING FUNCTIONS
 // ------------------------------------------------------------------
 
-function drawImageCover(
+/**
+ * Draws the vector hero piece from HeroPiecex.tsx in the center of the card
+ */
+function drawCenterHeroPiece(
   ctx: CanvasRenderingContext2D,
-  img: HTMLImageElement,
-  x: number,
-  y: number,
-  w: number,
-  h: number
+  pieceType: HeroPieceType,
+  cx: number,
+  cy: number,
+  size: number,
+  spotColor: string
 ) {
-  const imgRatio = img.naturalWidth / img.naturalHeight;
-  const targetRatio = w / h;
-  let renderW = w;
-  let renderH = h;
-  let offsetX = 0;
-  let offsetY = 0;
+  const art = HERO_PIECE_ART[pieceType];
+  if (!art) return;
 
-  if (imgRatio > targetRatio) {
-    renderW = h * imgRatio;
-    offsetX = (w - renderW) / 2;
-  } else {
-    renderH = w / imgRatio;
-    offsetY = (h - renderH) / 2;
+  ctx.save();
+
+  // Translate to center hero position (the vector paths are 24x24 box with feet at y=19)
+  const scale = size / 24;
+  ctx.translate(cx - size / 2, cy - size / 2);
+  ctx.scale(scale, scale);
+
+  // 1. Smooth Backdrop Shadow for Silhouette
+  if (art.sil) {
+    const silPath = new Path2D(art.sil);
+    ctx.save();
+    ctx.shadowColor = spotColor;
+    ctx.shadowBlur = 18;
+    ctx.fillStyle = '#1A2236';
+    ctx.fill(silPath);
+    ctx.restore();
+
+    // Fill main dark silhouette
+    ctx.fillStyle = '#1A2236';
+    ctx.fill(silPath);
+
+    // Golden/Spot outline stroke around silhouette
+    ctx.lineWidth = 0.6;
+    ctx.strokeStyle = spotColor;
+    ctx.stroke(silPath);
   }
 
-  ctx.drawImage(img, x + offsetX, y + offsetY, renderW, renderH);
+  // 2. White/Ivory accent shapes (`lite`)
+  if (art.lite) {
+    const litePath = new Path2D(art.lite);
+    ctx.fillStyle = '#FFFAF0';
+    ctx.fill(litePath);
+  }
+
+  // 3. Highlight accent shapes (`acc`)
+  if (art.acc) {
+    const accPath = new Path2D(art.acc);
+    ctx.fillStyle = spotColor;
+    ctx.fill(accPath);
+  }
+
+  ctx.restore();
+}
+
+/**
+ * Draws Plinth Ring Base beneath hero artwork
+ */
+function drawHeroPlinthRing(
+  ctx: CanvasRenderingContext2D,
+  cx: number,
+  cy: number,
+  radiusX: number,
+  spotColor: string,
+  rarityColor: string
+) {
+  ctx.save();
+  ctx.translate(cx, cy);
+
+  // Ellipse Base Shadow
+  ctx.beginPath();
+  ctx.ellipse(0, 0, radiusX, radiusX * 0.35, 0, 0, Math.PI * 2);
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
+  ctx.fill();
+
+  // Glowing Outer Ring
+  ctx.lineWidth = 4;
+  ctx.strokeStyle = spotColor;
+  ctx.stroke();
+
+  // Inner Rarity Ring
+  ctx.beginPath();
+  ctx.ellipse(0, 0, radiusX * 0.75, radiusX * 0.25, 0, 0, Math.PI * 2);
+  ctx.strokeStyle = rarityColor;
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  ctx.restore();
+}
+
+/**
+ * Draws Mugen Gem Icon and Gem Value Pill
+ */
+function drawGemRewardBadge(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  gemValue: number
+) {
+  ctx.save();
+
+  const w = 165;
+  const h = 42;
+
+  // Badge Container Background
+  ctx.beginPath();
+  ctx.roundRect(x, y, w, h, 21);
+  ctx.fillStyle = '#0F172A';
+  ctx.fill();
+  ctx.lineWidth = 2;
+  ctx.strokeStyle = '#38BDF8';
+  ctx.stroke();
+
+  // 3D Faceted Mugen Gem Icon
+  drawMugenGemIcon(ctx, x + 8, y + 9, 24);
+
+  // Gem Value Text
+  ctx.fillStyle = '#38BDF8';
+  ctx.font = '900 18px "Anton", "Bebas Neue", sans-serif';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(`${gemValue.toLocaleString()} GEMS`, x + 40, y + h / 2);
+
+  ctx.restore();
+}
+
+/**
+ * Renders authentic 3D Faceted Sapphire Mugen Gem Icon
+ */
+function drawMugenGemIcon(ctx: CanvasRenderingContext2D, x: number, y: number, size: number) {
+  ctx.save();
+  ctx.translate(x, y);
+
+  const s = size / 24;
+  ctx.scale(s, s);
+
+  // Top Facet Polygon
+  ctx.fillStyle = '#38BDF8';
+  ctx.beginPath();
+  ctx.moveTo(12, 2);
+  ctx.lineTo(19, 7);
+  ctx.lineTo(5, 7);
+  ctx.closePath();
+  ctx.fill();
+
+  // Top Left Facet
+  ctx.fillStyle = '#0284C7';
+  ctx.beginPath();
+  ctx.moveTo(12, 2);
+  ctx.lineTo(5, 7);
+  ctx.lineTo(2, 7);
+  ctx.closePath();
+  ctx.fill();
+
+  // Top Right Facet
+  ctx.fillStyle = '#7DD3FC';
+  ctx.beginPath();
+  ctx.moveTo(12, 2);
+  ctx.lineTo(22, 7);
+  ctx.lineTo(19, 7);
+  ctx.closePath();
+  ctx.fill();
+
+  // Bottom Center Facet
+  ctx.fillStyle = '#0EA5E9';
+  ctx.beginPath();
+  ctx.moveTo(12, 22);
+  ctx.lineTo(5, 7);
+  ctx.lineTo(19, 7);
+  ctx.closePath();
+  ctx.fill();
+
+  // Bottom Left Facet
+  ctx.fillStyle = '#0369A1';
+  ctx.beginPath();
+  ctx.moveTo(12, 22);
+  ctx.lineTo(2, 7);
+  ctx.lineTo(5, 7);
+  ctx.closePath();
+  ctx.fill();
+
+  // Bottom Right Facet
+  ctx.fillStyle = '#38BDF8';
+  ctx.beginPath();
+  ctx.moveTo(12, 22);
+  ctx.lineTo(19, 7);
+  ctx.lineTo(22, 7);
+  ctx.closePath();
+  ctx.fill();
+
+  // Facet Stroke Highlights
+  ctx.strokeStyle = '#E0F2FE';
+  ctx.lineWidth = 0.8;
+  ctx.stroke();
+
+  ctx.restore();
 }
 
 function drawCarvedHeroName(
   ctx: CanvasRenderingContext2D,
   heroName: string,
   roleTitle: string,
-  palette: CardPaletteDef,
+  spotColor: string,
   ink: string
 ) {
   ctx.save();
 
-  // Role Line (28px)
-  ctx.fillStyle = palette.spot;
-  ctx.font = '900 28px "Bebas Neue", sans-serif';
+  // Role Subtitle Line (26px)
+  ctx.fillStyle = spotColor;
+  ctx.font = '900 26px "Bebas Neue", sans-serif';
   ctx.textAlign = 'left';
-  ctx.letterSpacing = '5px';
+  ctx.letterSpacing = '4px';
   ctx.fillText(roleTitle.toUpperCase(), 38, 698);
 
   // Hero Main Name (Anton / Sans 76px)
@@ -327,15 +520,14 @@ function drawCarvedHeroName(
   ctx.font = `900 ${fontSize}px "Anton", "Bebas Neue", sans-serif`;
   ctx.textAlign = 'left';
 
-  while (ctx.measureText(heroName.toUpperCase()).width > 620 && fontSize > 48) {
+  const nameUpper = heroName.toUpperCase();
+  while (ctx.measureText(nameUpper).width > 620 && fontSize > 48) {
     fontSize -= 4;
     ctx.font = `900 ${fontSize}px "Anton", "Bebas Neue", sans-serif`;
   }
 
-  const nameUpper = heroName.toUpperCase();
-
   // Drop Shadow
-  ctx.fillStyle = 'rgba(0, 0, 0, 0.85)';
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.9)';
   ctx.fillText(nameUpper, 38, 666);
 
   // White Fill
@@ -359,12 +551,12 @@ function drawRarityBadge(
   ink: string
 ) {
   ctx.save();
-  const w = 148;
-  const h = 44;
+  const w = 158;
+  const h = 46;
   const x = rightX - w;
 
   ctx.beginPath();
-  ctx.roundRect(x, y, w, h, 22);
+  ctx.roundRect(x, y, w, h, 23);
   ctx.fillStyle = color;
   ctx.fill();
 
@@ -372,7 +564,9 @@ function drawRarityBadge(
   ctx.strokeStyle = ink;
   ctx.stroke();
 
-  ctx.fillStyle = ink;
+  // Badge Text
+  const textColor = rarity === 'legendary' || rarity === 'master' ? '#000000' : '#FFFFFF';
+  ctx.fillStyle = textColor;
   ctx.font = '900 22px "Bebas Neue", sans-serif';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
@@ -410,9 +604,9 @@ function getRarityColor(rarity?: string): string {
     case 'rare': return '#3B82F6';
     case 'epic': return '#A855F7';
     case 'master': return '#F59E0B';
-    case 'mythic': return '#EF4444';
-    case 'legendary': return '#F59E0B';
-    default: return '#9AA0A6';
+    case 'mythic': return '#F43F5E';
+    case 'legendary': return '#EAB308';
+    default: return '#6B7280';
   }
 }
 
@@ -440,7 +634,7 @@ export async function downloadCardPng(card: CollectibleHeroCard): Promise<void> 
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `HeroDuel_${card.heroId}_${card.code}.png`;
+  a.download = `HeroDuel_${card.heroId}_${(card.code || 'HD100').toUpperCase()}.png`;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);

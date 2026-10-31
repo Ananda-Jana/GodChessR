@@ -71,6 +71,7 @@ export const HeroDuelEntry: React.FC<HeroDuelEntryProps> = ({ onBack }) => {
 
   const handleConfirmSiegeDeployment = (placements: { heroId: HeroId; pos: { x: number; y: number } }[]) => {
     setSiegePlacements(placements);
+    setSiegeHeroes(placements.map((p) => p.heroId));
     setScreen('siege_match');
   };
 

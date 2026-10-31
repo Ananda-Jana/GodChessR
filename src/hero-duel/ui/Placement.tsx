@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { HeroId, Coord } from '../types/heroDuelTypes';
 import { HEROES } from '../heroes/heroRegistry';
-import { HeroPieceSvg } from '../art/heroPieceSvg';
+import { HeroPiece, heroIdToPieceType } from '../art/heroAvatarHelper';
 import { Swords, ArrowLeft, ArrowRight, RotateCcw } from 'lucide-react';
 
 interface PlacedHero {
@@ -125,11 +125,11 @@ export const Placement: React.FC<PlacementProps> = ({
         </div>
 
         {/* Mini 7x4 preview showing rows 1-4 */}
-        <div className="w-full max-w-[420px] aspect-[7/4] grid grid-cols-7 grid-rows-4 border-3 border-black shadow-2xl bg-[#0e0e12] overflow-hidden rounded-lg">
+        <div className="w-full max-w-[420px] aspect-[7/4] grid grid-cols-7 grid-rows-4 border-4 border-slate-700/70 shadow-2xl bg-[#0f172a] overflow-hidden rounded-xl">
           {[3, 2, 1, 0].map((y) =>
             [0, 1, 2, 3, 4, 5, 6].map((x) => {
               const isHomeZone = y <= 1;
-              const isLight = (x + y) % 2 === 0;
+              const isLight = (x + y) % 2 === 1;
               const occupant = placements.find((p) => p.pos.x === x && p.pos.y === y);
               const isSelected =
                 selectedPlacementIndex !== null &&
@@ -145,26 +145,26 @@ export const Placement: React.FC<PlacementProps> = ({
                   className={`relative aspect-square flex items-center justify-center transition-all ${
                     isHomeZone
                       ? isLight
-                        ? 'bg-[#F2EFE4] text-black'
-                        : 'bg-[#BC1434] text-white'
-                      : 'bg-[#18181f] text-neutral-600 border border-black/40'
-                  } ${isSelected ? 'outline-3 outline-amber-400 z-10' : ''}`}
+                        ? 'bg-[#2b3c5a] text-slate-300'
+                        : 'bg-[#101726] text-slate-400'
+                      : 'bg-[#0b1120] text-slate-600 border border-slate-800/40'
+                  } ${isSelected ? 'ring-3 ring-inset ring-amber-400 z-10 brightness-105' : ''}`}
                 >
                   {isHomeZone && !occupant && isSelected && (
-                    <div className="w-3 h-3 rounded-full bg-emerald-500 animate-pulse" />
+                    <div className="w-3 h-3 rounded-full bg-emerald-400 animate-pulse" />
                   )}
 
                   {occupant && (
-                    <div className="w-[85%] h-[85%] relative flex items-center justify-center">
-                      <HeroPieceSvg
-                        heroId={occupant.heroId}
-                        team={1}
-                        isCaptain={occupant.isCaptain}
+                    <div className="w-[85%] h-[85%] relative flex items-center justify-center drop-shadow-md">
+                      <HeroPiece
+                        type={heroIdToPieceType(occupant.heroId)}
+                        color="white"
+                        className="w-full h-full"
                       />
                     </div>
                   )}
 
-                  <span className="absolute bottom-0.5 right-1 text-[8px] font-mono opacity-50 pointer-events-none">
+                  <span className="absolute bottom-0.5 right-1 text-[8px] font-mono text-slate-400 opacity-60 pointer-events-none">
                     {colLabels[x]}{y + 1}
                   </span>
                 </button>

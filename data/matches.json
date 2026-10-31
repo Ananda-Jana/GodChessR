@@ -14472,8 +14472,22 @@
       ]
     ],
     "turn": "white",
-    "status": "active",
-    "dice": null,
+    "status": "completed",
+    "dice": {
+      "rolledValue": 2,
+      "category": "inexpensive",
+      "eligiblePieceTypes": [
+        "knight",
+        "bishop",
+        "pawn",
+        "communist",
+        "priest"
+      ],
+      "isFallbackAnyPiece": false,
+      "isConsumed": false,
+      "probabilityMode": "uniform",
+      "rolledAt": 1793395547496
+    },
     "whitePawnsReachedEndRank": 0,
     "blackPawnsReachedEndRank": 0,
     "capturedByWhite": [],
@@ -14517,16 +14531,22 @@
       }
     ],
     "inCheck": null,
-    "result": null,
+    "result": {
+      "winner": "black",
+      "reason": "timeout",
+      "winnerUserId": "usr_bob_test",
+      "completedAt": 1793395548498,
+      "explanation": "Timer expired for white. Piece difference is 0 (<= 7). Black wins on time!"
+    },
     "moveSuggestions": "included",
     "totalCaptures": 0,
     "diceActive": true,
     "timeControl": 300,
-    "whiteTimeRemaining": 299.991,
+    "whiteTimeRemaining": 0,
     "blackTimeRemaining": 299.991,
     "lastTurnStartTime": 1793329005138,
     "createdAt": 1793329005120,
-    "updatedAt": 1793329005138,
+    "updatedAt": 1793395548498,
     "boardWidth": 8,
     "boardHeight": 8,
     "lostPieces": {

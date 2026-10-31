@@ -1,43 +1,33 @@
 import { SIEGE_CONFIG } from '../../config/siegeConfig';
-import { Coord, SiegeHeroInstance, SiegeTower, SiegeThrone } from './siegeTypes';
+import { Coord, SiegeHeroInstance, SiegePawnInstance } from './siegeTypes';
 
 export function getBlockedCells(
   heroes: SiegeHeroInstance[],
-  towers: SiegeTower[],
-  thrones: SiegeThrone[],
-  currentHeroId?: string
+  pawns: SiegePawnInstance[],
+  currentEntityId?: string
 ): Set<string> {
   const blocked = new Set<string>();
 
-  // Add obstacles
-  for (const obs of SIEGE_CONFIG.OBSTACLES) {
-    blocked.add(`${obs.x},${obs.y}`);
-  }
-
-  // Add living thrones
-  for (const th of thrones) {
-    if (th.isAlive) {
-      blocked.add(`${th.pos.x},${th.pos.y}`);
-    }
-  }
-
-  // Add living towers
-  for (const tw of towers) {
-    if (tw.isAlive) {
-      blocked.add(`${tw.pos.x},${tw.pos.y}`);
-    }
-  }
-
-  // Add other living heroes
+  // Add living friendly/enemy heroes
   for (const h of heroes) {
-    if (h.isAlive && h.instanceId !== currentHeroId) {
+    if (h.isAlive && h.instanceId !== currentEntityId) {
       blocked.add(`${h.pos.x},${h.pos.y}`);
+    }
+  }
+
+  // Add living pawns
+  for (const p of pawns) {
+    if (p.isAlive && p.id !== currentEntityId) {
+      blocked.add(`${p.pos.x},${p.pos.y}`);
     }
   }
 
   return blocked;
 }
 
+/**
+ * Find path supporting 8-direction King movement on 8x8 grid
+ */
 export function findPath(
   start: Coord,
   goal: Coord,
@@ -49,6 +39,12 @@ export function findPath(
   const visited = new Set<string>();
   visited.add(`${start.x},${start.y}`);
 
+  // 8 Directions: Orthogonal + Diagonals
+  const dirOffsets = [
+    { x: 0, y: -1 }, { x: 0, y: 1 }, { x: -1, y: 0 }, { x: 1, y: 0 },
+    { x: -1, y: -1 }, { x: 1, y: -1 }, { x: -1, y: 1 }, { x: 1, y: 1 },
+  ];
+
   while (queue.length > 0) {
     const path = queue.shift()!;
     const curr = path[path.length - 1];
@@ -57,35 +53,32 @@ export function findPath(
       return path;
     }
 
-    const neighbors: Coord[] = [
-      { x: curr.x + 1, y: curr.y },
-      { x: curr.x - 1, y: curr.y },
-      { x: curr.x, y: curr.y + 1 },
-      { x: curr.x, y: curr.y - 1 },
-    ];
+    for (const d of dirOffsets) {
+      const nx = curr.x + d.x;
+      const ny = curr.y + d.y;
+      if (nx < 0 || nx >= SIEGE_CONFIG.COLS || ny < 0 || ny >= SIEGE_CONFIG.ROWS) continue;
 
-    for (const n of neighbors) {
-      if (n.x < 0 || n.x >= SIEGE_CONFIG.COLS || n.y < 0 || n.y >= SIEGE_CONFIG.ROWS) continue;
-      const key = `${n.x},${n.y}`;
+      const key = `${nx},${ny}`;
       if (visited.has(key)) continue;
-      // Allow goal even if blocked (or adjacent)
-      if (blocked.has(key) && !(n.x === goal.x && n.y === goal.y)) continue;
+      // Allow stepping onto goal even if occupied (to initiate combat)
+      if (blocked.has(key) && !(nx === goal.x && ny === goal.y)) continue;
 
       visited.add(key);
-      queue.push([...path, n]);
+      queue.push([...path, { x: nx, y: ny }]);
     }
   }
 
-  // Fallback: return adjacent step towards goal if full path blocked
+  // Fallback: 1-step King movement towards goal
   const dx = Math.sign(goal.x - start.x);
   const dy = Math.sign(goal.y - start.y);
-  const step1 = { x: start.x + dx, y: start.y };
-  const step2 = { x: start.x, y: start.y + dy };
-  if (!blocked.has(`${step1.x},${step1.y}`) && step1.x >= 0 && step1.x < SIEGE_CONFIG.COLS && step1.y >= 0 && step1.y < SIEGE_CONFIG.ROWS) {
-    return [start, step1];
-  }
-  if (!blocked.has(`${step2.x},${step2.y}`) && step2.x >= 0 && step2.x < SIEGE_CONFIG.COLS && step2.y >= 0 && step2.y < SIEGE_CONFIG.ROWS) {
-    return [start, step2];
+  const fallbackStep = { x: start.x + dx, y: start.y + dy };
+
+  if (
+    fallbackStep.x >= 0 && fallbackStep.x < SIEGE_CONFIG.COLS &&
+    fallbackStep.y >= 0 && fallbackStep.y < SIEGE_CONFIG.ROWS &&
+    !blocked.has(`${fallbackStep.x},${fallbackStep.y}`)
+  ) {
+    return [start, fallbackStep];
   }
 
   return [start];

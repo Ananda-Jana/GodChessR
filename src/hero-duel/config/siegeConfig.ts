@@ -1,52 +1,43 @@
 /**
  * Shrine Siege Configuration Constants
+ * Configured for 8 columns x 8 rows tactical chessboard
  */
 
 export const SIEGE_CONFIG = {
-  COLS: 9,
-  ROWS: 13,
-  TICK_MS: 100, // 10 ticks per second
-  MAX_MATCH_SECONDS: 300, // 5 minutes
+  COLS: 8,
+  ROWS: 8,
+  TICK_MS: 100, // 10 ticks per second (0.1s dt)
+  MAX_MATCH_SECONDS: 300,
 
-  // Board positions
-  PLAYER_THRONE: { x: 4, y: 0 }, // 0-indexed: col 5, row 1 => (4,0)
-  BOT_THRONE: { x: 4, y: 12 },    // col 5, row 13 => (4,12)
-
-  PLAYER_TOWERS: [
-    { x: 2, y: 2 }, // col 3, row 3 => (2,2)
-    { x: 6, y: 2 }, // col 7, row 3 => (6,2)
-  ],
-  BOT_TOWERS: [
-    { x: 2, y: 10 }, // col 3, row 11 => (2,10)
-    { x: 6, y: 10 }, // col 7, row 11 => (6,10)
-  ],
-
+  // 2 Shrines, each taking 2x2 grid areas in the middle
+  // Rows 3 and 4 (0-indexed)
   SHRINES: [
-    { id: 'left', x: 1, y: 6 },   // col 2, row 7
-    { id: 'center', x: 4, y: 6 }, // col 5, row 7
-    { id: 'right', x: 7, y: 6 },  // col 8, row 7
+    {
+      id: 's-left',
+      name: 'West Grand Shrine',
+      cells: [
+        { x: 1, y: 3 }, { x: 2, y: 3 },
+        { x: 1, y: 4 }, { x: 2, y: 4 },
+      ],
+    },
+    {
+      id: 's-right',
+      name: 'East Grand Shrine',
+      cells: [
+        { x: 5, y: 3 }, { x: 6, y: 3 },
+        { x: 5, y: 4 }, { x: 6, y: 4 },
+      ],
+    },
   ],
 
-  // Symmetrical obstacles forming 3 lanes (0-indexed x, y)
-  OBSTACLES: [
-    // Left lane blockers
-    { x: 2, y: 5 }, { x: 2, y: 7 },
-    // Center lane blockers
-    { x: 4, y: 4 }, { x: 4, y: 8 },
-    // Right lane blockers
-    { x: 6, y: 5 }, { x: 6, y: 7 },
-  ],
+  // Win condition constants
+  DOMINION_WIN_HOLD_TURNS: 8, // Hold both shrines for 8 cumulative turns to win
+  DOMINION_WIN_HOLD_SECONDS: 8.0,
 
-  // Stats
-  THRONE_HP: 12,
-  TOWER_HP: 6,
-  TOWER_RANGE: 2,
-  TOWER_ATTACK_SECONDS: 2.0,
-  TOWER_DAMAGE: 1,
-
-  HERO_DEFAULT_HP: 3,
-  SHRINE_CAPTURE_SECONDS: 4.0, // 4s to neutralize or capture
-  DOMINION_WIN_SCORE: 100,
-  DOMINION_GAIN_RATE: 0.83, // per second per shrine advantage (3 shrines vs 0 = 2.5/s)
-  COOLDOWN_RECHARGE_BONUS_PER_SHRINE: 0.20, // +20% per shrine held
+  // Unit Stats
+  HERO_DEFAULT_HP: 10,
+  HERO_ATTACK_COOLDOWN_SEC: 1.2,
+  PAWN_DEFAULT_HP: 3,
+  PAWN_ATTACK_DAMAGE: 1,
+  PAWN_DEFENSE: 0,
 };

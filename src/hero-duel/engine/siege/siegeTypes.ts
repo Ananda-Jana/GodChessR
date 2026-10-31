@@ -18,6 +18,16 @@ export type HeroRole =
   | 'trickster'
   | 'bruiser';
 
+export type CommandType = 'attack' | 'defend' | 'capture' | 'regroup' | 'retreat' | 'auto';
+export type FormationType = 'spread' | 'clustered_left' | 'clustered_right';
+
+export interface HeroOrder {
+  type: CommandType;
+  targetCoord?: Coord;
+  targetEntityId?: string;
+  label?: string;
+}
+
 export interface SiegeHeroInstance {
   instanceId: string;
   heroId: HeroId;
@@ -29,63 +39,103 @@ export interface SiegeHeroInstance {
   targetPos: Coord | null;
   hp: number;
   maxHp: number;
-  attackRange: number;
   attackDamage: number;
+  defense: number;
+  attackRange: number;
   attackIntervalSec: number;
   moveIntervalSec: number;
   timeSinceLastAttack: number;
   timeSinceLastMove: number;
   abilityCooldownSec: number;
   currentAbilityCooldown: number;
+  abilityUnlocked: boolean; // Gated by reaching a shrine
   isAlive: boolean;
   statuses: {
-    type: 'silenced' | 'rooted' | 'slowed' | 'disarmed';
+    type: 'silenced' | 'rooted' | 'slowed' | 'disarmed' | 'shielded' | 'buffed';
     durationSec: number;
   }[];
-  order?: {
-    type: 'move' | 'attack_target' | 'capture_shrine';
-    targetCoord?: Coord;
-    targetEntityId?: string;
-  };
+  order?: HeroOrder;
+  // Stats tracked per hero for post-match analysis
+  damageDealt: number;
+  kills: number;
+  shrinesCaptured: number;
 }
 
-export interface SiegeTower {
+export interface SiegePawnInstance {
   id: string;
   team: TeamSide;
   pos: Coord;
   hp: number;
   maxHp: number;
-  timeSinceLastAttack: number;
-  isAlive: boolean;
-}
-
-export interface SiegeThrone {
-  team: TeamSide;
-  pos: Coord;
-  hp: number;
-  maxHp: number;
+  attackDamage: number;
+  defense: number;
   isAlive: boolean;
 }
 
 export interface SiegeShrine {
+  id: string; // 's-left' or 's-right'
+  name: string;
+  cells: Coord[]; // 4 cells forming 2x2 area
+  owner: TeamSide | null; // 1, 2, or null
+  occupierTeam: TeamSide | null;
+  isContested: boolean;
+  dominionTimer: number; // Seconds held continuously by owner
+}
+
+export interface VisualProjectile {
+  id: string;
+  from: Coord;
+  to: Coord;
+  progress: number; // 0..1
+  type: 'hero_slash' | 'ability_beam' | 'gas_cloud' | 'pawn_strike';
+  team: TeamSide;
+}
+
+export interface FloatingNumber {
   id: string;
   pos: Coord;
-  owner: TeamSide | null; // 1, 2, or null (neutral)
-  capturingTeam: TeamSide | null;
-  progress: number; // 0 to 4.0 seconds
+  text: string;
+  color: string;
+  lifeSec: number;
+}
+
+export interface DamageFlash {
+  id: string;
+  pos: Coord;
+  color?: string;
+}
+
+export interface ShrineModalState {
+  heroInstanceId: string;
+  shrineId: string;
+}
+
+export interface PlayerAction {
+  heroInstanceId: string;
+  targetPos: Coord;
+  isHold?: boolean;
 }
 
 export interface SiegeState {
   tick: number;
+  turn: number;
   elapsedSeconds: number;
   heroes: SiegeHeroInstance[];
-  towers: SiegeTower[];
-  thrones: SiegeThrone[];
+  pawns: SiegePawnInstance[];
   shrines: SiegeShrine[];
-  dominion: {
+  dominionTurns: {
+    1: number; // Turns holding both shrines (win at 8)
+    2: number;
+  };
+  dominionTimer: {
     1: number;
     2: number;
   };
+  damageFlashes: DamageFlash[];
+  eliminatedUnitIds: string[];
+  shrineModal: ShrineModalState | null; // When non-null, turn timer is paused for ability selection
+  projectiles: VisualProjectile[];
+  floatingNumbers: FloatingNumber[];
   winner: TeamSide | 'draw' | null;
   winReason: string | null;
   events: {
@@ -94,4 +144,10 @@ export interface SiegeState {
     text: string;
     team?: TeamSide;
   }[];
+  stats: {
+    shrineControlSec: { 1: number; 2: number };
+    heroesEliminated: { 1: number; 2: number };
+    totalDamageDealt: { 1: number; 2: number };
+    turningPointText?: string;
+  };
 }
